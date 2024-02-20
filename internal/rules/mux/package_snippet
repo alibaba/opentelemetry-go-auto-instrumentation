@@ -1,0 +1,10 @@
+package mux
+
+var OTelMuxNewRouterHook func(*Router)
+
+func otelMuxNewRouterHook(r *Router) *Router {
+	if OTelMuxNewRouterHook != nil {
+		OTelMuxNewRouterHook(r)
+	}
+	return r
+}

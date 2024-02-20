@@ -1,0 +1,25 @@
+package http
+
+var OTelHandlerHook func(pattern string, handler Handler) Handler
+
+func otelHandlerHook(pattern string, handler Handler) Handler {
+	if handler == nil {
+		return handler
+	}
+	if OTelHandlerHook != nil {
+		return OTelHandlerHook(pattern, handler)
+	}
+	return handler
+}
+
+var OTelTransportHook func(c *Client) RoundTripper
+
+func otelTransportHook(c *Client) RoundTripper {
+	if OTelTransportHook == nil {
+		if c.Transport != nil {
+			return c.Transport
+		}
+		return DefaultTransport
+	}
+	return OTelTransportHook(c)
+}

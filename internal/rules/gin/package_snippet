@@ -1,0 +1,10 @@
+package gin
+
+var OTelGinNewHook func(*Engine)
+
+func otelGinNewHook(e *Engine) *Engine {
+	if OTelGinNewHook != nil {
+		OTelGinNewHook(e)
+	}
+	return e
+}

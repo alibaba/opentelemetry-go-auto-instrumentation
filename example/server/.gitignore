@@ -1,0 +1,3 @@
+.otel-auto-instrumentation
+otel_*
+server

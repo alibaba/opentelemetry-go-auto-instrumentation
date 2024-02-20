@@ -1,0 +1,24 @@
+package main
+
+import (
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"net/http"
+)
+
+func init() {
+	http.OTelHandlerHook = func (pattern string, handler http.Handler) http.Handler {
+		return otelhttp.NewHandler(handler, pattern)
+	}
+
+	dt := otelhttp.NewTransport(http.DefaultTransport)
+	http.OTelTransportHook = func (c *http.Client) http.RoundTripper {
+		if c.Transport != nil {
+			_, ok := c.Transport.(*otelhttp.Transport)
+			if !ok {
+				c.Transport = otelhttp.NewTransport(c.Transport)
+			}
+			return c.Transport
+		}
+		return dt
+	}
+}

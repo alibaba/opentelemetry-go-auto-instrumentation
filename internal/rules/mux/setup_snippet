@@ -1,0 +1,12 @@
+package main
+
+import (
+	"github.com/gorilla/mux"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+)
+
+func init() {
+	mux.OTelMuxNewRouterHook = func(r *mux.Router) {
+		r.Use(otelmux.Middleware("mux-server"))
+	}
+}

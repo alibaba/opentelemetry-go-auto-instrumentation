@@ -1,0 +1,16 @@
+package main
+
+import (
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+)
+
+func init() {
+	grpc.OTelDialContextHook = func() grpc.DialOption {
+		return grpc.WithStatsHandler(otelgrpc.NewClientHandler())
+	}
+
+	grpc.OTelNewServerHook = func() grpc.ServerOption {
+		return grpc.StatsHandler(otelgrpc.NewServerHandler())
+	}
+}
