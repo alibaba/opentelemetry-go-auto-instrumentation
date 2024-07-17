@@ -1,0 +1,190 @@
+package preprocess
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"runtime"
+	"syscall"
+	"time"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+)
+
+// -----------------------------------------------------------------------------
+// Preprocess
+//
+// The preprocess package is used to preprocess the source code before the actual
+// instrumentation. Instrumentation rules may introduces additional dependencies
+// that are not present in original source code. The preprocess is responsible
+// for preparing these dependencies in advance.
+
+const (
+	DryRunLog = "dry_run.log"
+	GoModFile = "go.mod"
+)
+
+// runDryBuild runs a dry build to get all dependencies needed for the project.
+func runDryBuild() error {
+	dryRunLog, err := os.Create(util.GetLogPath(DryRunLog))
+	if err != nil {
+		return err
+	}
+	// The full build command is: "go build -a -x -n {BuildArgs...}"
+	args := append([]string{"build", "-a", "-x", "-n"}, shared.BuildArgs...)
+	cmd := exec.Command("go", args...)
+	cmd.Stdout = dryRunLog
+	cmd.Stderr = dryRunLog
+	return cmd.Run()
+}
+
+func runModTidy() error {
+	return util.RunCmd("go", "mod", "tidy")
+}
+
+func runGoGet(dep string) error {
+	return util.RunCmd("go", "get", dep)
+}
+
+func nullDevice() string {
+	if runtime.GOOS == "windows" {
+		return "NUL"
+	}
+	return "/dev/null"
+}
+
+func runBuildWithToolexec() error {
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	args := []string{
+		"build",
+		"-toolexec=" + exe + " -in-toolexec",
+	}
+
+	// Leave the temporary compilation directory
+	args = append(args, "-work")
+
+	// Force rebuilding
+	args = append(args, "-a")
+
+	if shared.Debug {
+		// Disable compiler optimizations for debugging mode
+		args = append(args, "-gcflags=all=-N -l")
+	}
+
+	// Avoid conflicts between args and flags with -- symbol
+	// According to go1.18.10/src/flag/flag.go#parseOne
+	if len(shared.BuildArgs) > 0 {
+		if shared.Restore {
+			return fmt.Errorf("args are not allowed when -restore is present")
+		}
+		// Append additional build arguments provided by the user
+		args = append(args, shared.BuildArgs...)
+	}
+
+	if shared.Restore {
+		// Dont generate any compiled binary when using -restore
+		args = append(args, "-o")
+		args = append(args, nullDevice())
+	}
+
+	if shared.Verbose {
+		log.Printf("Run go build with args %v in toolexec mode", args)
+	}
+	return util.RunCmd(append([]string{"go"}, args...)...)
+}
+
+func (dp *DepProcessor) updateDepVersion() error {
+	// This should be done before running go mod tidy, because we may relies on
+	// some packages that only presents in our specified version, running go mod
+	// tidy will report error since it nevertheless pulls the latest version,
+	// which is not what we want.
+	for _, ruleHash := range dp.funcRules {
+		rule := resource.FindFuncRuleByHash(ruleHash)
+		for _, dep := range rule.PackageDeps {
+			log.Printf("Update dependency %v ", dep)
+			err := runGoGet(dep)
+			if err != nil {
+				return fmt.Errorf("failed to update dependency %v: %w", dep, err)
+			}
+		}
+	}
+	err := runModTidy()
+	if err != nil {
+		return fmt.Errorf("failed to run go mod tidy: %w", err)
+	}
+	return nil
+}
+
+func checkModularized() error {
+	found, err := util.IsExistGoMod()
+	if !found {
+		return fmt.Errorf("go.mod not found")
+	}
+	if err != nil {
+		return fmt.Errorf("failed to check go.mod: %w", err)
+	}
+	return nil
+}
+
+func Preprocess() error {
+	err := checkModularized()
+	if err != nil {
+		return fmt.Errorf("not modularized project: %w", err)
+	}
+
+	dp := newDepProcessor()
+	// Aware of both normal exit and interrupt signal, clean up temporary files
+	defer func() { dp.postProcess() }()
+	go func() {
+		s := <-dp.sigc
+		switch s {
+		case syscall.SIGTERM, syscall.SIGINT:
+			log.Printf("Interrupted instrumentation, cleaning up")
+			dp.postProcess()
+		default:
+		}
+	}()
+	{
+		start := time.Now()
+		// Backup go.mod, it's okay to fail here
+		_ = dp.backupFile(GoModFile)
+
+		// Find rule dependencies according to compile commands
+		err = dp.setupDeps()
+		if err != nil {
+			return fmt.Errorf("failed to setup prerequisites: %w", err)
+		}
+
+		// Update dependencies in go.mod to specific version
+		err = dp.updateDepVersion()
+		if err != nil {
+			return fmt.Errorf("failed to update dependencies: %w", err)
+		}
+
+		// Run go mod tidy to fetch dependencies
+		err = runModTidy()
+		if err != nil {
+			return fmt.Errorf("failed to run mod tidy: %w", err)
+		}
+
+		log.Printf("Preprocess took %v", time.Since(start))
+	}
+
+	{
+		start := time.Now()
+		// Run go build with toolexec to start instrumentation
+		err := runBuildWithToolexec()
+		if err != nil {
+			return fmt.Errorf("failed to run go toolexec build: %w", err)
+		}
+		log.Printf("Instrument took %v", time.Since(start))
+	}
+	return nil
+}

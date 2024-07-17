@@ -2,80 +2,47 @@
 
 ## Introduction
 
-This project provides an automatic solution for Go applications that want to leverage OpenTelemetry to enable effective
-observability.
+This project provides an automatic solution for Golang applications that want to
+leverage OpenTelemetry to enable effective observability.
 
-## Quick Demo
+## Build
+To build local development version, run below command:
 
-1. Launch jaeger
+```bash
+$ make build
+```
 
-   ```shell
-   $ docker run --rm --name jaeger \
-     -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
-     -p 6831:6831/udp \
-     -p 6832:6832/udp \
-     -p 5778:5778 \
-     -p 16686:16686 \
-     -p 4317:4317 \
-     -p 4318:4318 \
-     -p 14250:14250 \
-     -p 14268:14268 \
-     -p 14269:14269 \
-     -p 9411:9411 \
-     jaegertracing/all-in-one:1.53
-   ```
+To build release version for all supported os+arch matrix, run below command:
 
-2. Launch demo
+```bash
+$ make all
+```
 
-   ```shell
-   # 1. build the project
-   $ go build -a
+## Usage
+If you previously used `go build` to build your project, you can simply use
 
-   # 2. build & run the demo server
-   $ cd example/server
-   $ ../../otel-auto-instrumentation
-   $ OTEL_EXPORTER_ENDPOINT="localhost:4318" OTEL_EXPORTER_INSECURE=true OTEL_SERVICE_NAME=server ./server
+```bash
+$ ./otel-go-auto-instrumentation
+```
 
-   # 3. build & run the demo client in a new shell
-   $ cd example/client
-   $ ../../otel-auto-instrumentation
-   $ OTEL_EXPORTER_ENDPOINT="localhost:4318" OTEL_EXPORTER_INSECURE=true OTEL_SERVICE_NAME=client ./client
-   ```
+If you previously used `go build` with arguments, e.g.  `go build -gcflags="-m" cmd/app`, it becomes
 
-Then we can see trace data at http://localhost:16686/search.
+```bash
+$ ./otel-go-auto-instrumentation -- -gcflags="-m" cmd/app
+```
 
-![snapshot](./jaeger.jpg)
+Where all arguments that you would pass to `go build` are now passed after the `--` delimiter.
 
-## Packages
+Additionally, there are some options for specific purposes, which need to be passed
+before the -- delimiter, as shown below:
 
-|   Instrumentation Package   | Metrics | Traces |
-|:---------------------------:|:-------:|:------:|
-|          net/http           |         |   ✓    |
-|  github.com/gin-gonic/gin   |         |   ✓    |
-|   google.golang.org/grpc    |         |   ✓    |
-|   github.com/gorilla/mux    |         |   ✓    |
-| github.com/labstack/echo/v4 |         |   ✓    |
+```bash
+$ otel-go-auto-instrumentation -help
+$ otel-go-auto-instrumentation -debuglog # print log to file
+$ otel-go-auto-instrumentation -verbose -- -gcflags="-m" cmd/app # print verbose log
+```
 
-## Implementation
-
-The current implementation
-reuses [the existing instrumentation for Go packages](https://github.com/open-telemetry/opentelemetry-go-contrib/tree/main/instrumentation)
-and depends on the package `dave/dst` to rewrite Go source code.
-
-The main process is as follows (see driver.go):
-
-- Use `go build -a -x -n` to retrieve packages that the application depends on
-
-- Inject snippets into `package main` based on the result of step 1
-    - Setup hooks for frameworks/libraries
-    - Setup OTel SDK
-
-- Build the application and rewrite code using `-toolexec`
-    - Inject snippets that define hooks into the target packages
-    - Rewrite source code to invoke hooks
-
-## Next Steps
-
-- More popular packages support
-- Different versions of a library may require distinct instrumentation approaches
-- Instrument user code and Go Runtime
+As a drop-in replacement for `go build`, you can replace `go build` in your project's
+Makefile/build script/build command with `otel-go-auto-instrumentation --` and
+then compile the project as usual. If you find that the build fails after
+the replacement, it is likely a bug, please file a bug in [Issue](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues).
