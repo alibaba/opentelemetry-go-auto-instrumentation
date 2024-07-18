@@ -15,6 +15,8 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+
+	"golang.org/x/mod/modfile"
 )
 
 const (
@@ -44,24 +46,26 @@ const (
 )
 
 type DepProcessor struct {
-	bundles       []*resource.RuleBundle // All dependent rule bundles
-	funcRules     []uint64               // Function should be processed separately
-	addon         string
-	generatedDeps []string
-	sigc          chan os.Signal // Graceful shutdown
-	backups       map[string]string
+	bundles         []*resource.RuleBundle // All dependent rule bundles
+	funcRules       []uint64               // Function should be processed separately
+	addon           string
+	generatedDeps   []string
+	sigc            chan os.Signal // Graceful shutdown
+	backups         map[string]string
+	localImportPath string
 }
 
 func newDepProcessor() *DepProcessor {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	return &DepProcessor{
-		bundles:       []*resource.RuleBundle{},
-		funcRules:     []uint64{},
-		addon:         "",
-		generatedDeps: []string{},
-		sigc:          sigc,
-		backups:       map[string]string{},
+		bundles:         []*resource.RuleBundle{},
+		funcRules:       []uint64{},
+		addon:           "",
+		generatedDeps:   []string{},
+		sigc:            sigc,
+		backups:         map[string]string{},
+		localImportPath: "",
 	}
 }
 
@@ -455,7 +459,7 @@ func (dp *DepProcessor) addRuleImport() (err error) {
 	if shared.Verbose {
 		log.Printf("RuleImport candidates: %v", files)
 	}
-	ruleImportPath, err := util.GetImportPathOf(OtelRules)
+	ruleImportPath, err := dp.getImportPathOf(OtelRules)
 	if err != nil {
 		return fmt.Errorf("failed to get import path of %v: %w", OtelRules, err)
 	}
@@ -509,6 +513,52 @@ func (dp *DepProcessor) addRuleImport() (err error) {
 	return nil
 }
 
+// getModuleName returns the module name of the project by parsing go.mod file.
+func getModuleName(gomod string) (string, error) {
+	data, err := util.ReadFile(gomod)
+	if err != nil {
+		return "", fmt.Errorf("failed to read go.mod: %w", err)
+	}
+
+	modFile, err := modfile.Parse("go.mod", []byte(data), nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse go.mod: %w", err)
+	}
+
+	moduleName := modFile.Module.Mod.Path
+	return moduleName, nil
+}
+
+func (dp *DepProcessor) findLocalImportPath() error {
+	// Get absolute path of current working directory
+	workingDir, err := filepath.Abs(".")
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	// Get absolute path of go.mod directory
+	gomod, err := util.GetGoModPath()
+	if err != nil {
+		return fmt.Errorf("failed to get go.mod directory: %w", err)
+	}
+	projectDir := filepath.Dir(gomod)
+	// Replace go.mod directory with module name
+	moduleName, err := getModuleName(gomod)
+	if err != nil {
+		return fmt.Errorf("failed to get module name: %w", err)
+	}
+	dp.localImportPath = strings.Replace(workingDir, projectDir, moduleName, 1)
+	if shared.Verbose {
+		log.Printf("Local import path: %v", dp.localImportPath)
+	}
+	return nil
+}
+
+func (dp *DepProcessor) getImportPathOf(dirName string) (string, error) {
+	util.Assert(dirName != "", "dirName is empty")
+	util.Assert(dp.localImportPath != "", "localImportPath is empty")
+	return dp.localImportPath + "/" + dirName, nil
+}
+
 func (dp *DepProcessor) setupRules() (err error) {
 	err = os.MkdirAll(OtelRules, os.ModePerm)
 	if err != nil {
@@ -536,6 +586,11 @@ func (dp *DepProcessor) setupDeps() error {
 	compileCmds, err := getCompileCommands()
 	if err != nil {
 		return fmt.Errorf("failed to get compile commands: %w", err)
+	}
+
+	err = dp.findLocalImportPath()
+	if err != nil {
+		return fmt.Errorf("failed to find local import path: %w", err)
 	}
 
 	err = dp.findUsedRules(compileCmds)

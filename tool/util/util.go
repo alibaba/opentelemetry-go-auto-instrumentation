@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-	"golang.org/x/mod/modfile"
 )
 
 const GoBuildIgnoreComment = "//go:build ignore"
@@ -101,8 +100,8 @@ func HasGoBuildComment(text string) bool {
 	return strings.Contains(text, GoBuildIgnoreComment)
 }
 
-// getGoModPath returns the absolute path of go.mod file, if any.
-func getGoModPath() (string, error) {
+// GetGoModPath returns the absolute path of go.mod file, if any.
+func GetGoModPath() (string, error) {
 	// @@ As said in the comment https://github.com/golang/go/issues/26500, the
 	// expected way to get go.mod should be go list -m -f {{.GoMod}}, but it does
 	// not work well when go.work presents, we use go env GOMOD instead.
@@ -126,7 +125,7 @@ func IsGoFile(path string) bool {
 }
 
 func IsExistGoMod() (bool, error) {
-	gomod, err := getGoModPath()
+	gomod, err := GetGoModPath()
 	if err != nil {
 		return false, fmt.Errorf("failed to get go.mod path: %w", err)
 	}
@@ -134,44 +133,6 @@ func IsExistGoMod() (bool, error) {
 		return false, errors.New("failed to get go.mod path: not module-aware")
 	}
 	return strings.HasSuffix(gomod, GoModFile), nil
-}
-
-// getModuleName returns the module name of the project by parsing go.mod file.
-func getModuleName(gomod string) (string, error) {
-	data, err := ReadFile(gomod)
-	if err != nil {
-		return "", fmt.Errorf("failed to read go.mod: %w", err)
-	}
-
-	modFile, err := modfile.Parse("go.mod", []byte(data), nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse go.mod: %w", err)
-	}
-
-	moduleName := modFile.Module.Mod.Path
-	return moduleName, nil
-}
-
-func GetImportPathOf(dirName string) (string, error) {
-	Assert(dirName != "", "dirName is empty")
-	// Get absolute path of current working directory
-	workingDir, err := filepath.Abs(".")
-	if err != nil {
-		return "", fmt.Errorf("failed to get absolute path: %w", err)
-	}
-	// Get absolute path of go.mod directory
-	gomod, err := getGoModPath()
-	if err != nil {
-		return "", fmt.Errorf("failed to get go.mod directory: %w", err)
-	}
-	projectDir := filepath.Dir(gomod)
-	// Replace go.mod directory with module name
-	moduleName, err := getModuleName(gomod)
-	if err != nil {
-		return "", fmt.Errorf("failed to get module name: %w", err)
-	}
-	moduleName = strings.Replace(workingDir, projectDir, moduleName, 1)
-	return moduleName + "/" + dirName, nil
 }
 
 func RandomString(n int) string {
