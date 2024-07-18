@@ -69,7 +69,11 @@ import (
 //
 // The compiler responsible for hoisting the initialization statement out of the
 // if skeleton, and the dce and sccp passes will remove the whole then block. All
-// these trampoline functions looks as if they are executed sequentially.
+// these trampoline functions looks as if they are executed sequentially, i.e.
+//
+//	ctx,_ := otel_trampoline_onenter(&arg);
+//	defer otel_trampoline_onexit(ctx, &retval)
+//
 // Note that this optimization pass is fraigle as it really heavily depends on
 // the structure of trampoline-jump-if and trampoline functions. Any change in
 // tjump should be carefully examined.

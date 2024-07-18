@@ -138,7 +138,9 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 	varSuffix := util.RandomString(5)
 	rp.rule2Suffix[t] = varSuffix
 
-	// Exotic code to call to trampoline function
+	// Generate the trampoline-jump-if. N.B. Note that future optimization pass
+	// heavily depends on the structure of trampoline-jump-if. Any change in it
+	// should be carefully examined.
 	onEnterCall := shared.CallTo(rp.makeFuncName(t, true), args)
 	onExitCall := shared.CallTo(rp.makeFuncName(t, false), func() []dst.Expr {
 		// NB. DST framework disallows duplicated node in the

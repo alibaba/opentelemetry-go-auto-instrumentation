@@ -46,3 +46,7 @@ As a drop-in replacement for `go build`, you can replace `go build` in your proj
 Makefile/build script/build command with `otel-go-auto-instrumentation --` and
 then compile the project as usual. If you find that the build fails after
 the replacement, it is likely a bug, please file a bug in [Issue](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues).
+
+# Document
+- [How auto instrumentation works](./docs/internal.md)
+- [How to add a new rule for desired framework](./docs/add_rule.md)
