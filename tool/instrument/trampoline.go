@@ -178,8 +178,8 @@ func (rp *RuleProcessor) callOnExitHook(t *api.InstFuncRule, traits []ParamTrait
 	if len(traits) != len(rp.onExitHookFunc.Type.Params.List) {
 		return errors.New("hook param traits mismatch on exit hook")
 	}
-	// Hook: 	   func onExitFoo(callContext* CallContext, p*[]int)
-	// Trampoline: func OtelOnExitTrampoline_foo(callContext* CallContext, p *[]int)
+	// Hook: 	   func onExitFoo(ctx* CallContext, p*[]int)
+	// Trampoline: func OtelOnExitTrampoline_foo(ctx* CallContext, p *[]int)
 	var args []dst.Expr
 	for idx, field := range rp.onExitHookFunc.Type.Params.List {
 		if idx == 0 {
@@ -189,9 +189,11 @@ func (rp *RuleProcessor) callOnExitHook(t *api.InstFuncRule, traits []ParamTrait
 		trait := traits[idx]
 		for _, name := range field.Names { // syntax of n1,n2 type
 			if trait.IsVaradic {
-				args = append(args, shared.DereferenceOf(shared.Ident(name.Name+"...")))
+				arg := shared.DereferenceOf(shared.Ident(name.Name + "..."))
+				args = append(args, arg)
 			} else {
-				args = append(args, shared.DereferenceOf(dst.NewIdent(name.Name)))
+				arg := shared.DereferenceOf(dst.NewIdent(name.Name))
+				args = append(args, arg)
 			}
 		}
 	}
@@ -249,7 +251,8 @@ func (rp *RuleProcessor) addOnExitVarHookDecl(t *api.InstFuncRule, traits []Para
 
 func insertAtBody(funcDecl *dst.FuncDecl, stmt dst.Stmt, index int) {
 	stmts := funcDecl.Body.List
-	newStmts := append(stmts[:index], append([]dst.Stmt{stmt}, stmts[index:]...)...)
+	newStmts := append(stmts[:index],
+		append([]dst.Stmt{stmt}, stmts[index:]...)...)
 	funcDecl.Body.List = newStmts
 }
 
@@ -258,7 +261,7 @@ func (rp *RuleProcessor) renameFunc(t *api.InstFuncRule) {
 	rp.onEnterHookFunc.Name.Name = rp.makeFuncName(t, true)
 	dst.Inspect(rp.onEnterHookFunc, func(node dst.Node) bool {
 		if basicLit, ok := node.(*dst.BasicLit); ok {
-			// Replace OtelOnEnterTrampolinePlaceHolder to real hook function name
+			// Replace OtelOnEnterTrampolinePlaceHolder to real hook func name
 			if basicLit.Value == TrampolineOnEnterNamePlaceholder {
 				basicLit.Value = util.StringQuote(t.OnEnter)
 			}

@@ -255,6 +255,9 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 						return false
 					}
 				}
+				if foundPoison {
+					return false
+				}
 				return true
 			})
 			if !foundPoison {
