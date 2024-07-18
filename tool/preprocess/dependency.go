@@ -170,7 +170,7 @@ func readImportPath(cmd []string) string {
 	return pkg
 }
 
-func (dp *DepProcessor) findUsedRules(compileCmds []string) error {
+func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	matcher := resource.NewRuleMatcher()
 	// Find used instrumentation rule according to compile commands
 	for _, cmd := range compileCmds {
@@ -190,7 +190,7 @@ func (dp *DepProcessor) findUsedRules(compileCmds []string) error {
 		}
 	}
 	// In rare case, we might instrument functions that are not in the project
-	// but introduced by InstFileRule or InstFuncRule. For instance, if InstFileRule
+	// but introduced by InstFileRule/InstFuncRule. For instance, if InstFileRule
 	// adds a foo.go file containing the Foo function, we would want to further
 	// instrument that one. In such cases, we need to match rules for them again.
 	for _, bundle := range dp.bundles {
@@ -208,7 +208,8 @@ func (dp *DepProcessor) findUsedRules(compileCmds []string) error {
 				candidates = append(candidates, rule.FileName)
 			}
 		}
-		log.Printf("Try to match additional %v for %v\n", candidates, bundle.ImportPath)
+		log.Printf("Try to match additional %v for %v\n",
+			candidates, bundle.ImportPath)
 		util.Assert(bundle.ImportPath != "", "sanity check")
 		newBundle := matcher.MatchRuleBundle(bundle.ImportPath, candidates)
 		// One rule bundle represents one import path, so we should merge
@@ -217,6 +218,12 @@ func (dp *DepProcessor) findUsedRules(compileCmds []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to merge rule bundle: %w", err)
 		}
+	}
+	// Save used rules to file, so that we can restore them in instrument phase
+	// rather than re-matching them again
+	err := resource.StoreRuleBundles(dp.bundles)
+	if err != nil {
+		return fmt.Errorf("failed to persist used rules: %w", err)
 	}
 	return nil
 }
@@ -593,14 +600,9 @@ func (dp *DepProcessor) setupDeps() error {
 		return fmt.Errorf("failed to find local import path: %w", err)
 	}
 
-	err = dp.findUsedRules(compileCmds)
+	err = dp.matchRules(compileCmds)
 	if err != nil {
 		return fmt.Errorf("failed to find dependencies: %w", err)
-	}
-
-	err = resource.StoreRuleBundles(dp.bundles)
-	if err != nil {
-		return fmt.Errorf("failed to persist used rules: %w", err)
 	}
 
 	err = dp.setupRules()
