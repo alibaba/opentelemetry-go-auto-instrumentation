@@ -1,9 +1,0 @@
-package echo
-
-var OTelEchoNewHook func(*Echo)
-
-func otelEchoNewHook(r *Echo) {
-	if OTelEchoNewHook != nil {
-		OTelEchoNewHook(r)
-	}
-}

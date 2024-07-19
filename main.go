@@ -1,22 +1,28 @@
 package main
 
-// Entry
-
 import (
-	"flag"
-	"fmt"
+	"log"
 	"os"
-	"otel-auto-instrumentation/internal"
-	"otel-auto-instrumentation/internal/shared"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 )
 
 func main() {
-	flag.BoolVar(&shared.InToolexec, shared.NameOfInToolexec, false, shared.UsageOfIntoolexec)
-	flag.Parse()
-
-	err := internal.Run()
+	shared.ParseOptions()
+	if shared.PrintVersion {
+		shared.PrintTheVersion()
+		os.Exit(0)
+	}
+	err := shared.InitOptions()
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("failed to init options: %v", err)
+		os.Exit(1)
+
+	}
+	err = tool.Run()
+	if err != nil {
+		log.Printf("failed to run the tool: %v", err)
 		os.Exit(1)
 	}
 }
