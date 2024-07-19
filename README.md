@@ -5,36 +5,36 @@
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability.
 
-## Build
-To build local development version, run below command:
+## How to Build
+
+Run the following command to build `otel-go-auto-instrumentation`:
 
 ```bash
 $ make build
 ```
 
-To build release version for all supported os+arch matrix, run below command:
+For all supported platforms:
 
 ```bash
 $ make all
 ```
 
-## Usage
-If you previously used `go build` to build your project, you can simply use
+## How to Use
+
+Replace `go build` with the following command to build you project:
 
 ```bash
 $ ./otel-go-auto-instrumentation
 ```
 
-If you previously used `go build` with arguments, e.g.  `go build -gcflags="-m" cmd/app`, it becomes
+The arguments for `go build` should be placed after the `--` delimiter:
 
 ```bash
+# go build -gcflags="-m" cmd/app
 $ ./otel-go-auto-instrumentation -- -gcflags="-m" cmd/app
 ```
 
-Where all arguments that you would pass to `go build` are now passed after the `--` delimiter.
-
-Additionally, there are some options for specific purposes, which need to be passed
-before the -- delimiter, as shown below:
+The arguments for the tool itself should be placed before the `--` delimiter:
 
 ```bash
 $ otel-go-auto-instrumentation -help
@@ -42,11 +42,16 @@ $ otel-go-auto-instrumentation -debuglog # print log to file
 $ otel-go-auto-instrumentation -verbose -- -gcflags="-m" cmd/app # print verbose log
 ```
 
-As a drop-in replacement for `go build`, you can replace `go build` in your project's
-Makefile/build script/build command with `otel-go-auto-instrumentation --` and
-then compile the project as usual. If you find that the build fails after
-the replacement, it is likely a bug, please file a bug in [Issue](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues).
+If you find any failures during the process, it's likely a bug.
+Please feel free to file a bug
+at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+to help us enhance this project.
 
 # Document
-- [How auto instrumentation works](./docs/internal.md)
-- [How to add a new rule for desired framework](./docs/add_rule.md)
+
+- [How it works](./docs/how-it-works.md)
+- [How to add a new rule](./docs/how-to-add-a-new-rule.md)
+
+# Links
+
+- [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)

@@ -5,7 +5,6 @@ otel-go-auto-instrumentation-*
 *.log
 .otel-build
 vendor
-arms_cache
 test/errors-test/errors-test
 test/helloworld/helloworld
 test/httpclient/httpclient
