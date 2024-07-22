@@ -79,7 +79,7 @@ func RunInstrumentFallible(t *testing.T, args ...string) {
 func RunInstrument(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
 	path := filepath.Join(filepath.Dir(pwd), execName)
-	fmt.Printf("RunningTest: %v %v", path, args)
+	fmt.Printf("RunningTest: %v %v\n", path, args)
 	cmd := RunCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err != nil {
