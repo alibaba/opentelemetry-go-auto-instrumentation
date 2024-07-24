@@ -48,7 +48,6 @@ const (
 type DepProcessor struct {
 	bundles         []*resource.RuleBundle // All dependent rule bundles
 	funcRules       []uint64               // Function should be processed separately
-	addon           string
 	generatedDeps   []string
 	sigc            chan os.Signal // Graceful shutdown
 	backups         map[string]string
@@ -61,7 +60,6 @@ func newDepProcessor() *DepProcessor {
 	return &DepProcessor{
 		bundles:         []*resource.RuleBundle{},
 		funcRules:       []uint64{},
-		addon:           "",
 		generatedDeps:   []string{},
 		sigc:            sigc,
 		backups:         map[string]string{},
