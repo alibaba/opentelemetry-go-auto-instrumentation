@@ -347,6 +347,7 @@ func NewRuleMatcher() *RuleMatcher {
 // MatchRuleBundle gives compilation arguments and finds out all interested rules
 // for it.
 func (rm *RuleMatcher) MatchRuleBundle(importPath string, candidates []string) *RuleBundle {
+	util.Assert(importPath != "", "sanity check")
 	availables := make([]api.InstRule, len(rm.AvailableRules[importPath]))
 
 	// Okay, we are interested in these candidates, let's read it and match with

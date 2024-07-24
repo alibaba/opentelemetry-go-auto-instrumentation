@@ -223,7 +223,6 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 		}
 		log.Printf("Try to match additional %v for %v\n",
 			candidates, bundle.ImportPath)
-		util.Assert(bundle.ImportPath != "", "sanity check")
 		newBundle := matcher.MatchRuleBundle(bundle.ImportPath, candidates)
 		// One rule bundle represents one import path, so we should merge
 		// them together instead of adding a brand new one
@@ -488,10 +487,8 @@ func (dp *DepProcessor) addRuleImport() (err error) {
 	if shared.Verbose {
 		log.Printf("RuleImport candidates: %v", files)
 	}
-	ruleImportPath, err := dp.getImportPathOf(OtelRules)
-	if err != nil {
-		return fmt.Errorf("failed to get import path of %v: %w", OtelRules, err)
-	}
+	ruleImportPath := dp.getImportPathOf(OtelRules)
+
 	addImport := false
 	for _, file := range files {
 		if shared.IsGoFile(file) {
@@ -582,10 +579,10 @@ func (dp *DepProcessor) findLocalImportPath() error {
 	return nil
 }
 
-func (dp *DepProcessor) getImportPathOf(dirName string) (string, error) {
+func (dp *DepProcessor) getImportPathOf(dirName string) string {
 	util.Assert(dirName != "", "dirName is empty")
 	util.Assert(dp.localImportPath != "", "localImportPath is empty")
-	return dp.localImportPath + "/" + dirName, nil
+	return dp.localImportPath + "/" + dirName
 }
 
 func (dp *DepProcessor) setupRules() (err error) {
