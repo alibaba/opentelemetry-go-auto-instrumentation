@@ -39,6 +39,20 @@ func Ident(name string) *dst.Ident {
 	}
 }
 
+func StringLit(value string) *dst.BasicLit {
+	return &dst.BasicLit{
+		Kind:  token.STRING,
+		Value: fmt.Sprintf("%q", value),
+	}
+}
+
+func IntLit(value int) *dst.BasicLit {
+	return &dst.BasicLit{
+		Kind:  token.INT,
+		Value: fmt.Sprintf("%d", value),
+	}
+}
+
 func Block(stmt dst.Stmt) *dst.BlockStmt {
 	return &dst.BlockStmt{
 		List: []dst.Stmt{
@@ -55,6 +69,37 @@ func BlockStmts(stmts ...dst.Stmt) *dst.BlockStmt {
 
 func Exprs(exprs ...dst.Expr) []dst.Expr {
 	return exprs
+}
+
+func Stmts(stmts ...dst.Stmt) []dst.Stmt {
+	return stmts
+}
+
+func SelectorExpr(x dst.Expr, sel string) *dst.SelectorExpr {
+	return &dst.SelectorExpr{
+		X:   dst.Clone(x).(dst.Expr),
+		Sel: Ident(sel),
+	}
+}
+
+func IndexExpr(x dst.Expr, index dst.Expr) *dst.IndexExpr {
+	return &dst.IndexExpr{
+		X:     dst.Clone(x).(dst.Expr),
+		Index: dst.Clone(index).(dst.Expr),
+	}
+}
+
+func TypeAssertExpr(x dst.Expr, typ dst.Expr) *dst.TypeAssertExpr {
+	return &dst.TypeAssertExpr{
+		X:    x,
+		Type: dst.Clone(typ).(dst.Expr),
+	}
+}
+
+func ParenExpr(x dst.Expr) *dst.ParenExpr {
+	return &dst.ParenExpr{
+		X: dst.Clone(x).(dst.Expr),
+	}
 }
 
 func NewField(name string, typ dst.Expr) *dst.Field {
@@ -95,6 +140,14 @@ func DeferStmt(call *dst.CallExpr) *dst.DeferStmt {
 
 func ReturnStmt(results []dst.Expr) *dst.ReturnStmt {
 	return &dst.ReturnStmt{Results: results}
+}
+
+func AssignStmt(lhs, rhs dst.Expr) *dst.AssignStmt {
+	return &dst.AssignStmt{
+		Lhs: []dst.Expr{lhs},
+		Tok: token.ASSIGN,
+		Rhs: []dst.Expr{rhs},
+	}
 }
 
 func AddStructField(decl dst.Decl, name string, typ string) {

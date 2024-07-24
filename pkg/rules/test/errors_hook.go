@@ -7,40 +7,66 @@ import (
 	"fmt"
 )
 
-func onEnterUnwrap(call *errors.CallContext, err error) {
+func onEnterUnwrap(call errors.CallContext, err error) {
 	newErr := fmt.Errorf("wrapped: %w", err)
-	*(call.Params[0].(*error)) = newErr
+	call.SetParam(0, newErr)
 }
 
-func onExitUnwrap(call *errors.CallContext, err error) {
-	e := (*(call.Params[0].(*error))).(interface {
+func onExitUnwrap(call errors.CallContext, err error) {
+	e := call.GetParam(0).(interface {
 		Unwrap() error
 	})
 	old := e.Unwrap()
 	fmt.Printf("old:%v\n", old)
 }
 
-func onEnterTestSkip(call *errors.CallContext) {
+func onEnterTestSkip(call errors.CallContext) {
 	call.SetSkipCall(true)
 }
 
-func onExitTestSkipOnly(call *errors.CallContext, _ *int) {}
+func onExitTestSkipOnly(call errors.CallContext, _ *int) {}
 
-func onEnterTestSkipOnly(call *errors.CallContext) {}
+func onEnterTestSkipOnly(call errors.CallContext) {}
 
-func onEnterP11(call *errors.CallContext) {}
-func onEnterP12(call *errors.CallContext) {}
+func onEnterP11(call errors.CallContext) {}
+func onEnterP12(call errors.CallContext) {}
 
-func onExitP21(call *errors.CallContext) {}
-func onExitP22(call *errors.CallContext) {}
+func onExitP21(call errors.CallContext) {}
+func onExitP22(call errors.CallContext) {}
 
-func onEnterP31(call *errors.CallContext, arg1 int, arg2 bool, arg3 float64) {}
-func onExitP31(call *errors.CallContext, arg1 int, arg2 bool, arg3 float64)  {}
+func onEnterP31(call errors.CallContext, arg1 int, arg2 bool, arg3 float64) {}
+func onExitP31(call errors.CallContext, arg1 int, arg2 bool, arg3 float64)  {}
 
-func onEnterTestSkip2(call *errors.CallContext) {
+func onEnterTestSkip2(call errors.CallContext) {
 	call.SetSkipCall(true)
 }
 
-func onExitTestSkip2(call *errors.CallContext, _ int) {
-	*(call.ReturnVals[0].(*int)) = 0x512
+func onExitTestSkip2(call errors.CallContext, _ int) {
+	call.SetReturnVal(0, 0x512)
+}
+
+func onEnterTestGetSet(call errors.CallContext, arg1 int, arg2, arg3 bool, arg4 float64, arg5 string, arg6 interface{}, arg7, arg8 map[int]bool, arg9 chan int, arg10 []int) {
+	call.SetParam(0, 7632)
+	call.SetParam(1, arg2)
+	call.SetParam(2, arg3)
+	call.SetParam(3, arg4)
+	call.SetParam(4, arg5)
+	call.SetParam(5, arg6)
+	call.SetParam(6, arg7)
+	call.SetParam(7, arg8)
+	call.SetParam(8, arg9)
+	call.SetParam(9, arg10)
+}
+
+func onExitTestGetSet(call errors.CallContext, arg1 int, arg2 bool, arg3 bool, arg4 float64, arg5 string, arg6 interface{}, arg7 map[int]bool, arg8 map[int]bool, arg9 chan int, arg10 []int) {
+	call.SetReturnVal(0, arg1)
+	call.SetReturnVal(1, arg2)
+	call.SetReturnVal(2, arg3)
+	call.SetReturnVal(3, arg4)
+	call.SetReturnVal(4, arg5)
+	call.SetReturnVal(5, arg6)
+	call.SetReturnVal(6, arg7)
+	call.SetReturnVal(7, arg8)
+	call.SetReturnVal(8, arg9)
+	call.SetReturnVal(9, arg10)
 }

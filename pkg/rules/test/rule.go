@@ -179,4 +179,8 @@ func init() {
 	api.NewRule("errors", "TestSkip2", "", "onEnterTestSkip2", "onExitTestSkip2").
 		WithRuleName("testrule").
 		Register()
+
+	api.NewRule("errors", "TestGetSet", "", "onEnterTestGetSet", "onExitTestGetSet").
+		WithRuleName("testrule").
+		Register()
 }

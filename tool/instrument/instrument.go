@@ -34,6 +34,8 @@ type RuleProcessor struct {
 	varDecls        []dst.Decl
 	relocated       map[string]string
 	trampolineJumps []*TJump // Optimization candidates
+	callCtxDecl     *dst.GenDecl
+	callCtxMethods  []*dst.FuncDecl
 }
 
 func newRuleProcessor(args []string, pkgName string) *RuleProcessor {

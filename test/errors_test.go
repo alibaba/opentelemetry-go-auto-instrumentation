@@ -17,6 +17,7 @@ func TestRunErrors(t *testing.T) {
 	ExpectContains(t, stdout, "ptr<nil>")
 	ExpectNotContains(t, stdout, "val1024")
 	ExpectContains(t, stdout, "val1298") // 0x512
+	ExpectContains(t, stdout, "7632")
 
 	text := ReadInstrumentLog(t, "debug_fn_otel_inst_file_p4.go")
 	re := regexp.MustCompile(".*OtelOnEnterTrampoline_TestSkip.*")

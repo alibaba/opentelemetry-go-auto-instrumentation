@@ -2,22 +2,54 @@
 
 package instrument
 
-// @@ Modification on this trampoline template should be cautious, as it imposes
-// many implicit constraints on generated code, known constraints are as follows:
-// - It's performance critical, so it should be as simple as possible
-// - It should not import any package because there is no guarantee that package
-//   is existed in import config during the compilation, one practical approach
-//   is to use function variables and setup these variables in preprocess stage
-// - It should not panic as this affects user application
-// - Function and variable names are coupled with the framework, any modification
-//   on them should be synced with the framework
+// Seeing is not always believing. The following template is a bit tricky, see
+// trampoline.go for more details
 
-// Variable Declaration
+// Struct Template
+type CallContextImpl struct {
+	Params     []interface{}
+	ReturnVals []interface{}
+	SkipCall   bool
+	Data       interface{}
+}
+
+func (c *CallContextImpl) SetSkipCall(skip bool)    { c.SkipCall = skip }
+func (c *CallContextImpl) IsSkipCall() bool         { return c.SkipCall }
+func (c *CallContextImpl) SetData(data interface{}) { c.Data = data }
+func (c *CallContextImpl) GetData() interface{}     { return c.Data }
+func (c *CallContextImpl) GetParam(idx int) interface{} {
+	switch idx {
+	case 0:
+		return c.Params[idx].(int)
+	}
+	return nil
+}
+func (c *CallContextImpl) SetParam(idx int, val interface{}) {
+	switch idx {
+	case 0:
+		*(c.Params[0].(*int)) = val.(int)
+	}
+}
+func (c *CallContextImpl) GetReturnVal(idx int) interface{} {
+	switch idx {
+	case 0:
+		return c.ReturnVals[idx].(int)
+	}
+	return nil
+}
+func (c *CallContextImpl) SetReturnVal(idx int, val interface{}) {
+	switch idx {
+	case 0:
+		*(c.ReturnVals[0].(*int)) = val.(int)
+	}
+}
+
+// Variable Template
 var OtelGetStackImpl func() []byte = nil
 var OtelPrintStackImpl func([]byte) = nil
 
-// Function Declaration
-func OtelOnEnterTrampoline() (*CallContext, bool) {
+// Trampoline Template
+func OtelOnEnterTrampoline() (CallContext, bool) {
 	defer func() {
 		if err := recover(); err != nil {
 			println("failed to exec onEnter hook", "OtelOnEnterNamePlaceholder")
@@ -30,16 +62,12 @@ func OtelOnEnterTrampoline() (*CallContext, bool) {
 			}
 		}
 	}()
-	callContext := &CallContext{
-		Params:     nil,
-		ReturnVals: nil,
-		SkipCall:   false,
-	}
+	callContext := &CallContextImpl{}
 	callContext.Params = []interface{}{}
 	return callContext, callContext.SkipCall
 }
 
-func OtelOnExitTrampoline(callContext *CallContext) {
+func OtelOnExitTrampoline(callContext CallContext) {
 	defer func() {
 		if err := recover(); err != nil {
 			println("failed to exec onExit hook", "OtelOnExitNamePlaceholder")
@@ -52,5 +80,5 @@ func OtelOnExitTrampoline(callContext *CallContext) {
 			}
 		}
 	}()
-	callContext.ReturnVals = []interface{}{}
+	callContext.(*CallContextImpl).ReturnVals = []interface{}{}
 }
