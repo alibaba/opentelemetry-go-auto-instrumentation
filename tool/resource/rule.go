@@ -173,9 +173,9 @@ var hash2Rules = make(map[uint64]api.InstRule)
 // dependencies of file rules to the local file system. In this way, all kinds
 // of rules uses the local file system.
 func localizeFileRule(rule *api.InstFileRule) (string, error) {
-	target := util.GetPreprocessLogPath(filepath.Join(EmbededFs, rule.FileName))
+	target := shared.GetPreprocessLogPath(filepath.Join(EmbededFs, rule.FileName))
 
-	if util.InPreprocess() {
+	if shared.InPreprocess() {
 		exist, err := util.PathExists(target)
 		if err != nil {
 			return "", fmt.Errorf("failed to check file existence: %w", err)
@@ -216,7 +216,7 @@ func InitRules() error {
 			}
 			rl.FileName = target
 		}
-		h, err := util.HashStruct(rule)
+		h, err := shared.HashStruct(rule)
 		if err != nil {
 			return fmt.Errorf("failed to hash rule: %w", err)
 		}
@@ -248,7 +248,7 @@ func FindRuleByHash(hash uint64) api.InstRule {
 }
 
 func StoreRuleBundles(bundles []*RuleBundle) error {
-	util.GuaranteeInPreprocess()
+	shared.GuaranteeInPreprocess()
 
 	ruleLines := make([]string, 0)
 	for _, bundle := range bundles {
@@ -258,7 +258,7 @@ func StoreRuleBundles(bundles []*RuleBundle) error {
 		}
 		ruleLines = append(ruleLines, string(bs))
 	}
-	ruleFile := util.GetPreprocessLogPath(UsedRuleJsonFile)
+	ruleFile := shared.GetPreprocessLogPath(UsedRuleJsonFile)
 	_, err := util.WriteStringToFile(ruleFile, strings.Join(ruleLines, "\n"))
 	if err != nil {
 		return fmt.Errorf("failed to write used rules: %w", err)
@@ -267,9 +267,9 @@ func StoreRuleBundles(bundles []*RuleBundle) error {
 }
 
 func LoadRuleBundles() ([]*RuleBundle, error) {
-	util.GuaranteeInInstrument()
+	shared.GuaranteeInInstrument()
 
-	ruleFile := util.GetPreprocessLogPath(UsedRuleJsonFile)
+	ruleFile := shared.GetPreprocessLogPath(UsedRuleJsonFile)
 	data, err := util.ReadFile(ruleFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read used rules: %w", err)

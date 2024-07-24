@@ -361,7 +361,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 		if err != nil {
 			return fmt.Errorf("failed to inline trampoline call: %w", err)
 		}
-		util.SaveDebugFile("fn_", filePath)
+		shared.SaveDebugFile("fn_", filePath)
 	}
 
 	err = rp.writeTrampoline(bundle.PackageName)

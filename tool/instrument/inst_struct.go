@@ -6,7 +6,6 @@ import (
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
@@ -36,7 +35,7 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		if err != nil {
 			return fmt.Errorf("failed to restore ast: %w", err)
 		}
-		util.SaveDebugFile("struct_", newFile)
+		shared.SaveDebugFile("struct_", newFile)
 	}
 	return nil
 }

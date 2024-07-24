@@ -2,6 +2,7 @@ package resource
 
 import (
 	"embed"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"os"
 	"path/filepath"
 	"strings"
@@ -70,7 +71,7 @@ func CopyPkgTo(target string) error {
 func CopyOtelSetupTo(pkgName, target string) (string, error) {
 	template := pkg.ExportOtelSetupSDKTemplate()
 	snippet := strings.Replace(template, "package pkg", "package "+pkgName, 1)
-	snippet = util.RemoveGoBuildComment(snippet)
+	snippet = shared.RemoveGoBuildComment(snippet)
 	return util.WriteStringToFile(target, snippet)
 }
 

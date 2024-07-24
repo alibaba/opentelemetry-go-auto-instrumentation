@@ -29,7 +29,7 @@ const (
 
 // runDryBuild runs a dry build to get all dependencies needed for the project.
 func runDryBuild() error {
-	dryRunLog, err := os.Create(util.GetLogPath(DryRunLog))
+	dryRunLog, err := os.Create(shared.GetLogPath(DryRunLog))
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (dp *DepProcessor) updateDepVersion() error {
 }
 
 func checkModularized() error {
-	found, err := util.IsExistGoMod()
+	found, err := shared.IsExistGoMod()
 	if !found {
 		return fmt.Errorf("go.mod not found")
 	}
@@ -133,7 +133,7 @@ func checkModularized() error {
 }
 
 func (dp *DepProcessor) backupGoMod() error {
-	gomod, err := util.GetGoModPath()
+	gomod, err := shared.GetGoModPath()
 	if err != nil {
 		return fmt.Errorf("failed to get go.mod directory: %w", err)
 	}

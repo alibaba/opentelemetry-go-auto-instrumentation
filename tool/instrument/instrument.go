@@ -132,7 +132,7 @@ func matchCompileImportPath(importPath string, args []string) bool {
 func Instrument() error {
 	args := os.Args[2:]
 	// Is compile command?
-	if util.IsCompileCommand(strings.Join(args, " ")) {
+	if shared.IsCompileCommand(strings.Join(args, " ")) {
 		if shared.Verbose {
 			log.Printf("Compiling: %v\n", args)
 		}

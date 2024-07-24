@@ -6,11 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/instrument"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/preprocess"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 )
 
@@ -22,7 +20,7 @@ func initLogs(names ...string) error {
 			return err
 		}
 		if shared.DebugLog {
-			logPath := filepath.Join(path, util.DebugLogFile)
+			logPath := filepath.Join(path, shared.DebugLogFile)
 			_, err = os.Create(logPath)
 			if err != nil {
 				return err
@@ -33,14 +31,14 @@ func initLogs(names ...string) error {
 }
 
 func setupLogs() {
-	if util.InInstrument() {
-		log.SetPrefix("[" + util.TInstrument + "] ")
+	if shared.InInstrument() {
+		log.SetPrefix("[" + shared.TInstrument + "] ")
 	} else {
-		log.SetPrefix("[" + util.TPreprocess + "] ")
+		log.SetPrefix("[" + shared.TPreprocess + "] ")
 	}
 	if shared.DebugLog {
 		// Redirect log to debug log if required
-		debugLogPath := util.GetLogPath(util.DebugLogFile)
+		debugLogPath := shared.GetLogPath(shared.DebugLogFile)
 		debugLog, _ := os.OpenFile(debugLogPath, os.O_WRONLY|os.O_APPEND, 0777)
 		if debugLog != nil {
 			log.SetOutput(debugLog)
@@ -49,7 +47,7 @@ func setupLogs() {
 }
 
 func initEnv() (err error) {
-	if util.InInstrument() {
+	if shared.InInstrument() {
 		setupLogs()
 	} else {
 		err = os.MkdirAll(shared.TempBuildDir, 0777)
@@ -58,7 +56,7 @@ func initEnv() (err error) {
 		}
 
 		// @@ Init here to avoid permission issue
-		err = initLogs(util.TPreprocess, util.TInstrument)
+		err = initLogs(shared.TPreprocess, shared.TInstrument)
 		if err != nil {
 			return fmt.Errorf("failed to init logs: %w", err)
 		}
@@ -86,7 +84,7 @@ func Run() (err error) {
 		return fmt.Errorf("failed to init context: %w", err)
 	}
 
-	if util.InPreprocess() {
+	if shared.InPreprocess() {
 		return preprocess.Preprocess()
 	} else {
 		return instrument.Instrument()
