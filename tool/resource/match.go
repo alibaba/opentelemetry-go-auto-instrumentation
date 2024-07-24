@@ -80,7 +80,7 @@ func (rb *RuleBundle) Merge(new *RuleBundle) (*RuleBundle, error) {
 func (rb *RuleBundle) AddFile2FuncRule(file string, rule *api.InstFuncRule) {
 	fn := rule.Function + "," + rule.ReceiverType
 	util.Assert(fn != "", "sanity check")
-	h, err := util.HashStruct(*rule)
+	h, err := shared.HashStruct(*rule)
 	if err != nil {
 		log.Fatalf("Failed to hash struct %v", rule)
 	}
@@ -95,7 +95,7 @@ func (rb *RuleBundle) AddFile2FuncRule(file string, rule *api.InstFuncRule) {
 func (rb *RuleBundle) AddFile2StructRule(file string, rule *api.InstStructRule) {
 	st := rule.StructType
 	util.Assert(st != "", "sanity check")
-	h, err := util.HashStruct(*rule)
+	h, err := shared.HashStruct(*rule)
 	if err != nil {
 		log.Fatalf("Failed to hash struct %v", rule)
 	}
@@ -108,7 +108,7 @@ func (rb *RuleBundle) AddFile2StructRule(file string, rule *api.InstStructRule) 
 }
 
 func (rb *RuleBundle) AddFileRule(rule *api.InstFileRule) {
-	h, err := util.HashStruct(*rule)
+	h, err := shared.HashStruct(*rule)
 	if err != nil {
 		log.Fatalf("Failed to hash struct %v", rule)
 	}
@@ -347,6 +347,7 @@ func NewRuleMatcher() *RuleMatcher {
 // MatchRuleBundle gives compilation arguments and finds out all interested rules
 // for it.
 func (rm *RuleMatcher) MatchRuleBundle(importPath string, candidates []string) *RuleBundle {
+	util.Assert(importPath != "", "sanity check")
 	availables := make([]api.InstRule, len(rm.AvailableRules[importPath]))
 
 	// Okay, we are interested in these candidates, let's read it and match with
@@ -359,7 +360,7 @@ func (rm *RuleMatcher) MatchRuleBundle(importPath string, candidates []string) *
 	bundle := NewRuleBundle(importPath)
 	for _, candidate := range candidates {
 		// It's not a go file, ignore silently
-		if !util.IsGoFile(candidate) {
+		if !shared.IsGoFile(candidate) {
 			continue
 		}
 

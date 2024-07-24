@@ -48,7 +48,6 @@ const (
 type DepProcessor struct {
 	bundles         []*resource.RuleBundle // All dependent rule bundles
 	funcRules       []uint64               // Function should be processed separately
-	addon           string
 	generatedDeps   []string
 	sigc            chan os.Signal // Graceful shutdown
 	backups         map[string]string
@@ -61,7 +60,6 @@ func newDepProcessor() *DepProcessor {
 	return &DepProcessor{
 		bundles:         []*resource.RuleBundle{},
 		funcRules:       []uint64{},
-		addon:           "",
 		generatedDeps:   []string{},
 		sigc:            sigc,
 		backups:         map[string]string{},
@@ -70,7 +68,7 @@ func newDepProcessor() *DepProcessor {
 }
 
 func (dp *DepProcessor) postProcess() {
-	util.GuaranteeInPreprocess()
+	shared.GuaranteeInPreprocess()
 	// Using -debug? Leave all changes for debugging
 	if shared.Debug {
 		return
@@ -100,9 +98,9 @@ func (dp *DepProcessor) catchSignal() {
 }
 
 func (dp *DepProcessor) backupFile(origin string) error {
-	util.GuaranteeInPreprocess()
+	shared.GuaranteeInPreprocess()
 	backup := filepath.Base(origin) + OtelBackupSuffix
-	backup = util.GetLogPath(filepath.Join(OtelBackups, backup))
+	backup = shared.GetLogPath(filepath.Join(OtelBackups, backup))
 	err := os.MkdirAll(filepath.Dir(backup), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
@@ -117,7 +115,7 @@ func (dp *DepProcessor) backupFile(origin string) error {
 }
 
 func (dp *DepProcessor) restoreBackupFiles() error {
-	util.GuaranteeInPreprocess()
+	shared.GuaranteeInPreprocess()
 	for origin, backup := range dp.backups {
 		err := util.CopyFile(backup, origin)
 		if err != nil {
@@ -143,7 +141,7 @@ func getCompileCommands() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to run dry build: %w", err)
 	}
-	dryRunLog, err := os.Open(util.GetLogPath(DryRunLog))
+	dryRunLog, err := os.Open(shared.GetLogPath(DryRunLog))
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +160,7 @@ func getCompileCommands() ([]string, error) {
 	scanner.Buffer(buffer, cap(buffer))
 	for scanner.Scan() {
 		line := scanner.Text()
-		if util.IsCompileCommand(line) {
+		if shared.IsCompileCommand(line) {
 			line = strings.Trim(line, " ")
 			compileCmds = append(compileCmds, line)
 		}
@@ -223,7 +221,6 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 		}
 		log.Printf("Try to match additional %v for %v\n",
 			candidates, bundle.ImportPath)
-		util.Assert(bundle.ImportPath != "", "sanity check")
 		newBundle := matcher.MatchRuleBundle(bundle.ImportPath, candidates)
 		// One rule bundle represents one import path, so we should merge
 		// them together instead of adding a brand new one
@@ -246,10 +243,10 @@ func (dp *DepProcessor) copyRule(path string, target string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read rule file %v: %w", path, err)
 	}
-	if !util.HasGoBuildComment(text) {
+	if !shared.HasGoBuildComment(text) {
 		log.Printf("Warning: %v does not contain //go:build ignore tag", path)
 	}
-	text = util.RemoveGoBuildComment(text)
+	text = shared.RemoveGoBuildComment(text)
 	astRoot, err := shared.ParseAstFromSource(text)
 	if err != nil {
 		return fmt.Errorf("failed to parse ast from source: %w", err)
@@ -326,7 +323,7 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 			return fmt.Errorf("failed to copy rule %v: %w", path, err)
 		}
 		dp.addGeneratedDep(ruleFile)
-		util.SaveDebugFile("", ruleFile)
+		shared.SaveDebugFile("", ruleFile)
 	}
 	return nil
 }
@@ -363,7 +360,7 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 						assigns = append(assigns,
 							fmt.Sprintf("\t%s.%s = %s\n",
 								aliasPkg,
-								util.GetVarNameOfFunc(rule.OnEnter),
+								shared.GetVarNameOfFunc(rule.OnEnter),
 								rule.OnEnter,
 							),
 						)
@@ -373,7 +370,7 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 							fmt.Sprintf(
 								"\t%s.%s = %s\n",
 								aliasPkg,
-								util.GetVarNameOfFunc(rule.OnExit),
+								shared.GetVarNameOfFunc(rule.OnExit),
 								rule.OnExit,
 							),
 						)
@@ -416,7 +413,7 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 		return err
 	}
 	dp.addGeneratedDep(f)
-	util.SaveDebugFile("", target)
+	shared.SaveDebugFile("", target)
 	return err
 }
 func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
@@ -425,7 +422,7 @@ func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
 	dp.addGeneratedDep(f)
-	util.SaveDebugFile("", target)
+	shared.SaveDebugFile("", target)
 	return err
 }
 
@@ -442,7 +439,7 @@ func assembleImportCandidates() ([]string, error) {
 		// it later, which would cause fatal error if permission is not granted.
 
 		// It's a golang file, good candidate
-		if util.IsGoFile(buildArg) {
+		if shared.IsGoFile(buildArg) {
 			candidates = append(candidates, buildArg)
 			found = true
 			continue
@@ -460,7 +457,7 @@ func assembleImportCandidates() ([]string, error) {
 				continue
 			}
 			for _, file := range p2 {
-				if util.IsGoFile(file) {
+				if shared.IsGoFile(file) {
 					candidates = append(candidates, file)
 					found = true
 				}
@@ -488,13 +485,11 @@ func (dp *DepProcessor) addRuleImport() (err error) {
 	if shared.Verbose {
 		log.Printf("RuleImport candidates: %v", files)
 	}
-	ruleImportPath, err := dp.getImportPathOf(OtelRules)
-	if err != nil {
-		return fmt.Errorf("failed to get import path of %v: %w", OtelRules, err)
-	}
+	ruleImportPath := dp.getImportPathOf(OtelRules)
+
 	addImport := false
 	for _, file := range files {
-		if util.IsGoFile(file) {
+		if shared.IsGoFile(file) {
 			text, err := util.ReadFile(file)
 			if err != nil {
 				return fmt.Errorf("failed to read file %v: %w", file, err)
@@ -565,7 +560,7 @@ func (dp *DepProcessor) findLocalImportPath() error {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 	// Get absolute path of go.mod directory
-	gomod, err := util.GetGoModPath()
+	gomod, err := shared.GetGoModPath()
 	if err != nil {
 		return fmt.Errorf("failed to get go.mod directory: %w", err)
 	}
@@ -582,10 +577,10 @@ func (dp *DepProcessor) findLocalImportPath() error {
 	return nil
 }
 
-func (dp *DepProcessor) getImportPathOf(dirName string) (string, error) {
+func (dp *DepProcessor) getImportPathOf(dirName string) string {
 	util.Assert(dirName != "", "dirName is empty")
 	util.Assert(dp.localImportPath != "", "localImportPath is empty")
-	return dp.localImportPath + "/" + dirName, nil
+	return dp.localImportPath + "/" + dirName
 }
 
 func (dp *DepProcessor) setupRules() (err error) {

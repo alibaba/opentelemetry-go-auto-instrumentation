@@ -1,31 +1,14 @@
 package util
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"hash/fnv"
 	"io"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-)
-
-const GoBuildIgnoreComment = "//go:build ignore"
-
-const GoModFile = "go.mod"
-
-const DebugLogFile = "debug.log"
-
-const (
-	TInstrument = "instrument"
-	TPreprocess = "preprocess"
 )
 
 var Guarantee = Assert // More meaningful name:)
@@ -50,91 +33,6 @@ func ShouldNotReachHere() {
 
 func ShouldNotReachHereT(msg string) {
 	panic("should not reach here: " + msg)
-}
-
-func IsCompileCommand(line string) bool {
-	return strings.Contains(line, "compile -o") &&
-		strings.Contains(line, "buildid")
-}
-
-func GetLogPath(name string) string {
-	if shared.InToolexec {
-		return filepath.Join(shared.TempBuildDir, TInstrument, name)
-	} else {
-		return filepath.Join(shared.TempBuildDir, TPreprocess, name)
-	}
-}
-
-func GetInstrumentLogPath(name string) string {
-	return filepath.Join(shared.TempBuildDir, TInstrument, name)
-}
-
-func GetPreprocessLogPath(name string) string {
-	return filepath.Join(shared.TempBuildDir, TPreprocess, name)
-}
-
-func GetVarNameOfFunc(fn string) string {
-	const varDeclSuffix = "Impl"
-	fn = strings.Title(fn)
-	return fn + varDeclSuffix
-}
-
-func SaveDebugFile(prefix string, path string) {
-	targetName := filepath.Base(path)
-	Assert(IsGoFile(targetName), "sanity check")
-	counterpart := GetLogPath("debug_" + prefix + targetName)
-	_ = CopyFile(path, counterpart)
-}
-
-var packageRegexp = regexp.MustCompile(`(?m)^package\s+\w+`)
-
-func RenamePackage(source, newPkgName string) string {
-	source = packageRegexp.ReplaceAllString(source, fmt.Sprintf("package %s\n", newPkgName))
-	return source
-}
-
-func RemoveGoBuildComment(text string) string {
-	text = strings.ReplaceAll(text, GoBuildIgnoreComment, "")
-	return text
-}
-
-func HasGoBuildComment(text string) bool {
-	return strings.Contains(text, GoBuildIgnoreComment)
-}
-
-// GetGoModPath returns the absolute path of go.mod file, if any.
-func GetGoModPath() (string, error) {
-	// @@ As said in the comment https://github.com/golang/go/issues/26500, the
-	// expected way to get go.mod should be go list -m -f {{.GoMod}}, but it does
-	// not work well when go.work presents, we use go env GOMOD instead.
-	//
-	// go env GOMOD
-	// The absolute path to the go.mod of the main module.
-	// If module-aware mode is enabled, but there is no go.mod, GOMOD will be
-	// os.DevNull ("/dev/null" on Unix-like systems, "NUL" on Windows).
-	// If module-aware mode is disabled, GOMOD will be the empty string.
-	cmd := exec.Command("go", "env", "GOMOD")
-	out, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to get go.mod directory: %w", err)
-	}
-	path := strings.TrimSpace(string(out))
-	return path, nil
-}
-
-func IsGoFile(path string) bool {
-	return strings.HasSuffix(path, ".go")
-}
-
-func IsExistGoMod() (bool, error) {
-	gomod, err := GetGoModPath()
-	if err != nil {
-		return false, fmt.Errorf("failed to get go.mod path: %w", err)
-	}
-	if gomod == "" {
-		return false, errors.New("failed to get go.mod path: not module-aware")
-	}
-	return strings.HasSuffix(gomod, GoModFile), nil
 }
 
 func RandomString(n int) string {
@@ -255,43 +153,6 @@ func ListFilesFlat(dir string) ([]string, error) {
 		paths = append(paths, filepath.Join(dir, file.Name()))
 	}
 	return paths, nil
-}
-
-func HashStruct(st interface{}) (uint64, error) {
-	bs, err := json.Marshal(st)
-	if err != nil {
-		return 0, err
-	}
-	hasher := fnv.New64a()
-	_, err = hasher.Write(bs)
-	if err != nil {
-		return 0, err
-	}
-	return hasher.Sum64(), nil
-}
-
-func IsDebugMode() bool {
-	return shared.Debug
-}
-
-func IsProductMode() bool {
-	return !shared.Debug
-}
-
-func InPreprocess() bool {
-	return !shared.InToolexec
-}
-
-func InInstrument() bool {
-	return shared.InToolexec
-}
-
-func GuaranteeInPreprocess() {
-	Assert(!shared.InToolexec, "not in preprocess stage")
-}
-
-func GuaranteeInInstrument() {
-	Assert(shared.InToolexec, "not in instrument stage")
 }
 
 func PathExists(path string) (bool, error) {

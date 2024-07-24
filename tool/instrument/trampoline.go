@@ -91,9 +91,9 @@ func getNames(list *dst.FieldList) []string {
 
 func (rp *RuleProcessor) makeOnXName(t *api.InstFuncRule, onEnter bool) string {
 	if onEnter {
-		return util.GetVarNameOfFunc(t.OnEnter)
+		return shared.GetVarNameOfFunc(t.OnEnter)
 	} else {
-		return util.GetVarNameOfFunc(t.OnExit)
+		return shared.GetVarNameOfFunc(t.OnExit)
 	}
 }
 
@@ -427,6 +427,6 @@ func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 	}
 	rp.addCompileArg(trampolineFile)
 	// Save trampoline code for debugging
-	util.SaveDebugFile(pkgName+"_", path)
+	shared.SaveDebugFile(pkgName+"_", path)
 	return nil
 }

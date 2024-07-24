@@ -2,6 +2,7 @@ package instrument
 
 import (
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"log"
 	"path/filepath"
 	"strings"
@@ -22,8 +23,8 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 		if err != nil {
 			return fmt.Errorf("failed to read file %s: %w", rule.FileName, err)
 		}
-		source = util.RemoveGoBuildComment(source)
-		source = util.RenamePackage(source, bundle.PackageName)
+		source = shared.RemoveGoBuildComment(source)
+		source = shared.RenamePackage(source, bundle.PackageName)
 
 		// Get last section of file path as file name
 		fileName := filepath.Base(rule.FileName)
@@ -51,7 +52,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 			rp.addCompileArg(target)
 		}
 		log.Printf("Apply file rule %v by %s mode", fileName, mode)
-		util.SaveDebugFile("file_", target)
+		shared.SaveDebugFile("file_", target)
 	}
 	return nil
 }
