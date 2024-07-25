@@ -40,22 +40,6 @@ type MeterProvider interface {
 	GetMeters() []MeterWithMeta
 }
 
-type ArmsMeterProvider struct {
-	metricsMeter     MeterWithMeta
-	selfMetricsMeter MeterWithMeta
-}
-
-func NewArmsMeterProvider(metricsMeter, selfMetricsMeter MeterWithMeta) *ArmsMeterProvider {
-	return &ArmsMeterProvider{
-		metricsMeter:     metricsMeter,
-		selfMetricsMeter: selfMetricsMeter,
-	}
-}
-
-func (a *ArmsMeterProvider) GetMeters() []MeterWithMeta {
-	return []MeterWithMeta{a.metricsMeter, a.selfMetricsMeter}
-}
-
 type OtelMeterProvider struct {
 	metricsMeter MeterWithMeta
 }
