@@ -241,7 +241,7 @@ func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, max
 	if err != nil {
 		t.Fatal(err)
 	}
-	dirs, err := os.ReadDir(moduleName)
+	dirs, err := os.ReadDir(filepath.Join(pwd, moduleName))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +274,7 @@ func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion,
 	if err != nil {
 		t.Fatal(err)
 	}
-	dirs, err := os.ReadDir(moduleName)
+	dirs, err := os.ReadDir(filepath.Join(pwd, moduleName))
 	if err != nil {
 		t.Fatal(err)
 	}
