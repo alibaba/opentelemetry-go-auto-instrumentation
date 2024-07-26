@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 	min_version, _ = NewVersion("v1.11.1")
 	max_version, _ = NewVersion("v1.15.1")
 	min_go_version, _ = NewVersion("1.18")
-	max_go_version, _ = NewVersion("1.21.9")
+	max_go_version, _ = NewVersion("1.21.12")
 	goVersion, _ := NewVersion(strings.ReplaceAll(runtime.Version(), "go", ""))
 	if goVersion.LessThan(min_go_version) || goVersion.GreaterThan(max_go_version) {
 		log.Printf("This test does not suppport go " + goVersion.String())
