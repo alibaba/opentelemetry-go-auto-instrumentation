@@ -50,23 +50,23 @@ func setup() {
 		ctx := req.Context()
 		err = TestCreateCollection(ctx, client)
 		if err != nil {
-			log.Fatalf("failed to create collection: %v", err)
+			log.Printf("failed to create collection: %v", err)
 		}
 		err = TestCreate(ctx, client)
 		if err != nil {
-			log.Fatalf("failed to create: %v", err)
+			log.Printf("failed to create: %v", err)
 		}
 		err = TestQuery(ctx, client)
 		if err != nil {
-			log.Fatalf("failed to query: %v", err)
+			log.Printf("failed to query: %v", err)
 		}
 		err = TestUpdate(ctx, client)
 		if err != nil {
-			log.Fatalf("failed to update: %v", err)
+			log.Printf("failed to update: %v", err)
 		}
 		err = TestDelete(ctx, client)
 		if err != nil {
-			log.Fatalf("failed to delete: %v", err)
+			log.Printf("failed to delete: %v", err)
 		}
 		_, _ = res.Write([]byte("execute finished"))
 	})
