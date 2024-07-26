@@ -20,7 +20,7 @@ func (m mongoAttrsGetter) GetUser(request mongoRequest) string {
 }
 
 func (m mongoAttrsGetter) GetName(request mongoRequest) string {
-	return request.CommandName
+	return request.DatabaseName
 }
 
 func (m mongoAttrsGetter) GetConnectionString(request mongoRequest) string {

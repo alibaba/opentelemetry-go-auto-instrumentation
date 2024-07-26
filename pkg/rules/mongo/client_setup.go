@@ -46,7 +46,6 @@ func mongoOnEnter(call *mongo.CallContext, opts ...*options.ClientOptions) {
 						mongoInstrumenter.End(newContext, mongoRequest{
 							CommandName:  succeededEvent.CommandName,
 							ConnectionID: succeededEvent.ConnectionID,
-							DatabaseName: succeededEvent.DatabaseName,
 						}, nil, nil)
 					}
 				}
@@ -61,7 +60,6 @@ func mongoOnEnter(call *mongo.CallContext, opts ...*options.ClientOptions) {
 						mongoInstrumenter.End(newContext, mongoRequest{
 							CommandName:  failedEvent.CommandName,
 							ConnectionID: failedEvent.ConnectionID,
-							DatabaseName: failedEvent.DatabaseName,
 						}, nil, errors.New(failedEvent.Failure))
 					}
 				}
