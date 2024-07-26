@@ -4,6 +4,7 @@ package pkg
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -32,27 +33,31 @@ func init() {
 	initOpenTelemetry()
 }
 
-func newHTTPExporterAndSpanProcessor(ctx context.Context) (*otlptrace.Exporter, trace.SpanProcessor) {
-
-	traceExporter, err := otlptrace.New(ctx, otlptracehttp.NewClient())
-
-	if err != nil {
-		log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
+func newHTTPExporterAndSpanProcessor(ctx context.Context) (trace.SpanExporter, trace.SpanProcessor) {
+	if verifier.IsInTest() {
+		traceExporter := verifier.GetSpanExporter()
+		// in test, we just send the span immediately
+		simpleProcessor := trace.NewSimpleSpanProcessor(traceExporter)
+		return traceExporter, simpleProcessor
+	} else {
+		traceExporter, err := otlptrace.New(ctx, otlptracehttp.NewClient())
+		if err != nil {
+			log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
+		}
+		batchSpanProcessor := trace.NewBatchSpanProcessor(traceExporter)
+		return traceExporter, batchSpanProcessor
 	}
-
-	batchSpanProcessor := trace.NewBatchSpanProcessor(traceExporter)
-
-	return traceExporter, batchSpanProcessor
 }
 
 func initOpenTelemetry() func() {
 	ctx := context.Background()
 
-	var traceExporter *otlptrace.Exporter
+	var traceExporter trace.SpanExporter
 	var batchSpanProcessor trace.SpanProcessor
 
 	traceExporter, batchSpanProcessor = newHTTPExporterAndSpanProcessor(ctx)
 
+	// TODO: add sampler
 	traceProvider := trace.NewTracerProvider(
 		trace.WithSampler(trace.AlwaysSample()),
 		trace.WithSpanProcessor(batchSpanProcessor))

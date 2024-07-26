@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -79,7 +80,6 @@ func RunInstrumentFallible(t *testing.T, args ...string) {
 func RunInstrument(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
 	path := filepath.Join(filepath.Dir(pwd), execName)
-	fmt.Printf("RunningTest: %v %v\n", path, args)
 	cmd := RunCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err != nil {
@@ -92,6 +92,11 @@ func RunInstrument(t *testing.T, args ...string) {
 		text += fmt.Sprintf("instrument: %v\n", log2)
 		t.Fatal(text)
 	}
+}
+
+func TBuildAppNoop(t *testing.T, appName string) {
+	UseApp(appName)
+	RunInstrument(t)
 }
 
 func BuildApp(t *testing.B, appName string) {
@@ -121,9 +126,11 @@ func UseApp(appName string) {
 	}
 }
 
-func RunApp(t *testing.T, appName string) (string, string) {
+func RunApp(t *testing.T, appName string, env ...string) (string, string) {
 	cmd := RunCmd([]string{"./" + appName})
 	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, env...)
+	cmd.Env = append(cmd.Env, verifier.IS_IN_TEST+"=true")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatal(err)
@@ -131,6 +138,14 @@ func RunApp(t *testing.T, appName string) (string, string) {
 	stdoutText := readStdoutLog(t)
 	stderrText := readStderrLog(t)
 	return stdoutText, stderrText
+}
+
+func FetchVersion(t *testing.T, dependency, version string) string {
+	output, err := exec.Command("go", "get", "-u", dependency+"@"+version).Output()
+	if err != nil {
+		t.Fatal(output, err)
+	}
+	return string(output)
 }
 
 func readLog(t *testing.T, path string) string {
@@ -219,4 +234,63 @@ func ExpectContainsNothing(t *testing.T, actualItems []string) {
 	if len(actualItems) > 0 {
 		t.Fatalf("-- expected: []\n-- actual: [%s]", strings.Join(actualItems, ", "))
 	}
+}
+
+func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *Version) {
+	versions, err := GetRandomVersion(3, dependencyName, minVersion, maxVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dirs, err := os.ReadDir(moduleName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testVersions := make([]*Version, 0)
+	for _, dir := range dirs {
+		v, err := NewVersion(dir.Name())
+		if err != nil {
+			continue
+		}
+		testVersions = append(testVersions, v)
+	}
+	sort.Slice(testVersions, func(i, j int) bool {
+		return testVersions[i].GreaterThan(testVersions[j])
+	})
+	for _, version := range versions {
+		for _, testVersion := range testVersions {
+			if version.GreaterThanOrEqual(testVersion) {
+				t.Logf("testing on version %v\n", version.original)
+				UseApp(moduleName + "/" + testVersion.original)
+				FetchVersion(t, dependencyName, version.original)
+				TBuildAppNoop(t, moduleName+"/"+testVersion.original)
+				break
+			}
+		}
+	}
+}
+
+func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *Version, testFunc func(*testing.T, *Version)) {
+	latestVersion, err := GetLatestVersion(dependencyName, minVersion, maxVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dirs, err := os.ReadDir(moduleName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testVersions := make([]*Version, 0)
+	for _, dir := range dirs {
+		v, err := NewVersion(dir.Name())
+		if err != nil {
+			continue
+		}
+		testVersions = append(testVersions, v)
+	}
+	sort.Slice(testVersions, func(i, j int) bool {
+		return testVersions[i].LessThan(testVersions[j])
+	})
+	latestTestVersion := testVersions[len(testVersions)-1]
+	UseApp(moduleName + "/" + latestTestVersion.original)
+	FetchVersion(t, dependencyName, latestVersion.original)
+	testFunc(t, latestTestVersion)
 }
