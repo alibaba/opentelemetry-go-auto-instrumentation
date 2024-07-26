@@ -132,11 +132,12 @@ func RunApp(t *testing.T, appName string, env ...string) (string, string) {
 	cmd.Env = append(cmd.Env, env...)
 	cmd.Env = append(cmd.Env, verifier.IS_IN_TEST+"=true")
 	err := cmd.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
 	stdoutText := readStdoutLog(t)
 	stderrText := readStderrLog(t)
+	if err != nil {
+		t.Log(stdoutText)
+		t.Fatal(err, stderrText)
+	}
 	return stdoutText, stderrText
 }
 
