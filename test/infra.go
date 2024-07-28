@@ -238,6 +238,10 @@ func ExpectContainsNothing(t *testing.T, actualItems []string) {
 }
 
 func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *Version) {
+	if testing.Short() {
+		t.Skip()
+		return
+	}
 	versions, err := GetRandomVersion(3, dependencyName, minVersion, maxVersion)
 	if err != nil {
 		t.Fatal(err)
@@ -271,6 +275,10 @@ func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, max
 }
 
 func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *Version, testFunc func(*testing.T, *Version)) {
+	if testing.Short() {
+		t.Skip()
+		return
+	}
 	latestVersion, err := GetLatestVersion(dependencyName, minVersion, maxVersion)
 	if err != nil {
 		t.Fatal(err)
