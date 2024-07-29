@@ -84,7 +84,7 @@ func TestOnAfterStart(t *testing.T) {
 	w := OperationListenerWrapper{listener: &testListener{}}
 	w.OnAfterStart(context.Background(), time.UnixMilli(123412341234))
 	wListener := w.listener.(*testListener)
-	if wListener.startTime.UnixMilli() != 123412341234 {
+	if wListener.endTime.UnixMilli() != 123412341234 {
 		log.Fatal("start time is not equal to new start time")
 	}
 }
