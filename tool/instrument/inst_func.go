@@ -149,7 +149,7 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 		clone := make([]dst.Expr, len(retVals)+1)
 		clone[0] = shared.Ident(TrampolineCallContextName + varSuffix)
 		for i := 1; i < len(clone); i++ {
-			clone[i] = shared.AddressOf(dst.Clone(retVals[i-1]).(dst.Expr))
+			clone[i] = shared.AddressOf(retVals[i-1])
 		}
 		return clone
 	}())
@@ -168,7 +168,7 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 			shared.ReturnStmt(retVals),
 		),
 		Else: shared.Block(
-			shared.DeferStmt(dst.Clone(onExitCall).(*dst.CallExpr)),
+			shared.DeferStmt(onExitCall),
 		),
 	}
 	// Add this trampoline-jump-if as optimization candidates

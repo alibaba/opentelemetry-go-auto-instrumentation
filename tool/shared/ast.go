@@ -14,7 +14,7 @@ import (
 
 // AST Construction
 func AddressOf(expr dst.Expr) *dst.UnaryExpr {
-	return &dst.UnaryExpr{Op: token.AND, X: expr}
+	return &dst.UnaryExpr{Op: token.AND, X: dst.Clone(expr).(dst.Expr)}
 }
 
 func CallTo(name string, args []dst.Expr) *dst.CallExpr {
@@ -135,7 +135,7 @@ func ExprStmt(expr dst.Expr) *dst.ExprStmt {
 }
 
 func DeferStmt(call *dst.CallExpr) *dst.DeferStmt {
-	return &dst.DeferStmt{Call: call}
+	return &dst.DeferStmt{Call: dst.Clone(call).(*dst.CallExpr)}
 }
 
 func ReturnStmt(results []dst.Expr) *dst.ReturnStmt {

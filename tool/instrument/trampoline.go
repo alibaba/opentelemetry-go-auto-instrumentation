@@ -385,7 +385,7 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 }
 
 // implementCallContext effectively "implements" the CallContext interface by
-// renaming occurences of CallContextImpl to CallContextImpl{suffix} in the
+// renaming occurrences of CallContextImpl to CallContextImpl{suffix} in the
 // trampoline template
 func (rp *RuleProcessor) implementCallContext(t *api.InstFuncRule) {
 	suffix := rp.rule2Suffix[t]
@@ -473,7 +473,8 @@ func desugarType(param *dst.Field) dst.Expr {
 	return param.Type
 }
 
-func (rp *RuleProcessor) rewriteCallContextImplMethods(funcDecl *dst.FuncDecl) {
+func (rp *RuleProcessor) rewriteCallContextImpl() {
+	util.Assert(len(rp.callCtxMethods) > 4, "sanity check")
 	var (
 		methodSetParam  *dst.FuncDecl
 		methodGetParam  *dst.FuncDecl
@@ -504,7 +505,7 @@ func (rp *RuleProcessor) rewriteCallContextImplMethods(funcDecl *dst.FuncDecl) {
 	methodGetRetValBody.List = nil
 	methodSetRetValBody.List = nil
 	idx := 0
-	for _, param := range funcDecl.Type.Params.List {
+	for _, param := range rp.rawFunc.Type.Params.List {
 		paramType := desugarType(param)
 		for range param.Names {
 			clause := setParamClause(idx, paramType)
@@ -515,9 +516,9 @@ func (rp *RuleProcessor) rewriteCallContextImplMethods(funcDecl *dst.FuncDecl) {
 		}
 	}
 	// Rewrite GetReturnVal and SetReturnVal methods
-	if funcDecl.Type.Results != nil {
+	if rp.rawFunc.Type.Results != nil {
 		idx = 0
-		for _, retval := range funcDecl.Type.Results.List {
+		for _, retval := range rp.rawFunc.Type.Results.List {
 			retType := desugarType(retval)
 			for range retval.Names {
 				clause := getReturnValClause(idx, retType)
@@ -541,7 +542,7 @@ func (rp *RuleProcessor) generateTrampoline(t *api.InstFuncRule, funcDecl *dst.F
 	// Implement CallContext interface
 	rp.implementCallContext(t)
 	// Rewrite type-aware CallContext APIs
-	rp.rewriteCallContextImplMethods(funcDecl)
+	rp.rewriteCallContextImpl()
 
 	// Rename trampoline functions
 	rp.renameFunc(t)
