@@ -23,6 +23,7 @@ jobs:
 
     - name: Build
       run: make build
-
+    - name: InstUt
+      run: go test -short -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg
     - name: Test
       run: go test -short -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test
