@@ -6,23 +6,14 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"time"
 )
 
 func onEnterClientDo(call *http.CallContext, recv *http.Client, req *http.Request) {
-	if time.Now().UnixMilli()%2 == 1 {
-		panic("test panic")
-	} else {
-		println("Before Client.Do()")
-	}
+	println("Client.Do()")
 }
 
 func onExitClientDo(call *http.CallContext, resp *http.Response, err error) {
-	if time.Now().UnixMilli()%2 == 1 {
-		println("After Client.Do()")
-	} else {
-		panic("deliberately")
-	}
+	panic("deliberately")
 }
 
 // arg type has package prefix
