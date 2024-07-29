@@ -28,20 +28,17 @@ type OperationListenerWrapper struct {
 	attrCustomizer AttrsShadower
 }
 
-func NewOperationListenerWrapper(listener OperationListener, attrCustomizer AttrsShadower) *OperationListenerWrapper {
-	return &OperationListenerWrapper{
-		listener:       listener,
-		attrCustomizer: attrCustomizer,
-	}
-}
-
 func (w *OperationListenerWrapper) OnBeforeStart(parentContext context.Context, startTimestamp time.Time) context.Context {
 	return w.listener.OnBeforeStart(parentContext, startTimestamp)
 }
 
 func (w *OperationListenerWrapper) OnBeforeEnd(context context.Context, startAttributes []attribute.KeyValue, startTimestamp time.Time) context.Context {
-	validNum, startAttributes := w.attrCustomizer.Shadow(startAttributes)
-	return w.listener.OnBeforeEnd(context, startAttributes[:validNum], startTimestamp)
+	if w.attrCustomizer != nil {
+		validNum, startAttributes := w.attrCustomizer.Shadow(startAttributes)
+		return w.listener.OnBeforeEnd(context, startAttributes[:validNum], startTimestamp)
+	} else {
+		return w.listener.OnBeforeEnd(context, startAttributes, startTimestamp)
+	}
 }
 
 func (w *OperationListenerWrapper) OnAfterStart(context context.Context, endTimestamp time.Time) {
@@ -49,8 +46,12 @@ func (w *OperationListenerWrapper) OnAfterStart(context context.Context, endTime
 }
 
 func (w *OperationListenerWrapper) OnAfterEnd(context context.Context, endAttributes []attribute.KeyValue, endTimestamp time.Time) {
-	validNum, endAttributes := w.attrCustomizer.Shadow(endAttributes)
-	w.listener.OnAfterEnd(context, endAttributes[:validNum], endTimestamp)
+	if w.attrCustomizer != nil {
+		validNum, endAttributes := w.attrCustomizer.Shadow(endAttributes)
+		w.listener.OnAfterEnd(context, endAttributes[:validNum], endTimestamp)
+	} else {
+		w.listener.OnAfterEnd(context, endAttributes, endTimestamp)
+	}
 }
 
 type ContextCustomizer[REQUEST interface{}] interface {
