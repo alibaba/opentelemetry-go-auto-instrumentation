@@ -77,6 +77,9 @@ func (dp *DepProcessor) postProcess() {
 	// rm -rf otel_rules
 	_ = os.RemoveAll(OtelRules)
 
+	// rm -rf otel_pkgdep
+	_ = os.RemoveAll(OtelPkgDepsDir)
+
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
 	if err != nil {

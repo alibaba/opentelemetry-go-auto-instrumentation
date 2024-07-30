@@ -6,15 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"sync"
 )
 
 var mongoInstrumenter = BuildMongoOtelInstrumenter()
 
-func mongoOnEnter(call *mongo.CallContext, opts ...*options.ClientOptions) {
+func mongoOnEnter(call mongo.CallContext, opts ...*options.ClientOptions) {
 	syncMap := sync.Map{}
 	for _, opt := range opts {
 		hosts := opt.Hosts

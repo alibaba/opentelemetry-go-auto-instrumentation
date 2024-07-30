@@ -7,14 +7,10 @@ import (
 	"go/token"
 	"path/filepath"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
-
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
 
@@ -31,14 +27,33 @@ import (
 // its name suggests, it jumps to the trampoline function from raw function.
 
 const (
+	TrampolineSetParamName           = "SetParam"
+	TrampolineGetParamName           = "GetParam"
+	TrampolineSetReturnValName       = "SetReturnVal"
+	TrampolineGetReturnValName       = "GetReturnVal"
+	TrampolineValIdentifier          = "val"
+	TrampolineCtxIdentifier          = "c"
+	TrampolineParamsIdentifier       = "Params"
+	TrampolineReturnValsIdentifier   = "ReturnVals"
 	TrampolineSkipName               = "skip"
 	TrampolineCallContextName        = "callContext"
 	TrampolineCallContextType        = "CallContext"
+	TrampolineCallContextImplType    = "CallContextImpl"
 	TrampolineOnEnterName            = "OtelOnEnterTrampoline"
 	TrampolineOnExitName             = "OtelOnExitTrampoline"
 	TrampolineOnEnterNamePlaceholder = "\"OtelOnEnterNamePlaceholder\""
 	TrampolineOnExitNamePlaceholder  = "\"OtelOnExitNamePlaceholder\""
 )
+
+// @@ Modification on this trampoline template should be cautious, as it imposes
+// many implicit constraints on generated code, known constraints are as follows:
+// - It's performance critical, so it should be as simple as possible
+// - It should not import any package because there is no guarantee that package
+//   is existed in import config during the compilation, one practical approach
+//   is to use function variables and setup these variables in preprocess stage
+// - It should not panic as this affects user application
+// - Function and variable names are coupled with the framework, any modification
+//   on them should be synced with the framework
 
 //go:embed template.go
 var trampolineTemplate string
@@ -50,32 +65,41 @@ func (rp *RuleProcessor) materializeTemplate() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse trampoline template: %w", err)
 	}
-	varDecls := make([]dst.Decl, 0)
-	var onEnterDecl, onExitDecl *dst.FuncDecl
+
+	rp.varDecls = make([]dst.Decl, 0)
+	rp.callCtxMethods = make([]*dst.FuncDecl, 0)
 	for _, node := range astRoot.Decls {
 		// Materialize function declarations
 		if decl, ok := node.(*dst.FuncDecl); ok {
 			if decl.Name.Name == TrampolineOnEnterName {
-				onEnterDecl = decl
+				rp.onEnterHookFunc = decl
+				rp.addDecl(decl)
 			} else if decl.Name.Name == TrampolineOnExitName {
-				onExitDecl = decl
+				rp.onExitHookFunc = decl
+				rp.addDecl(decl)
+			} else if shared.HasReceiver(decl) {
+				// We know exactly this is CallContextImpl method
+				t := decl.Recv.List[0].Type.(*dst.StarExpr).X.(*dst.Ident).Name
+				util.Assert(t == TrampolineCallContextImplType, "sanity check")
+				rp.callCtxMethods = append(rp.callCtxMethods, decl)
+				rp.addDecl(decl)
 			}
 		}
 		// Materialize variable declarations
 		if decl, ok := node.(*dst.GenDecl); ok {
 			// No further processing for variable declarations, just append them
 			if decl.Tok == token.VAR {
-				varDecls = append(varDecls, decl)
+				rp.varDecls = append(rp.varDecls, decl)
+			} else if decl.Tok == token.TYPE {
+				rp.callCtxDecl = decl
+				rp.addDecl(decl)
 			}
 		}
 	}
-	util.Assert(len(varDecls) > 0, "sanity check")
-	util.Assert(onEnterDecl != nil && onExitDecl != nil, "sanity check")
-	rp.onEnterHookFunc = onEnterDecl
-	rp.onExitHookFunc = onExitDecl
-	rp.addDecl(onEnterDecl)
-	rp.addDecl(onExitDecl)
-	rp.varDecls = varDecls
+	util.Assert(rp.callCtxDecl != nil, "sanity check")
+	util.Assert(len(rp.varDecls) > 0, "sanity check")
+	util.Assert(rp.onEnterHookFunc != nil, "sanity check")
+	util.Assert(rp.onExitHookFunc != nil, "sanity check")
 	return nil
 }
 
@@ -226,7 +250,7 @@ func (rp *RuleProcessor) addOnEnterHookVarDecl(t *api.InstFuncRule, traits []Par
 	// raw function is not exposed, we need to use interface{} to represent them.
 	err := rectifyAnyType(paramTypes, traits)
 	if err != nil {
-		return fmt.Errorf("failed to rectify any type: %w", err)
+		return fmt.Errorf("failed to rectify any type on enter: %w", err)
 	}
 
 	// Generate onEnter var decl
@@ -240,7 +264,7 @@ func (rp *RuleProcessor) addOnExitVarHookDecl(t *api.InstFuncRule, traits []Para
 	addCallContext(paramTypes)
 	err := rectifyAnyType(paramTypes, traits)
 	if err != nil {
-		return fmt.Errorf("failed to rectify any type: %w", err)
+		return fmt.Errorf("failed to rectify any type on exit: %w", err)
 	}
 
 	// Generate onExit var decl
@@ -282,7 +306,7 @@ func (rp *RuleProcessor) renameFunc(t *api.InstFuncRule) {
 func addCallContext(list *dst.FieldList) {
 	callCtx := shared.NewField(
 		TrampolineCallContextName,
-		shared.DereferenceOf(dst.NewIdent(TrampolineCallContextType)),
+		dst.NewIdent(TrampolineCallContextType),
 	)
 	list.List = append([]*dst.Field{callCtx}, list.List...)
 }
@@ -320,13 +344,8 @@ func (rp *RuleProcessor) rectifyTypes() {
 	for _, list := range candidate {
 		for i := 0; i < len(list.List); i++ {
 			paramField := list.List[i]
-			if ft, ok := paramField.Type.(*dst.Ellipsis); ok {
-				// If parameter is type of ...T, we need to convert it to *[]T
-				paramField.Type = shared.DereferenceOf(shared.ArrayType(ft.Elt))
-			} else {
-				// Otherwise, convert it to *T as usual
-				paramField.Type = shared.DereferenceOf(paramField.Type)
-			}
+			paramFieldType := desugarType(paramField)
+			paramField.Type = shared.DereferenceOf(paramFieldType)
 		}
 	}
 	addCallContext(onExitHookFunc.Type.Params)
@@ -358,21 +377,183 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 			}
 		}
 	}
+	util.ShouldNotReachHereT("failed to replenish call context")
 	return false
+}
+
+// implementCallContext effectively "implements" the CallContext interface by
+// renaming occurrences of CallContextImpl to CallContextImpl{suffix} in the
+// trampoline template
+func (rp *RuleProcessor) implementCallContext(t *api.InstFuncRule) {
+	suffix := rp.rule2Suffix[t]
+	structType := rp.callCtxDecl.Specs[0].(*dst.TypeSpec)
+	util.Assert(structType.Name.Name == TrampolineCallContextImplType,
+		"sanity check")
+	structType.Name.Name += suffix             // type declaration
+	for _, method := range rp.callCtxMethods { // method declaration
+		method.Recv.List[0].Type.(*dst.StarExpr).X.(*dst.Ident).Name += suffix
+	}
+	for _, node := range []dst.Node{rp.onEnterHookFunc, rp.onExitHookFunc} {
+		dst.Inspect(node, func(node dst.Node) bool {
+			if ident, ok := node.(*dst.Ident); ok {
+				if ident.Name == TrampolineCallContextImplType {
+					ident.Name += suffix
+					return false
+				}
+			}
+			return true
+		})
+	}
+}
+
+func setValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
+	// *(c.Params[idx].(*int)) = val.(int)
+	// c.Params[idx] = val iff type is interface{}
+	se := shared.SelectorExpr(shared.Ident(TrampolineCtxIdentifier), field)
+	ie := shared.IndexExpr(se, shared.IntLit(idx))
+	te := shared.TypeAssertExpr(ie, shared.DereferenceOf(typ))
+	pe := shared.ParenExpr(te)
+	de := shared.DereferenceOf(pe)
+	val := shared.Ident(TrampolineValIdentifier)
+	assign := shared.AssignStmt(de, shared.TypeAssertExpr(val, typ))
+	if _, ok := typ.(*dst.InterfaceType); ok {
+		assign = shared.AssignStmt(ie, val)
+	}
+	caseClause := &dst.CaseClause{
+		List: shared.Exprs(shared.IntLit(idx)),
+		Body: shared.Stmts(assign),
+	}
+	return caseClause
+}
+
+func getValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
+	// return *(c.Params[idx].(*int))
+	// return c.Params[idx] iff type is interface{}
+	se := shared.SelectorExpr(shared.Ident(TrampolineCtxIdentifier), field)
+	ie := shared.IndexExpr(se, shared.IntLit(idx))
+	te := shared.TypeAssertExpr(ie, shared.DereferenceOf(typ))
+	pe := shared.ParenExpr(te)
+	de := shared.DereferenceOf(pe)
+	ret := shared.ReturnStmt(shared.Exprs(de))
+	if _, ok := typ.(*dst.InterfaceType); ok {
+		ret = shared.ReturnStmt(shared.Exprs(ie))
+	}
+	caseClause := &dst.CaseClause{
+		List: shared.Exprs(shared.IntLit(idx)),
+		Body: shared.Stmts(ret),
+	}
+	return caseClause
+}
+
+func getParamClause(idx int, typ dst.Expr) *dst.CaseClause {
+	return getValue(TrampolineParamsIdentifier, idx, typ)
+}
+
+func setParamClause(idx int, typ dst.Expr) *dst.CaseClause {
+	return setValue(TrampolineParamsIdentifier, idx, typ)
+}
+
+func getReturnValClause(idx int, typ dst.Expr) *dst.CaseClause {
+	return getValue(TrampolineReturnValsIdentifier, idx, typ)
+}
+
+func setReturnValClause(idx int, typ dst.Expr) *dst.CaseClause {
+	return setValue(TrampolineReturnValsIdentifier, idx, typ)
+}
+
+// desugarType desugars parameter type to its original type, if parameter
+// is type of ...T, it will be converted to []T
+func desugarType(param *dst.Field) dst.Expr {
+	if ft, ok := param.Type.(*dst.Ellipsis); ok {
+		return shared.ArrayType(ft.Elt)
+	}
+	return param.Type
+}
+
+func (rp *RuleProcessor) rewriteCallContextImpl() {
+	util.Assert(len(rp.callCtxMethods) > 4, "sanity check")
+	var (
+		methodSetParam  *dst.FuncDecl
+		methodGetParam  *dst.FuncDecl
+		methodGetRetVal *dst.FuncDecl
+		methodSetRetVal *dst.FuncDecl
+	)
+	for _, decl := range rp.callCtxMethods {
+		switch decl.Name.Name {
+		case TrampolineSetParamName:
+			methodSetParam = decl
+		case TrampolineGetParamName:
+			methodGetParam = decl
+		case TrampolineGetReturnValName:
+			methodGetRetVal = decl
+		case TrampolineSetReturnValName:
+			methodSetRetVal = decl
+		}
+	}
+	// Rewrite SetParam and GetParam methods
+	// Dont believe what you see in template.go, we will null out it and rewrite
+	// the whole switch statement
+	methodSetParamBody := methodSetParam.Body.List[0].(*dst.SwitchStmt).Body
+	methodGetParamBody := methodGetParam.Body.List[0].(*dst.SwitchStmt).Body
+	methodGetRetValBody := methodGetRetVal.Body.List[0].(*dst.SwitchStmt).Body
+	methodSetRetValBody := methodSetRetVal.Body.List[0].(*dst.SwitchStmt).Body
+	methodGetParamBody.List = nil
+	methodSetParamBody.List = nil
+	methodGetRetValBody.List = nil
+	methodSetRetValBody.List = nil
+	idx := 0
+	if shared.HasReceiver(rp.rawFunc) {
+		recvType := rp.rawFunc.Recv.List[0].Type
+		clause := setParamClause(idx, recvType)
+		methodSetParamBody.List = append(methodSetParamBody.List, clause)
+		clause = getParamClause(idx, recvType)
+		methodGetParamBody.List = append(methodGetParamBody.List, clause)
+		idx++
+	}
+	for _, param := range rp.rawFunc.Type.Params.List {
+		paramType := desugarType(param)
+		for range param.Names {
+			clause := setParamClause(idx, paramType)
+			methodSetParamBody.List = append(methodSetParamBody.List, clause)
+			clause = getParamClause(idx, paramType)
+			methodGetParamBody.List = append(methodGetParamBody.List, clause)
+			idx++
+		}
+	}
+	// Rewrite GetReturnVal and SetReturnVal methods
+	if rp.rawFunc.Type.Results != nil {
+		idx = 0
+		for _, retval := range rp.rawFunc.Type.Results.List {
+			retType := desugarType(retval)
+			for range retval.Names {
+				clause := getReturnValClause(idx, retType)
+				methodGetRetValBody.List = append(methodGetRetValBody.List, clause)
+				clause = setReturnValClause(idx, retType)
+				methodSetRetValBody.List = append(methodSetRetValBody.List, clause)
+				idx++
+			}
+		}
+	}
 }
 
 func (rp *RuleProcessor) generateTrampoline(t *api.InstFuncRule, funcDecl *dst.FuncDecl) error {
 	rp.rawFunc = funcDecl
-	// Materialize trampoline template
+	// Materialize various declarations from template file, no one wants to see
+	// a bunch of manual AST code generation, isn't it?
 	err := rp.materializeTemplate()
 	if err != nil {
 		return fmt.Errorf("failed to materialize template: %w", err)
 	}
-	// Rename onEnter and onExit trampoline function names
+	// Implement CallContext interface
+	rp.implementCallContext(t)
+	// Rewrite type-aware CallContext APIs
+	rp.rewriteCallContextImpl()
+
+	// Rename trampoline functions
 	rp.renameFunc(t)
-	// Rectify types of onEnter and onExit trampoline funcs
+	// Rectify types of trampoline functions
 	rp.rectifyTypes()
-	// Generate calls to onEnter and onExit hooks
+	// Generate calls to hook functions within trampoline functions
 	if t.OnEnter != "" {
 		traits, err := getHookParamTraits(t, true)
 		if err != nil {
