@@ -25,7 +25,6 @@ import (
 // so-called "Trampoline Jump" snippet is inserted at start of raw func, it is
 // guaranteed to be generated within one line to avoid confusing debugging, as
 // its name suggests, it jumps to the trampoline function from raw function.
-
 const (
 	TrampolineSetParamName           = "SetParam"
 	TrampolineGetParamName           = "GetParam"
@@ -405,10 +404,10 @@ func setValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
 	if shared.IsInterfaceType(typ) {
 		assign = shared.AssignStmt(ie, val)
 	}
-	caseClause := &dst.CaseClause{
-		List: shared.Exprs(shared.IntLit(idx)),
-		Body: shared.Stmts(assign),
-	}
+	caseClause := shared.SwitchCase(
+		shared.Exprs(shared.IntLit(idx)),
+		shared.Stmts(assign),
+	)
 	return caseClause
 }
 
@@ -424,10 +423,10 @@ func getValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
 	if shared.IsInterfaceType(typ) {
 		ret = shared.ReturnStmt(shared.Exprs(ie))
 	}
-	caseClause := &dst.CaseClause{
-		List: shared.Exprs(shared.IntLit(idx)),
-		Body: shared.Stmts(ret),
-	}
+	caseClause := shared.SwitchCase(
+		shared.Exprs(shared.IntLit(idx)),
+		shared.Stmts(ret),
+	)
 	return caseClause
 }
 

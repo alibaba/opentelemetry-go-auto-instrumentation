@@ -136,12 +136,21 @@ func ArrayType(elem dst.Expr) *dst.ArrayType {
 	return &dst.ArrayType{Elt: elem}
 }
 
+func IfStmt(init dst.Stmt, cond dst.Expr, body, elseBody *dst.BlockStmt) *dst.IfStmt {
+	return &dst.IfStmt{
+		Init: dst.Clone(init).(dst.Stmt),
+		Cond: dst.Clone(cond).(dst.Expr),
+		Body: dst.Clone(body).(*dst.BlockStmt),
+		Else: dst.Clone(elseBody).(*dst.BlockStmt),
+	}
+}
+
 func EmptyStmt() *dst.EmptyStmt {
 	return &dst.EmptyStmt{}
 }
 
 func ExprStmt(expr dst.Expr) *dst.ExprStmt {
-	return &dst.ExprStmt{X: expr}
+	return &dst.ExprStmt{X: dst.Clone(expr).(dst.Expr)}
 }
 
 func DeferStmt(call *dst.CallExpr) *dst.DeferStmt {
@@ -157,6 +166,21 @@ func AssignStmt(lhs, rhs dst.Expr) *dst.AssignStmt {
 		Lhs: []dst.Expr{lhs},
 		Tok: token.ASSIGN,
 		Rhs: []dst.Expr{rhs},
+	}
+}
+
+func AssignStmts(lhs, rhs []dst.Expr) *dst.AssignStmt {
+	return &dst.AssignStmt{
+		Lhs: lhs,
+		Tok: token.ASSIGN,
+		Rhs: rhs,
+	}
+}
+
+func SwitchCase(list []dst.Expr, stmts []dst.Stmt) *dst.CaseClause {
+	return &dst.CaseClause{
+		List: list,
+		Body: stmts,
 	}
 }
 
