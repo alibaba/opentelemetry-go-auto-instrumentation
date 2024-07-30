@@ -2,20 +2,16 @@ package instrument
 
 import (
 	"fmt"
-	"go/token"
 	"log"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
 
@@ -81,7 +77,7 @@ func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
 		// Insert trampoline jump within the else block
 		elseBlock := jumpIf.Else.(*dst.BlockStmt)
 		if len(elseBlock.List) > 1 {
-			// One trampoline jump already exists, recursively find the last one
+			// One trampoline jump already exists, recursively find last one
 			ifStmt, ok := elseBlock.List[len(elseBlock.List)-1].(*dst.IfStmt)
 			util.Assert(ok, "unexpected statement in trampoline-jump-if")
 			return findJumpPoint(ifStmt)
@@ -120,7 +116,7 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 	// Arguments for onEnter trampoline
 	args := make([]dst.Expr, 0)
 	// Receiver as argument for trampoline func, if any
-	if funcDecl.Recv != nil {
+	if shared.HasReceiver(funcDecl) {
 		if recv := funcDecl.Recv.List; recv != nil {
 			receiver := recv[0].Names[0].Name
 			args = append(args, shared.AddressOf(shared.Ident(receiver)))
@@ -149,32 +145,28 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 		clone := make([]dst.Expr, len(retVals)+1)
 		clone[0] = shared.Ident(TrampolineCallContextName + varSuffix)
 		for i := 1; i < len(clone); i++ {
-			clone[i] = shared.AddressOf(dst.Clone(retVals[i-1]).(dst.Expr))
+			clone[i] = shared.AddressOf(retVals[i-1])
 		}
 		return clone
 	}())
-	trampolineJump := &dst.IfStmt{
-		Init: &dst.AssignStmt{
-			Lhs: shared.Exprs(
-				shared.Ident(TrampolineCallContextName+varSuffix),
-				shared.Ident(TrampolineSkipName+varSuffix),
-			),
-			Tok: token.DEFINE,
-			Rhs: shared.Exprs(onEnterCall),
-		},
-		Cond: shared.Ident(TrampolineSkipName + varSuffix),
-		Body: shared.BlockStmts(
-			shared.ExprStmt(onExitCall),
-			shared.ReturnStmt(retVals),
+	tjumpInit := shared.AssignStmts(
+		shared.Exprs(
+			shared.Ident(TrampolineCallContextName+varSuffix),
+			shared.Ident(TrampolineSkipName+varSuffix),
 		),
-		Else: shared.Block(
-			shared.DeferStmt(dst.Clone(onExitCall).(*dst.CallExpr)),
-		),
-	}
+		shared.Exprs(onEnterCall),
+	)
+	tjumpCond := shared.Ident(TrampolineSkipName + varSuffix)
+	tjumpBody := shared.BlockStmts(
+		shared.ExprStmt(onExitCall),
+		shared.ReturnStmt(retVals),
+	)
+	tjumpElse := shared.Block(shared.DeferStmt(onExitCall))
+	tjump := shared.IfStmt(tjumpInit, tjumpCond, tjumpBody, tjumpElse)
 	// Add this trampoline-jump-if as optimization candidates
 	rp.trampolineJumps = append(rp.trampolineJumps, &TJump{
 		target: funcDecl,
-		ifStmt: trampolineJump,
+		ifStmt: tjump,
 		rule:   t,
 	})
 
@@ -189,22 +181,22 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 	//	} /* NO_NEWWLINE_PLACEHOLDER */
 	//  NEW_LINE
 	{ // then block
-		callExpr := trampolineJump.Body.List[0]
+		callExpr := tjump.Body.List[0]
 		callExpr.Decorations().Start.Append(TrampolineNoNewlinePlaceholder)
 		callExpr.Decorations().End.Append(TrampolineSemicolonPlaceholder)
-		retStmt := trampolineJump.Body.List[1]
+		retStmt := tjump.Body.List[1]
 		retStmt.Decorations().End.Append(TrampolineNoNewlinePlaceholder)
 	}
 	{ // else block
-		deferStmt := trampolineJump.Else.(*dst.BlockStmt).List[0]
+		deferStmt := tjump.Else.(*dst.BlockStmt).List[0]
 		deferStmt.Decorations().Start.Append(TrampolineNoNewlinePlaceholder)
 		deferStmt.Decorations().End.Append(TrampolineSemicolonPlaceholder)
-		trampolineJump.Else.Decorations().End.Append(TrampolineNoNewlinePlaceholder)
-		trampolineJump.Decs.If.Append(TrampolineJumpIfDesc) // Anchor label
+		tjump.Else.Decorations().End.Append(TrampolineNoNewlinePlaceholder)
+		tjump.Decs.If.Append(TrampolineJumpIfDesc) // Anchor label
 	}
 
-	// Find if there is already a trampoline-jump-if, if so, insert new trampoline
-	// jump within the else block, otherwise prepend to block body
+	// Find if there is already a trampoline-jump-if, insert new tjump if so,
+	// otherwise prepend to block body
 	found := false
 	if len(funcDecl.Body.List) > 0 {
 		firstStmt := funcDecl.Body.List[0]
@@ -212,7 +204,7 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 			point := findJumpPoint(ifStmt)
 			if point != nil {
 				point.List = append(point.List, shared.EmptyStmt())
-				point.List = append(point.List, trampolineJump)
+				point.List = append(point.List, tjump)
 				found = true
 			}
 		}
@@ -221,8 +213,8 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 		// Outmost trampoline-jump-if may follow by user code right after else
 		// block, replacing the trailing newline mandatorily breaks the code,
 		// we need to insert extra new line to make replacement possible
-		trampolineJump.Decorations().After = dst.EmptyLine
-		funcDecl.Body.List = append([]dst.Stmt{trampolineJump}, funcDecl.Body.List...)
+		tjump.Decorations().After = dst.EmptyLine
+		funcDecl.Body.List = append([]dst.Stmt{tjump}, funcDecl.Body.List...)
 	}
 
 	// Generate corresponding trampoline code

@@ -2,12 +2,12 @@ package instrument
 
 import (
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"log"
 	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 

@@ -9,43 +9,21 @@ package api
 // of the original function call. Modification of the Params and ReturnVals will
 // affect the original function call thus should be used with caution.
 
-type CallContext struct {
-	Params     []interface{} // Address of parameters of original function
-	ReturnVals []interface{} // Address of return values of original function
-	Data       interface{}   // User defined data
-	SkipCall   bool          // Skip the original function call if set to true
-}
-
-func (ctx *CallContext) SetSkipCall(skip bool) {
-	ctx.SkipCall = skip
-}
-
-func (ctx *CallContext) SetData(data interface{}) {
-	ctx.Data = data
-}
-
-func (ctx *CallContext) GetData() interface{} {
-	return ctx.Data
-}
-
-func (ctx *CallContext) SetKeyData(key, val string) {
-	if ctx.Data == nil {
-		ctx.Data = make(map[string]string)
-	}
-	ctx.Data.(map[string]string)[key] = val
-}
-
-func (ctx *CallContext) GetKeyData(key string) string {
-	if ctx.Data == nil {
-		return ""
-	}
-	return ctx.Data.(map[string]string)[key]
-}
-
-func (ctx *CallContext) HasKeyData(key string) bool {
-	if ctx.Data == nil {
-		return false
-	}
-	_, ok := ctx.Data.(map[string]string)[key]
-	return ok
+type CallContext interface {
+	// Skip the original function call
+	SetSkipCall(bool)
+	// Check if the original function call should be skipped
+	IsSkipCall() bool
+	// Set the data field, can be used to pass information between OnEnter&OnExit
+	SetData(interface{})
+	// Get the data field, can be used to pass information between OnEnter&OnExit
+	GetData() interface{}
+	// Get the original function parameter at index idx
+	GetParam(idx int) interface{}
+	// Change the original function parameter at index idx
+	SetParam(idx int, val interface{})
+	// Get the original function return value at index idx
+	GetReturnVal(idx int) interface{}
+	// Change the original function return value at index idx
+	SetReturnVal(idx int, val interface{})
 }

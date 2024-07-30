@@ -77,6 +77,9 @@ func (dp *DepProcessor) postProcess() {
 	// rm -rf otel_rules
 	_ = os.RemoveAll(OtelRules)
 
+	// rm -rf otel_pkgdep
+	_ = os.RemoveAll(OtelPkgDepsDir)
+
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
 	if err != nil {
@@ -139,7 +142,9 @@ func getCompileCommands() ([]string, error) {
 	}
 	err = runDryBuild()
 	if err != nil {
-		return nil, fmt.Errorf("failed to run dry build: %w", err)
+		// Tell us more about what happened in the dry run
+		errLog, _ := util.ReadFile(shared.GetLogPath(DryRunLog))
+		return nil, fmt.Errorf("failed to run dry build: %w\n%v", err, errLog)
 	}
 	dryRunLog, err := os.Open(shared.GetLogPath(DryRunLog))
 	if err != nil {

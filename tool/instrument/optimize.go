@@ -132,10 +132,11 @@ func replenishCallContextLiteral(tjump *TJump, expr dst.Expr) {
 	paramLiteral.Elts = names
 }
 
-func newCallContext(tjump *TJump) (dst.Expr, error) {
+func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
 	// One line please, otherwise debugging line number will be a nightmare
-	const newCallContext = `&CallContext{Params:[]interface{}{},ReturnVals:[]interface{}{},SkipCall:false,}`
-	astRoot, err := shared.ParseAstFromSnippet(newCallContext)
+	tmpl := fmt.Sprintf("&CallContextImpl%s{Params:[]interface{}{},ReturnVals:[]interface{}{}}",
+		rp.rule2Suffix[tjump.rule])
+	astRoot, err := shared.ParseAstFromSnippet(tmpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse new CallContext: %w", err)
 	}
@@ -147,7 +148,7 @@ func newCallContext(tjump *TJump) (dst.Expr, error) {
 
 func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	// Construct CallContext on the fly and pass to onExit trampoline defer call
-	callContextExpr, err := newCallContext(tjump)
+	callContextExpr, err := rp.newCallContextImpl(tjump)
 	if err != nil {
 		return fmt.Errorf("failed to construct CallContext: %w", err)
 	}
@@ -218,6 +219,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		// because there might be more than one trampoline-jump-if in the same
 		// function, they are nested in the else block. See findJumpPoint for
 		// more details.
+		// TODO: Remove corresponding CallContextImpl methods
 		rule := tjump.rule
 		removedOnExit := false
 		if rule.OnExit == "" {
