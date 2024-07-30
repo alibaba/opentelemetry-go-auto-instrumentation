@@ -56,3 +56,7 @@ to help us enhance this project.
 # Links
 
 - [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)
+
+# Community
+
+![image](https://github.com/user-attachments/assets/5aded990-e8f8-4f58-a37c-9ae3abb3c686)
