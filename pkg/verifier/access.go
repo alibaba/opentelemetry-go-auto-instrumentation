@@ -20,7 +20,3 @@ func GetTestSpans() *tracetest.SpanStubs {
 func ResetTestSpans() {
 	spanExporter.Reset()
 }
-
-func ClearSpan() {
-	spanExporter.Reset()
-}
