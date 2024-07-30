@@ -118,6 +118,16 @@ func BoolFalse() *dst.BasicLit {
 	return &dst.BasicLit{Value: "false"}
 }
 
+func IsInterfaceType(typ dst.Expr) bool {
+	_, ok := typ.(*dst.InterfaceType)
+	return ok
+}
+
+func IsEllipsis(typ dst.Expr) bool {
+	_, ok := typ.(*dst.Ellipsis)
+	return ok
+}
+
 func InterfaceType() *dst.InterfaceType {
 	return &dst.InterfaceType{Methods: &dst.FieldList{List: nil}}
 }

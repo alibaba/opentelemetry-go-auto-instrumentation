@@ -163,10 +163,10 @@ func getHookParamTraits(t *api.InstFuncRule, onEnter bool) ([]ParamTrait, error)
 	// Find which parameter is type of interface{}
 	for i, field := range target.Type.Params.List {
 		attr := ParamTrait{Index: i}
-		if _, ok := field.Type.(*dst.InterfaceType); ok {
+		if shared.IsInterfaceType(field.Type) {
 			attr.IsInterfaceAny = true
 		}
-		if _, ok := field.Type.(*dst.Ellipsis); ok {
+		if shared.IsEllipsis(field.Type) {
 			attr.IsVaradic = true
 		}
 		attrs = append(attrs, attr)
@@ -243,32 +243,18 @@ func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	return nil
 }
 
-func (rp *RuleProcessor) addOnEnterHookVarDecl(t *api.InstFuncRule, traits []ParamTrait) error {
-	paramTypes := rp.buildTrampolineType(true)
+func (rp *RuleProcessor) addHookFuncVar(t *api.InstFuncRule, traits []ParamTrait, onEnter bool) error {
+	paramTypes := rp.buildTrampolineType(onEnter)
 	addCallContext(paramTypes)
 	// Hook functions may uses interface{} as parameter type, as some types of
-	// raw function is not exposed, we need to use interface{} to represent them.
+	// raw function is not exposed
 	err := rectifyAnyType(paramTypes, traits)
 	if err != nil {
 		return fmt.Errorf("failed to rectify any type on enter: %w", err)
 	}
 
-	// Generate onEnter var decl
-	varDecl := shared.NewVarDecl(rp.makeOnXName(t, true), paramTypes)
-	rp.addDecl(varDecl)
-	return nil
-}
-
-func (rp *RuleProcessor) addOnExitVarHookDecl(t *api.InstFuncRule, traits []ParamTrait) error {
-	paramTypes := rp.buildTrampolineType(false)
-	addCallContext(paramTypes)
-	err := rectifyAnyType(paramTypes, traits)
-	if err != nil {
-		return fmt.Errorf("failed to rectify any type on exit: %w", err)
-	}
-
-	// Generate onExit var decl
-	varDecl := shared.NewVarDecl(rp.makeOnXName(t, false), paramTypes)
+	// Generate var decl
+	varDecl := shared.NewVarDecl(rp.makeOnXName(t, onEnter), paramTypes)
 	rp.addDecl(varDecl)
 	return nil
 }
@@ -416,7 +402,7 @@ func setValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
 	de := shared.DereferenceOf(pe)
 	val := shared.Ident(TrampolineValIdentifier)
 	assign := shared.AssignStmt(de, shared.TypeAssertExpr(val, typ))
-	if _, ok := typ.(*dst.InterfaceType); ok {
+	if shared.IsInterfaceType(typ) {
 		assign = shared.AssignStmt(ie, val)
 	}
 	caseClause := &dst.CaseClause{
@@ -435,7 +421,7 @@ func getValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
 	pe := shared.ParenExpr(te)
 	de := shared.DereferenceOf(pe)
 	ret := shared.ReturnStmt(shared.Exprs(de))
-	if _, ok := typ.(*dst.InterfaceType); ok {
+	if shared.IsInterfaceType(typ) {
 		ret = shared.ReturnStmt(shared.Exprs(ie))
 	}
 	caseClause := &dst.CaseClause{
@@ -536,6 +522,29 @@ func (rp *RuleProcessor) rewriteCallContextImpl() {
 	}
 }
 
+func (rp *RuleProcessor) callHookFunc(t *api.InstFuncRule, onEnter bool) error {
+	traits, err := getHookParamTraits(t, onEnter)
+	if err != nil {
+		return fmt.Errorf("failed to get hook param traits: %w", err)
+	}
+	err = rp.addHookFuncVar(t, traits, onEnter)
+	if err != nil {
+		return fmt.Errorf("failed to add onEnter var hook decl: %w", err)
+	}
+	if onEnter {
+		err = rp.callOnEnterHook(t, traits)
+	} else {
+		err = rp.callOnExitHook(t, traits)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to call onEnter: %w", err)
+	}
+	if !rp.replenishCallContext(onEnter) {
+		return errors.New("failed to replenish context in onEnter hook")
+	}
+	return nil
+}
+
 func (rp *RuleProcessor) generateTrampoline(t *api.InstFuncRule, funcDecl *dst.FuncDecl) error {
 	rp.rawFunc = funcDecl
 	// Materialize various declarations from template file, no one wants to see
@@ -548,44 +557,21 @@ func (rp *RuleProcessor) generateTrampoline(t *api.InstFuncRule, funcDecl *dst.F
 	rp.implementCallContext(t)
 	// Rewrite type-aware CallContext APIs
 	rp.rewriteCallContextImpl()
-
 	// Rename trampoline functions
 	rp.renameFunc(t)
 	// Rectify types of trampoline functions
 	rp.rectifyTypes()
-	// Generate calls to hook functions within trampoline functions
+	// Generate calls to hook functions
 	if t.OnEnter != "" {
-		traits, err := getHookParamTraits(t, true)
-		if err != nil {
-			return fmt.Errorf("failed to get hook param traits: %w", err)
-		}
-		err = rp.addOnEnterHookVarDecl(t, traits)
-		if err != nil {
-			return fmt.Errorf("failed to add onEnter var hook decl: %w", err)
-		}
-		err = rp.callOnEnterHook(t, traits)
+		err = rp.callHookFunc(t, true)
 		if err != nil {
 			return fmt.Errorf("failed to call onEnter: %w", err)
 		}
-		if !rp.replenishCallContext(true) {
-			return errors.New("failed to replenish context in onEnter hook")
-		}
 	}
 	if t.OnExit != "" {
-		traits, err := getHookParamTraits(t, false)
-		if err != nil {
-			return fmt.Errorf("failed to get hook param traits: %w", err)
-		}
-		err = rp.addOnExitVarHookDecl(t, traits)
-		if err != nil {
-			return fmt.Errorf("failed to add onExit var hook decl: %w", err)
-		}
-		err = rp.callOnExitHook(t, traits)
+		err = rp.callHookFunc(t, false)
 		if err != nil {
 			return fmt.Errorf("failed to call onExit: %w", err)
-		}
-		if !rp.replenishCallContext(false) {
-			return errors.New("failed to replenish context in onExit hook")
 		}
 	}
 	return nil
