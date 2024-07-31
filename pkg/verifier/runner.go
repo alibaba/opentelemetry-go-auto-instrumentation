@@ -22,6 +22,7 @@ func WaitAndAssertTraces(traceVerifiers ...func([]tracetest.SpanStubs)) {
 }
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
+	defer ResetTestSpans()
 	// 最多等20s
 	finish := false
 	var traces []tracetest.SpanStubs
@@ -47,7 +48,6 @@ func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 
 func groupAndSortTrace() []tracetest.SpanStubs {
 	spans := GetTestSpans()
-	defer ResetTestSpans()
 	traceMap := make(map[string][]tracetest.SpanStub)
 	for _, span := range *spans {
 		if span.SpanContext.HasTraceID() && span.SpanContext.TraceID().IsValid() {

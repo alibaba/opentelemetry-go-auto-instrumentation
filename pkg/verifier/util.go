@@ -39,7 +39,7 @@ func GetFreePort() (int, error) {
 	return cli.Addr().(*net.TCPAddr).Port, nil
 }
 
-func GetServer(ctx context.Context, url string) {
+func GetServer(ctx context.Context, url string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		panic(err)
@@ -50,6 +50,7 @@ func GetServer(ctx context.Context, url string) {
 		panic(err)
 	}
 	defer resp.Body.Close()
+	return resp.Status, nil
 }
 
 func IsInTest() bool {
