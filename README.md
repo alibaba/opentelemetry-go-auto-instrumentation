@@ -19,6 +19,12 @@ For all supported platforms:
 $ make all
 ```
 
+To run all tests:
+
+```bash
+$ make test
+```
+
 # How to Use
 
 Replace `go build` with the following command to build you project:
@@ -48,11 +54,14 @@ Please feel free to file a bug
 at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
 to help us enhance this project.
 
-# Document
+# Community
+
+We are looking forward to your feedback and suggestions. Please feel free to join our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? ) to communicate with us.
+
+<img src="docs/dingtalk.png" height="200">
+
+Also there are several documents that you may find useful:
 
 - [How it works](./docs/how-it-works.md)
 - [How to add a new rule](./docs/how-to-add-a-new-rule.md)
-
-# Links
-
 - [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)
