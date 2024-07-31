@@ -4,18 +4,8 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
-
-const http_request_method = attribute.Key("http.request.method")
-const http_response_status_code = attribute.Key("http.response.status_code")
-const http_route = attribute.Key("http.route")
-
-const network_protocol_name = attribute.Key("network.protocol.name")
-const network_protocol_version = attribute.Key("network.protocol.version")
-
-const url_full = attribute.Key("url.full")
-
-const user_agent_original = attribute.Key("user_agent.original")
 
 // TODO: http.route
 
@@ -27,7 +17,7 @@ type HttpCommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpCommonAttrs
 
 func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   http_request_method,
+		Key:   semconv.HTTPRequestMethodKey,
 		Value: attribute.StringValue(h.httpGetter.GetRequestMethod(request)),
 	})
 	return attributes
@@ -38,13 +28,13 @@ func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER, GETTER2]) OnEnd(att
 	protocolName := h.netGetter.GetNetworkProtocolName(request, response)
 	protocolVersion := h.netGetter.GetNetworkProtocolVersion(request, response)
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   http_response_status_code,
+		Key:   semconv.HTTPResponseStatusCodeKey,
 		Value: attribute.IntValue(statusCode),
 	}, attribute.KeyValue{
-		Key:   network_protocol_name,
+		Key:   semconv.NetworkProtocolNameKey,
 		Value: attribute.StringValue(protocolName),
 	}, attribute.KeyValue{
-		Key:   network_protocol_version,
+		Key:   semconv.NetworkProtocolVersionKey,
 		Value: attribute.StringValue(protocolVersion),
 	})
 	return attributes
@@ -60,7 +50,7 @@ func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(
 	fullUrl := h.base.httpGetter.GetUrlFull(request)
 	// TODO: add resend count
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   url_full,
+		Key:   semconv.URLFullKey,
 		Value: attribute.StringValue(fullUrl),
 	})
 	return attributes
@@ -88,10 +78,10 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	} else {
 		firstUserAgent = ""
 	}
-	attributes = append(attributes, attribute.KeyValue{Key: http_route,
+	attributes = append(attributes, attribute.KeyValue{Key: semconv.HTTPRouteKey,
 		Value: attribute.StringValue(h.base.httpGetter.GetHttpRoute(request)),
 	}, attribute.KeyValue{
-		Key:   user_agent_original,
+		Key:   semconv.UserAgentOriginalKey,
 		Value: attribute.StringValue(firstUserAgent),
 	})
 	return attributes

@@ -6,6 +6,7 @@ import (
 
 type testRequest struct {
 	IsTemporaryDestination bool
+	IsAnonymousDestination bool
 	Destination            string
 }
 
