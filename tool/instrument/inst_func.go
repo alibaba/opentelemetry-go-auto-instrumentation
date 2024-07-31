@@ -90,10 +90,7 @@ func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
 }
 
 func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl) error {
-	// Instrumentation is not needed if both hooks are nil
-	if t.OnEnter == "" && t.OnExit == "" {
-		return nil
-	}
+	util.Assert(t.OnEnter != "" || t.OnExit != "", "sanity check")
 
 	var retVals []dst.Expr // nil by default
 	if retList := funcDecl.Type.Results; retList != nil {
@@ -290,6 +287,27 @@ func sortFuncRules(rules []uint64) []*api.InstFuncRule {
 		return fnRules[i].Order < fnRules[j].Order
 	})
 	return fnRules
+}
+
+func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
+	// Prepare trampoline code header
+	code := "package " + pkgName
+	trampoline, err := shared.ParseAstFromSource(code)
+	if err != nil {
+		return fmt.Errorf("failed to parse trampoline code header: %w", err)
+	}
+	// One trampoline file shares common variable declarations
+	trampoline.Decls = append(trampoline.Decls, rp.varDecls...)
+	// Write trampoline code to file
+	path := filepath.Join(rp.workDir, OtelTrampolineFile)
+	trampolineFile, err := shared.WriteAstToFile(trampoline, path)
+	if err != nil {
+		return err
+	}
+	rp.addCompileArg(trampolineFile)
+	// Save trampoline code for debugging
+	shared.SaveDebugFile(pkgName+"_", path)
+	return nil
 }
 
 func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error) {

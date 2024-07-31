@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"go/token"
-	"path/filepath"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
@@ -112,7 +111,7 @@ func getNames(list *dst.FieldList) []string {
 	return names
 }
 
-func (rp *RuleProcessor) makeOnXName(t *api.InstFuncRule, onEnter bool) string {
+func makeOnXName(t *api.InstFuncRule, onEnter bool) string {
 	if onEnter {
 		return shared.GetVarNameOfFunc(t.OnEnter)
 	} else {
@@ -191,7 +190,7 @@ func (rp *RuleProcessor) callOnEnterHook(t *api.InstFuncRule, traits []ParamTrai
 		}
 	}
 	// Generate onEnter call
-	onEnterCall := shared.CallTo(rp.makeOnXName(t, true), args)
+	onEnterCall := shared.CallTo(makeOnXName(t, true), args)
 	insertAtBody(rp.onEnterHookFunc, shared.ExprStmt(onEnterCall),
 		len(rp.onEnterHookFunc.Body.List)-1 /*before return*/)
 	return nil
@@ -221,7 +220,7 @@ func (rp *RuleProcessor) callOnExitHook(t *api.InstFuncRule, traits []ParamTrait
 		}
 	}
 	// Generate onExit call
-	onExitCall := shared.CallTo(rp.makeOnXName(t, false), args)
+	onExitCall := shared.CallTo(makeOnXName(t, false), args)
 	insertAtBody(rp.onExitHookFunc, shared.ExprStmt(onExitCall),
 		len(rp.onExitHookFunc.Body.List))
 	return nil
@@ -253,7 +252,7 @@ func (rp *RuleProcessor) addHookFuncVar(t *api.InstFuncRule, traits []ParamTrait
 	}
 
 	// Generate var decl
-	varDecl := shared.NewVarDecl(rp.makeOnXName(t, onEnter), paramTypes)
+	varDecl := shared.NewVarDecl(makeOnXName(t, onEnter), paramTypes)
 	rp.addDecl(varDecl)
 	return nil
 }
@@ -573,26 +572,5 @@ func (rp *RuleProcessor) generateTrampoline(t *api.InstFuncRule, funcDecl *dst.F
 			return fmt.Errorf("failed to call onExit: %w", err)
 		}
 	}
-	return nil
-}
-
-func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
-	// Prepare trampoline code header
-	code := "package " + pkgName
-	trampoline, err := shared.ParseAstFromSource(code)
-	if err != nil {
-		return fmt.Errorf("failed to parse trampoline code header: %w", err)
-	}
-	// One trampoline file shares common variable declarations
-	trampoline.Decls = append(trampoline.Decls, rp.varDecls...)
-	// Write trampoline code to file
-	path := filepath.Join(rp.workDir, OtelTrampolineFile)
-	trampolineFile, err := shared.WriteAstToFile(trampoline, path)
-	if err != nil {
-		return err
-	}
-	rp.addCompileArg(trampolineFile)
-	// Save trampoline code for debugging
-	shared.SaveDebugFile(pkgName+"_", path)
 	return nil
 }
