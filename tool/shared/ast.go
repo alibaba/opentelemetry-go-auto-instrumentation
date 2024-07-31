@@ -169,10 +169,10 @@ func AssignStmt(lhs, rhs dst.Expr) *dst.AssignStmt {
 	}
 }
 
-func AssignStmts(lhs, rhs []dst.Expr) *dst.AssignStmt {
+func DefineStmts(lhs, rhs []dst.Expr) *dst.AssignStmt {
 	return &dst.AssignStmt{
 		Lhs: lhs,
-		Tok: token.ASSIGN,
+		Tok: token.DEFINE,
 		Rhs: rhs,
 	}
 }

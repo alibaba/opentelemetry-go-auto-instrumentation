@@ -149,7 +149,7 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 		}
 		return clone
 	}())
-	tjumpInit := shared.AssignStmts(
+	tjumpInit := shared.DefineStmts(
 		shared.Exprs(
 			shared.Ident(TrampolineCallContextName+varSuffix),
 			shared.Ident(TrampolineSkipName+varSuffix),
