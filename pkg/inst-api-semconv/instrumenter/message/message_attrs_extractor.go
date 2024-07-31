@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 type MessageOperation string
@@ -11,19 +12,6 @@ type MessageOperation string
 const PUBLISH MessageOperation = "publish"
 const RECEIVE MessageOperation = "receive"
 const PROCESS MessageOperation = "process"
-
-const messaging_batch_message_count = attribute.Key("messaging.batch.message_count")
-const messaging_client_id = attribute.Key("messaging.client_id")
-const messaging_destination_anoymous = attribute.Key("messaging.destination.anonymous")
-const messaging_destination_name = attribute.Key("messaging.destination.name")
-const messaging_destination_template = attribute.Key("messaging.destination.template")
-const messaging_destination_temporary = attribute.Key("messaging.destination.temporary")
-const messaging_message_body_size = attribute.Key("messaging.message.body.size")
-const messaging_message_conversation_id = attribute.Key("messaging.message.conversation_id")
-const messaging_message_envelope_size = attribute.Key("messaging.message.envelope.size")
-const messaging_message_id = attribute.Key("messaging.message.id")
-const messaging_operation = attribute.Key("messaging.operation")
-const messaging_system = attribute.Key("messaging.system")
 
 type MessageAttrsExtractor[REQUEST any, RESPONSE any, GETTER MessageAttrsGetter[REQUEST, RESPONSE]] struct {
 	getter    GETTER
@@ -47,45 +35,45 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []
 	isTemporaryDestination := m.getter.IsTemporaryDestination(request)
 	if isTemporaryDestination {
 		attributes = append(attributes, attribute.KeyValue{
-			Key:   messaging_destination_temporary,
+			Key:   semconv.MessagingDestinationTemporaryKey,
 			Value: attribute.BoolValue(true),
 		}, attribute.KeyValue{
-			Key:   messaging_destination_name,
+			Key:   semconv.MessagingDestinationNameKey,
 			Value: attribute.StringValue("(temporary)"),
 		})
 	} else {
 		attributes = append(attributes, attribute.KeyValue{
-			Key:   messaging_destination_name,
+			Key:   semconv.MessagingDestinationNameKey,
 			Value: attribute.StringValue(m.getter.GetDestination(request)),
 		}, attribute.KeyValue{
-			Key:   messaging_destination_template,
+			Key:   semconv.MessagingDestinationTemplateKey,
 			Value: attribute.StringValue(m.getter.GetDestinationTemplate(request)),
 		})
 	}
 	isAnonymousDestination := m.getter.isAnonymousDestination(request)
 	if isAnonymousDestination {
 		attributes = append(attributes, attribute.KeyValue{
-			Key:   messaging_destination_anoymous,
+			Key:   semconv.MessagingDestinationAnonymousKey,
 			Value: attribute.BoolValue(true),
 		})
 	}
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   messaging_message_conversation_id,
+		Key:   semconv.MessagingMessageConversationIDKey,
 		Value: attribute.StringValue(m.getter.GetConversationId(request)),
 	}, attribute.KeyValue{
-		Key:   messaging_message_body_size,
+		Key:   semconv.MessagingMessageBodySizeKey,
 		Value: attribute.Int64Value(m.getter.GetMessageBodySize(request)),
 	}, attribute.KeyValue{
-		Key:   messaging_message_envelope_size,
+		Key:   semconv.MessagingMessageEnvelopeSizeKey,
 		Value: attribute.Int64Value(m.getter.GetMessageEnvelopSize(request)),
 	}, attribute.KeyValue{
-		Key:   messaging_client_id,
+		Key:   semconv.MessagingClientIDKey,
 		Value: attribute.StringValue(m.getter.GetClientId(request)),
 	}, attribute.KeyValue{
-		Key:   messaging_operation,
+		Key:   semconv.MessagingOperationNameKey,
 		Value: attribute.StringValue(string(m.operation)),
 	}, attribute.KeyValue{
-		Key:   messaging_system,
+		Key:   semconv.MessagingSystemKey,
 		Value: attribute.StringValue(messageAttrSystem),
 	})
 	return attributes
@@ -93,10 +81,10 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []
 
 func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   messaging_message_id,
+		Key:   semconv.MessagingMessageIDKey,
 		Value: attribute.StringValue(m.getter.GetMessageId(request, response)),
 	}, attribute.KeyValue{
-		Key:   messaging_batch_message_count,
+		Key:   semconv.MessagingBatchMessageCountKey,
 		Value: attribute.Int64Value(m.getter.GetBatchMessageCount(request, response)),
 	})
 	// TODO: add custom captured headers attributes

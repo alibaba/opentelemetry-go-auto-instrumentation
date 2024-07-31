@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// VerifyNoSqlAttributes TODO: make attribute name to semconv attribute
 func VerifyNoSqlAttributes(span tracetest.SpanStub, name, dbName, system, user, connString, statement, operation string) {
 	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
 	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
