@@ -189,10 +189,15 @@ func (rp *RuleProcessor) callOnEnterHook(t *api.InstFuncRule, traits []ParamTrai
 			}
 		}
 	}
-	// Generate onEnter call
-	onEnterCall := shared.CallTo(makeOnXName(t, true), args)
-	insertAtBody(rp.onEnterHookFunc, shared.ExprStmt(onEnterCall),
-		len(rp.onEnterHookFunc.Body.List)-1 /*before return*/)
+	// Call onEnter if it exists
+	fnName := makeOnXName(t, true)
+	call := shared.ExprStmt(shared.CallTo(fnName, args))
+	iff := shared.IfNotNilStmt(
+		dst.NewIdent(fnName),
+		shared.Block(call),
+		nil,
+	)
+	insertAtBody(rp.onEnterHookFunc, iff, len(rp.onEnterHookFunc.Body.List)-1)
 	return nil
 }
 
@@ -219,10 +224,15 @@ func (rp *RuleProcessor) callOnExitHook(t *api.InstFuncRule, traits []ParamTrait
 			}
 		}
 	}
-	// Generate onExit call
-	onExitCall := shared.CallTo(makeOnXName(t, false), args)
-	insertAtBody(rp.onExitHookFunc, shared.ExprStmt(onExitCall),
-		len(rp.onExitHookFunc.Body.List))
+	// Call onExit if it exists
+	fnName := makeOnXName(t, false)
+	call := shared.ExprStmt(shared.CallTo(fnName, args))
+	iff := shared.IfNotNilStmt(
+		dst.NewIdent(fnName),
+		shared.Block(call),
+		nil,
+	)
+	insertAtBody(rp.onExitHookFunc, iff, len(rp.onExitHookFunc.Body.List))
 	return nil
 }
 
