@@ -22,4 +22,8 @@ func main() {
 	recv := &errors.Recv{}
 	a, b := recv.TestGetSetRecv(1, 3.14)
 	fmt.Printf("recv%v %v %v\n", recv, a, b)
+
+	errors.OnlyArgs(1, "jiangsu")
+	c, d := errors.OnlyRet()
+	fmt.Printf("onlyret%v %v\n", c, d)
 }
