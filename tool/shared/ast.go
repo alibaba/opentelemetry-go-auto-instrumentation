@@ -12,6 +12,13 @@ import (
 	"github.com/dave/dst/decorator"
 )
 
+const (
+	IdentNil    = "nil"
+	IdentTrue   = "true"
+	IdentFalse  = "false"
+	IdentIgnore = "_"
+)
+
 // AST Construction
 func AddressOf(expr dst.Expr) *dst.UnaryExpr {
 	return &dst.UnaryExpr{Op: token.AND, X: dst.Clone(expr).(dst.Expr)}
@@ -25,12 +32,12 @@ func CallTo(name string, args []dst.Expr) *dst.CallExpr {
 }
 
 func MakeUnusedIdent(ident *dst.Ident) *dst.Ident {
-	ident.Name = "_"
+	ident.Name = IdentIgnore
 	return ident
 }
 
 func IsUnusedIdent(ident *dst.Ident) bool {
-	return ident.Name == "_"
+	return ident.Name == IdentIgnore
 }
 
 func Ident(name string) *dst.Ident {
@@ -111,11 +118,11 @@ func NewField(name string, typ dst.Expr) *dst.Field {
 }
 
 func BoolTrue() *dst.BasicLit {
-	return &dst.BasicLit{Value: "true"}
+	return &dst.BasicLit{Value: IdentTrue}
 }
 
 func BoolFalse() *dst.BasicLit {
-	return &dst.BasicLit{Value: "false"}
+	return &dst.BasicLit{Value: IdentFalse}
 }
 
 func IsInterfaceType(typ dst.Expr) bool {
@@ -142,6 +149,24 @@ func IfStmt(init dst.Stmt, cond dst.Expr, body, elseBody *dst.BlockStmt) *dst.If
 		Cond: dst.Clone(cond).(dst.Expr),
 		Body: dst.Clone(body).(*dst.BlockStmt),
 		Else: dst.Clone(elseBody).(*dst.BlockStmt),
+	}
+}
+
+func IfNotNilStmt(cond dst.Expr, body, elseBody *dst.BlockStmt) *dst.IfStmt {
+	var elseB dst.Stmt
+	if elseBody == nil {
+		elseB = nil
+	} else {
+		elseB = dst.Clone(elseBody).(dst.Stmt)
+	}
+	return &dst.IfStmt{
+		Cond: &dst.BinaryExpr{
+			X:  dst.Clone(cond).(dst.Expr),
+			Op: token.NEQ,
+			Y:  &dst.Ident{Name: IdentNil},
+		},
+		Body: dst.Clone(body).(*dst.BlockStmt),
+		Else: elseB,
 	}
 }
 
@@ -199,7 +224,7 @@ func AddImportForcely(root *dst.File, path string) {
 		Tok: token.IMPORT,
 		Specs: []dst.Spec{
 			&dst.ImportSpec{
-				Name: &dst.Ident{Name: "_"},
+				Name: &dst.Ident{Name: IdentIgnore},
 				Path: &dst.BasicLit{
 					Kind:  token.STRING,
 					Value: fmt.Sprintf("\"%s\"", path),
