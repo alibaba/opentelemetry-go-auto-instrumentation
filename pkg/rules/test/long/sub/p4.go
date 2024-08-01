@@ -28,3 +28,11 @@ type Recv struct{ X int }
 func (t *Recv) TestGetSetRecv(arg1 int, arg2 float64) (int, float64) {
 	return arg1, arg2
 }
+
+func OnlyRet() (int, string) {
+	return 1024, "gansu"
+}
+
+func OnlyArgs(arg1 int, arg2 string) {
+	println(arg1, arg2)
+}

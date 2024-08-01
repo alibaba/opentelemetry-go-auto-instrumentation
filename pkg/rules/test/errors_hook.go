@@ -83,3 +83,13 @@ func onExitTestGetSetRecv(call errors.CallContext, arg1 int, arg2 float64) {
 	call.SetReturnVal(0, arg1)
 	call.SetReturnVal(1, arg2)
 }
+
+func onExitOnlyRet(call errors.CallContext, _ int, _ string) {
+	call.SetReturnVal(0, 2033)
+	call.SetReturnVal(1, "hangzhou")
+}
+
+func onEnterOnlyArgs(call errors.CallContext, _ int, _ string) {
+	call.SetParam(0, 2024)
+	call.SetParam(1, "shanghai")
+}
