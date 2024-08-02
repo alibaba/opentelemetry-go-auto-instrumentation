@@ -65,3 +65,4 @@ Also there are several documents that you may find useful:
 - [How it works](./docs/how-it-works.md)
 - [How to add a new rule](./docs/how-to-add-a-new-rule.md)
 - [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)
+- [面向OpenTelemetry的Golang应用无侵入插桩技术](https://mp.weixin.qq.com/s/FKCwzRB5Ujhe1stOH2ibXg)

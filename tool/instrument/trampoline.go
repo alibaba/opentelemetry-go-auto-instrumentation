@@ -375,6 +375,17 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 	return false
 }
 
+// -----------------------------------------------------------------------------
+// Dynamic CallContext API Generation
+//
+// This is somewhat challenging, as we need to generate type-aware CallContext
+// APIs, which means we need to generate a bunch of switch statements to handle
+// different types of parameters. Different RawFuncs in the same package may have
+// different types of parameters, all of them should have their own CallContext
+// implementation, thus we need to generate a bunch of CallContextImpl{suffix}
+// types and methods to handle them. The suffix is generated based on the rule
+// suffix, so that we can distinguish them from each other.
+
 // implementCallContext effectively "implements" the CallContext interface by
 // renaming occurrences of CallContextImpl to CallContextImpl{suffix} in the
 // trampoline template
