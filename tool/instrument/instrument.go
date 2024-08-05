@@ -136,7 +136,7 @@ func Instrument() error {
 	// Is compile command?
 	if shared.IsCompileCommand(strings.Join(args, " ")) {
 		if shared.Verbose {
-			log.Printf("CompileCmd: %v\n", args)
+			log.Printf("CompileCmdInit: %v\n", args)
 		}
 		bundles, err := resource.LoadRuleBundles()
 		if err != nil {
