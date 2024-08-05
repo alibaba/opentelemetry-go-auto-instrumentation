@@ -197,7 +197,7 @@ func (rp *RuleProcessor) callOnEnterHook(t *api.InstFuncRule, traits []ParamTrai
 		shared.Block(call),
 		nil,
 	)
-	insertAtBody(rp.onEnterHookFunc, iff, len(rp.onEnterHookFunc.Body.List)-1)
+	insertAt(rp.onEnterHookFunc, iff, len(rp.onEnterHookFunc.Body.List)-1)
 	return nil
 }
 
@@ -232,7 +232,7 @@ func (rp *RuleProcessor) callOnExitHook(t *api.InstFuncRule, traits []ParamTrait
 		shared.Block(call),
 		nil,
 	)
-	insertAtBody(rp.onExitHookFunc, iff, len(rp.onExitHookFunc.Body.List))
+	insertAtEnd(rp.onExitHookFunc, iff)
 	return nil
 }
 
@@ -267,11 +267,15 @@ func (rp *RuleProcessor) addHookFuncVar(t *api.InstFuncRule, traits []ParamTrait
 	return nil
 }
 
-func insertAtBody(funcDecl *dst.FuncDecl, stmt dst.Stmt, index int) {
+func insertAt(funcDecl *dst.FuncDecl, stmt dst.Stmt, index int) {
 	stmts := funcDecl.Body.List
 	newStmts := append(stmts[:index],
 		append([]dst.Stmt{stmt}, stmts[index:]...)...)
 	funcDecl.Body.List = newStmts
+}
+
+func insertAtEnd(funcDecl *dst.FuncDecl, stmt dst.Stmt) {
+	insertAt(funcDecl, stmt, len(funcDecl.Body.List))
 }
 
 func (rp *RuleProcessor) renameFunc(t *api.InstFuncRule) {
