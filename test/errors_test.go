@@ -11,7 +11,7 @@ func TestRunErrors(t *testing.T) {
 	UseApp(ErrorsAppName)
 
 	RunInstrument(t, "-debuglog", "-disablerules=fmt")
-	stdout, _ := RunApp(t, ErrorsAppName)
+	stdout, stderr := RunApp(t, ErrorsAppName)
 	ExpectContains(t, stdout, "wow")
 	ExpectContains(t, stdout, "old:wow")
 	ExpectContains(t, stdout, "ptr<nil>")
@@ -21,6 +21,8 @@ func TestRunErrors(t *testing.T) {
 	ExpectContains(t, stdout, "4008208820")
 	ExpectContains(t, stdout, "118888")
 	ExpectContains(t, stdout, "0.001")
+	ExpectContains(t, stderr, "2024 shanghai")
+	ExpectContains(t, stdout, "2033 hangzhou")
 
 	text := ReadInstrumentLog(t, "debug_fn_otel_inst_file_p4.go")
 	re := regexp.MustCompile(".*OtelOnEnterTrampoline_TestSkip.*")
