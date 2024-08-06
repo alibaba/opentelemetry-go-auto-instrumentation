@@ -28,59 +28,39 @@ type SpanKeyProvider interface {
 	GetSpanKey() attribute.Key
 }
 
-type alwaysInternalExtractor[REQUEST any] struct {
+type AlwaysInternalExtractor[REQUEST any] struct {
 }
 
-func (a *alwaysInternalExtractor[any]) Extract(request any) trace.SpanKind {
+func (a *AlwaysInternalExtractor[any]) Extract(request any) trace.SpanKind {
 	return trace.SpanKindInternal
 }
 
-type alwaysClientExtractor[REQUEST any] struct {
+type AlwaysClientExtractor[REQUEST any] struct {
 }
 
-func (a *alwaysClientExtractor[any]) Extract(request any) trace.SpanKind {
+func (a *AlwaysClientExtractor[any]) Extract(request any) trace.SpanKind {
 	return trace.SpanKindClient
 }
 
-type alwaysServerExtractor[REQUEST any] struct {
+type AlwaysServerExtractor[REQUEST any] struct {
 }
 
-func (a *alwaysServerExtractor[any]) Extract(request any) trace.SpanKind {
+func (a *AlwaysServerExtractor[any]) Extract(request any) trace.SpanKind {
 	return trace.SpanKindServer
 }
 
-type alwaysProducerExtractor[REQUEST any] struct {
+type AlwaysProducerExtractor[REQUEST any] struct {
 }
 
-func (a *alwaysProducerExtractor[any]) Extract(request any) trace.SpanKind {
+func (a *AlwaysProducerExtractor[any]) Extract(request any) trace.SpanKind {
 	return trace.SpanKindProducer
 }
 
-type alwaysConsumerExtractor[REQUEST any] struct {
+type AlwaysConsumerExtractor[REQUEST any] struct {
 }
 
-func (a *alwaysConsumerExtractor[any]) Extract(request any) trace.SpanKind {
+func (a *AlwaysConsumerExtractor[any]) Extract(request any) trace.SpanKind {
 	return trace.SpanKindConsumer
-}
-
-func AlwaysInternalExtractor() SpanKindExtractor[any] {
-	return &alwaysInternalExtractor[any]{}
-}
-
-func AlwaysClientExtractor() SpanKindExtractor[any] {
-	return &alwaysClientExtractor[any]{}
-}
-
-func AlwaysServerExtractor() SpanKindExtractor[any] {
-	return &alwaysServerExtractor[any]{}
-}
-
-func AlwaysProducerExtractor() SpanKindExtractor[any] {
-	return &alwaysProducerExtractor[any]{}
-}
-
-func AlwaysConsumerExtractor() SpanKindExtractor[any] {
-	return &alwaysConsumerExtractor[any]{}
 }
 
 type defaultSpanStatusExtractor[REQUEST any, RESPONSE any] struct {
