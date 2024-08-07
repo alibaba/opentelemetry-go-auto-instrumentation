@@ -17,6 +17,27 @@ func (c *CallContextImpl) SetSkipCall(skip bool)    { c.SkipCall = skip }
 func (c *CallContextImpl) IsSkipCall() bool         { return c.SkipCall }
 func (c *CallContextImpl) SetData(data interface{}) { c.Data = data }
 func (c *CallContextImpl) GetData() interface{}     { return c.Data }
+func (c *CallContextImpl) GetKeyData(key string) interface{} {
+	if data == nil {
+		return nil
+	}
+	return data.(map[string]interface{})[key]
+}
+func (c *CallContextImpl) SetKeyData(key string, val interface{}) {
+	if data == nil {
+		data = make(map[string]interface{})
+	}
+	data.(map[string]interface{})[key] = val
+}
+
+func (c *CallContextImpl) HasKeyData(key string) bool {
+	if data == nil {
+		return false
+	}
+	_, ok := data.(map[string]interface{})[key]
+	return ok
+}
+
 func (c *CallContextImpl) GetParam(idx int) interface{} {
 	switch idx {
 	}
