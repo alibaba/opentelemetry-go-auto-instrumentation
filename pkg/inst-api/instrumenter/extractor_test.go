@@ -28,7 +28,7 @@ func TestDefaultSpanStatusExtractor(t *testing.T) {
 }
 
 func TestAlwaysInternalExtractor(t *testing.T) {
-	a := AlwaysInternalExtractor()
+	a := &AlwaysInternalExtractor[any]{}
 	kind := a.Extract(nil)
 	if kind != trace.SpanKindInternal {
 		t.Fatal("expected internal kind")
@@ -36,7 +36,7 @@ func TestAlwaysInternalExtractor(t *testing.T) {
 }
 
 func TestAlwaysServerExtractor(t *testing.T) {
-	a := AlwaysServerExtractor()
+	a := &AlwaysServerExtractor[any]{}
 	kind := a.Extract(nil)
 	if kind != trace.SpanKindServer {
 		t.Fatal("expected server kind")
@@ -44,7 +44,7 @@ func TestAlwaysServerExtractor(t *testing.T) {
 }
 
 func TestAlwaysClientExtractor(t *testing.T) {
-	a := AlwaysClientExtractor()
+	a := &AlwaysClientExtractor[any]{}
 	kind := a.Extract(nil)
 	if kind != trace.SpanKindClient {
 		t.Fatal("expected client kind")
@@ -52,7 +52,7 @@ func TestAlwaysClientExtractor(t *testing.T) {
 }
 
 func TestAlwaysConsumerExtractor(t *testing.T) {
-	a := AlwaysConsumerExtractor()
+	a := &AlwaysConsumerExtractor[any]{}
 	kind := a.Extract(nil)
 	if kind != trace.SpanKindConsumer {
 		t.Fatal("expected consumer kind")
@@ -60,7 +60,7 @@ func TestAlwaysConsumerExtractor(t *testing.T) {
 }
 
 func TestAlwaysProducerExtractor(t *testing.T) {
-	a := AlwaysProducerExtractor()
+	a := &AlwaysProducerExtractor[any]{}
 	kind := a.Extract(nil)
 	if kind != trace.SpanKindProducer {
 		t.Fatal("expected producer kind")
