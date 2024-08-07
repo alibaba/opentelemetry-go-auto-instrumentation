@@ -187,4 +187,12 @@ func init() {
 	api.NewRule("errors", "TestGetSetRecv", "*Recv", "onEnterTestGetSetRecv", "onExitTestGetSetRecv").
 		WithRuleName("testrule").
 		Register()
+
+	api.NewRule("errors", "OnlyRet", "", "", "onExitOnlyRet").
+		WithRuleName("testrule").
+		Register()
+
+	api.NewRule("errors", "OnlyArgs", "", "onEnterOnlyArgs", "").
+		WithRuleName("testrule").
+		Register()
 }

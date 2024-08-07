@@ -1,10 +1,10 @@
 package http
 
-type HttpClientSpanNameExtractor[REQUEST any] struct {
-	getter HttpClientAttrsGetter[REQUEST, any]
+type HttpClientSpanNameExtractor[REQUEST any, RESPONSE any] struct {
+	getter HttpClientAttrsGetter[REQUEST, RESPONSE]
 }
 
-func (h *HttpClientSpanNameExtractor[REQUEST]) Extract(request REQUEST) string {
+func (h *HttpClientSpanNameExtractor[REQUEST, RESPONSE]) Extract(request REQUEST) string {
 	method := h.getter.GetRequestMethod(request)
 	if method == "" {
 		return "HTTP"
@@ -12,11 +12,11 @@ func (h *HttpClientSpanNameExtractor[REQUEST]) Extract(request REQUEST) string {
 	return method
 }
 
-type HttpServerSpanNameExtractor[REQUEST any] struct {
-	getter HttpServerAttrsGetter[REQUEST, any]
+type HttpServerSpanNameExtractor[REQUEST any, RESPONSE any] struct {
+	getter HttpServerAttrsGetter[REQUEST, RESPONSE]
 }
 
-func (h *HttpServerSpanNameExtractor[REQUEST]) Extract(request REQUEST) string {
+func (h *HttpServerSpanNameExtractor[REQUEST, RESPONSE]) Extract(request REQUEST) string {
 	method := h.getter.GetRequestMethod(request)
 	route := h.getter.GetHttpRoute(request)
 	if method == "" {

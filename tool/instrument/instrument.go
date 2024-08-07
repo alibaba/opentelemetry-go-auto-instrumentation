@@ -136,7 +136,7 @@ func Instrument() error {
 	// Is compile command?
 	if shared.IsCompileCommand(strings.Join(args, " ")) {
 		if shared.Verbose {
-			log.Printf("Compiling: %v\n", args)
+			log.Printf("CompileCmdInit: %v\n", args)
 		}
 		bundles, err := resource.LoadRuleBundles()
 		if err != nil {
@@ -151,7 +151,12 @@ func Instrument() error {
 				if err != nil {
 					return fmt.Errorf("failed to apply rules: %w", err)
 				}
-				log.Printf("Compiled: %v", rp.compileArgs)
+				if !shared.Verbose {
+					log.Printf("CompileCmd: %v (%v)\n",
+						bundle.ImportPath, bundle.PackageName)
+				} else {
+					log.Printf("CompileCmd: %v\n", rp.compileArgs)
+				}
 				// Good, run final compilation after instrumentation
 				return util.RunCmd(rp.compileArgs...)
 			}

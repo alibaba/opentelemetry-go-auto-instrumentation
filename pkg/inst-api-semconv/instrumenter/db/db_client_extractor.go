@@ -4,14 +4,8 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 )
-
-const db_name = attribute.Key("db.name")
-const db_system = attribute.Key("db.system")
-const db_user = attribute.Key("db.user")
-const db_connection_string = attribute.Key("db.connection_string")
-const db_statement = attribute.Key("db.statement")
-const db_operation = attribute.Key("db.operation")
 
 type DbClientCommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER DbClientCommonAttrsGetter[REQUEST]] struct {
 	Getter GETTER
@@ -23,16 +17,16 @@ func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() a
 
 func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   db_name,
+		Key:   semconv.DBNameKey,
 		Value: attribute.StringValue(d.Getter.GetName(request)),
 	}, attribute.KeyValue{
-		Key:   db_system,
+		Key:   semconv.DBSystemKey,
 		Value: attribute.StringValue(d.Getter.GetSystem(request)),
 	}, attribute.KeyValue{
-		Key:   db_user,
+		Key:   semconv.DBUserKey,
 		Value: attribute.StringValue(d.Getter.GetUser(request)),
 	}, attribute.KeyValue{
-		Key:   db_connection_string,
+		Key:   semconv.DBConnectionStringKey,
 		Value: attribute.StringValue(d.Getter.GetConnectionString(request)),
 	})
 	return attributes
@@ -49,11 +43,11 @@ type DbClientAttrsExtractor[REQUEST any, RESPONSE any, GETTER DbClientAttrsGette
 func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrs []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attrs = d.Base.OnStart(attrs, parentContext, request)
 	attrs = append(attrs, attribute.KeyValue{
-		Key:   db_statement,
-		Value: attribute.StringValue(d.Base.Getter.GetStatement(request)),
+		Key:   semconv.DBStatementKey,
+		Value: attribute.StringValue(d.Base.getter.GetStatement(request)),
 	}, attribute.KeyValue{
-		Key:   db_operation,
-		Value: attribute.StringValue(d.Base.Getter.GetOperation(request)),
+		Key:   semconv.DBOperationKey,
+		Value: attribute.StringValue(d.Base.getter.GetOperation(request)),
 	})
 	return attrs
 }

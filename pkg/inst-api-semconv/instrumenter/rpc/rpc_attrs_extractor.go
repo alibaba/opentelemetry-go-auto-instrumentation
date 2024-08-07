@@ -4,11 +4,8 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
-
-const rpc_method = attribute.Key("rpc.method")
-const rpc_service = attribute.Key("rpc.service")
-const rpc_system = attribute.Key("rpc.system")
 
 type RpcAttrsExtractor[REQUEST any, RESPONSE any, GETTER RpcAttrsGetter[REQUEST]] struct {
 	getter GETTER
@@ -16,13 +13,13 @@ type RpcAttrsExtractor[REQUEST any, RESPONSE any, GETTER RpcAttrsGetter[REQUEST]
 
 func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   rpc_system,
+		Key:   semconv.RPCSystemKey,
 		Value: attribute.StringValue(r.getter.GetSystem(request)),
 	}, attribute.KeyValue{
-		Key:   rpc_service,
+		Key:   semconv.RPCServiceKey,
 		Value: attribute.StringValue(r.getter.GetService(request)),
 	}, attribute.KeyValue{
-		Key:   rpc_method,
+		Key:   semconv.RPCMethodKey,
 		Value: attribute.StringValue(r.getter.GetMethod(request)),
 	})
 	return attributes
@@ -53,7 +50,7 @@ type ClientRpcAttrsExtractor[REQUEST any, RESPONSE any, GETTER RpcAttrsGetter[RE
 }
 
 func (s *ClientRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribute.Key {
-	return utils.RPC_SERVER_KEY
+	return utils.RPC_CLIENT_KEY
 }
 
 func (s *ClientRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {

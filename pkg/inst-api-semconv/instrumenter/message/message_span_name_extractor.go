@@ -17,5 +17,8 @@ func (m *MessageSpanNameExtractor[REQUEST, RESPONSE]) Extract(request REQUEST) s
 	if destinationName == "" {
 		destinationName = "unknown"
 	}
-	return destinationName + " " + string(m.operationName)
+	if m.operationName != "" {
+		destinationName = destinationName + " " + string(m.operationName)
+	}
+	return destinationName
 }
