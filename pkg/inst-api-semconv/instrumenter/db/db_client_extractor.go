@@ -44,10 +44,10 @@ func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrs []attr
 	attrs = d.Base.OnStart(attrs, parentContext, request)
 	attrs = append(attrs, attribute.KeyValue{
 		Key:   semconv.DBStatementKey,
-		Value: attribute.StringValue(d.Base.getter.GetStatement(request)),
+		Value: attribute.StringValue(d.Base.Getter.GetStatement(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.DBOperationKey,
-		Value: attribute.StringValue(d.Base.getter.GetOperation(request)),
+		Value: attribute.StringValue(d.Base.Getter.GetOperation(request)),
 	})
 	return attrs
 }
