@@ -36,3 +36,5 @@ func OnlyRet() (int, string) {
 func OnlyArgs(arg1 int, arg2 string) {
 	println(arg1, arg2)
 }
+
+func NilArg(arg1 *int) {}
