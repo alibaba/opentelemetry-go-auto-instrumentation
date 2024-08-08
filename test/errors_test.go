@@ -23,6 +23,7 @@ func TestRunErrors(t *testing.T) {
 	ExpectContains(t, stdout, "0.001")
 	ExpectContains(t, stderr, "2024 shanghai")
 	ExpectContains(t, stdout, "2033 hangzhou")
+	ExpectNotContains(t, stderr, "failed to exec")
 
 	text := ReadInstrumentLog(t, "debug_fn_otel_inst_file_p4.go")
 	re := regexp.MustCompile(".*OtelOnEnterTrampoline_TestSkip.*")

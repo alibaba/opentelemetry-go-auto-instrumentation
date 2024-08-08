@@ -26,4 +26,6 @@ func main() {
 	errors.OnlyArgs(1, "jiangsu")
 	c, d := errors.OnlyRet()
 	fmt.Printf("onlyret%v %v\n", c, d)
+
+	errors.NilArg(nil)
 }

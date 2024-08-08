@@ -195,4 +195,8 @@ func init() {
 	api.NewRule("errors", "OnlyArgs", "", "onEnterOnlyArgs", "").
 		WithRuleName("testrule").
 		Register()
+
+	api.NewRule("errors", "NilArg", "", "onEnterNilArg", "").
+		WithRuleName("testrule").
+		Register()
 }

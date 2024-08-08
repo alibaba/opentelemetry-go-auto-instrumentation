@@ -88,12 +88,12 @@ func main() {
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		// TODO: add http server as root span
-		verifier.VerifyNoSqlAttributes(stubs[0][0], "create", "otel_database", "mongodb", "", "127.0.0.1", "create", "create")
-		verifier.VerifyNoSqlAttributes(stubs[1][0], "insert", "otel_database", "mongodb", "", "127.0.0.1", "insert", "insert")
-		verifier.VerifyNoSqlAttributes(stubs[2][0], "find", "otel_database", "mongodb", "", "127.0.0.1", "find", "find")
-		verifier.VerifyNoSqlAttributes(stubs[3][0], "find", "otel_database", "mongodb", "", "127.0.0.1", "find", "find")
-		verifier.VerifyNoSqlAttributes(stubs[4][0], "update", "otel_database", "mongodb", "", "127.0.0.1", "update", "update")
-		verifier.VerifyNoSqlAttributes(stubs[5][0], "delete", "otel_database", "mongodb", "", "127.0.0.1", "delete", "delete")
+		verifier.VerifyDbAttributes(stubs[0][0], "create", "otel_database", "mongodb", "", "127.0.0.1", "create", "create")
+		verifier.VerifyDbAttributes(stubs[1][0], "insert", "otel_database", "mongodb", "", "127.0.0.1", "insert", "insert")
+		verifier.VerifyDbAttributes(stubs[2][0], "find", "otel_database", "mongodb", "", "127.0.0.1", "find", "find")
+		verifier.VerifyDbAttributes(stubs[3][0], "find", "otel_database", "mongodb", "", "127.0.0.1", "find", "find")
+		verifier.VerifyDbAttributes(stubs[4][0], "update", "otel_database", "mongodb", "", "127.0.0.1", "update", "update")
+		verifier.VerifyDbAttributes(stubs[5][0], "delete", "otel_database", "mongodb", "", "127.0.0.1", "delete", "delete")
 	})
 }
 

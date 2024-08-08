@@ -1,12 +1,12 @@
 package db
 
 type DBSpanNameExtractor[REQUEST any] struct {
-	getter DbClientAttrsGetter[REQUEST]
+	Getter DbClientAttrsGetter[REQUEST]
 }
 
 func (d *DBSpanNameExtractor[REQUEST]) Extract(request REQUEST) string {
-	dbName := d.getter.GetName(request)
-	operation := d.getter.GetOperation(request)
+	dbName := d.Getter.GetName(request)
+	operation := d.Getter.GetOperation(request)
 	if operation == "" {
 		if dbName == "" {
 			return "DB Query"

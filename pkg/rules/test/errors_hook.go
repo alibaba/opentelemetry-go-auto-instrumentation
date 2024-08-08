@@ -93,3 +93,10 @@ func onEnterOnlyArgs(call errors.CallContext, _ int, _ string) {
 	call.SetParam(0, 2024)
 	call.SetParam(1, "shanghai")
 }
+
+func onEnterNilArg(call errors.CallContext, _ *int) {
+	// GetParam(0) is nil
+	arg0 := call.GetParam(0)
+	println("getparam0", arg0)
+	call.SetParam(0, nil)
+}

@@ -23,6 +23,10 @@ func (c *CallContextImpl) GetParam(idx int) interface{} {
 	return nil
 }
 func (c *CallContextImpl) SetParam(idx int, val interface{}) {
+	if val == nil {
+		c.Params[idx] = nil
+		return
+	}
 	switch idx {
 	}
 }
@@ -32,6 +36,10 @@ func (c *CallContextImpl) GetReturnVal(idx int) interface{} {
 	return nil
 }
 func (c *CallContextImpl) SetReturnVal(idx int, val interface{}) {
+	if val == nil {
+		c.ReturnVals[idx] = nil
+		return
+	}
 	switch idx {
 	}
 }

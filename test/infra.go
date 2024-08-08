@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -94,9 +95,13 @@ func RunInstrument(t *testing.T, args ...string) {
 	}
 }
 
-func TBuildAppNoop(t *testing.T, appName string) {
+func TBuildAppNoop(t *testing.T, appName, mainClass string) {
 	UseApp(appName)
-	RunInstrument(t)
+	if mainClass == "" {
+		RunInstrument(t)
+	} else {
+		RunInstrument(t, "--", mainClass)
+	}
 }
 
 func BuildApp(t *testing.B, appName string) {
@@ -237,12 +242,12 @@ func ExpectContainsNothing(t *testing.T, actualItems []string) {
 	}
 }
 
-func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *Version) {
+func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version, mainClass string) {
 	if testing.Short() {
 		t.Skip()
 		return
 	}
-	versions, err := GetRandomVersion(3, dependencyName, minVersion, maxVersion)
+	versions, err := version.GetRandomVersion(3, dependencyName, minVersion, maxVersion)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,9 +255,9 @@ func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, max
 	if err != nil {
 		t.Fatal(err)
 	}
-	testVersions := make([]*Version, 0)
+	testVersions := make([]*version.Version, 0)
 	for _, dir := range dirs {
-		v, err := NewVersion(dir.Name())
+		v, err := version.NewVersion(dir.Name())
 		if err != nil {
 			continue
 		}
@@ -264,22 +269,22 @@ func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, max
 	for _, version := range versions {
 		for _, testVersion := range testVersions {
 			if version.GreaterThanOrEqual(testVersion) {
-				t.Logf("testing on version %v\n", version.original)
-				UseApp(moduleName + "/" + testVersion.original)
-				FetchVersion(t, dependencyName, version.original)
-				TBuildAppNoop(t, moduleName+"/"+testVersion.original)
+				t.Logf("testing on version %v\n", version.Original())
+				UseApp(moduleName + "/" + testVersion.Original())
+				FetchVersion(t, dependencyName, version.Original())
+				TBuildAppNoop(t, moduleName+"/"+testVersion.Original(), mainClass)
 				break
 			}
 		}
 	}
 }
 
-func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *Version, testFunc func(*testing.T, *Version)) {
+func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version, testFunc func(*testing.T, ...string)) {
 	if testing.Short() {
 		t.Skip()
 		return
 	}
-	latestVersion, err := GetLatestVersion(dependencyName, minVersion, maxVersion)
+	latestVersion, err := version.GetLatestVersion(dependencyName, minVersion, maxVersion)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,9 +292,9 @@ func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion,
 	if err != nil {
 		t.Fatal(err)
 	}
-	testVersions := make([]*Version, 0)
+	testVersions := make([]*version.Version, 0)
 	for _, dir := range dirs {
-		v, err := NewVersion(dir.Name())
+		v, err := version.NewVersion(dir.Name())
 		if err != nil {
 			continue
 		}
@@ -299,7 +304,7 @@ func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion,
 		return testVersions[i].LessThan(testVersions[j])
 	})
 	latestTestVersion := testVersions[len(testVersions)-1]
-	UseApp(moduleName + "/" + latestTestVersion.original)
-	FetchVersion(t, dependencyName, latestVersion.original)
-	testFunc(t, latestTestVersion)
+	UseApp(moduleName + "/" + latestTestVersion.Original())
+	FetchVersion(t, dependencyName, latestVersion.Original())
+	testFunc(t)
 }
