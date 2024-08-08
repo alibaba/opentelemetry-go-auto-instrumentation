@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
-	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"log"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"log"
+	"os"
 )
 
 const (
@@ -32,59 +28,32 @@ type User struct {
 	Age  int                `bson:"age"`
 }
 
-func setup() {
-	var err error
-	http_server_port, err = verifier.GetFreePort()
-	if err != nil {
-		log.Fatalf("failed to find a free port: %v", err)
-	}
-	log.Printf("mongo dsn is %s\n", dsn)
-	// init connect mongodb.
+func main() {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(dsn))
 	if err != nil {
 		panic(fmt.Sprintf("connect mongodb error %v \n", err))
 	}
-
-	route := http.NewServeMux()
-	route.HandleFunc("/execute", func(res http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-		err = TestCreateCollection(ctx, client)
-		if err != nil {
-			log.Printf("failed to create collection: %v", err)
-		}
-		err = TestCreate(ctx, client)
-		if err != nil {
-			log.Printf("failed to create: %v", err)
-		}
-		err = TestQuery(ctx, client)
-		if err != nil {
-			log.Printf("failed to query: %v", err)
-		}
-		err = TestUpdate(ctx, client)
-		if err != nil {
-			log.Printf("failed to update: %v", err)
-		}
-		err = TestDelete(ctx, client)
-		if err != nil {
-			log.Printf("failed to delete: %v", err)
-		}
-		_, _ = res.Write([]byte("execute finished"))
-	})
-	addr := ":" + strconv.Itoa(http_server_port)
-	log.Println("start client, addr is " + addr)
-	err = http.ListenAndServe(addr, route)
+	ctx := context.Background()
+	err = TestCreateCollection(ctx, client)
 	if err != nil {
-		log.Fatalf("client start error: %v \n", err)
+		log.Printf("failed to create collection: %v", err)
 	}
-}
-
-func main() {
-	go setup()
-	time.Sleep(5 * time.Second)
-
-	verifier.GetServer(context.Background(), "http://localhost:"+strconv.Itoa(http_server_port)+"/execute")
-
-	time.Sleep(5 * time.Second)
+	err = TestCreate(ctx, client)
+	if err != nil {
+		log.Printf("failed to create: %v", err)
+	}
+	err = TestQuery(ctx, client)
+	if err != nil {
+		log.Printf("failed to query: %v", err)
+	}
+	err = TestUpdate(ctx, client)
+	if err != nil {
+		log.Printf("failed to update: %v", err)
+	}
+	err = TestDelete(ctx, client)
+	if err != nil {
+		log.Printf("failed to delete: %v", err)
+	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		// TODO: add http server as root span
