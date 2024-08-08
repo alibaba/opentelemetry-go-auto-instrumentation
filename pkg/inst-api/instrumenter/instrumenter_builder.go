@@ -21,6 +21,10 @@ type InstrumentEnabler interface {
 type defaultInstrumentEnabler struct {
 }
 
+func NewDefaultInstrumentEnabler() InstrumentEnabler {
+	return &defaultInstrumentEnabler{}
+}
+
 func (a *defaultInstrumentEnabler) IsEnabled() bool {
 	return true
 }

@@ -4,7 +4,7 @@ import "testing"
 
 func TestDbNameExtractor(t *testing.T) {
 	dbSpanNameExtractor := DBSpanNameExtractor[testRequest]{
-		getter: mongoAttrsGetter{},
+		Getter: mongoAttrsGetter{},
 	}
 	if dbSpanNameExtractor.Extract(testRequest{}) != "DB Query" {
 		t.Fatalf("Should have returned DB_QUERY")
