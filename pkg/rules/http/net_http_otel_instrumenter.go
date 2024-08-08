@@ -43,7 +43,11 @@ func (n netHttpClientAttrsGetter) GetNetworkTransport(request netHttpRequest, re
 }
 
 func (n netHttpClientAttrsGetter) GetNetworkProtocolName(request netHttpRequest, response netHttpResponse) string {
-	return request.url.Scheme
+	if request.isTls == false {
+		return "http"
+	} else {
+		return "https"
+	}
 }
 
 func (n netHttpClientAttrsGetter) GetNetworkProtocolVersion(request netHttpRequest, response netHttpResponse) string {
@@ -59,7 +63,7 @@ func (n netHttpClientAttrsGetter) GetNetworkLocalPort(request netHttpRequest, re
 }
 
 func (n netHttpClientAttrsGetter) GetNetworkPeerInetAddress(request netHttpRequest, response netHttpResponse) string {
-	return request.url.Host
+	return request.host
 }
 
 func (n netHttpClientAttrsGetter) GetNetworkPeerPort(request netHttpRequest, response netHttpResponse) int {
@@ -75,7 +79,7 @@ func (n netHttpClientAttrsGetter) GetUrlFull(request netHttpRequest) string {
 }
 
 func (n netHttpClientAttrsGetter) GetServerAddress(request netHttpRequest) string {
-	return request.url.Host
+	return request.host
 }
 
 type netHttpServerAttrsGetter struct {
@@ -122,7 +126,11 @@ func (n netHttpServerAttrsGetter) GetNetworkTransport(request netHttpRequest, re
 }
 
 func (n netHttpServerAttrsGetter) GetNetworkProtocolName(request netHttpRequest, response netHttpResponse) string {
-	return request.url.Scheme
+	if request.isTls == false {
+		return "http"
+	} else {
+		return "https"
+	}
 }
 
 func (n netHttpServerAttrsGetter) GetNetworkProtocolVersion(request netHttpRequest, response netHttpResponse) string {
@@ -138,7 +146,7 @@ func (n netHttpServerAttrsGetter) GetNetworkLocalPort(request netHttpRequest, re
 }
 
 func (n netHttpServerAttrsGetter) GetNetworkPeerInetAddress(request netHttpRequest, response netHttpResponse) string {
-	return request.url.Host
+	return request.host
 }
 
 func (n netHttpServerAttrsGetter) GetNetworkPeerPort(request netHttpRequest, response netHttpResponse) int {

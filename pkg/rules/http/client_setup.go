@@ -16,6 +16,8 @@ func clientOnEnter(call http.CallContext, t *http.Transport, req *http.Request) 
 		url:     *req.URL,
 		header:  req.Header,
 		version: strconv.Itoa(req.ProtoMajor) + "." + strconv.Itoa(req.ProtoMinor),
+		host:    req.Host,
+		isTls:   req.TLS != nil,
 	})
 	req = req.WithContext(ctx)
 	call.SetParam(1, req)
@@ -33,9 +35,12 @@ func clientOnExit(call http.CallContext, res *http.Response, err error) {
 	ctx := data["ctx"].(context.Context)
 	if res != nil {
 		netHttpClientInstrumenter.End(ctx, netHttpRequest{
-			method: res.Request.Method,
-			url:    *res.Request.URL,
-			header: res.Request.Header,
+			method:  res.Request.Method,
+			url:     *res.Request.URL,
+			header:  res.Request.Header,
+			version: strconv.Itoa(res.Request.ProtoMajor) + "." + strconv.Itoa(res.Request.ProtoMinor),
+			host:    res.Request.Host,
+			isTls:   res.Request.TLS != nil,
 		}, netHttpResponse{
 			statusCode: res.StatusCode,
 			header:     res.Header,

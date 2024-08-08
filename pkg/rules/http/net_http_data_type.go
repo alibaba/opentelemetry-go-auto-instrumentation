@@ -10,6 +10,8 @@ import (
 type netHttpRequest struct {
 	method  string
 	url     url.URL
+	host    string
+	isTls   bool
 	header  http.Header
 	version string
 }
