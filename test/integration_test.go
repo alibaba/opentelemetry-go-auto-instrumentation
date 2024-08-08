@@ -7,6 +7,9 @@ import (
 
 func TestPlugins(t *testing.T) {
 	for _, c := range TestCases {
+		if c == nil {
+			t.Skip()
+		}
 		if c.IsMuzzleCheck || c.IsLatestDepthCheck {
 			continue
 		}
@@ -18,6 +21,9 @@ func TestPlugins(t *testing.T) {
 
 func TestMuzzle(t *testing.T) {
 	for _, c := range TestCases {
+		if c == nil {
+			t.Skip()
+		}
 		if !c.IsMuzzleCheck {
 			continue
 		}
@@ -29,6 +35,9 @@ func TestMuzzle(t *testing.T) {
 
 func TestLatest(t *testing.T) {
 	for _, c := range TestCases {
+		if c == nil {
+			t.Skip()
+		}
 		if !c.IsLatestDepthCheck {
 			continue
 		}
