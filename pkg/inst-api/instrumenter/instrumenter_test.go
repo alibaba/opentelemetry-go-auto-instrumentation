@@ -84,7 +84,7 @@ func TestInstrumenter(t *testing.T) {
 	builder := Builder[testRequest, testResponse]{}
 	builder.Init().
 		SetSpanNameExtractor(testNameExtractor{}).
-		SetSpanKindExtractor(&alwaysClientExtractor[testRequest]{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
 		AddAttributesExtractor(testAttributesExtractor{}).
 		AddOperationListeners(&OperationListenerWrapper{
 			listener:       &testOperationListener{},

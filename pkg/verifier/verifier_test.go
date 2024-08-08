@@ -9,7 +9,7 @@ import (
 )
 
 func TestNoSqlAttributesPass(t *testing.T) {
-	VerifyNoSqlAttributes(tracetest.SpanStub{SpanKind: trace.SpanKindClient, Name: "name", Attributes: []attribute.KeyValue{
+	VerifyDbAttributes(tracetest.SpanStub{SpanKind: trace.SpanKindClient, Name: "name", Attributes: []attribute.KeyValue{
 		{Key: semconv.DBNameKey, Value: attribute.StringValue("dbname")},
 		{Key: semconv.DBSystemKey, Value: attribute.StringValue("system")},
 		{Key: semconv.DBUserKey, Value: attribute.StringValue("user")},
@@ -29,7 +29,7 @@ func TestNoSqlAttributesFail(t *testing.T) {
 			t.Fatal("Should be recovered from panic")
 		}
 	}()
-	VerifyNoSqlAttributes(tracetest.SpanStub{SpanKind: trace.SpanKindClient, Name: "name", Attributes: []attribute.KeyValue{
+	VerifyDbAttributes(tracetest.SpanStub{SpanKind: trace.SpanKindClient, Name: "name", Attributes: []attribute.KeyValue{
 		{Key: semconv.DBNameKey, Value: attribute.StringValue("dbname")},
 		{Key: semconv.DBSystemKey, Value: attribute.StringValue("system")},
 		{Key: semconv.DBUserKey, Value: attribute.StringValue("user")},

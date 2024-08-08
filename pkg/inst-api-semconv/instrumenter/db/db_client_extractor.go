@@ -8,7 +8,7 @@ import (
 )
 
 type DbClientCommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER DbClientCommonAttrsGetter[REQUEST]] struct {
-	getter GETTER
+	Getter GETTER
 }
 
 func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribute.Key {
@@ -18,16 +18,16 @@ func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() a
 func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.DBNameKey,
-		Value: attribute.StringValue(d.getter.GetName(request)),
+		Value: attribute.StringValue(d.Getter.GetName(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.DBSystemKey,
-		Value: attribute.StringValue(d.getter.GetSystem(request)),
+		Value: attribute.StringValue(d.Getter.GetSystem(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.DBUserKey,
-		Value: attribute.StringValue(d.getter.GetUser(request)),
+		Value: attribute.StringValue(d.Getter.GetUser(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.DBConnectionStringKey,
-		Value: attribute.StringValue(d.getter.GetConnectionString(request)),
+		Value: attribute.StringValue(d.Getter.GetConnectionString(request)),
 	})
 	return attributes
 }
@@ -37,17 +37,17 @@ func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []
 }
 
 type DbClientAttrsExtractor[REQUEST any, RESPONSE any, GETTER DbClientAttrsGetter[REQUEST]] struct {
-	base DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]
+	Base DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]
 }
 
 func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrs []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
-	attrs = d.base.OnStart(attrs, parentContext, request)
+	attrs = d.Base.OnStart(attrs, parentContext, request)
 	attrs = append(attrs, attribute.KeyValue{
 		Key:   semconv.DBStatementKey,
-		Value: attribute.StringValue(d.base.getter.GetStatement(request)),
+		Value: attribute.StringValue(d.Base.Getter.GetStatement(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.DBOperationKey,
-		Value: attribute.StringValue(d.base.getter.GetOperation(request)),
+		Value: attribute.StringValue(d.Base.Getter.GetOperation(request)),
 	})
 	return attrs
 }

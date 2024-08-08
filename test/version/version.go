@@ -3,7 +3,7 @@
 
 // inspired by https://github.com/hashicorp/go-version
 
-package test
+package version
 
 import (
 	"bytes"
