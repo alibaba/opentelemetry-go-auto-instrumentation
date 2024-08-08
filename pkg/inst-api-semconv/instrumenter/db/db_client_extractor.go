@@ -53,7 +53,7 @@ func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrs []attr
 }
 
 func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
-	attrs = d.base.OnEnd(attrs, context, request, response, err)
+	attrs = d.Base.OnEnd(attrs, context, request, response, err)
 	return attrs
 }
 

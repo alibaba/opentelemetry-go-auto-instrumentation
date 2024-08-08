@@ -40,7 +40,7 @@ func (t testServerGetter) GetHttpRoute(request testRequest) string {
 }
 
 func TestHttpClientExtractSpanName(t *testing.T) {
-	r := HttpClientSpanNameExtractor[testRequest, testResponse]{getter: testClientGetter{}}
+	r := HttpClientSpanNameExtractor[testRequest, testResponse]{Getter: testClientGetter{}}
 	spanName := r.Extract(testRequest{Method: "GET"})
 	if spanName != "GET" {
 		t.Errorf("want GET, got %s", spanName)
@@ -52,7 +52,7 @@ func TestHttpClientExtractSpanName(t *testing.T) {
 }
 
 func TestHttpServerExtractSpanName(t *testing.T) {
-	r := HttpServerSpanNameExtractor[testRequest, testResponse]{getter: testServerGetter{}}
+	r := HttpServerSpanNameExtractor[testRequest, testResponse]{Getter: testServerGetter{}}
 	spanName := r.Extract(testRequest{Method: "GET"})
 	if spanName != "GET" {
 		t.Errorf("want GET, got %s", spanName)
