@@ -7,6 +7,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 	"log"
 	"testing"
+	"time"
 )
 
 func init() {
@@ -160,6 +161,7 @@ func init8xMySqlContainer() (testcontainers.Container, nat.Port) {
 	if err := mysqlContainer.Start(ctx); err != nil {
 		panic(err)
 	}
+	time.Sleep(5 * time.Second)
 	port, err := mysqlContainer.MappedPort(ctx, "3306")
 	if err != nil {
 		panic(err)

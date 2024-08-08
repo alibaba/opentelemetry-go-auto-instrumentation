@@ -95,9 +95,13 @@ func RunInstrument(t *testing.T, args ...string) {
 	}
 }
 
-func TBuildAppNoop(t *testing.T, appName string) {
+func TBuildAppNoop(t *testing.T, appName, mainClass string) {
 	UseApp(appName)
-	RunInstrument(t)
+	if mainClass == "" {
+		RunInstrument(t)
+	} else {
+		RunInstrument(t, "--", mainClass)
+	}
 }
 
 func BuildApp(t *testing.B, appName string) {
@@ -238,7 +242,7 @@ func ExpectContainsNothing(t *testing.T, actualItems []string) {
 	}
 }
 
-func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version) {
+func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version, mainClass string) {
 	if testing.Short() {
 		t.Skip()
 		return
@@ -268,14 +272,14 @@ func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, max
 				t.Logf("testing on version %v\n", version.Original())
 				UseApp(moduleName + "/" + testVersion.Original())
 				FetchVersion(t, dependencyName, version.Original())
-				TBuildAppNoop(t, moduleName+"/"+testVersion.Original())
+				TBuildAppNoop(t, moduleName+"/"+testVersion.Original(), mainClass)
 				break
 			}
 		}
 	}
 }
 
-func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version, testFunc func(*testing.T, *version.Version, ...string)) {
+func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version, testFunc func(*testing.T, ...string)) {
 	if testing.Short() {
 		t.Skip()
 		return
@@ -302,5 +306,5 @@ func ExecLatestTest(t *testing.T, dependencyName, moduleName string, minVersion,
 	latestTestVersion := testVersions[len(testVersions)-1]
 	UseApp(moduleName + "/" + latestTestVersion.Original())
 	FetchVersion(t, dependencyName, latestVersion.Original())
-	testFunc(t, latestTestVersion)
+	testFunc(t)
 }
