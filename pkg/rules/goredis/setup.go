@@ -31,6 +31,14 @@ func afterNewRingClient(call redis.CallContext, client *redis.Ring) {
 	})
 }
 
+func afterNewSentinelClient(call redis.CallContext, client *redis.SentinelClient) {
+	client.AddHook(newOtRedisHook(client.String()))
+}
+
+func afterClientConn(call redis.CallContext, client *redis.Conn) {
+	client.AddHook(newOtRedisHook(client.String()))
+}
+
 type otRedisHook struct {
 	Addr string
 }
@@ -72,9 +80,28 @@ func (o *otRedisHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 
 func (o *otRedisHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
 	return func(ctx context.Context, cmds []redis.Cmder) error {
+		summary := ""
+		summaryCmds := cmds
+		if len(summaryCmds) > 10 {
+			summaryCmds = summaryCmds[:10]
+		}
+		for i := range summaryCmds {
+			summary += summaryCmds[i].FullName() + "/"
+		}
+		if len(cmds) > 10 {
+			summary += "..."
+		}
+		cmd := redis.NewCmd(ctx, "pipeline", summary)
+		request := goRedisRequest{
+			cmd:      cmd,
+			endpoint: o.Addr,
+		}
+		ctx = goRedisInstrumenter.Start(ctx, request)
 		if err := next(ctx, cmds); err != nil {
+			goRedisInstrumenter.End(ctx, request, nil, err)
 			return err
 		}
+		goRedisInstrumenter.End(ctx, request, nil, nil)
 		return nil
 	}
 }
