@@ -122,6 +122,10 @@ func (dp *DepProcessor) updateDepVersion() error {
 }
 
 func checkModularized() error {
+	go11module := os.Getenv("GO111MODULE")
+	if go11module == "off" {
+		return fmt.Errorf("GO111MODULE is set to off")
+	}
 	found, err := shared.IsExistGoMod()
 	if !found {
 		return fmt.Errorf("go.mod not found")
