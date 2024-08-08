@@ -7,7 +7,7 @@ import (
 
 func TestPlugins(t *testing.T) {
 	for _, c := range TestCases {
-		if c == nil || c.TestName != "redis-9.0.5-universal-test" {
+		if c == nil {
 			continue
 		}
 		if c.IsMuzzleCheck || c.IsLatestDepthCheck {
