@@ -89,31 +89,21 @@ func afterQueryContextInstrumentation(call sql.CallContext, rows *sql.Rows, err 
 }
 
 func beforeTxInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Context, opts *sql.TxOptions) {
-	call.SetData(map[string]string{
-		"endpoint": db.Endpoint,
-		"driver":   db.DriverName,
-		"dsn":      db.DSN,
-	})
 	instrumentStart(call, ctx, "begin", "START TRANSACTION", db.Endpoint, db.DriverName, db.DSN)
 }
 
 func afterTxInstrumentation(call sql.CallContext, tx *sql.Tx, err error) {
-	data, ok := call.GetData().(map[string]string)
+	callData, ok := call.GetData().(map[string]interface{})
 	if !ok {
 		return
 	}
-	endpoint, ok := data["endpoint"]
-	if ok {
-		tx.Endpoint = endpoint
+	dbRequest, ok := callData["dbRequest"].(databaseSqlRequest)
+	if !ok {
+		return
 	}
-	driverName, ok := data["driver"]
-	if ok {
-		tx.DriverName = driverName
-	}
-	dsn, ok := data["dsn"]
-	if ok {
-		tx.DSN = dsn
-	}
+	tx.Endpoint = dbRequest.endpoint
+	tx.DriverName = dbRequest.driverName
+	tx.DSN = dbRequest.dsn
 	instrumentEnd(call, err)
 }
 
@@ -283,7 +273,7 @@ func afterTxRollbackInstrumentation(call sql.CallContext, err error) {
 func beforeStmtExecContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, ctx context.Context, args ...any) {
 	sql, endpoint, driverName, dsn := "", "", "", ""
 	if stmt.Data != nil {
-		sql, endpoint, driverName, dsn = stmt.Data["sql"], stmt.Data["endpoint"], stmt.Data["driver"], stmt.Data["dsn"]
+		sql, endpoint, driverName, dsn = stmt.Data["sql"], stmt.Data["endpoint"], stmt.Data["driver"], stmt.DSN
 	}
 	instrumentStart(call, ctx, "exec", sql, endpoint, driverName, dsn)
 }
@@ -295,7 +285,7 @@ func afterStmtExecContextInstrumentation(call sql.CallContext, result sql.Result
 func beforeStmtQueryContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, ctx context.Context, args ...any) {
 	sql, endpoint, driverName, dsn := "", "", "", ""
 	if stmt.Data != nil {
-		sql, endpoint, driverName, dsn = stmt.Data["sql"], stmt.Data["endpoint"], stmt.Data["driver"], stmt.Data["dsn"]
+		sql, endpoint, driverName, dsn = stmt.Data["sql"], stmt.Data["endpoint"], stmt.Data["driver"], stmt.DSN
 	}
 	instrumentStart(call, ctx, "query", sql, endpoint, driverName, dsn)
 }

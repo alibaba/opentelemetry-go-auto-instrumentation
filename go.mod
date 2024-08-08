@@ -6,6 +6,7 @@ require (
 	github.com/dave/dst v0.27.3
 	github.com/docker/go-connections v0.5.0
 	github.com/testcontainers/testcontainers-go v0.32.0
+	github.com/testcontainers/testcontainers-go/modules/mysql v0.32.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/metric v1.28.0
 	go.opentelemetry.io/otel/sdk v1.28.0
