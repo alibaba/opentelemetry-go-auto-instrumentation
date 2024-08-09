@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var port int
-
 func setupBasicHttp() {
 	http.HandleFunc("/a", redirectHandler)
 	http.HandleFunc("/b", helloHandler)
@@ -60,14 +58,7 @@ func main() {
 		if stubs[0][3].Parent.TraceID().String() != stubs[0][2].SpanContext.TraceID().String() {
 			log.Fatal("span 3 should be child of span 2")
 		}
-		for i, _ := range stubs[1] {
-			span := stubs[1][i]
-			println(span.Name)
-			for _, attr := range span.Attributes {
-				log.Printf("%v %v", attr.Key, attr.Value)
-			}
-			println()
-		}
+
 		verifier.VerifyHttpClientAttributes(stubs[1][0], "POST", "POST", "http://127.0.0.1:"+strconv.Itoa(port)+"/a", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), 200, 0, int64(port))
 		verifier.VerifyHttpServerAttributes(stubs[1][1], "POST /a", "POST", "http", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), "Go-http-client/1.1", "", "/a", "", "/a", 200)
 		verifier.VerifyHttpClientAttributes(stubs[1][2], "GET", "GET", "http://127.0.0.1:"+strconv.Itoa(port)+"/b", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), 200, 0, int64(port))
