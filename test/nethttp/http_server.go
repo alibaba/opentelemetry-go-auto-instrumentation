@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+var port int
+
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Get("http://127.0.0.1:" + strconv.Itoa(port) + "/b")
 	if err != nil {
