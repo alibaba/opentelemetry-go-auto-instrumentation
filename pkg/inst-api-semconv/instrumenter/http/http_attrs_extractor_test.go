@@ -194,8 +194,8 @@ func (h httpServerAttrsGetter) GetHttpRoute(request testRequest) string {
 
 func TestHttpClientExtractorStart(t *testing.T) {
 	httpClientExtractor := HttpClientAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{
-		base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{},
-		networkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
@@ -210,8 +210,8 @@ func TestHttpClientExtractorStart(t *testing.T) {
 
 func TestHttpClientExtractorEnd(t *testing.T) {
 	httpClientExtractor := HttpClientAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{
-		base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{},
-		networkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
@@ -253,9 +253,9 @@ func TestHttpClientExtractorEnd(t *testing.T) {
 
 func TestHttpServerExtractorStart(t *testing.T) {
 	httpServerExtractor := HttpServerAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter, urlAttrsGetter]{
-		base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter]{},
-		networkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
-		urlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+		UrlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
@@ -282,9 +282,9 @@ func TestHttpServerExtractorStart(t *testing.T) {
 
 func TestHttpServerExtractorEnd(t *testing.T) {
 	httpServerExtractor := HttpServerAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter, urlAttrsGetter]{
-		base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter]{},
-		networkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
-		urlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+		UrlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
