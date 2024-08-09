@@ -5,6 +5,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -30,6 +31,7 @@ func (a *defaultInstrumentEnabler) IsEnabled() bool {
 }
 
 type Builder[REQUEST any, RESPONSE any] struct {
+	Enabler              InstrumentEnabler
 	SpanNameExtractor    SpanNameExtractor[REQUEST]
 	SpanKindExtractor    SpanKindExtractor[REQUEST]
 	SpanStatusExtractor  SpanStatusExtractor[REQUEST, RESPONSE]
@@ -43,12 +45,18 @@ type Builder[REQUEST any, RESPONSE any] struct {
 }
 
 func (b *Builder[REQUEST, RESPONSE]) Init() *Builder[REQUEST, RESPONSE] {
+	b.Enabler = &defaultInstrumentEnabler{}
 	b.AttributesExtractors = make([]AttributesExtractor[REQUEST, RESPONSE], 0)
 	b.OperationListeners = b.buildOperationListeners()
 	b.ContextCustomizers = make([]ContextCustomizer[REQUEST], 0)
 	b.SpanSuppressor = b.buildSpanSuppressor()
 	b.SpanStatusExtractor = &defaultSpanStatusExtractor[REQUEST, RESPONSE]{}
 	b.Tracer = otel.GetTracerProvider().Tracer("")
+	return b
+}
+
+func (b *Builder[REQUEST, RESPONSE]) SetInstrumentEnabler(enabler InstrumentEnabler) *Builder[REQUEST, RESPONSE] {
+	b.Enabler = enabler
 	return b
 }
 
@@ -99,6 +107,46 @@ func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *Instrumenter[REQUEST, 
 		spanSuppressor:       b.SpanSuppressor,
 		tracer:               b.Tracer,
 		instVersion:          b.InstVersion,
+	}
+}
+
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, propagator propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
+	return &PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]{
+		base: Instrumenter[REQUEST, RESPONSE]{
+			enabler:              b.Enabler,
+			spanNameExtractor:    b.SpanNameExtractor,
+			spanKindExtractor:    b.SpanKindExtractor,
+			spanStatusExtractor:  b.SpanStatusExtractor,
+			attributesExtractors: b.AttributesExtractors,
+			operationListeners:   b.OperationListeners,
+			operationMetrics:     b.OperationMetrics,
+			contextCustomizers:   b.ContextCustomizers,
+			spanSuppressor:       b.SpanSuppressor,
+			tracer:               b.Tracer,
+			instVersion:          b.InstVersion,
+		},
+		carrierGetter: carrierGetter,
+		propagator:    propagator,
+	}
+}
+
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, propagator propagation.TextMapPropagator) *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE] {
+	return &PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]{
+		base: Instrumenter[REQUEST, RESPONSE]{
+			enabler:              b.Enabler,
+			spanNameExtractor:    b.SpanNameExtractor,
+			spanKindExtractor:    b.SpanKindExtractor,
+			spanStatusExtractor:  b.SpanStatusExtractor,
+			attributesExtractors: b.AttributesExtractors,
+			operationListeners:   b.OperationListeners,
+			operationMetrics:     b.OperationMetrics,
+			contextCustomizers:   b.ContextCustomizers,
+			spanSuppressor:       b.SpanSuppressor,
+			tracer:               b.Tracer,
+			instVersion:          b.InstVersion,
+		},
+		carrierGetter: carrierGetter,
+		propagator:    propagator,
 	}
 }
 

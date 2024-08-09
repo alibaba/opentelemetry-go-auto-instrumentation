@@ -57,6 +57,13 @@ func TestGetSpanKey(t *testing.T) {
 	}
 }
 
+func TestDbCommonGetSpanKey(t *testing.T) {
+	dbExtractor := &DbClientCommonAttrsExtractor[testRequest, any, mongoAttrsGetter]{}
+	if dbExtractor.GetSpanKey() != utils.DB_CLIENT_KEY {
+		t.Fatalf("Should have returned DB_CLIENT_KEY")
+	}
+}
+
 func TestDbClientExtractorStart(t *testing.T) {
 	dbExtractor := DbClientAttrsExtractor[testRequest, testResponse, mongoAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)

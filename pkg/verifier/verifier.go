@@ -25,3 +25,38 @@ func VerifyDbAttributes(span tracetest.SpanStub, name, dbName, system, user, con
 	actualOperation := GetAttribute(span.Attributes, "db.operation").AsString()
 	Assert(actualOperation == operation, "Except client db name to be %s, got %s", operation, actualOperation)
 }
+
+func VerifyHttpClientAttributes(span tracetest.SpanStub, name, method, fullUrl, protocolName, protocolVersion, networkTransport, networkType, localAddr, peerAddr string, statusCode, localPort, peerPort int64) {
+	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
+	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
+	Assert(GetAttribute(span.Attributes, "http.request.method").AsString() == method, "Except method to be %s, got %s", method, GetAttribute(span.Attributes, "http.request.method").AsString())
+	Assert(GetAttribute(span.Attributes, "url.full").AsString() == fullUrl, "Except full url to be %s, got %s", fullUrl, GetAttribute(span.Attributes, "url.full").AsString())
+	Assert(GetAttribute(span.Attributes, "network.protocol.name").AsString() == protocolName, "Except protocol name to be %s, got %s", protocolName, GetAttribute(span.Attributes, "network.protocol.name").AsString())
+	Assert(GetAttribute(span.Attributes, "network.protocol.version").AsString() == protocolVersion, "Except protocol version to be %s, got %s", protocolVersion, GetAttribute(span.Attributes, "network.protocol.version").AsString())
+	Assert(GetAttribute(span.Attributes, "network.transport").AsString() == networkTransport, "Except network transport to be %s, got %s", networkTransport, GetAttribute(span.Attributes, "network.transport").AsString())
+	Assert(GetAttribute(span.Attributes, "network.type").AsString() == networkType, "Except network type to be %s, got %s", networkType, GetAttribute(span.Attributes, "network.type").AsString())
+	Assert(GetAttribute(span.Attributes, "network.local.address").AsString() == localAddr, "Except local addr to be %s, got %s", localAddr, GetAttribute(span.Attributes, "network.local.address").AsString())
+	Assert(GetAttribute(span.Attributes, "network.peer.address").AsString() == peerAddr, "Except peer addr to be %s, got %s", peerAddr, GetAttribute(span.Attributes, "network.peer.address").AsString())
+	Assert(GetAttribute(span.Attributes, "http.response.status_code").AsInt64() == statusCode, "Except status code to be %d, got %d", statusCode, GetAttribute(span.Attributes, "http.response.status_code").AsInt64())
+	Assert(GetAttribute(span.Attributes, "network.peer.port").AsInt64() == peerPort, "Except peer port to be %d, got %d", peerPort, GetAttribute(span.Attributes, "network.peer.port").AsInt64())
+	if localPort > 0 {
+		Assert(GetAttribute(span.Attributes, "network.local.port").AsInt64() == localPort, "Except local port to be %d, got %d", localPort, GetAttribute(span.Attributes, "network.local.port").AsInt64())
+	}
+}
+
+func VerifyHttpServerAttributes(span tracetest.SpanStub, name, method, protocolName, networkTransport, networkType, localAddr, peerAddr, agent, scheme, path, query, route string, statusCode int64) {
+	Assert(span.SpanKind == trace.SpanKindServer, "Expect to be client span, got %d", span.SpanKind)
+	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
+	Assert(GetAttribute(span.Attributes, "http.request.method").AsString() == method, "Except method to be %s, got %s", method, GetAttribute(span.Attributes, "http.request.method").AsString())
+	Assert(GetAttribute(span.Attributes, "network.protocol.name").AsString() == protocolName, "Except protocol name to be %s, got %s", protocolName, GetAttribute(span.Attributes, "network.protocol.name").AsString())
+	Assert(GetAttribute(span.Attributes, "network.transport").AsString() == networkTransport, "Except network transport to be %s, got %s", networkTransport, GetAttribute(span.Attributes, "network.transport").AsString())
+	Assert(GetAttribute(span.Attributes, "network.type").AsString() == networkType, "Except network type to be %s, got %s", networkType, GetAttribute(span.Attributes, "network.type").AsString())
+	Assert(GetAttribute(span.Attributes, "network.local.address").AsString() == localAddr, "Except local addr to be %s, got %s", localAddr, GetAttribute(span.Attributes, "network.local.address").AsString())
+	Assert(GetAttribute(span.Attributes, "network.peer.address").AsString() == peerAddr, "Except peer addr to be %s, got %s", peerAddr, GetAttribute(span.Attributes, "network.peer.address").AsString())
+	Assert(GetAttribute(span.Attributes, "user_agent.original").AsString() == agent, "Except user agent to be %s, got %s", agent, GetAttribute(span.Attributes, "user_agent.original").AsString())
+	Assert(GetAttribute(span.Attributes, "url.scheme").AsString() == scheme, "Except url scheme to be %s, got %s", scheme, GetAttribute(span.Attributes, "url.scheme").AsString())
+	Assert(GetAttribute(span.Attributes, "url.path").AsString() == path, "Except url path to be %s, got %s", path, GetAttribute(span.Attributes, "url.path").AsString())
+	Assert(GetAttribute(span.Attributes, "url.query").AsString() == query, "Except url query to be %s, got %s", query, GetAttribute(span.Attributes, "url.query").AsString())
+	Assert(GetAttribute(span.Attributes, "http.route").AsString() == route, "Except http route to be %s, got %s", route, GetAttribute(span.Attributes, "http.route").AsString())
+	Assert(GetAttribute(span.Attributes, "http.response.status_code").AsInt64() == statusCode, "Except status code to be %d, got %d", statusCode, GetAttribute(span.Attributes, "http.response.status_code").AsInt64())
+}

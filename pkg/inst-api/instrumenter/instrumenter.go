@@ -10,6 +10,7 @@ import (
 )
 
 type Instrumenter[REQUEST any, RESPONSE any] struct {
+	enabler              InstrumentEnabler
 	spanNameExtractor    SpanNameExtractor[REQUEST]
 	spanKindExtractor    SpanKindExtractor[REQUEST]
 	spanStatusExtractor  SpanStatusExtractor[REQUEST, RESPONSE]
@@ -23,15 +24,15 @@ type Instrumenter[REQUEST any, RESPONSE any] struct {
 }
 
 type PropagatingToDownstreamInstrumenter[REQUEST any, RESPONSE any] struct {
-	propagator propagation.TextMapPropagator
-	carrier    propagation.TextMapCarrier
-	base       Instrumenter[REQUEST, RESPONSE]
+	propagator    propagation.TextMapPropagator
+	carrierGetter func(REQUEST) propagation.TextMapCarrier
+	base          Instrumenter[REQUEST, RESPONSE]
 }
 
 type PropagatingFromUpstreamInstrumenter[REQUEST any, RESPONSE any] struct {
-	propagator propagation.TextMapPropagator
-	carrier    propagation.TextMapCarrier
-	base       Instrumenter[REQUEST, RESPONSE]
+	propagator    propagation.TextMapPropagator
+	carrierGetter func(REQUEST) propagation.TextMapCarrier
+	base          Instrumenter[REQUEST, RESPONSE]
 }
 
 func (i *Instrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
@@ -90,7 +91,7 @@ func (i *Instrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUE
 
 func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
 	newCtx := p.base.Start(parentContext, request)
-	p.propagator.Inject(newCtx, p.carrier)
+	p.propagator.Inject(newCtx, p.carrierGetter(request))
 	return newCtx
 }
 
@@ -99,7 +100,7 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context
 }
 
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
-	extracted := p.propagator.Extract(parentContext, p.carrier)
+	extracted := p.propagator.Extract(parentContext, p.carrierGetter(request))
 	return p.base.Start(extracted, request)
 }
 
