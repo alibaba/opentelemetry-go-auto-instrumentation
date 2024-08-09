@@ -18,6 +18,12 @@ type CallContext interface {
 	SetData(interface{})
 	// Get the data field, can be used to pass information between OnEnter&OnExit
 	GetData() interface{}
+	// Get the map data field by key
+	GetKeyData(key string) interface{}
+	// Set the map data field by key
+	SetKeyData(key string, val interface{})
+	// Has the map data field by key
+	HasKeyData(key string) bool
 	// Get the original function parameter at index idx
 	GetParam(idx int) interface{}
 	// Change the original function parameter at index idx
