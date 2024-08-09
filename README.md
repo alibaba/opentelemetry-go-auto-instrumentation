@@ -54,6 +54,7 @@ Please feel free to file a bug
 at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
 to help us enhance this project.
 
+Lastly, we've provided some examples in `example` direcory, you can try the project through those examples.
 # Community
 
 We are looking forward to your feedback and suggestions. Please feel free to join our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? ) to communicate with us.
