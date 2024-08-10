@@ -27,6 +27,16 @@ $ make test
 
 # How to Use
 
+Import `opentelemetry-go` related dependencies for context propagation:
+
+```go
+import (
+    _ "go.opentelemetry.io/otel"
+    _ "go.opentelemetry.io/otel/baggage"
+    _ "go.opentelemetry.io/otel/sdk/trace"
+)
+```
+
 Replace `go build` with the following command to build you project:
 
 ```bash
