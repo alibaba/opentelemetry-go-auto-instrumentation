@@ -13,9 +13,9 @@ const mongo_dependency_name = "go.mongodb.org/mongo-driver"
 const mongo_module_name = "mongo"
 
 func init() {
-	TestCases = append(TestCases, NewGeneralTestCase("mongo-1.11.1-crud-test", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestCrudMongo),
-		NewGeneralTestCase("mongo-1.11.1-cursor-test", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestCursor),
-		NewGeneralTestCase("mongo-1.11.1-batch-test", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestBatch),
+	TestCases = append(TestCases, NewGeneralTestCase("mongo-1.11.1-crud-test", mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestCrudMongo),
+		NewGeneralTestCase("mongo-1.11.1-cursor-test", mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestCursor),
+		NewGeneralTestCase("mongo-1.11.1-batch-test", mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestBatch),
 		NewMuzzleTestCase("mongo-1.11.1-crud-muzzle", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", []string{"test_crud_mongo.go", "dsn.go"}),
 		NewMuzzleTestCase("mongo-1.11.1-cursor-muzzle", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", []string{"test_batch.go", "dsn.go"}),
 		NewMuzzleTestCase("mongo-1.11.1-batch-muzzle", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", []string{"test_cursor.go", "dsn.go"}),
