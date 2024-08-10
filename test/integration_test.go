@@ -7,7 +7,7 @@ import (
 
 func TestPlugins(t *testing.T) {
 	for _, c := range TestCases {
-		if c == nil || c.TestName != "mongo-1.11.1-batch-test" {
+		if c == nil {
 			continue
 		}
 		if c.IsMuzzleCheck || c.IsLatestDepthCheck {
