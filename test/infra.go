@@ -95,12 +95,12 @@ func RunInstrument(t *testing.T, args ...string) {
 	}
 }
 
-func TBuildAppNoop(t *testing.T, appName, mainClass string) {
+func TBuildAppNoop(t *testing.T, appName string, muzzleClasses ...string) {
 	UseApp(appName)
-	if mainClass == "" {
+	if muzzleClasses == nil || len(muzzleClasses) == 0 {
 		RunInstrument(t)
 	} else {
-		RunInstrument(t, "--", mainClass)
+		RunInstrument(t, muzzleClasses...)
 	}
 }
 
@@ -242,7 +242,7 @@ func ExpectContainsNothing(t *testing.T, actualItems []string) {
 	}
 }
 
-func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version, mainClass string) {
+func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, maxVersion *version.Version, muzzleClasses []string) {
 	if testing.Short() {
 		t.Skip()
 		return
@@ -272,7 +272,7 @@ func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, max
 				t.Logf("testing on version %v\n", version.Original())
 				UseApp(moduleName + "/" + testVersion.Original())
 				FetchVersion(t, dependencyName, version.Original())
-				TBuildAppNoop(t, moduleName+"/"+testVersion.Original(), mainClass)
+				TBuildAppNoop(t, moduleName+"/"+testVersion.Original(), muzzleClasses...)
 				break
 			}
 		}
