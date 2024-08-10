@@ -28,7 +28,7 @@ func TestMuzzle(t *testing.T) {
 			continue
 		}
 		t.Run(c.TestName, func(t *testing.T) {
-			ExecMuzzle(t, c.DependencyName, c.ModuleName, c.MinVersion, c.MaxVersion, c.MuzzleMainClass)
+			ExecMuzzle(t, c.DependencyName, c.ModuleName, c.MinVersion, c.MaxVersion, c.MuzzleClasses)
 		})
 	}
 }

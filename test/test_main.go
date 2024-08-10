@@ -18,7 +18,7 @@ type TestCase struct {
 	MaxGoVersion       *version.Version
 	TestFunc           func(t *testing.T, env ...string)
 	LatestDepthFunc    func(t *testing.T, env ...string)
-	MuzzleMainClass    string
+	MuzzleClasses      []string
 	IsMuzzleCheck      bool
 	IsLatestDepthCheck bool
 }
@@ -61,10 +61,10 @@ func NewGeneralTestCase(testName, dependencyName, moduleName, minVersion, maxVer
 	}
 }
 
-func NewMuzzleTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, mainClass string) *TestCase {
+func NewMuzzleTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, muzzleClasses []string) *TestCase {
 	c := NewGeneralTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
 	c.IsMuzzleCheck = true
-	c.MuzzleMainClass = mainClass
+	c.MuzzleClasses = muzzleClasses
 	return c
 }
 
