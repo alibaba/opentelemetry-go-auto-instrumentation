@@ -4,9 +4,9 @@ import "testing"
 
 func init() {
 	TestCases = append(TestCases,
-		NewGeneralTestCase("nethttp-basic-test", "", "nethttp", "", "", "1.18", "", TestBasicNetHttp),
-		NewGeneralTestCase("nethttp-http-2-test", "", "nethttp", "", "", "1.18", "", TestHttp2),
-		NewGeneralTestCase("nethttp-https-test", "", "nethttp", "", "", "1.18", "", TestHttps),
+		NewGeneralTestCase("nethttp-basic-test", "nethttp", "", "", "1.18", "", TestBasicNetHttp),
+		NewGeneralTestCase("nethttp-http-2-test", "nethttp", "", "", "1.18", "", TestHttp2),
+		NewGeneralTestCase("nethttp-https-test", "nethttp", "", "", "1.18", "", TestHttps),
 	)
 }
 

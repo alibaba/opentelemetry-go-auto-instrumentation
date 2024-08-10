@@ -25,7 +25,7 @@ type TestCase struct {
 
 var TestCases = make([]*TestCase, 0)
 
-func NewGeneralTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, testFunc func(t *testing.T, env ...string)) *TestCase {
+func NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, testFunc func(t *testing.T, env ...string)) *TestCase {
 	minVer, err := version.NewVersion(minVersion)
 	if minVersion != "" && err != nil {
 		log.Printf("Error parsing min version: %v", err)
@@ -49,7 +49,6 @@ func NewGeneralTestCase(testName, dependencyName, moduleName, minVersion, maxVer
 	}
 	return &TestCase{
 		TestName:           testName,
-		DependencyName:     dependencyName,
 		ModuleName:         moduleName,
 		MinVersion:         minVer,
 		MaxVersion:         maxVer,
@@ -62,15 +61,17 @@ func NewGeneralTestCase(testName, dependencyName, moduleName, minVersion, maxVer
 }
 
 func NewMuzzleTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, muzzleClasses []string) *TestCase {
-	c := NewGeneralTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
+	c := NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
 	c.IsMuzzleCheck = true
+	c.DependencyName = dependencyName
 	c.MuzzleClasses = muzzleClasses
 	return c
 }
 
 func NewLatestDepthTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, latestTestFunc func(t *testing.T, env ...string)) *TestCase {
-	c := NewGeneralTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
+	c := NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
 	c.LatestDepthFunc = latestTestFunc
+	c.DependencyName = dependencyName
 	c.IsLatestDepthCheck = true
 	return c
 }
