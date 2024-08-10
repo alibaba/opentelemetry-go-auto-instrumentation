@@ -10,16 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
-	"os"
 )
-
-const (
-	db = "otel_database"
-)
-
-var dsn = "mongodb://127.0.0.1:" + os.Getenv("MONGO_PORT")
-
-var http_server_port int
 
 // User model.
 type User struct {
