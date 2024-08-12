@@ -50,6 +50,14 @@ func initEnv() (err error) {
 	if shared.InInstrument() {
 		setupLogs()
 	} else {
+		// Clean up temp build directory if exists, otherwise create it
+		_, err = os.Stat(shared.TempBuildDir)
+		if err == nil {
+			err = os.RemoveAll(shared.TempBuildDir)
+			if err != nil {
+				return fmt.Errorf("failed to remove working directory: %w", err)
+			}
+		}
 		err = os.MkdirAll(shared.TempBuildDir, 0777)
 		if err != nil {
 			return fmt.Errorf("failed to make working directory: %w", err)
