@@ -20,11 +20,14 @@ import (
 )
 
 const (
-	OtelSetupInst    = "otel_setup_inst.go"
-	OtelSetupSDK     = "otel_setup_sdk.go"
-	OtelRules        = "otel_rules"
-	OtelBackups      = "backups"
-	OtelBackupSuffix = ".bk"
+	OtelSetupInst          = "otel_setup_inst.go"
+	OtelSetupSDK           = "otel_setup_sdk.go"
+	OtelRules              = "otel_rules"
+	OtelBackups            = "backups"
+	OtelBackupSuffix       = ".bk"
+	OtelImportPath         = "go.opentelemetry.io/otel"
+	OtelBaggageImportPath  = "go.opentelemetry.io/otel/baggage"
+	OtelSdkTraceImportPath = "go.opentelemetry.io/otel/sdk/trace"
 )
 
 // @@ Change should sync with trampoline template
@@ -46,24 +49,26 @@ const (
 )
 
 type DepProcessor struct {
-	bundles         []*resource.RuleBundle // All dependent rule bundles
-	funcRules       []uint64               // Function should be processed separately
-	generatedDeps   []string
-	sigc            chan os.Signal // Graceful shutdown
-	backups         map[string]string
-	localImportPath string
+	bundles          []*resource.RuleBundle // All dependent rule bundles
+	funcRules        []uint64               // Function should be processed separately
+	generatedDeps    []string
+	sigc             chan os.Signal // Graceful shutdown
+	backups          map[string]string
+	localImportPath  string
+	importCandidates []string
 }
 
 func newDepProcessor() *DepProcessor {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	return &DepProcessor{
-		bundles:         []*resource.RuleBundle{},
-		funcRules:       []uint64{},
-		generatedDeps:   []string{},
-		sigc:            sigc,
-		backups:         map[string]string{},
-		localImportPath: "",
+		bundles:          []*resource.RuleBundle{},
+		funcRules:        []uint64{},
+		generatedDeps:    []string{},
+		sigc:             sigc,
+		backups:          map[string]string{},
+		localImportPath:  "",
+		importCandidates: nil,
 	}
 }
 
@@ -108,12 +113,16 @@ func (dp *DepProcessor) backupFile(origin string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
-	err = util.CopyFile(origin, backup)
-	if err != nil {
-		return fmt.Errorf("failed to backup file %v: %w", origin, err)
+	if _, exist := dp.backups[origin]; !exist {
+		err = util.CopyFile(origin, backup)
+		if err != nil {
+			return fmt.Errorf("failed to backup file %v: %w", origin, err)
+		}
+		dp.backups[origin] = backup
+		log.Printf("Backup %v to %v\n", origin, backup)
+	} else if shared.Verbose {
+		log.Printf("Backup %v already exists\n", origin)
 	}
-	dp.backups[origin] = backup
-	log.Printf("Backup %v to %v\n", origin, backup)
 	return nil
 }
 
@@ -481,63 +490,58 @@ func assembleImportCandidates() ([]string, error) {
 	return candidates, nil
 }
 
-func (dp *DepProcessor) addRuleImport() (err error) {
+func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 	// Find out where we should forcely import our init func
-	files, err := assembleImportCandidates()
-	if err != nil {
-		return fmt.Errorf("failed to assemble import candidates: %w", err)
+	if dp.importCandidates == nil {
+		files, err := assembleImportCandidates()
+		if err != nil {
+			return fmt.Errorf("failed to assemble import candidates: %w", err)
+		}
+		dp.importCandidates = files
+		if shared.Verbose {
+			log.Printf("RuleImport candidates: %v", files)
+		}
 	}
-	if shared.Verbose {
-		log.Printf("RuleImport candidates: %v", files)
-	}
-	ruleImportPath := dp.getImportPathOf(OtelRules)
 
 	addImport := false
-	for _, file := range files {
-		if shared.IsGoFile(file) {
-			text, err := util.ReadFile(file)
-			if err != nil {
-				return fmt.Errorf("failed to read file %v: %w", file, err)
-			}
-			// @@ N.B. DST framework provides a series of RestoreResolvers such
-			// as guess.New for resolving the package name from an importPath.
-			// However, its strategy is simply to guess by taking last section
-			// of the importpath as the package name. This can lead to issues
-			// where package names like github.com/foo/v2 are resolved as v2,
-			// while in reality, they might be foo. Incorrect resolutions can
-			// lead to some imports that should be present being rudely removed.
-			// To solve this issue, we disable DST's automatic Import management
-			// and use plain AST manipulation to add imports.
-			astRoot, err := shared.ParseAstFromSource(text)
-			if err != nil {
-				return fmt.Errorf("failed to parse ast from source: %w", err)
-			}
+	for _, file := range dp.importCandidates {
+		if !shared.IsGoFile(file) {
+			continue
+		}
+		text, err := util.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("failed to read file %v: %w", file, err)
+		}
+		astRoot, err := shared.ParseAstFromSource(text)
+		if err != nil {
+			return fmt.Errorf("failed to parse ast from source: %w", err)
+		}
 
-			foundInit := shared.FindFuncDecl(astRoot, FuncInit) != nil
-			foundMain := shared.FindFuncDecl(astRoot, FuncMain) != nil
-			if !foundInit && !foundMain {
-				continue
-			}
+		foundInit := shared.FindFuncDecl(astRoot, FuncInit) != nil
+		foundMain := shared.FindFuncDecl(astRoot, FuncMain) != nil
+		if !foundInit && !foundMain {
+			continue
+		}
 
-			// Only add implicit otel_rules import to the files whose main or
-			// init is defined, it should be prepended to the first import decl
-			// if there is any
-			shared.AddImportForcely(astRoot, ruleImportPath)
-			addImport = true
-			log.Printf("Add rule import to %v", file)
+		// Prepend import path to the file
+		for _, importPath := range importPaths {
+			shared.AddImportForcely(astRoot, importPath)
+			log.Printf("Add %s import to %v", importPath, file)
+		}
+		addImport = true
 
-			err = dp.backupFile(file)
-			if err != nil {
-				return fmt.Errorf("failed to backup file %v: %w", file, err)
-			}
-			_, err = shared.WriteAstToFile(astRoot, filepath.Join(file))
-			if err != nil {
-				return fmt.Errorf("failed to write ast to %v: %w", file, err)
-			}
+		err = dp.backupFile(file)
+		if err != nil {
+			return fmt.Errorf("failed to backup file %v: %w", file, err)
+		}
+		_, err = shared.WriteAstToFile(astRoot, filepath.Join(file))
+		if err != nil {
+			return fmt.Errorf("failed to write ast to %v: %w", file, err)
 		}
 	}
 	if !addImport {
-		return fmt.Errorf("failed to add rule import, candidates are %v", files)
+		return fmt.Errorf("failed to add rule import, candidates are %v",
+			dp.importCandidates)
 	}
 	return nil
 }
@@ -609,22 +613,34 @@ func (dp *DepProcessor) setupRules() (err error) {
 		return fmt.Errorf("failed to setup otel sdk: %w", err)
 	}
 	// Add implicit otel_rules import to introduce initialization side effect
-	err = dp.addRuleImport()
+	ruleImportPath := dp.getImportPathOf(OtelRules)
+	err = dp.addExplicitImport(ruleImportPath)
 	if err != nil {
 		return fmt.Errorf("failed to add rule import: %w", err)
 	}
 	return nil
 }
 
+func (dp *DepProcessor) addOtelImports() error {
+	err := dp.addExplicitImport(OtelImportPath,
+		OtelBaggageImportPath,
+		OtelSdkTraceImportPath,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to add otel import: %w", err)
+	}
+	return nil
+}
+
 func (dp *DepProcessor) setupDeps() error {
+	err := dp.addOtelImports()
+	if err != nil {
+		return fmt.Errorf("failed to add otel imports: %w", err)
+	}
+
 	compileCmds, err := getCompileCommands()
 	if err != nil {
 		return fmt.Errorf("failed to get compile commands: %w", err)
-	}
-
-	err = dp.copyPkgDep()
-	if err != nil {
-		return fmt.Errorf("failed to copy pkg dep: %w", err)
 	}
 
 	err = dp.findLocalImportPath()
