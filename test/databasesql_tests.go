@@ -12,19 +12,19 @@ import (
 
 func init() {
 	TestCases = append(TestCases,
-		NewGeneralTestCase("databasesql-mysql-8-access-database-test", "databasesql", "", "", "1.18", "", TestMySql8xAccessDatabase),
-		NewGeneralTestCase("databasesql-mysql-8-fetching-database-test", "databasesql", "", "", "1.18", "", TestMySql8xFetchingDatabase),
-		NewGeneralTestCase("databasesql-mysql-8-modify-data-test", "databasesql", "", "", "1.18", "", TestMySql8xModifyData),
-		NewGeneralTestCase("databasesql-mysql-8-prepared-statement-test", "databasesql", "", "", "1.18", "", TestPreparedStatement),
-		NewGeneralTestCase("databasesql-mysql-8-single-row-query-test", "databasesql", "", "", "1.18", "", TestSingleRowQuery),
-		NewGeneralTestCase("databasesql-mysql-8-single-transaction-test", "databasesql", "", "", "1.18", "", TestTransaction),
+		NewGeneralTestCase("databasesql-mysql-8-access-database-test", "", "databasesql", "", "", "1.18", "", TestMySql8xAccessDatabase),
+		NewGeneralTestCase("databasesql-mysql-8-fetching-database-test", "", "databasesql", "", "", "1.18", "", TestMySql8xFetchingDatabase),
+		NewGeneralTestCase("databasesql-mysql-8-modify-data-test", "", "databasesql", "", "", "1.18", "", TestMySql8xModifyData),
+		NewGeneralTestCase("databasesql-mysql-8-prepared-statement-test", "", "databasesql", "", "", "1.18", "", TestPreparedStatement),
+		NewGeneralTestCase("databasesql-mysql-8-single-row-query-test", "", "databasesql", "", "", "1.18", "", TestSingleRowQuery),
+		NewGeneralTestCase("databasesql-mysql-8-single-transaction-test", "", "databasesql", "", "", "1.18", "", TestTransaction),
 
-		NewGeneralTestCase("databasesql-mysql-5-access-database-test", "databasesql", "", "", "1.18", "", TestMySql5xAccessDatabase),
-		NewGeneralTestCase("databasesql-mysql-5-fetching-database-test", "databasesql", "", "", "1.18", "", TestMySql5xFetchingDatabase),
-		NewGeneralTestCase("databasesql-mysql-5-modify-data-test", "databasesql", "", "", "1.18", "", TestMySql5xModifyData),
-		NewGeneralTestCase("databasesql-mysql-5-prepared-statement-test", "databasesql", "", "", "1.18", "", TestMySql5xSingleRowQuery),
-		NewGeneralTestCase("databasesql-mysql-5-single-row-query-test", "databasesql", "", "", "1.18", "", TestMySql5xPreparedStatement),
-		NewGeneralTestCase("databasesql-mysql-5-single-transaction-test", "databasesql", "", "", "1.18", "", TestMySql5xTransaction),
+		NewGeneralTestCase("databasesql-mysql-5-access-database-test", "", "databasesql", "", "", "1.18", "", TestMySql5xAccessDatabase),
+		NewGeneralTestCase("databasesql-mysql-5-fetching-database-test", "", "databasesql", "", "", "1.18", "", TestMySql5xFetchingDatabase),
+		NewGeneralTestCase("databasesql-mysql-5-modify-data-test", "", "databasesql", "", "", "1.18", "", TestMySql5xModifyData),
+		NewGeneralTestCase("databasesql-mysql-5-prepared-statement-test", "", "databasesql", "", "", "1.18", "", TestMySql5xPreparedStatement),
+		NewGeneralTestCase("databasesql-mysql-5-single-row-query-test", "", "databasesql", "", "", "1.18", "", TestMySql5xSingleRowQuery),
+		NewGeneralTestCase("databasesql-mysql-5-single-transaction-test", "", "databasesql", "", "", "1.18", "", TestMySql5xTransaction),
 	)
 }
 
