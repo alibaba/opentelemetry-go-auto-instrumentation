@@ -56,6 +56,20 @@ func NewVersion(v string) (*Version, error) {
 	return newVersion(v, versionRegexp)
 }
 
+func NewGoVersion(v string) (*Version, error) {
+	goStart := 0
+	for i, _ := range v {
+		if i+1 < len(v) && v[i] == 'g' && v[i+1] == 'o' {
+			goStart = i + 2
+			break
+		}
+	}
+	if goStart >= len(v) {
+		return nil, fmt.Errorf("invalid go version: %s", v)
+	}
+	return NewVersion(v[goStart:])
+}
+
 func newVersion(v string, pattern *regexp.Regexp) (*Version, error) {
 	matches := pattern.FindStringSubmatch(v)
 	if matches == nil {

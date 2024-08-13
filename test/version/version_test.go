@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -540,6 +541,64 @@ func TestLessThanOrEqual(t *testing.T) {
 				"%s <= %s\nexpected: %t\nactual: %t",
 				tc.v1, tc.v2,
 				expected, actual)
+		}
+	}
+}
+
+func TestComplexVersion(t *testing.T) {
+	goVersion := "devel go1.21-36f564c189"
+	v, err := NewGoVersion(goVersion)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	v22, err := NewGoVersion("1.22")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	fmt.Printf("%v\n", v)
+	if !v.LessThan(v22) {
+		panic("should be less than v22")
+	}
+}
+
+func TestNewGoVersion(t *testing.T) {
+	cases := []struct {
+		version string
+		err     bool
+	}{
+		{"", true},
+		{"go1.2.3", false},
+		{"go1.0", false},
+		{"go1", false},
+		{"go1.2.beta", true},
+		{"go1.21.beta", true},
+		{"gofoo", true},
+		{"go1.2-5", false},
+		{"1.2-beta.5", false},
+		{"go\n1.2", true},
+		{"\ngo1.2", false},
+		{"go1.2.0-x.Y.0+metadata", false},
+		{"go1.2.0-x.Y.0+metadata-width-hyphen", false},
+		{"go1.2.3-rc1-with-hyphen", false},
+		{"go1.2.3.4", false},
+		{"go1.2.0.4-x.Y.0+metadata", false},
+		{"go1.2.0.4-x.Y.0+metadata-width-hyphen", false},
+		{"go1.2.0-X-1.2.0+metadata~dist", false},
+		{"go1.2.3.4-rc1-with-hyphen", false},
+		{"go1.2.3.4", false},
+		{"gov1.2.3", false},
+		{"gofoo1.2.3", true},
+		{"go1.7rc2", false},
+		{"gov1.7rc2", false},
+		{"go1.0-", false},
+	}
+
+	for _, tc := range cases {
+		_, err := NewGoVersion(tc.version)
+		if tc.err && err == nil {
+			t.Fatalf("expected error for version: %q", tc.version)
+		} else if !tc.err && err != nil {
+			t.Fatalf("error for version %q: %s", tc.version, err)
 		}
 	}
 }

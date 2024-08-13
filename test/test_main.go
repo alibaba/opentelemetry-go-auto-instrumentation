@@ -34,15 +34,15 @@ func NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersi
 	if maxVersion != "" && err != nil {
 		log.Printf("Error parsing max version: %v", err)
 	}
-	minGoVer, err := version.NewVersion(minGoVersion)
+	minGoVer, err := version.NewGoVersion(minGoVersion)
 	if minGoVersion != "" && err != nil {
 		log.Printf("Error parsing min go version: %v", err)
 	}
-	maxGoVer, err := version.NewVersion(maxGoVersion)
+	maxGoVer, err := version.NewGoVersion(maxGoVersion)
 	if maxGoVersion != "" && err != nil {
 		log.Printf("Error parsing max go version: %v", err)
 	}
-	goVersion, _ := version.NewVersion(strings.ReplaceAll(runtime.Version(), "go", ""))
+	goVersion, _ := version.NewGoVersion(strings.ReplaceAll(runtime.Version(), "go", ""))
 	if (minGoVer != nil && goVersion.LessThan(minGoVer)) || (maxGoVer != nil && goVersion.GreaterThan(maxGoVer)) {
 		log.Printf("This test does not suppport go " + goVersion.String())
 		return nil
