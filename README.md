@@ -56,6 +56,17 @@ to help us enhance this project.
 
 Lastly, we've provided some examples in [example](/example/) direcory, you can try the project through those examples.
 
+# Supported libraries
+
+| Plugin Name  | Repository Url                             | Min Supported Version | Max Supported Version |
+|--------------|--------------------------------------------|-----------------------|-----------------------|
+| net/http     | https://pkg.go.dev/net/http                | -                     | -                     |
+| database/sql | https://pkg.go.dev/database/sql            | -                     | -                     |
+| go-redis     | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |
+| mongodb      | https://github.com/mongodb/mongo-go-driver | v1.11.1               | v1.15.2               |
+
+We are gradually open-sourcing the libraries we have supported, and your contributions are warmly welcome.
+
 # Community
 
 We are looking forward to your feedback and suggestions. Please feel free to join our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? ) to communicate with us.
