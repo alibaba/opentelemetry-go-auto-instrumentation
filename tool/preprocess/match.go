@@ -183,17 +183,29 @@ func findAvailableRules() []api.InstRule {
 	return rules
 }
 
-// MatchRuleBundle gives compilation arguments and finds out all interested rules
+type ruleMatcher struct {
+	availableRules map[string][]api.InstRule
+}
+
+func newRuleMatcher() *ruleMatcher {
+	rules := make(map[string][]api.InstRule)
+	for _, rule := range findAvailableRules() {
+		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
+	}
+	return &ruleMatcher{availableRules: rules}
+}
+
+// matchRuleBundle gives compilation arguments and finds out all interested rules
 // for it.
-func (rm *RuleMatcher) MatchRuleBundle(importPath string,
+func (rm *ruleMatcher) matchRuleBundle(importPath string,
 	candidates []string) *resource.RuleBundle {
 	util.Assert(importPath != "", "sanity check")
-	availables := make([]api.InstRule, len(rm.AvailableRules[importPath]))
+	availables := make([]api.InstRule, len(rm.availableRules[importPath]))
 
 	// Okay, we are interested in these candidates, let's read it and match with
 	// the instrumentation rule, but first we need to check if the package name
 	// are already registered, to avoid futile effort
-	copy(availables, rm.AvailableRules[importPath])
+	copy(availables, rm.availableRules[importPath])
 	if len(availables) == 0 {
 		return nil // fast fail
 	}
@@ -241,7 +253,6 @@ func (rm *RuleMatcher) MatchRuleBundle(importPath string,
 				valid := false
 				for _, decl := range fileAst.Decls {
 					if genDecl, ok := decl.(*dst.GenDecl); ok {
-						// We are only interested in struct type declaration
 						if rl, ok := rule.(*api.InstStructRule); ok {
 							if shared.MatchStructDecl(genDecl, rl.StructType) {
 								log.Printf("Matched struct rule %s", rule)
@@ -250,9 +261,9 @@ func (rm *RuleMatcher) MatchRuleBundle(importPath string,
 							}
 						}
 					} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
-						// We are only interested in function declaration for func rule
 						if rl, ok := rule.(*api.InstFuncRule); ok {
-							if shared.MatchFuncDecl(funcDecl, rl.Function, rl.ReceiverType) {
+							if shared.MatchFuncDecl(funcDecl, rl.Function,
+								rl.ReceiverType) {
 								log.Printf("Matched func rule %s", rule)
 								bundle.AddFile2FuncRule(file, rl)
 								valid = true

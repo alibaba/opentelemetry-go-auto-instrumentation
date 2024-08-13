@@ -12,7 +12,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -193,18 +192,6 @@ func readImportPath(cmd []string) string {
 	return pkg
 }
 
-type RuleMatcher struct {
-	AvailableRules map[string][]api.InstRule
-}
-
-func newRuleMatcher() *RuleMatcher {
-	rules := make(map[string][]api.InstRule)
-	for _, rule := range findAvailableRules() {
-		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
-	}
-	return &RuleMatcher{AvailableRules: rules}
-}
-
 func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	matcher := newRuleMatcher()
 	// Find used instrumentation rule according to compile commands
@@ -218,7 +205,7 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 			log.Printf("Try to match rules for %v with %v\n",
 				importPath, cmdArgs)
 		}
-		bundle := matcher.MatchRuleBundle(importPath, cmdArgs)
+		bundle := matcher.matchRuleBundle(importPath, cmdArgs)
 		if bundle.IsValid() {
 			dp.bundles = append(dp.bundles, bundle)
 		} else if shared.Verbose {
@@ -246,7 +233,7 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 		}
 		log.Printf("Try to match additional %v for %v\n",
 			candidates, bundle.ImportPath)
-		newBundle := matcher.MatchRuleBundle(bundle.ImportPath, candidates)
+		newBundle := matcher.matchRuleBundle(bundle.ImportPath, candidates)
 		// One rule bundle represents one import path, so we should merge
 		// them together instead of adding a brand new one
 		_, err := bundle.Merge(newBundle)
