@@ -177,13 +177,13 @@ func (rule *InstFileRule) WithVersion(version string) *InstFileRule {
 
 func (rule *InstFuncRule) String() string {
 	if rule.ReceiverType == "" {
-		return fmt.Sprintf("%s@%s@%s::%s with {%s %s}",
+		return fmt.Sprintf("%s@%s@%s@%s {%s %s}",
 			rule.RuleName,
 			rule.ImportPath, rule.Version,
 			rule.Function,
 			rule.OnEnter, rule.OnExit)
 	}
-	return fmt.Sprintf("%s@%s@%s::(%s).%s with {%s %s}",
+	return fmt.Sprintf("%s@%s@%s@(%s).%s {%s %s}",
 		rule.RuleName,
 		rule.ImportPath, rule.Version,
 		rule.ReceiverType, rule.Function,
@@ -191,15 +191,14 @@ func (rule *InstFuncRule) String() string {
 }
 
 func (rule *InstStructRule) String() string {
-	return fmt.Sprintf("%s@%s@%s::struct %s with {%s %s}",
+	return fmt.Sprintf("%s@%s@%s {%s}",
 		rule.RuleName,
 		rule.ImportPath, rule.Version,
-		rule.StructType,
-		rule.FieldName, rule.FieldType)
+		rule.StructType)
 }
 
 func (rule *InstFileRule) String() string {
-	return fmt.Sprintf("%s@%s@%s::file with %s",
+	return fmt.Sprintf("%s@%s@%s {%s}",
 		rule.RuleName,
 		rule.ImportPath, rule.Version,
 		rule.FileName)
