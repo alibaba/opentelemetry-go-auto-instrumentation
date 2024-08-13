@@ -9,8 +9,8 @@ And there will be a `otel-go-auto-instrumentation` binary in the project root di
 ### 2. run mysql & redis
 We recommend you to use docker to run mysql and redis:
 ```shell
-docker run -p 3306:3306 -p 33060:33060 -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0.36
-docker run -p 6379:6379 redis:latest
+docker run -d -p 3306:3306 -p 33060:33060 -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0.36
+docker run -d -p 6379:6379 redis:latest
 ```
 ### 3. do hybrid compilation
 Change directory to `example/benchmark` and execute the following command:
