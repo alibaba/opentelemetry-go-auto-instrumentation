@@ -331,7 +331,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 				nameAndRecvType := strings.Split(fnName, ",")
 				name := nameAndRecvType[0]
 				recvType := nameAndRecvType[1]
-				if resource.MatchFuncDecl(decl, name, recvType) {
+				if shared.MatchFuncDecl(decl, name, recvType) {
 					fnDecl := decl.(*dst.FuncDecl)
 					// Add explicit names for return values, they can be further
 					// referenced if we're willing

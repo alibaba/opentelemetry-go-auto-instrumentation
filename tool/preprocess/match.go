@@ -1,8 +1,7 @@
-package resource
+package preprocess
 
 import (
 	"fmt"
-	"go/token"
 	"log"
 	"regexp"
 	"strconv"
@@ -11,109 +10,10 @@ import (
 	"github.com/dave/dst"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
-
-// RuleBundle is a collection of rules that matched with one compilation action
-type RuleBundle struct {
-	PackageName      string   // Short package name, e.g. "echo"
-	ImportPath       string   // Full import path, e.g. "github.com/labstack/echo/v4"
-	FileRules        []uint64 // File rules
-	File2FuncRules   map[string]map[string][]uint64
-	File2StructRules map[string]map[string][]uint64
-}
-
-func NewRuleBundle(importPath string) *RuleBundle {
-	return &RuleBundle{
-		PackageName:      "",
-		ImportPath:       importPath,
-		FileRules:        make([]uint64, 0),
-		File2FuncRules:   make(map[string]map[string][]uint64),
-		File2StructRules: make(map[string]map[string][]uint64),
-	}
-}
-
-func (rb *RuleBundle) Merge(new *RuleBundle) (*RuleBundle, error) {
-	if !new.IsValid() {
-		return rb, nil
-	}
-	util.Assert(rb.ImportPath == new.ImportPath, "inconsistent import path")
-	util.Assert(rb.PackageName == new.PackageName, "inconsistent package name")
-	fileRules := make(map[uint64]bool)
-	for _, h := range rb.FileRules {
-		fileRules[h] = true
-	}
-	for _, h := range new.FileRules {
-		if _, exist := fileRules[h]; !exist {
-			rb.FileRules = append(rb.FileRules, h)
-		}
-	}
-
-	for file, rules := range new.File2FuncRules {
-		if _, exist := rb.File2FuncRules[file]; !exist {
-			rb.File2FuncRules[file] = make(map[string][]uint64)
-		}
-		for fn, hashes := range rules {
-			if _, exist := rb.File2FuncRules[file][fn]; !exist {
-				rb.File2FuncRules[file][fn] = make([]uint64, 0)
-			}
-			rb.File2FuncRules[file][fn] =
-				append(rb.File2FuncRules[file][fn], hashes...)
-		}
-	}
-	for file, rules := range new.File2StructRules {
-		if _, exist := rb.File2StructRules[file]; !exist {
-			rb.File2StructRules[file] = make(map[string][]uint64)
-		}
-		for st, hashes := range rules {
-			if _, exist := rb.File2StructRules[file][st]; !exist {
-				rb.File2StructRules[file][st] = make([]uint64, 0)
-			}
-			rb.File2StructRules[file][st] =
-				append(rb.File2StructRules[file][st], hashes...)
-		}
-	}
-	return rb, nil
-}
-
-func (rb *RuleBundle) AddFile2FuncRule(file string, rule *api.InstFuncRule) {
-	fn := rule.Function + "," + rule.ReceiverType
-	util.Assert(fn != "", "sanity check")
-	h, err := shared.HashStruct(*rule)
-	if err != nil {
-		log.Fatalf("Failed to hash struct %v", rule)
-	}
-	if _, exist := rb.File2FuncRules[file]; !exist {
-		rb.File2FuncRules[file] = make(map[string][]uint64)
-		rb.File2FuncRules[file][fn] = []uint64{h}
-	} else {
-		rb.File2FuncRules[file][fn] = append(rb.File2FuncRules[file][fn], h)
-	}
-}
-
-func (rb *RuleBundle) AddFile2StructRule(file string, rule *api.InstStructRule) {
-	st := rule.StructType
-	util.Assert(st != "", "sanity check")
-	h, err := shared.HashStruct(*rule)
-	if err != nil {
-		log.Fatalf("Failed to hash struct %v", rule)
-	}
-	if _, exist := rb.File2StructRules[file]; !exist {
-		rb.File2StructRules[file] = make(map[string][]uint64)
-		rb.File2StructRules[file][st] = []uint64{h}
-	} else {
-		rb.File2StructRules[file][st] = append(rb.File2StructRules[file][st], h)
-	}
-}
-
-func (rb *RuleBundle) AddFileRule(rule *api.InstFileRule) {
-	h, err := shared.HashStruct(*rule)
-	if err != nil {
-		log.Fatalf("Failed to hash struct %v", rule)
-	}
-	rb.FileRules = append(rb.FileRules, h)
-}
 
 // splitVersion splits the version string into three parts, major, minor and patch.
 func splitVersion(version string) (int, int, int) {
@@ -283,70 +183,10 @@ func findAvailableRules() []api.InstRule {
 	return rules
 }
 
-func (rb *RuleBundle) IsValid() bool {
-	return rb != nil &&
-		(len(rb.FileRules) > 0 ||
-			len(rb.File2FuncRules) > 0 ||
-			len(rb.File2StructRules) > 0)
-}
-
-func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
-	funcDecl, ok := decl.(*dst.FuncDecl)
-	if !ok {
-		return false
-	}
-	if funcDecl.Name.Name != function {
-		return false
-	}
-	if receiverType != "" {
-		if !shared.HasReceiver(funcDecl) {
-			return false
-		}
-		switch recvTypeExpr := funcDecl.Recv.List[0].Type.(type) {
-		case *dst.StarExpr:
-			return "*"+recvTypeExpr.X.(*dst.Ident).Name == receiverType
-		case *dst.Ident:
-			return recvTypeExpr.Name == receiverType
-		default:
-			util.Unimplemented()
-		}
-	} else {
-		if shared.HasReceiver(funcDecl) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func MatchStructDecl(decl dst.Decl, structType string) bool {
-	if genDecl, ok := decl.(*dst.GenDecl); ok {
-		if genDecl.Tok == token.TYPE {
-			if typeSpec, ok := genDecl.Specs[0].(*dst.TypeSpec); ok {
-				if typeSpec.Name.Name == structType {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-type RuleMatcher struct {
-	AvailableRules map[string][]api.InstRule
-}
-
-func NewRuleMatcher() *RuleMatcher {
-	rules := make(map[string][]api.InstRule)
-	for _, rule := range findAvailableRules() {
-		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
-	}
-	return &RuleMatcher{AvailableRules: rules}
-}
-
 // MatchRuleBundle gives compilation arguments and finds out all interested rules
 // for it.
-func (rm *RuleMatcher) MatchRuleBundle(importPath string, candidates []string) *RuleBundle {
+func (rm *RuleMatcher) MatchRuleBundle(importPath string,
+	candidates []string) *resource.RuleBundle {
 	util.Assert(importPath != "", "sanity check")
 	availables := make([]api.InstRule, len(rm.AvailableRules[importPath]))
 
@@ -357,7 +197,7 @@ func (rm *RuleMatcher) MatchRuleBundle(importPath string, candidates []string) *
 	if len(availables) == 0 {
 		return nil // fast fail
 	}
-	bundle := NewRuleBundle(importPath)
+	bundle := resource.NewRuleBundle(importPath)
 	for _, candidate := range candidates {
 		// It's not a go file, ignore silently
 		if !shared.IsGoFile(candidate) {
@@ -403,7 +243,7 @@ func (rm *RuleMatcher) MatchRuleBundle(importPath string, candidates []string) *
 					if genDecl, ok := decl.(*dst.GenDecl); ok {
 						// We are only interested in struct type declaration
 						if rl, ok := rule.(*api.InstStructRule); ok {
-							if MatchStructDecl(genDecl, rl.StructType) {
+							if shared.MatchStructDecl(genDecl, rl.StructType) {
 								log.Printf("Matched struct rule %s", rule)
 								bundle.AddFile2StructRule(file, rl)
 								valid = true
@@ -412,7 +252,7 @@ func (rm *RuleMatcher) MatchRuleBundle(importPath string, candidates []string) *
 					} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
 						// We are only interested in function declaration for func rule
 						if rl, ok := rule.(*api.InstFuncRule); ok {
-							if MatchFuncDecl(funcDecl, rl.Function, rl.ReceiverType) {
+							if shared.MatchFuncDecl(funcDecl, rl.Function, rl.ReceiverType) {
 								log.Printf("Matched func rule %s", rule)
 								bundle.AddFile2FuncRule(file, rl)
 								valid = true

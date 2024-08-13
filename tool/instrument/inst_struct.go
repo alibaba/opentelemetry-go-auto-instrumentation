@@ -17,7 +17,7 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		}
 		for _, decl := range astRoot.Decls {
 			for structName, rules := range struct2Rules {
-				if resource.MatchStructDecl(decl, structName) {
+				if shared.MatchStructDecl(decl, structName) {
 					for _, ruleHash := range rules {
 						rule := resource.FindStructRuleByHash(ruleHash)
 						if rule.FieldName == "" || rule.FieldType == "" {

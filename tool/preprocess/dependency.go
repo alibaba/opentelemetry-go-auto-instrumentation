@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -81,9 +82,6 @@ func (dp *DepProcessor) postProcess() {
 
 	// rm -rf otel_rules
 	_ = os.RemoveAll(OtelRules)
-
-	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(OtelPkgDepsDir)
 
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
@@ -195,8 +193,20 @@ func readImportPath(cmd []string) string {
 	return pkg
 }
 
+type RuleMatcher struct {
+	AvailableRules map[string][]api.InstRule
+}
+
+func newRuleMatcher() *RuleMatcher {
+	rules := make(map[string][]api.InstRule)
+	for _, rule := range findAvailableRules() {
+		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
+	}
+	return &RuleMatcher{AvailableRules: rules}
+}
+
 func (dp *DepProcessor) matchRules(compileCmds []string) error {
-	matcher := resource.NewRuleMatcher()
+	matcher := newRuleMatcher()
 	// Find used instrumentation rule according to compile commands
 	for _, cmd := range compileCmds {
 		cmdArgs := strings.Split(cmd, " ")
@@ -631,7 +641,10 @@ func (dp *DepProcessor) setupRules() (err error) {
 }
 
 func (dp *DepProcessor) addOtelImports() error {
-	err := dp.addExplicitImport(OtelImportPath,
+	// We want to instrument otel-sdk itself, we done this by adding otel import
+	// to the project, in this way, pkg/rules/otdk rules will always take effect.
+	err := dp.addExplicitImport(
+		OtelImportPath,
 		OtelBaggageImportPath,
 		OtelSdkTraceImportPath,
 	)

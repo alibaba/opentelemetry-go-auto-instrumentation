@@ -114,10 +114,6 @@ func (dp *DepProcessor) updateDepVersion() error {
 			}
 		}
 	}
-	err := runModTidy()
-	if err != nil {
-		return fmt.Errorf("failed to run go mod tidy: %w", err)
-	}
 	return nil
 }
 
@@ -163,7 +159,7 @@ func Preprocess() error {
 	dp.catchSignal()
 	{
 		start := time.Now()
-		// Backup go.mod as we are likely modifing it via go mod tidy later
+		// Backup go.mod as we are likely modifing it later
 		err = dp.backupGoMod()
 		if err != nil {
 			return fmt.Errorf("failed to backup go.mod: %w", err)
