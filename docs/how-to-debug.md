@@ -16,9 +16,23 @@ debugging information.
 
 After doing the instrumentation, users can check the debugging files in `instrument` directory and `preprocess`
 directory. The debugging files
-in `preprocess` directory show all the rule files that are matched, and the debugging files in `instrument` directory
-show the instrumented plugin code.
-![otebuild.png](otebuild.png)
+in `preprocess` directory show all the used rule files that are matched and also the log for `go build`. The debugging files in `instrument` directory
+show code of the instrumented plugins.
+
+```shell
+.otel-build
+|-instrument
+|--debug_fn_xx.go
+|--debug_xx_trampoline.go
+|-preprocess
+|--backups
+|--embededfs
+|--debug_otel_rule_xx.go
+|--debug_otel_setup_inst.go
+|--debug_otel_setup_sdk.go
+|--dry_run.log
+|--used_rules.json
+```
 
 ## 3. Use delve to debug binary
 
