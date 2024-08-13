@@ -19,8 +19,7 @@ package os
 import "github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 
 func init() {
-	api.NewRule("os", "Setenv", "", "onEnterSetenv", "").
-		Register()
+    api.NewRule("os", "Setenv", "", "onEnterSetenv", "").Register()
 }
 ```
 In the `rule.go` file, we define a new rule for the `os` package. The `NewRule` function takes five arguments: the import path, the function name, the receiver type string, the onEnter function name, and the onExit function name.
@@ -38,12 +37,12 @@ In the `rule.go` file, we define a new rule for the `os` package. The `NewRule` 
 package os
 
 import (
-	"fmt"
-	"os"
+    "fmt"
+    "os"
 )
 
 func onEnterSetenv(call os.CallContext, key, value string) {
-	fmt.Printf("Setting environment variable %s to %s", key, value)
+    fmt.Printf("Setting environment variable %s to %s", key, value)
 }
 ```
 
@@ -63,7 +62,7 @@ package main
 
 import (
     ...
-	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/os"
+    _ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/os"
 )
 ```
 Dont forget recomplie the tool after adding the new rule, because currently `rules` is coded within the tool.
