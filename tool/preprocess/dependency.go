@@ -119,7 +119,7 @@ func (dp *DepProcessor) backupFile(origin string) error {
 			return fmt.Errorf("failed to backup file %v: %w", origin, err)
 		}
 		dp.backups[origin] = backup
-		log.Printf("Backup %v to %v\n", origin, backup)
+		log.Printf("Backup %v\n", origin)
 	} else if shared.Verbose {
 		log.Printf("Backup %v already exists\n", origin)
 	}
@@ -133,7 +133,7 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 		if err != nil {
 			return err
 		}
-		log.Printf("Restore %v from %v\n", origin, backup)
+		log.Printf("Restore %v\n", origin)
 	}
 	return nil
 }
@@ -205,7 +205,8 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 			return fmt.Errorf("failed to find import path: %v", cmd)
 		}
 		if shared.Verbose {
-			log.Printf("Try to match rules for %v with %v\n", importPath, cmdArgs)
+			log.Printf("Try to match rules for %v with %v\n",
+				importPath, cmdArgs)
 		}
 		bundle := matcher.MatchRuleBundle(importPath, cmdArgs)
 		if bundle.IsValid() {
@@ -581,15 +582,20 @@ func (dp *DepProcessor) findLocalImportPath() error {
 	}
 	dp.localImportPath = strings.Replace(workingDir, projectDir, moduleName, 1)
 	if shared.Verbose {
-		log.Printf("Local import path: %v", dp.localImportPath)
+		log.Printf("Find local import path: %v", dp.localImportPath)
 	}
 	return nil
 }
 
-func (dp *DepProcessor) getImportPathOf(dirName string) string {
+func (dp *DepProcessor) getImportPathOf(dirName string) (string, error) {
 	util.Assert(dirName != "", "dirName is empty")
-	util.Assert(dp.localImportPath != "", "localImportPath is empty")
-	return dp.localImportPath + "/" + dirName
+	if dp.localImportPath == "" {
+		err := dp.findLocalImportPath()
+		if err != nil {
+			return "", fmt.Errorf("failed to find local import path: %w", err)
+		}
+	}
+	return dp.localImportPath + "/" + dirName, nil
 }
 
 func (dp *DepProcessor) setupRules() (err error) {
@@ -613,7 +619,10 @@ func (dp *DepProcessor) setupRules() (err error) {
 		return fmt.Errorf("failed to setup otel sdk: %w", err)
 	}
 	// Add implicit otel_rules import to introduce initialization side effect
-	ruleImportPath := dp.getImportPathOf(OtelRules)
+	ruleImportPath, err := dp.getImportPathOf(OtelRules)
+	if err != nil {
+		return fmt.Errorf("failed to get import path: %w", err)
+	}
 	err = dp.addExplicitImport(ruleImportPath)
 	if err != nil {
 		return fmt.Errorf("failed to add rule import: %w", err)
@@ -641,11 +650,6 @@ func (dp *DepProcessor) setupDeps() error {
 	compileCmds, err := getCompileCommands()
 	if err != nil {
 		return fmt.Errorf("failed to get compile commands: %w", err)
-	}
-
-	err = dp.findLocalImportPath()
-	if err != nil {
-		return fmt.Errorf("failed to find local import path: %w", err)
 	}
 
 	err = dp.matchRules(compileCmds)
