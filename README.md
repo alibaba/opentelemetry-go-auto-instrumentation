@@ -1,5 +1,7 @@
 # OpenTelemetry Go Auto Instrumentation
 
+<img src="docs/logo.png" height="150" align="right">
+
 # Introduction
 
 This project provides an automatic solution for Golang applications that want to
