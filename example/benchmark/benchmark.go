@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
-	_ "go.opentelemetry.io/otel"
-	_ "go.opentelemetry.io/otel/baggage"
-	_ "go.opentelemetry.io/otel/sdk/trace"
+
 	"log"
 	"net/http"
 	"time"

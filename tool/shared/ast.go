@@ -272,6 +272,15 @@ func FindFuncDecl(root *dst.File, name string) *dst.FuncDecl {
 }
 
 // AST Parser
+// @@ N.B. DST framework provides a series of RestoreResolvers such
+// as guess.New for resolving the package name from an importPath.
+// However, its strategy is simply to guess by taking last section
+// of the importpath as the package name. This can lead to issues
+// where package names like github.com/foo/v2 are resolved as v2,
+// while in reality, they might be foo. Incorrect resolutions can
+// lead to some imports that should be present being rudely removed.
+// To solve this issue, we disable DST's automatic Import management
+// and use plain AST manipulation to add imports.
 
 // ParseAstFromSnippet parses the AST from incomplete source code snippet.
 func ParseAstFromSnippet(codeSnippnet string) ([]dst.Stmt, error) {
