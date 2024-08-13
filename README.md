@@ -82,6 +82,7 @@ Also there are several documents that you may find useful:
 - [How to debug](./docs/how-to-debug.md)
 - [How to write tests for plugins](./docs/how-to-write-tests-for-plugins.md)
 - [Compatibility](./docs/compatibility.md)
+- [Context Propagation](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/blob/main/docs/context-propagation.md)
 - [Supported Libraries](./docs/supported-libraries.md)
 - [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)
 - [面向OpenTelemetry的Golang应用无侵入插桩技术](https://mp.weixin.qq.com/s/FKCwzRB5Ujhe1stOH2ibXg)
