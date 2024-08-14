@@ -231,11 +231,11 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 
 		// Parse the file content
 		file := candidate
-		fileAst, _ := shared.ParseAstFromFile(file)
+		fileAst, err := shared.ParseAstFromFile(file)
 		if fileAst == nil {
 			// Failed to parse the file, stop here and log only
 			// sicne it's a tolerant failure
-			log.Printf("Failed to parse file %s from local fs", file)
+			log.Printf("Failed to parse file %s from local fs: %v", file, err)
 			continue
 		}
 		if bundle.PackageName == "" {
