@@ -12,7 +12,7 @@ const maxSpans = 300
 type traceContext struct {
 	sw   *spanWrapper
 	n    int
-	Data interface{}
+	Data map[string]interface{}
 }
 
 type spanWrapper struct {
@@ -71,22 +71,31 @@ func (tc *traceContext) clear() {
 }
 
 func (tc *traceContext) TakeSnapShot() interface{} {
+	// take a deep copy to avoid reading & writing the same map at the same time
+	var dataCopy = make(map[string]interface{})
+	for key, value := range tc.Data {
+		dataCopy[key] = value
+	}
 	if tc.n == 0 {
-		return &traceContext{nil, 0, tc.Data}
+		return &traceContext{nil, 0, dataCopy}
 	}
 	last := tc.tail()
 	sw := &spanWrapper{last, nil}
-	return &traceContext{sw, 1, tc.Data}
+	return &traceContext{sw, 1, dataCopy}
 }
 
-func GetGLocalData() interface{} {
+func GetGLocalData(key string) interface{} {
 	t := getOrInitTraceContext()
-	return t.Data
+	r := t.Data[key]
+	return r
 }
 
-func SetGLocalData(data interface{}) {
+func SetGLocalData(key string, value interface{}) {
 	t := getOrInitTraceContext()
-	t.Data = data
+	if t.Data == nil {
+		t.Data = make(map[string]interface{})
+	}
+	t.Data[key] = value
 	setTraceContext(t)
 }
 
