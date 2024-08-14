@@ -219,7 +219,7 @@ func FindRuleFile(path string) (string, error) {
 	}
 	for _, paths := range files {
 		for _, p := range paths {
-			if strings.HasSuffix(p, path) {
+			if strings.Contains(p, path) {
 				return p, nil
 			}
 		}
