@@ -21,6 +21,113 @@ const (
 	EmbededFs        = "embededfs"
 )
 
+// RuleBundle is a collection of rules that matched with one compilation action
+type RuleBundle struct {
+	PackageName      string   // Short package name, e.g. "echo"
+	ImportPath       string   // Full import path, e.g. "github.com/labstack/echo/v4"
+	FileRules        []uint64 // File rules
+	File2FuncRules   map[string]map[string][]uint64
+	File2StructRules map[string]map[string][]uint64
+}
+
+func NewRuleBundle(importPath string) *RuleBundle {
+	return &RuleBundle{
+		PackageName:      "",
+		ImportPath:       importPath,
+		FileRules:        make([]uint64, 0),
+		File2FuncRules:   make(map[string]map[string][]uint64),
+		File2StructRules: make(map[string]map[string][]uint64),
+	}
+}
+
+func (rb *RuleBundle) IsValid() bool {
+	return rb != nil &&
+		(len(rb.FileRules) > 0 ||
+			len(rb.File2FuncRules) > 0 ||
+			len(rb.File2StructRules) > 0)
+}
+
+func (rb *RuleBundle) Merge(new *RuleBundle) (*RuleBundle, error) {
+	if !new.IsValid() {
+		return rb, nil
+	}
+	util.Assert(rb.ImportPath == new.ImportPath, "inconsistent import path")
+	util.Assert(rb.PackageName == new.PackageName, "inconsistent package name")
+	fileRules := make(map[uint64]bool)
+	for _, h := range rb.FileRules {
+		fileRules[h] = true
+	}
+	for _, h := range new.FileRules {
+		if _, exist := fileRules[h]; !exist {
+			rb.FileRules = append(rb.FileRules, h)
+		}
+	}
+
+	for file, rules := range new.File2FuncRules {
+		if _, exist := rb.File2FuncRules[file]; !exist {
+			rb.File2FuncRules[file] = make(map[string][]uint64)
+		}
+		for fn, hashes := range rules {
+			if _, exist := rb.File2FuncRules[file][fn]; !exist {
+				rb.File2FuncRules[file][fn] = make([]uint64, 0)
+			}
+			rb.File2FuncRules[file][fn] =
+				append(rb.File2FuncRules[file][fn], hashes...)
+		}
+	}
+	for file, rules := range new.File2StructRules {
+		if _, exist := rb.File2StructRules[file]; !exist {
+			rb.File2StructRules[file] = make(map[string][]uint64)
+		}
+		for st, hashes := range rules {
+			if _, exist := rb.File2StructRules[file][st]; !exist {
+				rb.File2StructRules[file][st] = make([]uint64, 0)
+			}
+			rb.File2StructRules[file][st] =
+				append(rb.File2StructRules[file][st], hashes...)
+		}
+	}
+	return rb, nil
+}
+
+func (rb *RuleBundle) AddFile2FuncRule(file string, rule *api.InstFuncRule) {
+	fn := rule.Function + "," + rule.ReceiverType
+	util.Assert(fn != "", "sanity check")
+	h, err := shared.HashStruct(*rule)
+	if err != nil {
+		log.Fatalf("Failed to hash struct %v", rule)
+	}
+	if _, exist := rb.File2FuncRules[file]; !exist {
+		rb.File2FuncRules[file] = make(map[string][]uint64)
+		rb.File2FuncRules[file][fn] = []uint64{h}
+	} else {
+		rb.File2FuncRules[file][fn] = append(rb.File2FuncRules[file][fn], h)
+	}
+}
+
+func (rb *RuleBundle) AddFile2StructRule(file string, rule *api.InstStructRule) {
+	st := rule.StructType
+	util.Assert(st != "", "sanity check")
+	h, err := shared.HashStruct(*rule)
+	if err != nil {
+		log.Fatalf("Failed to hash struct %v", rule)
+	}
+	if _, exist := rb.File2StructRules[file]; !exist {
+		rb.File2StructRules[file] = make(map[string][]uint64)
+		rb.File2StructRules[file][st] = []uint64{h}
+	} else {
+		rb.File2StructRules[file][st] = append(rb.File2StructRules[file][st], h)
+	}
+}
+
+func (rb *RuleBundle) AddFileRule(rule *api.InstFileRule) {
+	h, err := shared.HashStruct(*rule)
+	if err != nil {
+		log.Fatalf("Failed to hash struct %v", rule)
+	}
+	rb.FileRules = append(rb.FileRules, h)
+}
+
 func findFiles(dir fs.FS, path string) (map[string][]string, error) {
 	files := make(map[string][]string, 0)
 	err := fs.WalkDir(dir, path, func(path string, d fs.DirEntry, err error) error {

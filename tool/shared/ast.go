@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 )
@@ -269,6 +270,48 @@ func FindFuncDecl(root *dst.File, name string) *dst.FuncDecl {
 		}
 	}
 	return nil
+}
+
+func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
+	funcDecl, ok := decl.(*dst.FuncDecl)
+	if !ok {
+		return false
+	}
+	if funcDecl.Name.Name != function {
+		return false
+	}
+	if receiverType != "" {
+		if !HasReceiver(funcDecl) {
+			return false
+		}
+		switch recvTypeExpr := funcDecl.Recv.List[0].Type.(type) {
+		case *dst.StarExpr:
+			return "*"+recvTypeExpr.X.(*dst.Ident).Name == receiverType
+		case *dst.Ident:
+			return recvTypeExpr.Name == receiverType
+		default:
+			util.Unimplemented()
+		}
+	} else {
+		if HasReceiver(funcDecl) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func MatchStructDecl(decl dst.Decl, structType string) bool {
+	if genDecl, ok := decl.(*dst.GenDecl); ok {
+		if genDecl.Tok == token.TYPE {
+			if typeSpec, ok := genDecl.Specs[0].(*dst.TypeSpec); ok {
+				if typeSpec.Name.Name == structType {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // AST Parser

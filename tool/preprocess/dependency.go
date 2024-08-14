@@ -82,9 +82,6 @@ func (dp *DepProcessor) postProcess() {
 	// rm -rf otel_rules
 	_ = os.RemoveAll(OtelRules)
 
-	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(OtelPkgDepsDir)
-
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
 	if err != nil {
@@ -196,7 +193,7 @@ func readImportPath(cmd []string) string {
 }
 
 func (dp *DepProcessor) matchRules(compileCmds []string) error {
-	matcher := resource.NewRuleMatcher()
+	matcher := newRuleMatcher()
 	// Find used instrumentation rule according to compile commands
 	for _, cmd := range compileCmds {
 		cmdArgs := strings.Split(cmd, " ")
@@ -208,7 +205,7 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 			log.Printf("Try to match rules for %v with %v\n",
 				importPath, cmdArgs)
 		}
-		bundle := matcher.MatchRuleBundle(importPath, cmdArgs)
+		bundle := matcher.matchRuleBundle(importPath, cmdArgs)
 		if bundle.IsValid() {
 			dp.bundles = append(dp.bundles, bundle)
 		} else if shared.Verbose {
@@ -236,7 +233,7 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 		}
 		log.Printf("Try to match additional %v for %v\n",
 			candidates, bundle.ImportPath)
-		newBundle := matcher.MatchRuleBundle(bundle.ImportPath, candidates)
+		newBundle := matcher.matchRuleBundle(bundle.ImportPath, candidates)
 		// One rule bundle represents one import path, so we should merge
 		// them together instead of adding a brand new one
 		_, err := bundle.Merge(newBundle)
@@ -631,7 +628,10 @@ func (dp *DepProcessor) setupRules() (err error) {
 }
 
 func (dp *DepProcessor) addOtelImports() error {
-	err := dp.addExplicitImport(OtelImportPath,
+	// We want to instrument otel-sdk itself, we done this by adding otel import
+	// to the project, in this way, pkg/rules/otdk rules will always take effect.
+	err := dp.addExplicitImport(
+		OtelImportPath,
 		OtelBaggageImportPath,
 		OtelSdkTraceImportPath,
 	)
