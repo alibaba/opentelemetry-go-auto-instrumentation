@@ -6,10 +6,10 @@
 
 ```bash
 # go build
-$ ./otel-go-auto-instrumentation -debug
+$ ./otelbuild -debug
 ```
 
-After alerting the `-debug` option, `otel-go-auto-instrumentation` will build an unoptimized binary file with more
+After alerting the `-debug` option, `otelbuild` will build an unoptimized binary file with more
 debugging information.
 
 ## 2. Check `.otel-build` directory

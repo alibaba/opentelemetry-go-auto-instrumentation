@@ -5,7 +5,7 @@ Go to the root directory of `opentelemetry-go-auto-instrumentation` and execute 
 ```shell
 make clean && make build
 ```
-And there will be a `otel-go-auto-instrumentation` binary in the project root directory.
+And there will be a `otelbuild` binary in the project root directory.
 ### 2. run mysql & redis
 We recommend you to use docker to run mysql and redis:
 ```shell
@@ -16,7 +16,7 @@ docker run -d -p 6379:6379 redis:latest
 Change directory to `example/benchmark` and execute the following command:
 ```shell
 cd example/benchmark
-../../otel-go-auto-instrumentation
+../../otelbuild
 ```
 And there will be a `benchmark` binary in the `example/benchmark` directory.
 ### 4. set opentelemetry endpoint

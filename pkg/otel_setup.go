@@ -23,14 +23,14 @@ import (
 // set the following environment variables based on https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
 // your service name: OTEL_SERVICE_NAME
 // your otlp endpoint: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-const exec_name = "otel-go-auto-instrumentation"
+const exec_name = "otelbuild"
 
 func init() {
 	path, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
-	// skip when the executable is otel-go-auto-instrumentation itself
+	// skip when the executable is otelbuild itself
 	if strings.HasSuffix(path, exec_name) {
 		return
 	}

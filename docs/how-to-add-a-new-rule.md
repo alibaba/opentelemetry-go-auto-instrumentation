@@ -78,7 +78,7 @@ package main
 import "os"
 func main(){ os.Setenv("hello", "world") }
 EOF
-$ ~/opentelemetry-go-auto-instrumentation/otel-go-auto-instrumentation -- main.go
+$ ~/opentelemetry-go-auto-instrumentation/otelbuild -- main.go
 $ ./main
 Setting environment variable hello to world%
 ```

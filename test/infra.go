@@ -2,8 +2,6 @@ package test
 
 import (
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,11 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
-const execName = "otel-go-auto-instrumentation"
+const execName = "otelbuild"
 
 func RunCmd(args []string) *exec.Cmd {
 	path := args[0]

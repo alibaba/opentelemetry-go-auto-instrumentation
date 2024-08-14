@@ -47,7 +47,7 @@ const (
 // is passed. This value is specified by the build system.
 var TheVersion = "1.0.0"
 
-var TheName = "otel-go-auto-instrumentation"
+var TheName = "otelbuild"
 
 func PrintTheVersion() {
 	fmt.Printf("%s version %s\n", TheName, TheVersion)
