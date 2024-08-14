@@ -9,13 +9,13 @@ leverage OpenTelemetry to enable effective observability.
 
 # How to Build
 
-Run the following command to build `otel-go-auto-instrumentation`:
+Run the following command to build `otelbuild`:
 
 ```bash
 $ make build
 ```
 
-For all supported platforms:
+To build all supported platforms for release purpose:
 
 ```bash
 $ make all
@@ -33,22 +33,22 @@ Replace `go build` with the following command to build you project:
 
 ```bash
 # go build
-$ ./otel-go-auto-instrumentation
+$ ./otelbuild
 ```
 
 The arguments for `go build` should be placed after the `--` delimiter:
 
 ```bash
 # go build -gcflags="-m" cmd/app
-$ ./otel-go-auto-instrumentation -- -gcflags="-m" cmd/app
+$ ./otelbuild -- -gcflags="-m" cmd/app
 ```
 
 The arguments for the tool itself should be placed before the `--` delimiter:
 
 ```bash
-$ ./otel-go-auto-instrumentation -help # print help doc
-$ ./otel-go-auto-instrumentation -debuglog # print log to file
-$ ./otel-go-auto-instrumentation -verbose -- -gcflags="-m" cmd/app # print verbose log
+$ ./otelbuild -help # print help doc
+$ ./otelbuild -debuglog # print log to file
+$ ./otelbuild -verbose -- -gcflags="-m" cmd/app # print verbose log
 ```
 
 If you find any failures during the process, it's likely a bug.

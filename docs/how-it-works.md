@@ -30,11 +30,11 @@ rules include:
 - InstStructRule: Modify a struct by adding a new field.
 - InstFileRule: Add a new file to participate in the original compilation process.
 
-Once all the preprocessing is complete, `go build -toolexec otel-go-auto-instrumentation cmd/app` 
+Once all the preprocessing is complete, `go build -toolexec otelbuild cmd/app` 
 is called for compilation. The `-toolexec` parameter is the core of our automatic 
 instrumentation, used to intercept the conventional build process and replace it
 with a user-defined tool, allowing developers to customize the build process more 
-flexibly. Here, `otel-go-auto-instrumentation` is the automatic instrumentation tool,
+flexibly. Here, `otelbuild` is the automatic instrumentation tool,
 which brings us to the Instrument phase.
 
 ## Instrument

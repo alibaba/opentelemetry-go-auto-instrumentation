@@ -1,3 +1,16 @@
+// Copyright (c) 2024 Alibaba Group Holding Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package instrument
 
 import (
@@ -6,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
@@ -135,6 +149,7 @@ func Instrument() error {
 	args := os.Args[2:]
 	// Is compile command?
 	if shared.IsCompileCommand(strings.Join(args, " ")) {
+		start := time.Now()
 		if shared.Verbose {
 			log.Printf("CompileCmdInit: %v\n", args)
 		}
@@ -151,14 +166,16 @@ func Instrument() error {
 				if err != nil {
 					return fmt.Errorf("failed to apply rules: %w", err)
 				}
-				if !shared.Verbose {
-					log.Printf("CompileCmd: %v (%v)\n",
-						bundle.ImportPath, bundle.PackageName)
-				} else {
-					log.Printf("CompileCmd: %v\n", rp.compileArgs)
-				}
 				// Good, run final compilation after instrumentation
-				return util.RunCmd(rp.compileArgs...)
+				err = util.RunCmd(rp.compileArgs...)
+				took := time.Since(start)
+				if !shared.Verbose {
+					log.Printf("CompileCmd: %v took %v (%v)\n",
+						bundle.ImportPath, took, bundle.PackageName)
+				} else {
+					log.Printf("CompileCmd: %v took %v\n", rp.compileArgs, took)
+				}
+				return err
 			}
 		}
 	}

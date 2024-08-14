@@ -24,7 +24,7 @@ endif
 
 # General build options
 MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
-TOOL_REL_NAME := otel-go-auto-instrumentation
+TOOL_REL_NAME := otelbuild
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
 
