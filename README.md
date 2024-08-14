@@ -5,7 +5,9 @@
 # Introduction
 
 This project provides an automatic solution for Golang applications that want to
-leverage OpenTelemetry to enable effective observability.
+leverage OpenTelemetry to enable effective observability. No code changes are
+required in the target application, and the instrumentation is done at compile
+time. The only thing you need to do is to replace `go build` with `otelbuild`.
 
 # How to Build
 
@@ -51,7 +53,7 @@ $ ./otelbuild -debuglog # print log to file
 $ ./otelbuild -verbose -- -gcflags="-m" cmd/app # print verbose log
 ```
 
-If you find any failures during the process, it's likely a bug.
+If you find any compilation failures during the process, it's likely a bug.
 Please feel free to file a bug
 at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
 to help us enhance this project.
@@ -67,7 +69,7 @@ Lastly, we've provided some examples in [example](/example/) direcory, you can t
 | go-redis     | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |
 | mongodb      | https://github.com/mongodb/mongo-go-driver | v1.11.1               | v1.15.2               |
 
-We are gradually open-sourcing the libraries we have supported, and your contributions are warmly welcome.
+We are gradually open-sourcing the libraries we have supported, and your contributions are very welcome.
 
 # Community
 
