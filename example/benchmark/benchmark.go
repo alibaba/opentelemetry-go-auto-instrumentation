@@ -13,10 +13,6 @@
 // limitations under the License.
 package main
 
-import _ "go.opentelemetry.io/otel/sdk/trace"
-import _ "go.opentelemetry.io/otel/baggage"
-import _ "go.opentelemetry.io/otel"
-
 import (
 	"example/benchmark/pkgs"
 	"net/http"
