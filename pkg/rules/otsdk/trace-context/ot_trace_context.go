@@ -104,6 +104,12 @@ func GetGLocalData(key string) interface{} {
 	return r
 }
 
+func GetGLocalDataDouble(key1, key2 string) (interface{}, interface{}) {
+	t := getOrInitTraceContext()
+	value1, value2 := t.Data[key1], t.Data[key2]
+	return value1, value2
+}
+
 func SetGLocalData(key string, value interface{}) {
 	t := getOrInitTraceContext()
 	if t.Data == nil {

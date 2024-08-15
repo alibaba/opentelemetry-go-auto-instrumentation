@@ -66,7 +66,8 @@ func (tr *tracer) Start(ctx context.Context, name string, options ...trace.SpanS
 	if rtt, ok := s.(runtimeTracer); ok {
 		ctx = rtt.runtimeTrace(ctx)
 	}
-
+	SetGLocalData("trace_id", s.SpanContext().TraceID().String())
+	SetGLocalData("span_id", s.SpanContext().SpanID().String())
 	return trace.ContextWithSpan(ctx, s), s
 }
 
