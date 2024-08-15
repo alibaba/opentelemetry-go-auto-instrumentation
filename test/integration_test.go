@@ -20,9 +20,6 @@ import (
 
 func TestPlugins(t *testing.T) {
 	for _, c := range TestCases {
-		if c.TestName != "logrus-test" {
-			continue
-		}
 		if c == nil {
 			continue
 		}
