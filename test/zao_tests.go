@@ -11,30 +11,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package test
 
 import (
-	"example/benchmark/pkgs"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
+	"bufio"
+	"strings"
+	"testing"
 )
 
-func main() {
-	go func() {
-		pkgs.InitNetwork()
-		pkgs.SetupHttp()
-	}()
+func init() {
+	TestCases = append(TestCases,
+		NewGeneralTestCase("zap-test", "zap", "", "", "1.21", "", TestZap),
+	)
+}
 
-	http.ListenAndServe("0.0.0.0:6060", nil)
-
-	signalCh := make(chan os.Signal, 1)
-
-	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
-
-	<-signalCh
-
-	os.Exit(0)
+func TestZap(t *testing.T, env ...string) {
+	UseApp("zap")
+	RunInstrument(t, "-debuglog", "--", "test_zap.go", "http_server.go")
+	_, stderr := RunApp(t, "test_zap", env...)
+	reader := strings.NewReader(stderr)
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		ExpectContains(t, line, "trace_id")
+		ExpectContains(t, line, "span_id")
+	}
 }

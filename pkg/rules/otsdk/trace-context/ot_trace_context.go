@@ -135,6 +135,15 @@ func traceContextAddSpan(span trace.Span) {
 	}
 }
 
+func GetTraceAndSpanId() (string, string) {
+	tc := GetTraceContextFromGLS()
+	if tc != nil {
+		ctx := tc.(*traceContext).tail().SpanContext()
+		return ctx.TraceID().String(), ctx.SpanID().String()
+	}
+	return "", ""
+}
+
 func traceContextDelSpan(span trace.Span) {
 	ctx := getOrInitTraceContext()
 	ctx.del(span)

@@ -14,27 +14,33 @@
 package main
 
 import (
-	"example/benchmark/pkgs"
+	"io"
+	"log"
 	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
+	"strconv"
 )
 
-func main() {
-	go func() {
-		pkgs.InitNetwork()
-		pkgs.SetupHttp()
-	}()
+var port int
 
-	http.ListenAndServe("0.0.0.0:6060", nil)
+func redirectHandler(w http.ResponseWriter, r *http.Request) {
+	resp, err := http.Get("http://127.0.0.1:" + strconv.Itoa(port) + "/b")
+	if err != nil {
+		log.Printf("request provider error: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	_, err = io.ReadAll(resp.Body)
+	if err != nil {
+		log.Print(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	logger.Info("warn info")
+	_, _ = w.Write([]byte("success"))
+}
 
-	signalCh := make(chan os.Signal, 1)
-
-	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
-
-	<-signalCh
-
-	os.Exit(0)
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("success"))
 }
