@@ -29,14 +29,37 @@ And there will be a `benchmark` binary in the `example/benchmark` directory.
 docker build -t benchmark:test .
 docker push benchmark
 ```
-### 5. run application on k8s
-Set your opentelemetry endpoint according to https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
+you can run application use our docker image.
 ```shell
-kubectl apply -f benchmark.yaml
+registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:benchmark
 ```
+### 5. run jaeger
+if you run on k8s
+```shell
+kubectl apply -f jaeger.yaml
+```
+if you run on loacal machine:
+```shell
+docker run --rm --name jaeger \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 14269:14269 \
+  -p 9411:9411 \
+  registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:jaeger
+```
+### 6. run application
+Set your opentelemetry endpoint according to https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
+
 if run on loacal machine:
 ```shell
-./benchmark
+OTEL_EXPORTER_ENDPOINT="localhost:4318" OTEL_EXPORTER_INSECURE=true OTEL_SERVICE_NAME=benchmark ./benchmark
 ```
 if run on k8s, update the `benchmark.yaml` image:
 ```shell
@@ -47,8 +70,12 @@ And request to the server:
 curl localhost:9000/http-service1
 ```
 Wait a little while, you can see the corresponding trace data！All the spans are aggregated in one trace.
-![xtrace.png](xtrace.png)
+![jaeger.png](jaeger.png)
 ## How to generate benchmark report?
-TODO @NameHaibinZhang
+you can use aliyun pts to generate benchmark report.
+![pts.png](pts.png)
+get the pts report:
+![report.png](report.png)
+
 ## Related
 You can report your span to [xTrace](https://help.aliyun.com/zh/opentelemetry/?spm=a2c4g.750001.J_XmGx2FZCDAeIy2ZCWL7sW.10.15152842aYbIq9&scm=20140722.S_help@@%E6%96%87%E6%A1%A3@@90275.S_BB2@bl+RQW@ag0+BB1@ag0+hot+os0.ID_90275-RL_xtrace-LOC_suggest~UND~product~UND~doc-OR_ser-V_3-P0_0) in Alibaba Cloud. xTrace provides out-of-the-box trace explorer for you!
