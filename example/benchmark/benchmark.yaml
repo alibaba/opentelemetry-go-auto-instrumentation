@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: benchmark
+  name: benchmark
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: benchmark
+  template:
+    metadata:
+      labels:
+        app: benchmark
+    spec:
+      containers:
+        - env:
+            - name: OTEL_SERVICE_NAME
+              value: benchmark
+            - name: OTEL_LOG_LEVEL
+              value: warn
+            - name: OTEL_TRACES_SAMPLER
+              value: "traceidratio"
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: 'http://opentelemetry-demo-jaeger-collector:4318'
+          image: registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:benchmark
+          imagePullPolicy: Always
+          name: benchmark
+          resources:
+            limits:
+              cpu: '2'
+              memory: 4048Mi
+            requests:
+              cpu: '2'
+              memory: 4048Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: benchmark
+  name: benchmark
+  namespace: default
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: http
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+  selector:
+    app: benchmark
+  sessionAffinity: None
+  type: LoadBalancer

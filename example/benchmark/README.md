@@ -7,11 +7,16 @@ make clean && make build
 ```
 And there will be a `otelbuild` binary in the project root directory.
 ### 2. run mysql & redis
-We recommend you to use docker to run mysql and redis:
+We recommend you to use k8s to run mysql and redis:
+```shell
+kubectl apply -f mysql-redis.yaml
+```
+Also you can run mysql and redis use docker.
 ```shell
 docker run -d -p 3306:3306 -p 33060:33060 -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0.36
 docker run -d -p 6379:6379 redis:latest
 ```
+
 ### 3. do hybrid compilation
 Change directory to `example/benchmark` and execute the following command:
 ```shell
@@ -19,15 +24,27 @@ cd example/benchmark
 ../../otelbuild
 ```
 And there will be a `benchmark` binary in the `example/benchmark` directory.
-### 4. set opentelemetry endpoint
+### 4. if run on k8s, build app images
+```shell
+docker build -t benchmark:test .
+docker push benchmark
+```
+### 5. run application on k8s
 Set your opentelemetry endpoint according to https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
-### 5. run application
+```shell
+kubectl apply -f benchmark.yaml
+```
+if run on loacal machine:
 ```shell
 ./benchmark
 ```
+if run on k8s, update the `benchmark.yaml` image:
+```shell
+kubectl apply -f benchmark.yaml
+```
 And request to the server:
 ```shell
-curl localhost:8080/request-all
+curl localhost:9000/http-service1
 ```
 Wait a little while, you can see the corresponding trace data！All the spans are aggregated in one trace.
 ![xtrace.png](xtrace.png)
