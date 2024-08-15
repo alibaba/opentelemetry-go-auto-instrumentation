@@ -29,6 +29,9 @@ docker run -d -p 6379:6379 redis:latest
 
 ### 3. do hybrid compilation
 
+First, please make sure your `go` version is >= `1.22`, which is required
+by demo's `go.mod` file.
+
 Change directory to `example/demo` and execute the following command:
 
 ```shell

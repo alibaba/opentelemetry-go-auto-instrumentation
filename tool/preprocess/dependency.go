@@ -16,20 +16,20 @@ package preprocess
 
 import (
 	"bufio"
+	"embed"
 	_ "embed"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"syscall"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
-
 	"golang.org/x/mod/modfile"
 )
 
@@ -37,35 +37,37 @@ const (
 	OtelSetupInst    = "otel_setup_inst.go"
 	OtelSetupSDK     = "otel_setup_sdk.go"
 	OtelRules        = "otel_rules"
+	OtelUser         = "otel_user"
+	OtelRuleCache    = "rule_cache"
 	OtelBackups      = "backups"
 	OtelBackupSuffix = ".bk"
+	FuncMain         = "main"
+	FuncInit         = "init"
+	StdRulesPrefix   = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
+	StdRulesPath     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
+	apiImport        = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 // @@ Change should sync with trampoline template
 const (
-	OtelGetStackDef        = "OtelGetStackImpl"
-	OtelGetStackImportPath = "runtime/debug"
-	OtelGetStackAliasPkg   = "otel_runtime_debug"
-	OtelGetStackImplCode   = OtelGetStackAliasPkg + ".Stack"
-
+	OtelGetStackDef          = "OtelGetStackImpl"
+	OtelGetStackImportPath   = "runtime/debug"
+	OtelGetStackAliasPkg     = "otel_runtime_debug"
+	OtelGetStackImplCode     = OtelGetStackAliasPkg + ".Stack"
 	OtelPrintStackDef        = "OtelPrintStackImpl"
 	OtelPrintStackImportPath = "log"
 	OtelPrintStackPkgAlias   = "otel_log"
 	OtelPrintStackImplCode   = "func(bt []byte){ otel_log.Printf(string(bt)) }"
 )
 
-const (
-	FuncMain = "main"
-	FuncInit = "init"
-)
-
 type DepProcessor struct {
 	bundles          []*resource.RuleBundle // All dependent rule bundles
-	funcRules        []uint64               // Function should be processed separately
 	sigc             chan os.Signal         // Graceful shutdown
 	backups          map[string]string
 	localImportPath  string
 	importCandidates []string
+	rule2Dir         map[*resource.InstFuncRule]string
+	ruleCache        embed.FS
 }
 
 func newDepProcessor() *DepProcessor {
@@ -73,11 +75,12 @@ func newDepProcessor() *DepProcessor {
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	return &DepProcessor{
 		bundles:          []*resource.RuleBundle{},
-		funcRules:        []uint64{},
 		sigc:             sigc,
 		backups:          map[string]string{},
 		localImportPath:  "",
 		importCandidates: nil,
+		rule2Dir:         map[*resource.InstFuncRule]string{},
+		ruleCache:        pkg.ExportRuleCache(),
 	}
 }
 
@@ -85,10 +88,10 @@ func (dp *DepProcessor) postProcess() {
 	shared.GuaranteeInPreprocess()
 	// Clean build cache as we may instrument some std packages(e.g. runtime)
 	// TODO: fine-grained cache cleanup
-	err := runCleanCache()
-	if err != nil {
-		log.Printf("failed to clean cache: %v", err)
-	}
+	// err := util.RunCmd("go", "clean", "-cache")
+	// if err != nil {
+	// 	log.Fatalf("failed to clean cache: %v", err)
+	// }
 
 	// Using -debug? Leave all changes for debugging
 	if shared.Debug {
@@ -99,7 +102,7 @@ func (dp *DepProcessor) postProcess() {
 	_ = os.RemoveAll(OtelRules)
 
 	// Restore everything we have modified during instrumentation
-	err = dp.restoreBackupFiles()
+	err := dp.restoreBackupFiles()
 	if err != nil {
 		log.Fatalf("failed to restore: %v", err)
 	}
@@ -188,274 +191,13 @@ func getCompileCommands() ([]string, error) {
 	return compileCmds, nil
 }
 
-func readImportPath(cmd []string) string {
-	var pkg string
-	for i, v := range cmd {
-		if v == "-p" {
-			return cmd[i+1]
-		}
-	}
-	return pkg
-}
-
-func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
-	cmdArgs := shared.SplitCmds(cmd)
-	importPath := readImportPath(cmdArgs)
-	util.Assert(importPath != "", "sanity check")
-	if shared.Verbose {
-		log.Printf("Matching %v with %v\n", importPath, cmdArgs)
-	}
-	bundle := matcher.matchRuleBundle(importPath, cmdArgs)
-	ch <- bundle
-}
-
-func (dp *DepProcessor) matchRules(compileCmds []string) error {
-	matcher := newRuleMatcher()
-	// Find used instrumentation rule according to compile commands
-	ch := make(chan *resource.RuleBundle)
-	for _, cmd := range compileCmds {
-		go runMatch(matcher, cmd, ch)
-	}
-	cnt := 0
-	for cnt < len(compileCmds) {
-		bundle := <-ch
-		if bundle.IsValid() {
-			dp.bundles = append(dp.bundles, bundle)
-		}
-		cnt++
-	}
-	// In rare case, we might instrument functions that are not in the project
-	// but introduced by InstFileRule/InstFuncRule. For instance, if InstFileRule
-	// adds a foo.go file containing the Foo function, we would want to further
-	// instrument that one. In such cases, we need to match rules for them again.
-	for _, bundle := range dp.bundles {
-		// FIXME: Support further instrumenting onEnter/onExit hook
-		if len(bundle.FileRules) == 0 {
-			continue
-		}
-		candidates := make([]string, 0)
-		for _, ruleHash := range bundle.FileRules {
-			rule := resource.FindFileRuleByHash(ruleHash)
-			// @@ File rules that intended to REPLACE the original file should
-			// not be considered as candidates because logically they do not
-			// introduce any new dependencies, but APPEND mode does.
-			if !rule.Replace {
-				candidates = append(candidates, rule.FileName)
-			}
-		}
-		log.Printf("Try to match additional %v for %v\n",
-			candidates, bundle.ImportPath)
-		newBundle := matcher.matchRuleBundle(bundle.ImportPath, candidates)
-		// One rule bundle represents one import path, so we should merge
-		// them together instead of adding a brand new one
-		_, err := bundle.Merge(newBundle)
-		if err != nil {
-			return fmt.Errorf("failed to merge rule bundle: %w", err)
-		}
-	}
-	// Save used rules to file, so that we can restore them in instrument phase
-	// rather than re-matching them again
-	err := resource.StoreRuleBundles(dp.bundles)
-	if err != nil {
-		return fmt.Errorf("failed to persist used rules: %w", err)
-	}
-	return nil
-}
-
-func (dp *DepProcessor) copyRule(path string, target string) error {
-	text, err := resource.ReadRuleFile(path)
-	if err != nil {
-		return fmt.Errorf("failed to read rule file %v: %w", path, err)
-	}
-	if !shared.HasGoBuildComment(text) {
-		log.Printf("Warning: %v does not contain //go:build ignore tag", path)
-	}
-	text = shared.RemoveGoBuildComment(text)
-	astRoot, err := shared.ParseAstFromSource(text)
-	if err != nil {
-		return fmt.Errorf("failed to parse ast from source: %w", err)
-	}
-	// If go.mod is present, we should put all rules into otel_rules directory
-	astRoot.Name.Name = OtelRules
-
-	// Copy used rule into project
-	_, err = shared.WriteAstToFile(astRoot, target)
-	if err != nil {
-		return fmt.Errorf("failed to write ast to %v: %w", target, err)
-	}
-	if shared.Verbose {
-		log.Printf("Copy dependency %v to %v", path, target)
-	}
-	return nil
-}
-
-func isValidFilePath(path string) bool {
-	// a valid file path looks like: /path/to/file.go
-	re := regexp.MustCompile(`^.*\.go$`)
-	return re.MatchString(path)
-}
-
-func (dp *DepProcessor) copyRules(targetDir string) (err error) {
-	if len(dp.bundles) == 0 {
-		return nil
-	}
-	// Find out which resource files we should add to project
-	uniqueResources := make(map[string]string)
-	for _, bundle := range dp.bundles {
-		for _, funcRules := range bundle.File2FuncRules {
-			// Copy resource file into project as otel_rule_\d.go
-			for _, rs := range funcRules {
-				dp.funcRules = append(dp.funcRules, rs...)
-				for _, ruleHash := range rs {
-					rule := resource.FindFuncRuleByHash(ruleHash)
-					// If rule inserts raw code directly, skip adding any
-					// further dependencies
-					if rule.UseRaw {
-						continue
-					}
-
-					// Find files where hooks relies on
-					for _, dep := range rule.FileDeps {
-						util.Assert(isValidFilePath(dep), "sanity check")
-						res, err := resource.FindRuleDepFile(rule, dep)
-						if err != nil {
-							return fmt.Errorf("cannot find dep %v: %w", dep, err)
-						}
-						if res == "" {
-							return fmt.Errorf("cannot find dep %v", dep)
-						}
-						uniqueResources[res] = bundle.PackageName
-					}
-					// Find files where hooks defines in
-					res, err := resource.FindHookFile(rule)
-					if err != nil {
-						return err
-					}
-					if res == "" {
-						return fmt.Errorf("can not find resource for %v", rule)
-					}
-					uniqueResources[res] = bundle.PackageName
-				}
-			}
-		}
-	}
-
-	for path, pkgName := range uniqueResources {
-		name := fmt.Sprintf("otel_rule_%s%s.go", pkgName, util.RandomString(5))
-		ruleFile := filepath.Join(targetDir, name)
-		err = dp.copyRule(path, ruleFile)
-		if err != nil {
-			return fmt.Errorf("failed to copy rule %v: %w", path, err)
-		}
-		shared.SaveDebugFile("", ruleFile)
-	}
-	return nil
-}
-
-func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
-	c := fmt.Sprintf("package %s\n", pkgName)
-	imports := make(map[string]string)
-
-	assigns := make([]string, 0)
-	for _, bundle := range dp.bundles {
-		if len(bundle.File2FuncRules) == 0 {
-			continue
-		}
-		addedImport := false
-		for _, funcRules := range bundle.File2FuncRules {
-			for _, rs := range funcRules {
-				for _, ruleHash := range rs {
-					rule := resource.FindFuncRuleByHash(ruleHash)
-
-					util.Assert(rule.OnEnter != "" || rule.OnExit != "",
-						"sanity check")
-					if rule.UseRaw {
-						continue
-					}
-					var aliasPkg string
-					if !addedImport {
-						if bundle.PackageName == OtelPrintStackImportPath {
-							aliasPkg = OtelPrintStackPkgAlias
-						} else {
-							aliasPkg = bundle.PackageName + util.RandomString(3)
-						}
-						imports[bundle.ImportPath] = aliasPkg
-						addedImport = true
-					} else {
-						aliasPkg = imports[bundle.ImportPath]
-					}
-					if rule.OnEnter != "" {
-						assigns = append(assigns,
-							fmt.Sprintf("\t%s.%s = %s\n",
-								aliasPkg,
-								shared.GetVarNameOfFunc(rule.OnEnter),
-								rule.OnEnter,
-							),
-						)
-					}
-					if rule.OnExit != "" {
-						assigns = append(assigns,
-							fmt.Sprintf(
-								"\t%s.%s = %s\n",
-								aliasPkg,
-								shared.GetVarNameOfFunc(rule.OnExit),
-								rule.OnExit,
-							),
-						)
-					}
-					assigns = append(assigns, fmt.Sprintf(
-						"\t%s.%s = %s\n",
-						aliasPkg,
-						OtelGetStackDef,
-						OtelGetStackImplCode,
-					))
-					assigns = append(assigns, fmt.Sprintf(
-						"\t%s.%s = %s\n",
-						aliasPkg,
-						OtelPrintStackDef,
-						OtelPrintStackImplCode,
-					))
-				}
-			}
-		}
-	}
-
-	// Imports
-	if len(assigns) > 0 {
-		imports[OtelPrintStackImportPath] = OtelPrintStackPkgAlias
-		imports[OtelGetStackImportPath] = OtelGetStackAliasPkg
-	}
-	for k, v := range imports {
-		c += fmt.Sprintf("import %s \"%s\"\n", v, k)
-	}
-
-	// Assignments
-	c += "func init() {\n"
-	for _, assign := range assigns {
-		c += assign
-	}
-	c += "}\n"
-
-	_, err = util.WriteStringToFile(target, c)
-	if err != nil {
-		return err
-	}
-	shared.SaveDebugFile("", target)
-	return err
-}
-func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
-	_, err := resource.CopyOtelSetupTo(pkgName, target)
-	if err != nil {
-		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
-	}
-	shared.SaveDebugFile("", target)
-	return err
-}
-
 // assembleInitCandidate assembles the candidate files that we may add init
 // function to. The candidate files are the ones that have main or init
 // function defined.
-func assembleImportCandidates() ([]string, error) {
+func (dp *DepProcessor) getImportCandidates() ([]string, error) {
+	if dp.importCandidates != nil {
+		return dp.importCandidates, nil
+	}
 	candidates := make([]string, 0)
 	found := false
 
@@ -499,27 +241,21 @@ func assembleImportCandidates() ([]string, error) {
 		}
 		candidates = append(candidates, files...)
 	}
+	if len(candidates) > 0 {
+		dp.importCandidates = candidates
+	}
 	return candidates, nil
 }
 
 func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 	// Find out where we should forcely import our init func
-	if dp.importCandidates == nil {
-		files, err := assembleImportCandidates()
-		if err != nil {
-			return fmt.Errorf("failed to assemble import candidates: %w", err)
-		}
-		dp.importCandidates = files
-		if shared.Verbose {
-			log.Printf("RuleImport candidates: %v", files)
-		}
-		if len(dp.importCandidates) == 0 {
-			return fmt.Errorf("no candidate found to add import")
-		}
+	candidate, err := dp.getImportCandidates()
+	if err != nil {
+		return fmt.Errorf("failed to get import candidates: %w", err)
 	}
 
 	addImport := false
-	for _, file := range dp.importCandidates {
+	for _, file := range candidate {
 		if !shared.IsGoFile(file) {
 			continue
 		}
@@ -551,7 +287,6 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to write ast to %v: %w", file, err)
 		}
-		shared.SaveDebugFile("user_", file)
 	}
 	if !addImport {
 		return fmt.Errorf("failed to add rule import, candidates are %v",
@@ -611,63 +346,84 @@ func (dp *DepProcessor) getImportPathOf(dirName string) (string, error) {
 	return dp.localImportPath + "/" + dirName, nil
 }
 
-func (dp *DepProcessor) setupRules() (err error) {
-	err = os.MkdirAll(OtelRules, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to create directory %v: %w", OtelRules, err)
-	}
-	// Put otel_rule_*.go files into otel_rules
-	err = dp.copyRules(OtelRules)
-	if err != nil {
-		return fmt.Errorf("failed to setup rules: %w", err)
-	}
-	// Put otel_setup_inst.go into otel_rules
-	err = dp.initializeRules(OtelRules, filepath.Join(OtelRules, OtelSetupInst))
-	if err != nil {
-		return fmt.Errorf("failed to setup initiator: %w", err)
-	}
-	// Put otel_setup_sdk.go into otel_rules
-	err = dp.setupOtelSDK(OtelRules, filepath.Join(OtelRules, OtelSetupSDK))
-	if err != nil {
-		return fmt.Errorf("failed to setup otel sdk: %w", err)
-	}
-	// Add implicit otel_rules import to introduce initialization side effect
-	ruleImportPath, err := dp.getImportPathOf(OtelRules)
-	if err != nil {
-		return fmt.Errorf("failed to get import path: %w", err)
-	}
-	err = dp.addExplicitImport(ruleImportPath)
-	if err != nil {
-		return fmt.Errorf("failed to add rule import: %w", err)
-	}
-	return nil
-}
-
 func (dp *DepProcessor) addOtelImports() error {
-	err := dp.addExplicitImport(fixedOtelDeps...)
+	deps := []string{}
+	for _, dep := range fixedDeps {
+		if dep.addImport {
+			deps = append(deps, dep.dep)
+		}
+	}
+	err := dp.addExplicitImport(deps...)
 	if err != nil {
 		return fmt.Errorf("failed to add otel import: %w", err)
 	}
 	return nil
 }
 
+func (dp *DepProcessor) preclean() {
+	// err is tolerated here as this is a best-effort operation
+	// Clean obsolete imports from last run
+	candidate, _ := dp.getImportCandidates()
+	ruleImport, _ := dp.getImportPathOf(OtelRules)
+	for _, file := range candidate {
+		if !shared.IsGoFile(file) {
+			continue
+		}
+		astRoot, _ := shared.ParseAstFromFile(file)
+		if astRoot == nil {
+			continue
+		}
+		if shared.RemoveImport(astRoot, ruleImport) {
+			if shared.Verbose {
+				log.Printf("Remove obsolete import %v from %v",
+					ruleImport, file)
+			}
+		}
+		for _, dep := range fixedDeps {
+			if !dep.addImport {
+				continue
+			}
+			if shared.RemoveImport(astRoot, dep.dep) {
+				if shared.Verbose {
+					log.Printf("Remove obsolete import %v from %v",
+						dep, file)
+				}
+			}
+		}
+		_, err := shared.WriteAstToFile(astRoot, file)
+		if err != nil {
+			log.Printf("Failed to write ast to %v: %v", file, err)
+		}
+	}
+	// Clean otel_rules directory
+	if exist, _ := util.PathExists(OtelRules); exist {
+		_ = os.RemoveAll(OtelRules)
+	}
+}
+
+func (dp *DepProcessor) storeRuleBundles() error {
+	err := resource.StoreRuleBundles(dp.bundles)
+	if err != nil {
+		return fmt.Errorf("failed to store rule bundles: %w", err)
+	}
+	// No longer valid from now on
+	dp.bundles = nil
+	return nil
+}
+
 func (dp *DepProcessor) setupDeps() error {
-	// Add otel import to the project so that we can instrument otel-sdk itself
+	// Pre-clean before processing in case of any obsolete materials left
+	dp.preclean()
+
 	err := dp.addOtelImports()
 	if err != nil {
 		return fmt.Errorf("failed to add otel imports: %w", err)
 	}
 
 	// Pinning otel version in go.mod
-	err = dp.pinOtelVersion()
+	err = dp.pinDepVersion()
 	if err != nil {
 		return fmt.Errorf("failed to update otel: %w", err)
-	}
-
-	// Try to pin opentelemetry-go-auto-instrumentation itself
-	tpe := dp.tryPinInstVersion()
-	if tpe != nil {
-		log.Printf("failed to pin opentelemetry-go-auto-instrumentation itself")
 	}
 
 	// Run go mod tidy first to fetch all dependencies
@@ -688,10 +444,22 @@ func (dp *DepProcessor) setupDeps() error {
 		return fmt.Errorf("failed to find dependencies: %w", err)
 	}
 
+	err = dp.fetchRules()
+	if err != nil {
+		return fmt.Errorf("failed to fetch rules: %w", err)
+	}
+
 	// Setup rules according to compile commands
 	err = dp.setupRules()
 	if err != nil {
 		return fmt.Errorf("failed to setup dependencies: %w", err)
+	}
+
+	// Save matched rules into file, from this point on, we no longer modify
+	// the rules
+	err = dp.storeRuleBundles()
+	if err != nil {
+		return fmt.Errorf("failed to store rule bundles: %w", err)
 	}
 	return nil
 }

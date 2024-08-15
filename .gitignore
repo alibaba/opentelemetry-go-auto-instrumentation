@@ -7,6 +7,7 @@ otelbuild-*
 .otel-build
 vendor
 test/errors-test/errors-test
+test/errorstest/errorstest
 test/helloworld/helloworld
 test/httpclient/httpclient
 test/flags/flags
@@ -20,3 +21,4 @@ otel_pkgdep
 opentelemetry-go-auto-instrumentation
 *_cache
 example/demo/demo
+test/zap/test_zap

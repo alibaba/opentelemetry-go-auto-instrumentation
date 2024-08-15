@@ -19,7 +19,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
@@ -94,9 +94,9 @@ import (
 
 // TJump describes a trampoline-jump-if optimization candidate
 type TJump struct {
-	target *dst.FuncDecl     // Target function we are hooking on
-	ifStmt *dst.IfStmt       // Trampoline-jump-if statement
-	rule   *api.InstFuncRule // Rule associated with the trampoline-jump-if
+	target *dst.FuncDecl          // Target function we are hooking on
+	ifStmt *dst.IfStmt            // Trampoline-jump-if statement
+	rule   *resource.InstFuncRule // Rule associated with the trampoline-jump-if
 }
 
 func newDecoratedEmptyStmt() *dst.EmptyStmt {

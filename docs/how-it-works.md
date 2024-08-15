@@ -111,7 +111,7 @@ The `clientOnEnter` function performs the actual monitoring tasks:
 
 ```go
 // == otel_rule_http59729.go
-func clientOnEnter(call *http.CallContext, t *http.Transport, req *http.Request) {
+func clientOnEnter(call api.CallContext, t *http.Transport, req *http.Request) {
     ...
     var tracer trace.Tracer
     if span := trace.SpanFromContext(req.Context()); span.SpanContext().IsValid() {

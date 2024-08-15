@@ -1,6 +1,6 @@
 module test
 
-go 1.22.0
+go 1.22
 
 require (
 	go.opentelemetry.io/otel/sdk v1.30.0
