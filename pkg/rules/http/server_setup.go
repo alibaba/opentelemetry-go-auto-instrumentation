@@ -11,9 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package http
 
 import (
 	"bufio"
@@ -22,11 +21,13 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 var netHttpServerInstrumenter = BuildNetHttpServerOtelInstrumenter()
 
-func serverOnEnter(call http.CallContext, _ interface{}, w http.ResponseWriter, r *http.Request) {
+func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r *http.Request) {
 	request := netHttpRequest{
 		method:  r.Method,
 		url:     *r.URL,
@@ -48,7 +49,7 @@ func serverOnEnter(call http.CallContext, _ interface{}, w http.ResponseWriter, 
 	return
 }
 
-func serverOnExit(call http.CallContext) {
+func serverOnExit(call api.CallContext) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return

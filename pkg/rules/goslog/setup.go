@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build ignore
-
 package golog
 
 import (
 	"context"
-	"go.opentelemetry.io/otel/sdk/trace"
 	"log/slog"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-func goSlogWriteOnEnter(call slog.CallContext, ce *slog.Logger, ctx context.Context, level slog.Level, msg string, args ...any) {
+func goSlogWriteOnEnter(call api.CallContext, ce *slog.Logger, ctx context.Context, level slog.Level, msg string, args ...any) {
 	traceId, spanId := trace.GetTraceAndSpanId()
 	if traceId != "" {
 		msg = msg + " trace_id=" + traceId

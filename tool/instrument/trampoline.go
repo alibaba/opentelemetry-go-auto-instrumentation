@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"go/token"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -125,7 +124,7 @@ func getNames(list *dst.FieldList) []string {
 	return names
 }
 
-func makeOnXName(t *api.InstFuncRule, onEnter bool) string {
+func makeOnXName(t *resource.InstFuncRule, onEnter bool) string {
 	if onEnter {
 		return shared.GetVarNameOfFunc(t.OnEnter)
 	} else {
@@ -139,18 +138,14 @@ type ParamTrait struct {
 	IsInterfaceAny bool
 }
 
-func getHookFunc(t *api.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
+func getHookFunc(t *resource.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
 	file, err := resource.FindHookFile(t)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find rule files: %w", err)
+		return nil, fmt.Errorf("failed to read file %s: %w", t, err)
 	}
-	source, err := resource.ReadRuleFile(file)
+	astRoot, err := shared.ParseAstFromFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", file, err)
-	}
-	astRoot, err := shared.ParseAstFromSource(source)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse ast from source: %w", err)
+		return nil, fmt.Errorf("failed to parse ast from file: %w", err)
 	}
 	var target *dst.FuncDecl
 	if onEnter {
@@ -161,10 +156,15 @@ func getHookFunc(t *api.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
 	if target != nil {
 		return target, nil
 	}
-	return nil, errors.New("can not find hook func for rule")
+
+	if onEnter {
+		return nil, fmt.Errorf("failed to find hook func %s", t.OnEnter)
+	} else {
+		return nil, fmt.Errorf("failed to find hook func %s", t.OnExit)
+	}
 }
 
-func getHookParamTraits(t *api.InstFuncRule, onEnter bool) ([]ParamTrait, error) {
+func getHookParamTraits(t *resource.InstFuncRule, onEnter bool) ([]ParamTrait, error) {
 	target, err := getHookFunc(t, onEnter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hook func: %w", err)
@@ -184,7 +184,7 @@ func getHookParamTraits(t *api.InstFuncRule, onEnter bool) ([]ParamTrait, error)
 	return attrs, nil
 }
 
-func (rp *RuleProcessor) callOnEnterHook(t *api.InstFuncRule, traits []ParamTrait) error {
+func (rp *RuleProcessor) callOnEnterHook(t *resource.InstFuncRule, traits []ParamTrait) error {
 	if len(traits) != (len(rp.onEnterHookFunc.Type.Params.List) + 1 /*CallContext*/) {
 		return errors.New("hook param traits mismatch on enter hook")
 	}
@@ -213,7 +213,7 @@ func (rp *RuleProcessor) callOnEnterHook(t *api.InstFuncRule, traits []ParamTrai
 	return nil
 }
 
-func (rp *RuleProcessor) callOnExitHook(t *api.InstFuncRule, traits []ParamTrait) error {
+func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []ParamTrait) error {
 	if len(traits) != len(rp.onExitHookFunc.Type.Params.List) {
 		return errors.New("hook param traits mismatch on exit hook")
 	}
@@ -263,7 +263,8 @@ func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	return nil
 }
 
-func (rp *RuleProcessor) addHookFuncVar(t *api.InstFuncRule, traits []ParamTrait, onEnter bool) error {
+func (rp *RuleProcessor) addHookFuncVar(t *resource.InstFuncRule,
+	traits []ParamTrait, onEnter bool) error {
 	paramTypes := rp.buildTrampolineType(onEnter)
 	addCallContext(paramTypes)
 	// Hook functions may uses interface{} as parameter type, as some types of
@@ -290,7 +291,7 @@ func insertAtEnd(funcDecl *dst.FuncDecl, stmt dst.Stmt) {
 	insertAt(funcDecl, stmt, len(funcDecl.Body.List))
 }
 
-func (rp *RuleProcessor) renameFunc(t *api.InstFuncRule) {
+func (rp *RuleProcessor) renameFunc(t *resource.InstFuncRule) {
 	// Randomize trampoline function names
 	rp.onEnterHookFunc.Name.Name = rp.makeFuncName(t, true)
 	dst.Inspect(rp.onEnterHookFunc, func(node dst.Node) bool {
@@ -405,7 +406,7 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 // implementCallContext effectively "implements" the CallContext interface by
 // renaming occurrences of CallContextImpl to CallContextImpl{suffix} in the
 // trampoline template
-func (rp *RuleProcessor) implementCallContext(t *api.InstFuncRule) {
+func (rp *RuleProcessor) implementCallContext(t *resource.InstFuncRule) {
 	suffix := rp.rule2Suffix[t]
 	structType := rp.callCtxDecl.Specs[0].(*dst.TypeSpec)
 	util.Assert(structType.Name.Name == TrampolineCallContextImplType,
@@ -535,9 +536,11 @@ func (rp *RuleProcessor) rewriteCallContextImpl() {
 		paramType := desugarType(param)
 		for range param.Names {
 			clause := setParamClause(idx, paramType)
-			methodSetParamBody.List = append(methodSetParamBody.List, clause)
+			methodSetParamBody.List =
+				append(methodSetParamBody.List, clause)
 			clause = getParamClause(idx, paramType)
-			methodGetParamBody.List = append(methodGetParamBody.List, clause)
+			methodGetParamBody.List =
+				append(methodGetParamBody.List, clause)
 			idx++
 		}
 	}
@@ -548,16 +551,19 @@ func (rp *RuleProcessor) rewriteCallContextImpl() {
 			retType := desugarType(retval)
 			for range retval.Names {
 				clause := getReturnValClause(idx, retType)
-				methodGetRetValBody.List = append(methodGetRetValBody.List, clause)
+				methodGetRetValBody.List =
+					append(methodGetRetValBody.List, clause)
 				clause = setReturnValClause(idx, retType)
-				methodSetRetValBody.List = append(methodSetRetValBody.List, clause)
+				methodSetRetValBody.List =
+					append(methodSetRetValBody.List, clause)
 				idx++
 			}
 		}
 	}
 }
 
-func (rp *RuleProcessor) callHookFunc(t *api.InstFuncRule, onEnter bool) error {
+func (rp *RuleProcessor) callHookFunc(t *resource.InstFuncRule,
+	onEnter bool) error {
 	traits, err := getHookParamTraits(t, onEnter)
 	if err != nil {
 		return fmt.Errorf("failed to get hook param traits: %w", err)
@@ -580,7 +586,8 @@ func (rp *RuleProcessor) callHookFunc(t *api.InstFuncRule, onEnter bool) error {
 	return nil
 }
 
-func (rp *RuleProcessor) generateTrampoline(t *api.InstFuncRule, funcDecl *dst.FuncDecl) error {
+func (rp *RuleProcessor) generateTrampoline(t *resource.InstFuncRule,
+	funcDecl *dst.FuncDecl) error {
 	rp.rawFunc = funcDecl
 	// Materialize various declarations from template file, no one wants to see
 	// a bunch of manual AST code generation, isn't it?

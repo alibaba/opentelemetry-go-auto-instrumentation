@@ -11,17 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package grpc
 
 import (
 	"context"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
 )
 
-func grpcNewClientOnEnter(call grpc.CallContext, target string, opts ...grpc.DialOption) {
+func grpcNewClientOnEnter(call api.CallContext, target string, opts ...grpc.DialOption) {
 	h := grpc.WithStatsHandler(NewClientNewHandler())
 	var opt []grpc.DialOption
 	opt = append(opt, h)
@@ -29,7 +30,7 @@ func grpcNewClientOnEnter(call grpc.CallContext, target string, opts ...grpc.Dia
 	call.SetParam(1, opt)
 }
 
-func grpcNewClientOnExit(call grpc.CallContext, cc *grpc.ClientConn, err error) {
+func grpcNewClientOnExit(call api.CallContext, cc *grpc.ClientConn, err error) {
 	return
 }
 
