@@ -104,12 +104,6 @@ func GetGLocalData(key string) interface{} {
 	return r
 }
 
-func GetGLocalDataDouble(key1, key2 string) (interface{}, interface{}) {
-	t := getOrInitTraceContext()
-	value1, value2 := t.Data[key1], t.Data[key2]
-	return value1, value2
-}
-
 func SetGLocalData(key string, value interface{}) {
 	t := getOrInitTraceContext()
 	if t.Data == nil {
@@ -139,6 +133,15 @@ func traceContextAddSpan(span trace.Span) {
 	if !tc.add(span) {
 		fmt.Println("Failed to add span to TraceContext")
 	}
+}
+
+func GetTraceAndSpanId() (string, string) {
+	tc := GetTraceContextFromGLS()
+	if tc != nil {
+		ctx := tc.(*traceContext).tail().SpanContext()
+		return ctx.TraceID().String(), ctx.SpanID().String()
+	}
+	return "", ""
 }
 
 func traceContextDelSpan(span trace.Span) {

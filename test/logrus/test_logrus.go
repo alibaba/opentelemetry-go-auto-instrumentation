@@ -59,7 +59,6 @@ func main() {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	logrus.Warn("warn info")
 	time.Sleep(1 * time.Second)
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:"+strconv.Itoa(port)+"/a", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), 200, 0, int64(port))

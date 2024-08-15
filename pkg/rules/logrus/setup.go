@@ -21,7 +21,7 @@ func (hook *logHook) Levels() []logrus.Level {
 
 func (hook *logHook) Fire(entry *logrus.Entry) error {
 	// 修改日志内容
-	traceId, spanId := trace.GetGLocalDataDouble("trace_id", "span_id")
+	traceId, spanId := trace.GetTraceAndSpanId()
 	if traceId != "" {
 		entry.Data["trace_id"] = traceId
 	}

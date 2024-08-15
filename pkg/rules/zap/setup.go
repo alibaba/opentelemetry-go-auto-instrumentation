@@ -10,12 +10,12 @@ import (
 
 func zapLogWriteOnEnter(call zapcore.CallContext, ce *zapcore.CheckedEntry, fields ...zap.Field) {
 	var fieldsTemp []zap.Field
-	traceId, spanId := trace.GetGLocalDataDouble("trace_id", "span_id")
-	if traceId != nil {
-		fieldsTemp = append(fieldsTemp, zap.String("trace_id", traceId.(string)))
+	traceId, spanId := trace.GetTraceAndSpanId()
+	if traceId != "" {
+		fieldsTemp = append(fieldsTemp, zap.String("trace_id", traceId))
 	}
-	if spanId != nil {
-		fieldsTemp = append(fieldsTemp, zap.String("span_id", spanId.(string)))
+	if spanId != "" {
+		fieldsTemp = append(fieldsTemp, zap.String("span_id", spanId))
 	}
 	if fields == nil {
 		fields = fieldsTemp
