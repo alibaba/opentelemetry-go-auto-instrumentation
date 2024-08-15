@@ -56,7 +56,7 @@ func service3(w http.ResponseWriter, r *http.Request) {
 var rdb *redis.Client
 var err error
 
-func init() {
+func InitNetwork() {
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     "r-uf6x51fdb6tqmrmisq.redis.rds.aliyuncs.com:6379",
 		Password: "Hello1234",

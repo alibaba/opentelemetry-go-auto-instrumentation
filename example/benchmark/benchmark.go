@@ -24,6 +24,7 @@ import (
 
 func main() {
 	go func() {
+		pkgs.InitNetwork()
 		pkgs.SetupHttp()
 	}()
 
