@@ -63,10 +63,10 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 			}
 		} else {
 			mode = "APPEND"
-			rp.addCompileArg(target)
+			rp.appendCompileArg(target)
 		}
 		log.Printf("Apply file rule %v by %s mode", fileName, mode)
-		shared.SaveDebugFile("file_", target)
+		shared.SaveDebugFile("file", target)
 	}
 	return nil
 }

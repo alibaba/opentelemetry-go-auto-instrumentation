@@ -15,7 +15,9 @@
 
 package test
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func OnExitPrintf1(call fmt.CallContext, n int, err error) {
 	println("Exiting hook1....")

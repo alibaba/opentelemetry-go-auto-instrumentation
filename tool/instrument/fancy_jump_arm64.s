@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,31 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// Thanks weixlu for providing the ARM64 invariant
 
-import (
-	"log"
-	"os"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-)
-
-func main() {
-	shared.ParseOptions()
-	if shared.PrintVersion {
-		shared.PrintTheVersion()
-		os.Exit(0)
-	}
-	err := shared.InitOptions()
-	if err != nil {
-		log.Printf("failed to init options: %v", err)
-		os.Exit(1)
-
-	}
-	err = tool.Run()
-	if err != nil {
-		log.Printf("failed to run the tool: %v %v", err, os.Args)
-		os.Exit(1)
-	}
-}
+//go:build ignore
+TEXT ·FancyJump(SB),NOSPLIT,$0-8
+    MOVD $·HookFuncVar(SB), R0
+    MOVD (R0), R1
+    CMP ZR, R1
+    BEQ invalid
+    BL R0
+invalid:
+    RET

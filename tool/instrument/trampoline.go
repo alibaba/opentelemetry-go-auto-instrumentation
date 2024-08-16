@@ -16,12 +16,10 @@ package instrument
 
 import (
 	_ "embed"
-	"errors"
 	"fmt"
 	"go/token"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
@@ -78,11 +76,10 @@ func (rp *RuleProcessor) materializeTemplate() error {
 		return fmt.Errorf("failed to parse trampoline template: %w", err)
 	}
 
-	rp.varDecls = make([]dst.Decl, 0)
 	rp.callCtxMethods = make([]*dst.FuncDecl, 0)
 	for _, node := range astRoot.Decls {
-		// Materialize function declarations
 		if decl, ok := node.(*dst.FuncDecl); ok {
+			// Materialize function declarations
 			if decl.Name.Name == TrampolineOnEnterName {
 				rp.onEnterHookFunc = decl
 				rp.addDecl(decl)
@@ -96,20 +93,16 @@ func (rp *RuleProcessor) materializeTemplate() error {
 				rp.callCtxMethods = append(rp.callCtxMethods, decl)
 				rp.addDecl(decl)
 			}
-		}
-		// Materialize variable declarations
-		if decl, ok := node.(*dst.GenDecl); ok {
-			// No further processing for variable declarations, just append them
-			if decl.Tok == token.VAR {
-				rp.varDecls = append(rp.varDecls, decl)
-			} else if decl.Tok == token.TYPE {
+		} else if decl, ok := node.(*dst.GenDecl); ok {
+			// Materialize type declarations
+			if decl.Tok == token.TYPE {
 				rp.callCtxDecl = decl
 				rp.addDecl(decl)
 			}
 		}
 	}
 	util.Assert(rp.callCtxDecl != nil, "sanity check")
-	util.Assert(len(rp.varDecls) > 0, "sanity check")
+	util.Assert(len(rp.callCtxMethods) > 0, "sanity check")
 	util.Assert(rp.onEnterHookFunc != nil, "sanity check")
 	util.Assert(rp.onExitHookFunc != nil, "sanity check")
 	return nil
@@ -133,123 +126,6 @@ func makeOnXName(t *api.InstFuncRule, onEnter bool) string {
 	}
 }
 
-type ParamTrait struct {
-	Index          int
-	IsVaradic      bool
-	IsInterfaceAny bool
-}
-
-func getHookFunc(t *api.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
-	res, err := resource.FindRuleFiles(t)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find rule files: %w", err)
-	}
-	for _, file := range res {
-		source, err := resource.ReadRuleFile(file)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %w", file, err)
-		}
-		astRoot, err := shared.ParseAstFromSource(source)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse ast from source: %w", err)
-		}
-		var target *dst.FuncDecl
-		if onEnter {
-			target = shared.FindFuncDecl(astRoot, t.OnEnter)
-		} else {
-			target = shared.FindFuncDecl(astRoot, t.OnExit)
-		}
-		if target != nil {
-			return target, nil
-		}
-	}
-	return nil, errors.New("can not find hook func for rule")
-}
-
-func getHookParamTraits(t *api.InstFuncRule, onEnter bool) ([]ParamTrait, error) {
-	target, err := getHookFunc(t, onEnter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get hook func: %w", err)
-	}
-	var attrs []ParamTrait
-	// Find which parameter is type of interface{}
-	for i, field := range target.Type.Params.List {
-		attr := ParamTrait{Index: i}
-		if shared.IsInterfaceType(field.Type) {
-			attr.IsInterfaceAny = true
-		}
-		if shared.IsEllipsis(field.Type) {
-			attr.IsVaradic = true
-		}
-		attrs = append(attrs, attr)
-	}
-	return attrs, nil
-}
-
-func (rp *RuleProcessor) callOnEnterHook(t *api.InstFuncRule, traits []ParamTrait) error {
-	if len(traits) != (len(rp.onEnterHookFunc.Type.Params.List) + 1 /*CallContext*/) {
-		return errors.New("hook param traits mismatch on enter hook")
-	}
-	// Hook: 	   func onEnterFoo(callContext* CallContext, p*[]int)
-	// Trampoline: func OtelOnEnterTrampoline_foo(p *[]int)
-	args := []dst.Expr{dst.NewIdent(TrampolineCallContextName)}
-	for idx, field := range rp.onEnterHookFunc.Type.Params.List {
-		trait := traits[idx+1 /*CallContext*/]
-		for _, name := range field.Names { // syntax of n1,n2 type
-			if trait.IsVaradic {
-				args = append(args, shared.DereferenceOf(shared.Ident(name.Name+"...")))
-			} else {
-				args = append(args, shared.DereferenceOf(dst.NewIdent(name.Name)))
-			}
-		}
-	}
-	// Call onEnter if it exists
-	fnName := makeOnXName(t, true)
-	call := shared.ExprStmt(shared.CallTo(fnName, args))
-	iff := shared.IfNotNilStmt(
-		dst.NewIdent(fnName),
-		shared.Block(call),
-		nil,
-	)
-	insertAt(rp.onEnterHookFunc, iff, len(rp.onEnterHookFunc.Body.List)-1)
-	return nil
-}
-
-func (rp *RuleProcessor) callOnExitHook(t *api.InstFuncRule, traits []ParamTrait) error {
-	if len(traits) != len(rp.onExitHookFunc.Type.Params.List) {
-		return errors.New("hook param traits mismatch on exit hook")
-	}
-	// Hook: 	   func onExitFoo(ctx* CallContext, p*[]int)
-	// Trampoline: func OtelOnExitTrampoline_foo(ctx* CallContext, p *[]int)
-	var args []dst.Expr
-	for idx, field := range rp.onExitHookFunc.Type.Params.List {
-		if idx == 0 {
-			args = append(args, dst.NewIdent(TrampolineCallContextName))
-			continue
-		}
-		trait := traits[idx]
-		for _, name := range field.Names { // syntax of n1,n2 type
-			if trait.IsVaradic {
-				arg := shared.DereferenceOf(shared.Ident(name.Name + "..."))
-				args = append(args, arg)
-			} else {
-				arg := shared.DereferenceOf(dst.NewIdent(name.Name))
-				args = append(args, arg)
-			}
-		}
-	}
-	// Call onExit if it exists
-	fnName := makeOnXName(t, false)
-	call := shared.ExprStmt(shared.CallTo(fnName, args))
-	iff := shared.IfNotNilStmt(
-		dst.NewIdent(fnName),
-		shared.Block(call),
-		nil,
-	)
-	insertAtEnd(rp.onExitHookFunc, iff)
-	return nil
-}
-
 func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	if len(paramList.List) != len(traits) {
 		return fmt.Errorf("param list length mismatch: %d vs %d",
@@ -262,22 +138,6 @@ func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 			field.Type = shared.InterfaceType()
 		}
 	}
-	return nil
-}
-
-func (rp *RuleProcessor) addHookFuncVar(t *api.InstFuncRule, traits []ParamTrait, onEnter bool) error {
-	paramTypes := rp.buildTrampolineType(onEnter)
-	addCallContext(paramTypes)
-	// Hook functions may uses interface{} as parameter type, as some types of
-	// raw function is not exposed
-	err := rectifyAnyType(paramTypes, traits)
-	if err != nil {
-		return fmt.Errorf("failed to rectify any type on enter: %w", err)
-	}
-
-	// Generate var decl
-	varDecl := shared.NewVarDecl(makeOnXName(t, onEnter), paramTypes)
-	rp.addDecl(varDecl)
 	return nil
 }
 
@@ -559,30 +419,7 @@ func (rp *RuleProcessor) rewriteCallContextImpl() {
 	}
 }
 
-func (rp *RuleProcessor) callHookFunc(t *api.InstFuncRule, onEnter bool) error {
-	traits, err := getHookParamTraits(t, onEnter)
-	if err != nil {
-		return fmt.Errorf("failed to get hook param traits: %w", err)
-	}
-	err = rp.addHookFuncVar(t, traits, onEnter)
-	if err != nil {
-		return fmt.Errorf("failed to add onEnter var hook decl: %w", err)
-	}
-	if onEnter {
-		err = rp.callOnEnterHook(t, traits)
-	} else {
-		err = rp.callOnExitHook(t, traits)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to call onEnter: %w", err)
-	}
-	if !rp.replenishCallContext(onEnter) {
-		return errors.New("failed to replenish context in onEnter hook")
-	}
-	return nil
-}
-
-func (rp *RuleProcessor) generateTrampoline(t *api.InstFuncRule, funcDecl *dst.FuncDecl) error {
+func (rp *RuleProcessor) writeTrampoline(t *api.InstFuncRule, funcDecl *dst.FuncDecl) error {
 	rp.rawFunc = funcDecl
 	// Materialize various declarations from template file, no one wants to see
 	// a bunch of manual AST code generation, isn't it?

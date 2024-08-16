@@ -15,10 +15,6 @@
 
 package instrument
 
-// Seeing is not always believing. The following template is a bit tricky, see
-// trampoline.go for more details
-
-// Struct Template
 type CallContextImpl struct {
 	Params     []interface{}
 	ReturnVals []interface{}
@@ -78,11 +74,8 @@ func (c *CallContextImpl) SetReturnVal(idx int, val interface{}) {
 	}
 }
 
-// Variable Template
-var OtelGetStackImpl func() []byte = nil
-var OtelPrintStackImpl func([]byte) = nil
+//func OtelPrintStack()
 
-// Trampoline Template
 func OtelOnEnterTrampoline() (CallContext, bool) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -90,10 +83,7 @@ func OtelOnEnterTrampoline() (CallContext, bool) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
-			if fetchStack != nil && printStack != nil {
-				printStack(fetchStack())
-			}
+			//OtelPrintStack()
 		}
 	}()
 	callContext := &CallContextImpl{}
@@ -108,10 +98,7 @@ func OtelOnExitTrampoline(callContext CallContext) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
-			if fetchStack != nil && printStack != nil {
-				printStack(fetchStack())
-			}
+			//OtelPrintStack()
 		}
 	}()
 	callContext.(*CallContextImpl).ReturnVals = []interface{}{}

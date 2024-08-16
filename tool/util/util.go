@@ -123,6 +123,32 @@ func ReadFile(filePath string) (string, error) {
 
 }
 
+func AppendFile(filePath string, content string) error {
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Fatalf("failed to close file %s: %v", file.Name(), err)
+		}
+	}(file)
+	_, err = file.WriteString(content)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ConcatFile(dst, src string) error {
+	srcContent, err := ReadFile(src)
+	if err != nil {
+		return err
+	}
+	return AppendFile(dst, srcContent)
+}
+
 func WriteStringToFile(filePath string, content string) (string, error) {
 	file, err := os.Create(filePath)
 	if err != nil {

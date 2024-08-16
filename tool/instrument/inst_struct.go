@@ -49,7 +49,7 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		if err != nil {
 			return fmt.Errorf("failed to restore ast: %w", err)
 		}
-		shared.SaveDebugFile("struct_", newFile)
+		shared.SaveDebugFile("st", newFile)
 	}
 	return nil
 }

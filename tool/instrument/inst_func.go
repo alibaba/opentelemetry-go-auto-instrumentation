@@ -39,8 +39,8 @@ const (
 )
 
 const (
-	OtelAPIFile        = "otel_api.go"
-	OtelTrampolineFile = "otel_trampoline.go"
+	OtelAPIFile    = "otel_api.go"
+	OtelCommonFile = "otel_common.go"
 )
 
 func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
@@ -50,7 +50,7 @@ func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to copy otel api: %w", err)
 	}
-	rp.addCompileArg(file)
+	rp.appendCompileArg(file)
 	return nil
 }
 
@@ -229,7 +229,7 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 	}
 
 	// Generate corresponding trampoline code
-	err := rp.generateTrampoline(t, funcDecl)
+	err := rp.writeTrampoline(t, funcDecl)
 	if err != nil {
 		return err
 	}
@@ -303,24 +303,35 @@ func sortFuncRules(rules []uint64) []*api.InstFuncRule {
 	return fnRules
 }
 
-func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
-	// Prepare trampoline code header
+func (rp *RuleProcessor) writeAsm() error {
+	path := filepath.Join(rp.workDir, OtelJumpAsm)
+	include := "#include \"textflag.h\""
+	rp.assembly = fmt.Sprintf("%s\n%s\n", include, rp.assembly)
+	_, err := util.WriteStringToFile(path, rp.assembly)
+	if err != nil {
+		return fmt.Errorf("failed to write asm file %s: %w", path, err)
+	}
+	shared.SaveDebugFile("asm_"+rp.packageName, path)
+	return nil
+}
+
+func (rp *RuleProcessor) writeCommon(pkgName string) error {
+	// No trampoline functions exists in this package, no common file needed
+	commonDecl := make([]dst.Decl, 0)
+	// Generate otel_common.go at working directory
 	code := "package " + pkgName
-	trampoline, err := shared.ParseAstFromSource(code)
+	astRoot, err := shared.ParseAstFromSource(code)
 	if err != nil {
 		return fmt.Errorf("failed to parse trampoline code header: %w", err)
 	}
-	// One trampoline file shares common variable declarations
-	trampoline.Decls = append(trampoline.Decls, rp.varDecls...)
-	// Write trampoline code to file
-	path := filepath.Join(rp.workDir, OtelTrampolineFile)
-	trampolineFile, err := shared.WriteAstToFile(trampoline, path)
+	astRoot.Decls = append(astRoot.Decls, commonDecl...)
+	path := filepath.Join(rp.workDir, OtelCommonFile)
+	commonFile, err := shared.WriteAstToFile(astRoot, path)
 	if err != nil {
 		return err
 	}
-	rp.addCompileArg(trampolineFile)
-	// Save trampoline code for debugging
-	shared.SaveDebugFile(pkgName+"_", path)
+	rp.appendCompileArg(commonFile)
+	shared.SaveDebugFile("com_"+pkgName, path)
 	return nil
 }
 
@@ -385,12 +396,18 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 		if err != nil {
 			return fmt.Errorf("failed to inline trampoline call: %w", err)
 		}
-		shared.SaveDebugFile("fn_", filePath)
+		shared.SaveDebugFile("fn", filePath)
 	}
 
-	err = rp.writeTrampoline(bundle.PackageName)
+	// Write common declarations that used across all trampoline functions
+	err = rp.writeCommon(bundle.PackageName)
 	if err != nil {
 		return fmt.Errorf("failed to write trampoline: %w", err)
+	}
+	// Write assembly code that used across all trampoline functions
+	err = rp.writeAsm()
+	if err != nil {
+		return fmt.Errorf("failed to write asm: %w", err)
 	}
 	return nil
 }

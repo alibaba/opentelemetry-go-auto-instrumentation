@@ -26,9 +26,11 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/dave/dst"
 
 	"golang.org/x/mod/modfile"
 )
@@ -46,20 +48,17 @@ const (
 
 // @@ Change should sync with trampoline template
 const (
-	OtelGetStackDef        = "OtelGetStackImpl"
-	OtelGetStackImportPath = "runtime/debug"
-	OtelGetStackAliasPkg   = "otel_runtime_debug"
-	OtelGetStackImplCode   = OtelGetStackAliasPkg + ".Stack"
-
-	OtelPrintStackDef        = "OtelPrintStackImpl"
-	OtelPrintStackImportPath = "log"
-	OtelPrintStackPkgAlias   = "otel_log"
-	OtelPrintStackImplCode   = "func(bt []byte){ otel_log.Printf(string(bt)) }"
+	OtelPrintStackDef        = "OtelPrintStack"
+	OtelPrintStackImpl       = "OtelPrintStackImpl"
+	OtelPrintStackImportPath = "runtime/debug"
+	OtelPrintStackPkgAlias   = "otel_debug"
+	OtelPrintStackImplCode   = "otel_debug.PrintStack"
 )
 
 const (
-	FuncMain = "main"
-	FuncInit = "init"
+	UnsafePkg = "unsafe"
+	FuncMain  = "main"
+	FuncInit  = "init"
 )
 
 type DepProcessor struct {
@@ -245,8 +244,10 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 				candidates = append(candidates, rule.FileName)
 			}
 		}
-		log.Printf("Try to match additional %v for %v\n",
-			candidates, bundle.ImportPath)
+		if shared.Verbose {
+			log.Printf("Try to match additional %v for %v\n",
+				candidates, bundle.ImportPath)
+		}
 		newBundle := matcher.matchRuleBundle(bundle.ImportPath, candidates)
 		// One rule bundle represents one import path, so we should merge
 		// them together instead of adding a brand new one
@@ -264,37 +265,75 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	return nil
 }
 
-func (dp *DepProcessor) copyRule(path string, target string) error {
-	text, err := resource.ReadRuleFile(path)
-	if err != nil {
-		return fmt.Errorf("failed to read rule file %v: %w", path, err)
-	}
-	if !shared.HasGoBuildComment(text) {
-		log.Printf("Warning: %v does not contain //go:build ignore tag", path)
-	}
-	text = shared.RemoveGoBuildComment(text)
-	astRoot, err := shared.ParseAstFromSource(text)
-	if err != nil {
-		return fmt.Errorf("failed to parse ast from source: %w", err)
-	}
-	// If go.mod is present, we should put all rules into otel_rules directory
-	astRoot.Name.Name = OtelRules
-
-	// Copy used rule into project
-	_, err = shared.WriteAstToFile(astRoot, target)
-	if err != nil {
-		return fmt.Errorf("failed to write ast to %v: %w", target, err)
-	}
-	if shared.Verbose {
-		log.Printf("Copy dependency %v to %v", path, target)
-	}
-	return nil
-}
-
 func isValidFilePath(path string) bool {
 	// a valid file path looks like: /path/to/file.go
 	re := regexp.MustCompile(`^.*\.go$`)
 	return re.MatchString(path)
+}
+
+func linknameTag(local, remote string) string {
+	return fmt.Sprintf("//go:linkname %s %s", local, remote)
+}
+
+func linkRule(rules []*api.InstFuncRule, src string, pkgName string) error {
+	if len(rules) == 0 {
+		return nil
+	}
+	astRoot, err := shared.ParseAstFromFile(src)
+	if err != nil {
+		return fmt.Errorf("failed to parse ast from source: %w", err)
+	}
+
+	// Import "unsafe" once in order to use //go:linkname
+	shared.AddImportForcely(astRoot, UnsafePkg)
+
+	// Add linkname tag for each hook function
+	for _, decl := range astRoot.Decls {
+		if fn, ok := decl.(*dst.FuncDecl); ok {
+			for _, rule := range rules {
+				fnName := fn.Name.Name
+				// Add linkname tag to replace remote function name with
+				// local hook function name
+				if fnName == rule.OnEnter || fnName == rule.OnExit {
+					local := fnName
+					remote := fmt.Sprintf("%s.%s", pkgName,
+						shared.GetVarNameOfFunc(fnName))
+					tag := linknameTag(local, remote)
+					fn.Decs.Before = dst.EmptyLine
+					fn.Decs.Start.Append(tag)
+					if shared.Verbose {
+						log.Printf("Link %v to %v", local, remote)
+					}
+					break
+				}
+			}
+		}
+	}
+
+	_, err = shared.WriteAstToFile(astRoot, src)
+	return err
+}
+
+func copyRule(src, dest string) error {
+	text, err := resource.ReadRuleFile(src)
+	if err != nil {
+		return fmt.Errorf("failed to read rule file %v: %w", src, err)
+	}
+	if !shared.HasGoBuildComment(text) {
+		log.Printf("Warning: %v does not contain //go:build ignore tag", src)
+	}
+	text = shared.RemoveGoBuildComment(text)
+	text = shared.RenamePackage(text, OtelRules)
+
+	// Copy used rule into project
+	_, err = util.WriteStringToFile(dest, text)
+	if err != nil {
+		return fmt.Errorf("failed to write ast to %v: %w", dest, err)
+	}
+	if shared.Verbose {
+		log.Printf("Copy rule dependency %v to %v", src, dest)
+	}
+	return nil
 }
 
 func (dp *DepProcessor) copyRules(targetDir string) (err error) {
@@ -302,10 +341,10 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 		return nil
 	}
 	// Find out which resource files we should add to project
-	uniqueResources := make(map[string]string)
 	for _, bundle := range dp.bundles {
+		copyCandidate := make(map[string][]*api.InstFuncRule)
+		// Collect all rule related files that we should copy into project
 		for _, funcRules := range bundle.File2FuncRules {
-			// Copy resource file into project as otel_rule_\d.go
 			for _, rs := range funcRules {
 				dp.funcRules = append(dp.funcRules, rs...)
 				for _, ruleHash := range rs {
@@ -314,11 +353,11 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 					// Find files where hooks relies on
 					for _, dep := range rule.FileDeps {
 						util.Assert(isValidFilePath(dep), "sanity check")
-						res, err := resource.FindRuleFile(dep)
+						path, err := resource.FindRuleFile(dep)
 						if err != nil {
-							return fmt.Errorf("cannot find dep %v: %w", dep, err)
+							return fmt.Errorf("cannot find dep %v %w", dep, err)
 						}
-						uniqueResources[res] = bundle.PackageName
+						copyCandidate[path] = nil
 					}
 					// If rule inserts raw code directly, skip adding any
 					// further dependencies
@@ -333,122 +372,78 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 					if resources == nil {
 						return fmt.Errorf("can not find resource for %v", rule)
 					}
-					for _, res := range resources {
-						uniqueResources[res] = bundle.PackageName
+					for _, path := range resources {
+						copyCandidate[path] = append(copyCandidate[path], rule)
 					}
 				}
 			}
 		}
-	}
-
-	for path, pkgName := range uniqueResources {
-		name := fmt.Sprintf("otel_rule_%s%s.go", pkgName, util.RandomString(5))
-		ruleFile := filepath.Join(targetDir, name)
-		err = dp.copyRule(path, ruleFile)
-		if err != nil {
-			return fmt.Errorf("failed to copy rule %v: %w", path, err)
+		// Multiple rules may rely on the same file, we only need to copy it
+		// once, but we need to link all rules to it
+		for path, rules := range copyCandidate {
+			name := fmt.Sprintf("otel_rule_%s%s.go",
+				bundle.PackageName, util.RandomString(5))
+			target := filepath.Join(targetDir, name)
+			err = copyRule(path, target)
+			if err != nil {
+				return fmt.Errorf("failed to copy rule %v: %w", path, err)
+			}
+			err = linkRule(rules, target, bundle.ImportPath)
+			if err != nil {
+				return fmt.Errorf("failed to link rule %v: %w", target, err)
+			}
+			dp.addGeneratedDep(target)
+			shared.SaveDebugFile("dep", target)
 		}
-		dp.addGeneratedDep(ruleFile)
-		shared.SaveDebugFile("", ruleFile)
 	}
 	return nil
 }
 
 func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
-	c := fmt.Sprintf("package %s\n", pkgName)
-	imports := make(map[string]string)
-
-	assigns := make([]string, 0)
+	funcs := ""
+	// Functions
+	idx := 0
 	for _, bundle := range dp.bundles {
 		if len(bundle.File2FuncRules) == 0 {
 			continue
 		}
-		addedImport := false
-		for _, funcRules := range bundle.File2FuncRules {
-			for _, rs := range funcRules {
-				for _, ruleHash := range rs {
-					rule := resource.FindFuncRuleByHash(ruleHash)
-
-					util.Assert(rule.OnEnter != "" || rule.OnExit != "",
-						"sanity check")
-					if rule.UseRaw {
-						continue
-					}
-					var aliasPkg string
-					if !addedImport {
-						aliasPkg = bundle.PackageName + util.RandomString(3)
-						imports[bundle.ImportPath] = aliasPkg
-						addedImport = true
-					} else {
-						aliasPkg = imports[bundle.ImportPath]
-					}
-					if rule.OnEnter != "" {
-						assigns = append(assigns,
-							fmt.Sprintf("\t%s.%s = %s\n",
-								aliasPkg,
-								shared.GetVarNameOfFunc(rule.OnEnter),
-								rule.OnEnter,
-							),
-						)
-					}
-					if rule.OnExit != "" {
-						assigns = append(assigns,
-							fmt.Sprintf(
-								"\t%s.%s = %s\n",
-								aliasPkg,
-								shared.GetVarNameOfFunc(rule.OnExit),
-								rule.OnExit,
-							),
-						)
-					}
-					assigns = append(assigns, fmt.Sprintf(
-						"\t%s.%s = %s\n",
-						aliasPkg,
-						OtelGetStackDef,
-						OtelGetStackImplCode,
-					))
-					assigns = append(assigns, fmt.Sprintf(
-						"\t%s.%s = %s\n",
-						aliasPkg,
-						OtelPrintStackDef,
-						OtelPrintStackImplCode,
-					))
-				}
-			}
+		local := fmt.Sprintf("%s%d", OtelPrintStackDef, idx)
+		remote := fmt.Sprintf("%s.%s", bundle.ImportPath, OtelPrintStackDef)
+		funcs += fmt.Sprintf("%s\nfunc %s() { otel_debug.PrintStack() }\n",
+			linknameTag(local, remote), local)
+		idx++
+	}
+	// Imports
+	imports := ""
+	if idx > 0 {
+		m := map[string]string{
+			"unsafe":                 "_",
+			OtelPrintStackImportPath: OtelPrintStackPkgAlias,
+		}
+		for k, v := range m {
+			imports += fmt.Sprintf("import %s \"%s\"\n", v, k)
 		}
 	}
 
-	// Imports
-	if len(assigns) > 0 {
-		imports[OtelPrintStackImportPath] = OtelPrintStackPkgAlias
-		imports[OtelGetStackImportPath] = OtelGetStackAliasPkg
-	}
-	for k, v := range imports {
-		c += fmt.Sprintf("import %s \"%s\"\n", v, k)
-	}
-
-	// Assignments
-	c += "func init() {\n"
-	for _, assign := range assigns {
-		c += assign
-	}
-	c += "}\n"
-
-	f, err := util.WriteStringToFile(target, c)
+	// Package
+	packages := fmt.Sprintf("package %s\n", pkgName)
+	code := packages + imports + funcs
+	f, err := util.WriteStringToFile(target, code)
 	if err != nil {
 		return err
 	}
 	dp.addGeneratedDep(f)
-	shared.SaveDebugFile("", target)
+	shared.SaveDebugFile("setup", target)
 	return err
 }
+
 func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
 	f, err := resource.CopyOtelSetupTo(pkgName, target)
 	if err != nil {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
 	dp.addGeneratedDep(f)
-	shared.SaveDebugFile("", target)
+	shared.SaveDebugFile("setup", target)
 	return err
 }
 

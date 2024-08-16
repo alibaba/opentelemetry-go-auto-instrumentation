@@ -250,23 +250,6 @@ func AddImportForcely(root *dst.File, path string) {
 	root.Decls = append([]dst.Decl{importStmt}, root.Decls...)
 }
 
-func NewVarDecl(name string, paramTypes *dst.FieldList) *dst.GenDecl {
-	return &dst.GenDecl{
-		Tok: token.VAR,
-		Specs: []dst.Spec{
-			&dst.ValueSpec{
-				Names: []*dst.Ident{
-					{Name: name},
-				},
-				Type: &dst.FuncType{
-					Func:   false,
-					Params: paramTypes,
-				},
-			},
-		},
-	}
-}
-
 func DereferenceOf(expr dst.Expr) dst.Expr {
 	return &dst.StarExpr{X: expr}
 }

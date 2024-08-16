@@ -50,6 +50,7 @@ func setupLogs() {
 	} else {
 		log.SetPrefix("[" + shared.TPreprocess + "] ")
 	}
+	log.SetFlags(0)
 	if shared.DebugLog {
 		// Redirect log to debug log if required
 		debugLogPath := shared.GetLogPath(shared.DebugLogFile)

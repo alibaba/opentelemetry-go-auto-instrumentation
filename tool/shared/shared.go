@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -67,8 +68,7 @@ func GetVarNameOfFunc(fn string) string {
 
 func SaveDebugFile(prefix string, path string) {
 	targetName := filepath.Base(path)
-	util.Assert(IsGoFile(targetName), "sanity check")
-	counterpart := GetLogPath("debug_" + prefix + targetName)
+	counterpart := GetLogPath(prefix + "_" + targetName)
 	_ = util.CopyFile(path, counterpart)
 }
 
@@ -81,6 +81,12 @@ func RenamePackage(source, newPkgName string) string {
 
 func RemoveGoBuildComment(text string) string {
 	text = strings.ReplaceAll(text, GoBuildIgnoreComment, "")
+	return text
+}
+
+func RemoveGoComment(text string) string {
+	re := regexp.MustCompile("(?s)//.*?\n|/\\*.*?\\*/")
+	text = re.ReplaceAllString(text, "")
 	return text
 }
 
@@ -108,8 +114,37 @@ func GetGoModPath() (string, error) {
 	return path, nil
 }
 
+func GoIncludeDir() string {
+	return filepath.Join(runtime.GOROOT(), "pkg/include")
+}
+
+func GetGoTool(toolName string) string {
+	dir := filepath.Join(runtime.GOROOT(), "pkg/tool/"+runtime.GOOS+"_"+runtime.GOARCH)
+	return filepath.Join(dir, toolName)
+}
+
+func GoAsmTool() string {
+	return GetGoTool("asm")
+}
+
+func GoPackTool() string {
+	return GetGoTool("pack")
+}
+
 func IsGoFile(path string) bool {
 	return strings.HasSuffix(path, ".go")
+}
+
+func IsAsmFile(path string) bool {
+	return strings.HasSuffix(path, ".s")
+}
+
+func IsObjectFile(path string) bool {
+	return strings.HasSuffix(path, ".o")
+}
+
+func IsArchiveFile(path string) bool {
+	return strings.HasSuffix(path, ".a")
 }
 
 func IsExistGoMod() (bool, error) {
