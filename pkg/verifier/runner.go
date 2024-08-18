@@ -27,12 +27,9 @@ type node struct {
 	span       tracetest.SpanStub
 }
 
-func WaitAndAssertTraces(traceVerifiers ...func([]tracetest.SpanStubs)) {
-	numTraces := len(traceVerifiers)
+func WaitAndAssertTraces(traceVerifiers func([]tracetest.SpanStubs), numTraces int) {
 	traces := waitForTraces(numTraces)
-	for _, v := range traceVerifiers {
-		v(traces)
-	}
+	traceVerifiers(traces)
 }
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
@@ -129,14 +126,14 @@ func sortSingleTrace(stubs []tracetest.SpanStub) []tracetest.SpanStub {
 			panic("no span id in stub " + stub.Name)
 		}
 		sort.Slice(n.childNodes, func(i, j int) bool {
-			return n.childNodes[i].span.StartTime.Unix() < n.childNodes[j].span.StartTime.Unix()
+			return n.childNodes[i].span.StartTime.UnixNano() < n.childNodes[j].span.StartTime.UnixNano()
 		})
 		if n.root {
 			rootNodes = append(rootNodes, n)
 		}
 	}
 	sort.Slice(rootNodes, func(i, j int) bool {
-		return rootNodes[i].span.StartTime.Unix() < rootNodes[j].span.StartTime.Unix()
+		return rootNodes[i].span.StartTime.UnixNano() < rootNodes[j].span.StartTime.UnixNano()
 	})
 	// 层序遍历，获取排序后的span
 	t := make([]tracetest.SpanStub, 0)

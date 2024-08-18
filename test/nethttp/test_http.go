@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -85,5 +85,5 @@ func main() {
 		if stubs[1][3].Parent.TraceID().String() != stubs[1][2].SpanContext.TraceID().String() {
 			log.Fatal("span 3 should be child of span 2")
 		}
-	})
+	}, 2)
 }
