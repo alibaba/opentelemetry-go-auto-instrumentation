@@ -49,7 +49,7 @@ func TestWaitAndAssertTracesOneTrace(t *testing.T) {
 		if len(stubs) != 1 {
 			t.Fatalf("expecting 1 traces but got %d", len(stubs))
 		}
-	})
+	}, 1)
 }
 
 func TestWaitAndAssertTracesMultipleTrace(t *testing.T) {
@@ -79,7 +79,7 @@ func TestWaitAndAssertTracesMultipleTrace(t *testing.T) {
 		if len(stubs) != 4 {
 			t.Fatalf("expecting 4 traces but got %d", len(stubs))
 		}
-	})
+	}, 4)
 }
 
 func TestWaitAndAssertTraceLink(t *testing.T) {
@@ -107,5 +107,5 @@ func TestWaitAndAssertTraceLink(t *testing.T) {
 		if stubs[0].Snapshots()[1].Parent().SpanID() != stubs[0].Snapshots()[0].SpanContext().SpanID() {
 			t.Fatalf("expecting parent span id to be equal")
 		}
-	})
+	}, 1)
 }

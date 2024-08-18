@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,5 +48,5 @@ func main() {
 		verifier.VerifyDbAttributes(stubs[0][0], "command", "", "redis", "", "localhost", "command: map[]", "command")
 		verifier.VerifyDbAttributes(stubs[1][0], "hset", "", "redis", "", "localhost", "hset a key1 1 key2 2: 0", "hset")
 		verifier.VerifyDbAttributes(stubs[2][0], "hvals", "", "redis", "", "localhost", "hvals a: []", "hvals")
-	})
+	}, 3)
 }
