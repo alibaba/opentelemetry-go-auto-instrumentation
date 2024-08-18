@@ -17,6 +17,7 @@ package pkg
 
 import (
 	"context"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"log"
 	"os"
 	"strings"
@@ -27,16 +28,19 @@ import (
 	_ "go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/trace"
 	_ "go.opentelemetry.io/otel/sdk/trace"
 )
 
 // set the following environment variables based on https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
 // your service name: OTEL_SERVICE_NAME
 // your otlp endpoint: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+// your otlp header: OTEL_EXPORTER_OTLP_HEADERS
 const exec_name = "otelbuild"
+const report_protocol = "OTEL_EXPORTER_OTLP_PROTOCOL"
+const trace_report_protocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 
 func init() {
 	path, err := os.Executable()
@@ -50,34 +54,45 @@ func init() {
 	initOpenTelemetry()
 }
 
-func newHTTPExporterAndSpanProcessor(ctx context.Context) (trace.SpanExporter, trace.SpanProcessor) {
+func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
 	if verifier.IsInTest() {
 		traceExporter := verifier.GetSpanExporter()
 		// in test, we just send the span immediately
 		simpleProcessor := trace.NewSimpleSpanProcessor(traceExporter)
-		return traceExporter, simpleProcessor
+		return simpleProcessor
 	} else {
-		traceExporter, err := otlptrace.New(ctx, otlptracehttp.NewClient())
-		if err != nil {
-			log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
+		var traceExporter trace.SpanExporter
+		var err error
+		if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
+			traceExporter, err = otlptrace.New(ctx, otlptracegrpc.NewClient())
+			if err != nil {
+				log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
+			}
+		} else {
+			traceExporter, err = otlptrace.New(ctx, otlptracehttp.NewClient())
+			if err != nil {
+				log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
+			}
 		}
 		batchSpanProcessor := trace.NewBatchSpanProcessor(traceExporter)
-		return traceExporter, batchSpanProcessor
+		return batchSpanProcessor
 	}
 }
 
 func initOpenTelemetry() func() {
 	ctx := context.Background()
 
-	var traceExporter trace.SpanExporter
 	var batchSpanProcessor trace.SpanProcessor
 
-	traceExporter, batchSpanProcessor = newHTTPExporterAndSpanProcessor(ctx)
+	batchSpanProcessor = newSpanProcessor(ctx)
 
-	// TODO: add sampler
-	traceProvider := trace.NewTracerProvider(
-		trace.WithSampler(trace.AlwaysSample()),
-		trace.WithSpanProcessor(batchSpanProcessor))
+	var traceProvider *trace.TracerProvider
+	if batchSpanProcessor != nil {
+		traceProvider = trace.NewTracerProvider(
+			trace.WithSpanProcessor(batchSpanProcessor))
+	} else {
+		traceProvider = trace.NewTracerProvider()
+	}
 
 	otel.SetTracerProvider(traceProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
@@ -85,7 +100,7 @@ func initOpenTelemetry() func() {
 	return func() {
 		cxt, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		if err := traceExporter.Shutdown(cxt); err != nil {
+		if err := traceProvider.Shutdown(cxt); err != nil {
 			otel.Handle(err)
 		}
 	}
