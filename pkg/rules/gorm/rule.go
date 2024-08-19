@@ -22,7 +22,7 @@ func init() {
 		Register()
 	// add callback
 	api.NewRule("gorm.io/gorm", "Open", "", "", "afterGormOpen").
-		WithVersion("[1.23.1,1.25.10)").
+		WithVersion("[1.22.0,1.25.10)").
 		WithFileDeps("gorm_data_type.go", "gorm_otel_instrumenter.go").
 		Register()
 
