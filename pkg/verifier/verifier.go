@@ -37,7 +37,7 @@ func VerifyDbAttributes(span tracetest.SpanStub, name, dbName, system, user, con
 	actualStatement := GetAttribute(span.Attributes, "db.statement").AsString()
 	Assert(actualStatement == statement, "Except client db statement to be %s, got %s", statement, actualStatement)
 	actualOperation := GetAttribute(span.Attributes, "db.operation").AsString()
-	Assert(actualOperation == operation, "Except client db name to be %s, got %s", operation, actualOperation)
+	Assert(actualOperation == operation, "Except client db operation to be %s, got %s", operation, actualOperation)
 }
 
 func VerifyHttpClientAttributes(span tracetest.SpanStub, name, method, fullUrl, protocolName, protocolVersion, networkTransport, networkType, localAddr, peerAddr string, statusCode, localPort, peerPort int64) {

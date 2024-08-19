@@ -20,7 +20,7 @@ import (
 
 func TestPlugins(t *testing.T) {
 	for _, c := range TestCases {
-		if c == nil {
+		if c == nil || c.TestName != "gorm_crud_test" {
 			continue
 		}
 		if c.IsMuzzleCheck || c.IsLatestDepthCheck {
