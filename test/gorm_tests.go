@@ -8,9 +8,9 @@ const gorm_dependency_name = "gorm.io/gorm"
 const gorm_module_name = "gorm"
 
 func init() {
-	TestCases = append(TestCases, NewGeneralTestCase("gorm_crud_test", gorm_module_name, "v1.22.0", "", "1.18", "", TestGormCrud),
-		NewMuzzleTestCase("gorm_muzzle_test", gorm_dependency_name, gorm_module_name, "v1.22.0", "", "1.18", "", []string{"test_gorm_crud.go"}),
-		NewLatestDepthTestCase("gorm_latestdepth_test", gorm_dependency_name, gorm_module_name, "v1.22.0", "", "1.18", "", TestGormCrud))
+	TestCases = append(TestCases, NewGeneralTestCase("gorm_crud_test", gorm_module_name, "v1.22.0", "v1.25.10", "1.18", "", TestGormCrud),
+		NewMuzzleTestCase("gorm_muzzle_test", gorm_dependency_name, gorm_module_name, "v1.22.0", "1.25.10", "1.18", "", []string{"test_gorm_crud.go"}),
+		NewLatestDepthTestCase("gorm_latestdepth_test", gorm_dependency_name, gorm_module_name, "v1.22.0", "1.25.10", "1.18", "", TestGormCrud))
 }
 
 func TestGormCrud(t *testing.T, env ...string) {
