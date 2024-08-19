@@ -63,21 +63,23 @@ Lastly, we've provided some examples in [example](/example/) direcory, you can t
 # Supported libraries
 
 | Plugin Name  | Repository Url                             | Min Supported Version | Max Supported Version |
-|--------------|--------------------------------------------|----------------------|----------------------|
-| net/http     | https://pkg.go.dev/net/http                | -                    | -                    |
-| database/sql | https://pkg.go.dev/database/sql            | -                    | -                    |
-| go-redis     | https://github.com/redis/go-redis          | v9.0.5               | v9.5.1               |
-| mongodb      | https://github.com/mongodb/mongo-go-driver | v1.11.1              | v1.15.2              |
-| logrus       | https://github.com/sirupsen/logrus         | v1.5.0               | v1.9.3               |
-| zap          | https://github.com/uber-go/zap             | v1.20.0              | v1.27.0              |
-| gin          | https://github.com/gin-gonic/gin           | v1.7.0               | v1.10.0              |
-
+|--------------|--------------------------------------------|-----------------------|-----------------------|
+| net/http     | https://pkg.go.dev/net/http                | -                     | -                     |
+| database/sql | https://pkg.go.dev/database/sql            | -                     | -                     |
+| go-redis     | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |
+| mongodb      | https://github.com/mongodb/mongo-go-driver | v1.11.1               | v1.15.2               |
+| logrus       | https://github.com/sirupsen/logrus         | v1.5.0                | v1.9.3                |
+| zap          | https://github.com/uber-go/zap             | v1.20.0               | v1.27.0               |
+| gin          | https://github.com/gin-gonic/gin           | v1.7.0                | v1.10.0               |
+| gorm         | https://github.com/go-gorm/gorm            | v1.22.0               | v1.25.9               |
 
 We are gradually open-sourcing the libraries we have supported, and your contributions are very welcome.
 
 # Community
 
-We are looking forward to your feedback and suggestions. Please feel free to join our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? ) to communicate with us.
+We are looking forward to your feedback and suggestions. Please feel free to join
+our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )
+to communicate with us.
 
 <img src="docs/dingtalk.png" height="200">
 

@@ -458,7 +458,7 @@ func assembleImportCandidates() ([]string, error) {
 	candidates := make([]string, 0)
 	found := false
 
-	// Find from build arguments e.g. go build main.go or go build cmd/app
+	// Find from build arguments e.g. go build test_gorm_crud.go or go build cmd/app
 	for _, buildArg := range shared.BuildArgs {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
