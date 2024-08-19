@@ -9,8 +9,8 @@ replace gitlab.alibaba-inc.com/go-agent/otel-go-auto-instrumentation => ../../..
 require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.1
 	go.opentelemetry.io/otel/sdk v1.28.0
-	gorm.io/driver/mysql v1.1.3
-	gorm.io/gorm v1.22.0
+	gorm.io/driver/mysql v1.2.3
+	gorm.io/gorm v1.22.4
 )
 
 require (
