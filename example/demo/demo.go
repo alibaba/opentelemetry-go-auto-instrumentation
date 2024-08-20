@@ -14,7 +14,7 @@
 package main
 
 import (
-	"example/benchmark/pkgs"
+	"example/demo/pkgs"
 	"net/http"
 	_ "net/http/pprof"
 	"os"

@@ -1,4 +1,4 @@
-module example/benchmark
+module example/demo
 
 go 1.22
 

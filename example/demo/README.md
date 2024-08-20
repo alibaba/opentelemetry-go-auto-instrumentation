@@ -1,4 +1,4 @@
-# Benchmark Usage
+# Demo Usage
 ## How to run it?
 ### 1. build agent
 Go to the root directory of `opentelemetry-go-auto-instrumentation` and execute the following command:
@@ -18,20 +18,20 @@ docker run -d -p 6379:6379 redis:latest
 ```
 
 ### 3. do hybrid compilation
-Change directory to `example/benchmark` and execute the following command:
+Change directory to `example/demo` and execute the following command:
 ```shell
-cd example/benchmark
+cd example/demo
 ../../otelbuild
 ```
-And there will be a `benchmark` binary in the `example/benchmark` directory.
+And there will be a `demo` binary in the `example/demo` directory.
 ### 4. if run on k8s, build app images
 ```shell
-docker build -t benchmark:test .
-docker push benchmark
+docker build -t demo:test .
+docker push demo
 ```
 you can run application use our docker image.
 ```shell
-registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:benchmark
+registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:demo
 ```
 ### 5. run jaeger
 if you run on k8s
@@ -59,11 +59,11 @@ Set your opentelemetry endpoint according to https://opentelemetry.io/docs/specs
 
 if run on loacal machine:
 ```shell
-OTEL_EXPORTER_ENDPOINT="localhost:4318" OTEL_EXPORTER_INSECURE=true OTEL_SERVICE_NAME=benchmark ./benchmark
+OTEL_EXPORTER_ENDPOINT="localhost:4318" OTEL_EXPORTER_INSECURE=true OTEL_SERVICE_NAME=demo ./demo
 ```
-if run on k8s, update the `benchmark.yaml` image:
+if run on k8s, update the `demo.yaml` image:
 ```shell
-kubectl apply -f benchmark.yaml
+kubectl apply -f demo.yaml
 ```
 And request to the server:
 ```shell
@@ -71,11 +71,6 @@ curl localhost:9000/http-service1
 ```
 Wait a little while, you can see the corresponding trace data！All the spans are aggregated in one trace.
 ![jaeger.png](jaeger.png)
-## How to generate benchmark report?
-you can use aliyun pts to generate benchmark report.
-![pts.png](pts.png)
-get the pts report:
-![report.png](report.png)
 
 ## Related
 You can report your span to [xTrace](https://help.aliyun.com/zh/opentelemetry/?spm=a2c4g.750001.J_XmGx2FZCDAeIy2ZCWL7sW.10.15152842aYbIq9&scm=20140722.S_help@@%E6%96%87%E6%A1%A3@@90275.S_BB2@bl+RQW@ag0+BB1@ag0+hot+os0.ID_90275-RL_xtrace-LOC_suggest~UND~product~UND~doc-OR_ser-V_3-P0_0) in Alibaba Cloud. xTrace provides out-of-the-box trace explorer for you!
