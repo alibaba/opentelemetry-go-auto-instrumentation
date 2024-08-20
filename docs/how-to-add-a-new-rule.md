@@ -71,14 +71,14 @@ Dont forget recomplie the tool after adding the new rule, because currently `rul
 To make sure the rule is working as expected, we can write a simple demo program to test it:
 
 ```bash
-$ mkdir setenv
+$ mkdir setenv && cd setenv
 $ go mod init setenv
 $ cat <<EOF > main.go
 package main
 import "os"
 func main(){ os.Setenv("hello", "world") }
 EOF
-$ ~/opentelemetry-go-auto-instrumentation/otelbuild -- main.go
+$ ~/otelbuild -- main.go
 $ ./main
 Setting environment variable hello to world%
 ```
