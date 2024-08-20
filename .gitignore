@@ -19,4 +19,4 @@ otel_rules
 otel_pkgdep
 opentelemetry-go-auto-instrumentation
 *_cache
-example/benchmark/benchmark
+example/demo/benchmark

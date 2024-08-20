@@ -2,22 +2,22 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: benchmark
-  name: benchmark
+    app: demo
+  name: demo
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: benchmark
+      app: demo
   template:
     metadata:
       labels:
-        app: benchmark
+        app: demo
     spec:
       containers:
         - env:
             - name: OTEL_SERVICE_NAME
-              value: benchmark
+              value: demo
             - name: OTEL_LOG_LEVEL
               value: warn
             - name: OTEL_TRACES_SAMPLER
@@ -26,9 +26,9 @@ spec:
               value: "0.1"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: 'http://opentelemetry-demo-jaeger-collector:4318'
-          image: registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:benchmark
+          image: registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:demo
           imagePullPolicy: Always
-          name: benchmark
+          name: demo
           resources:
             limits:
               cpu: '2'
@@ -50,8 +50,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: benchmark
-  name: benchmark
+    app: demo
+  name: demo
   namespace: default
 spec:
   internalTrafficPolicy: Cluster
@@ -64,6 +64,6 @@ spec:
       protocol: TCP
       targetPort: 9000
   selector:
-    app: benchmark
+    app: demo
   sessionAffinity: None
   type: LoadBalancer
