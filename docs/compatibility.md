@@ -1,20 +1,20 @@
 # Compatibility
 
-OpenTelemetry-Go Contrib ensures compatibility with the current supported
+`opentelemetry-go-auto-instrumentation` ensures compatibility with the current supported
 versions of
 the [Go language](https://golang.org/doc/devel/release#policy):
 
 > Each major Go release is supported until there are two newer major releases.
 > For example, Go 1.5 was supported until the Go 1.7 release, and Go 1.6 was supported until the Go 1.8 release.
 
-For versions of Go that are no longer supported upstream, opentelemetry-go-contrib will
+For versions of Go that are no longer supported upstream, `opentelemetry-go-auto-instrumentation` will
 stop ensuring compatibility with these versions in the following manner:
 
-- A minor release of opentelemetry-go-contrib will be made to add support for the new
+- A minor release of `opentelemetry-go-auto-instrumentation` will be made to add support for the new
   supported release of Go.
-- The following minor release of opentelemetry-go-contrib will remove compatibility
+- The following minor release of `opentelemetry-go-auto-instrumentation` will remove compatibility
   testing for the oldest (now archived upstream) version of Go. This, and
-  future, releases of opentelemetry-go-contrib may include features only supported by
+  future, releases of `opentelemetry-go-auto-instrumentation` may include features only supported by
   the currently supported versions of Go.
 
 This project is tested on the following systems.
