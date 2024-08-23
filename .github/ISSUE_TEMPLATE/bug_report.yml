@@ -1,6 +1,6 @@
 name: Bug report
 description: Create a report to help us improve
-labels: ["bug", "needs triage"]
+labels: ["bug"]
 body:
   - type: textarea
     attributes:
@@ -28,7 +28,7 @@ body:
       required: true
   - type: input
     attributes:
-      label: Javaagent or library instrumentation version
+      label: opentelemetry-go-auto-instrumentation version
       description: (e.g., `v0.9.0`, `393e4a2`, etc)
     validations:
       required: true
@@ -36,13 +36,13 @@ body:
     attributes:
       label: Environment
       description: |
-        Runtime environment information, including the runtime JDK distribution, OS, used library versions, javaagent configuration, etc.
+        Runtime environment information, including the runtime Go version, OS, used library versions, etc.
         Example:
-        > JDK: Temurin 17.0.7
+        > Go: go version go1.21.9 darwin/arm64
         > OS: Ubuntu 20.04
-        > Spring Boot 2.7.15, Hibernate 5.0.0, ...
+        > https://github.com/redis/go-redis v9.5.1
       value: |
-        **JDK**:
+        **Go**:
         **OS**:
   - type: textarea
     attributes:
