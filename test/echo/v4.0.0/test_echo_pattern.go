@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
@@ -36,21 +36,16 @@ func setupPattern() {
 			"msg":  c.Path(),
 		})
 	})
-	var err error
-	port, err = verifier.GetFreePort()
-	if err != nil {
-		panic(err)
-	}
 
 	// Start server
-	engine.Logger.Fatal(engine.Start(":" + strconv.Itoa(port)))
+	engine.Logger.Fatal(engine.Start(":8080"))
 }
 
 func main() {
 	go setupPattern()
 	time.Sleep(5 * time.Second)
 	client := &http.Client{}
-	resp, err := client.Get("http://127.0.0.1:" + strconv.Itoa(port) + "/users/1")
+	resp, err := client.Get("http://127.0.0.1:8080/users/1")
 	defer resp.Body.Close()
 	if err != nil {
 		panic(err)
@@ -58,8 +53,8 @@ func main() {
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(body))
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:"+strconv.Itoa(port)+"/users/1", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:8080", 200, 0, 8080)
+		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:8080/users/1", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:8080", 200, 0, 8080)
 		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /users/1", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "", "/users/1", "", "/users/1", 200)
-		verifier.VerifyHttpServerAttributes(stubs[0][2], "GET /users/1", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "", "/users/1", "", "/users/1", 200)
+		verifier.VerifyHttpServerAttributes(stubs[0][2], "GET /users/:id", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "", "/users/1", "", "/users/:id", 200)
 	}, 1)
 }
