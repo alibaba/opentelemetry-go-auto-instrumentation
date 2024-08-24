@@ -141,8 +141,6 @@ func initOpenTelemetry() func() {
 	otel.SetTracerProvider(traceProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
-	log.Printf("OpenTelemetry initialized endpoint: %s, report_protocol: %s", endpoint, reportProtocol)
-
 	return func() {
 		cxt, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
