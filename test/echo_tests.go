@@ -43,7 +43,7 @@ func TestEchoPattern(t *testing.T, env ...string) {
 }
 
 func TestEchoMiddleware(t *testing.T, env ...string) {
-	UseApp("echo/v1.7.0")
+	UseApp("echo/v4.10.0")
 	RunInstrument(t, "-debuglog", "--", "test_echo_middleware.go")
 	RunApp(t, "test_echo_middleware", env...)
 }
