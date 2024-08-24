@@ -95,7 +95,7 @@ func createSpanProcessor(ctx context.Context, endpoint, batcher string) (trace.S
 		}
 		traceExporter, err = otlptracegrpc.New(ctx, opts...)
 	case KindStdout:
-		return stdouttrace.New()
+		traceExporter, err = stdouttrace.New()
 	case KindFile:
 		f, err := os.OpenFile(endpoint, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
