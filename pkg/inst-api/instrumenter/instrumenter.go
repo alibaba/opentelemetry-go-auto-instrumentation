@@ -105,6 +105,9 @@ func (i *Instrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUE
 
 func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
 	newCtx := p.base.Start(parentContext, request)
+	if p.carrierGetter == nil {
+		return newCtx
+	}
 	p.propagator.Inject(newCtx, p.carrierGetter(request))
 	return newCtx
 }
