@@ -70,10 +70,6 @@ func (n grpcClientAttrsGetter) GetRequestMethod(request grpcRequest) string {
 	return request.methodName
 }
 
-func (n grpcClientAttrsGetter) GetDestId(request grpcRequest) string {
-	return request.addr
-}
-
 func (n grpcClientAttrsGetter) GetGrpcResponseStatusCode(request grpcRequest, response grpcResponse, err error) int {
 	return response.statusCode
 }
@@ -134,10 +130,6 @@ func (n grpcServerAttrsGetter) GetRequestMethod(request grpcRequest) string {
 
 func (n grpcServerAttrsGetter) GetUrlPath(request grpcRequest) string {
 	return request.methodName
-}
-
-func (n grpcServerAttrsGetter) GetDestId(request grpcRequest) string {
-	return request.addr
 }
 
 func (n grpcServerAttrsGetter) GetGrpcResponseStatusCode(request grpcRequest, response grpcResponse, err error) int {
