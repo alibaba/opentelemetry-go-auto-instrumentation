@@ -1,13 +1,17 @@
 # OpenTelemetry Go Auto Instrumentation
 
-<img src="docs/logo.png" height="150" align="right">
+<img src="docs/logo.png" height="150" align="right" alt="logo">
 
-# Introduction
+[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./docs)
+[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](README_CN.md)
+[![](https://shields.io/badge/Commercial-Edition-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications)
+
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, and the instrumentation is done at compile
 time. Simply replace `go build` with `otelbuild` to get started.
+
 
 # How to Build
 
@@ -53,12 +57,13 @@ $ ./otelbuild -debuglog    # print log to file
 $ ./otelbuild -verbose -- -gcflags="-m" cmd/app # print verbose log
 ```
 
-If you find any compilation failures during the process, it's likely a bug.
-Please feel free to file a bug
-at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
-to help us enhance this project.
+You can also explore [these examples](./example/) to get hands-on experience.
 
-You can also explore provided examples in the [example](./example/) directory to get hands-on experience.
+> [!NOTE]
+> If you find any compilation failures during the process, it's likely a bug.
+> Please feel free to file a bug
+> at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+> to help us enhance this project.
 
 # Supported Libraries
 
