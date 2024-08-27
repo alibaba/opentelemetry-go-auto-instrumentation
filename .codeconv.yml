@@ -1,4 +1,2 @@
 ignore:
-  - "example/.*"
-  - "pkg/rules/.*"
-  - "test/.*"
+  - "./rules/.*"
