@@ -51,7 +51,7 @@ jobs:
       run: make build
     - name: InstUt
       run: go test -v ./pkg/...
-    - name: Test
-      run: go test -short -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)
+    - name: Test
+      run: go test -short -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test
