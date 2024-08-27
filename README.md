@@ -4,8 +4,6 @@
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./docs)
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](README_CN.md)
-[![](https://shields.io/badge/Commercial-Edition-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications)
-
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
