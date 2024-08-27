@@ -50,7 +50,7 @@ jobs:
     - name: Build
       run: make build
     - name: InstUt
-      run: go test -v ./pkg/...
+      run: go test -v ./pkg/... -coverprofile=coverage.txt -covermode=atomic
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)
     - name: Test
