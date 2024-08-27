@@ -9,8 +9,6 @@ run:
     - ".*\\.pb\\.go$"
 linters:
   disable-all: true
-  enable:
-    - goimports
 issues:
   exclude-use-default: true
 
