@@ -34,11 +34,6 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - goimports
-    - gofmt
-    - misspell
-    - govet
-    - ineffassign
-    - staticcheck
+    - goheader
 issues:
   exclude-use-default: true
