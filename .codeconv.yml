@@ -1,0 +1,4 @@
+ignore:
+  - "example/.*"
+  - "pkg/rules/.*"
+  - "test/.*"
