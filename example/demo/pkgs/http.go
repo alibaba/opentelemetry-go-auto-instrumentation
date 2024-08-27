@@ -58,8 +58,8 @@ var err error
 
 func InitNetwork() {
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     "r-uf6x51fdb6tqmrmisq.redis.rds.aliyuncs.com:6379",
-		Password: "Hello1234",
+		Addr:     "127.0.0.1:6379",
+		Password: "test",
 	})
 	_ = redis.NewFailoverClient(&redis.FailoverOptions{
 		MaxRetries: 3,
@@ -67,9 +67,9 @@ func InitNetwork() {
 
 	_ = redis.NewRing(&redis.RingOptions{})
 	_ = redis.NewClusterClient(&redis.ClusterOptions{})
-	mysql.ParseDSN("root:arms@123@tcp(rm-uf65qlp1f3q8752sd.mysql.rds.aliyuncs.com:3306)/mysqldb")
+	mysql.ParseDSN("test:test@tcp(127.0.0.1:3306)/test")
 	db, err = sql.Open("mysql",
-		"root:arms@123@tcp(rm-uf65qlp1f3q8752sd.mysql.rds.aliyuncs.com:3306)/mysqldb")
+		"test:test@tcp(127.0.0.1:3306)/test")
 	if err != nil {
 		return
 	}
