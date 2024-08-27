@@ -1,13 +1,15 @@
 # OpenTelemetry Go Auto Instrumentation
 
-<img src="docs/logo.png" height="150" align="right">
+<img src="docs/logo.png" height="150" align="right" alt="logo">
 
-# Introduction
+[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./docs)
+[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](README_CN.md)
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, and the instrumentation is done at compile
 time. Simply replace `go build` with `otelbuild` to get started.
+
 
 # How to Build
 
@@ -53,30 +55,32 @@ $ ./otelbuild -debuglog    # print log to file
 $ ./otelbuild -verbose -- -gcflags="-m" cmd/app # print verbose log
 ```
 
-If you find any compilation failures during the process, it's likely a bug.
-Please feel free to file a bug
-at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
-to help us enhance this project.
+You can also explore [these examples](./example/) to get hands-on experience.
 
-You can also explore provided examples in the [example](./example/) directory to get hands-on experience.
+> [!NOTE]
+> If you find any compilation failures during the process, it's likely a bug.
+> Please feel free to file a bug
+> at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+> to help us enhance this project.
 
 # Supported Libraries
 
-| Plugin Name  | Repository Url                             | Min Supported Version | Max Supported Version |
-|--------------|--------------------------------------------|-----------------------|-----------------------|
-| database/sql | https://pkg.go.dev/database/sql            | -                     | -                     |
-| gin          | https://github.com/gin-gonic/gin           | v1.7.0                | v1.10.0               |
-| go-redis     | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |
-| gorm         | https://github.com/go-gorm/gorm            | v1.22.0               | v1.25.9               |
-| logrus       | https://github.com/sirupsen/logrus         | v1.5.0                | v1.9.3                |
-| mongodb      | https://github.com/mongodb/mongo-go-driver | v1.11.1               | v1.15.2               |
-| mux          | https://github.com/go-gorm/gorm            | v1.3.0                | v1.8.1                |
-| net/http     | https://pkg.go.dev/net/http                | -                     | -                     |
-| zap          | https://github.com/uber-go/zap             | v1.20.0               | v1.27.0               |
+| Plugin Name  | Repository Url                              | Min Supported Version | Max Supported Version |
+|--------------|---------------------------------------------|-----------------------|-----------------------|
+| database/sql | https://pkg.go.dev/database/sql             | -                     | -                     |
+| echo         | https://github.com/labstack/echo            | v4.0.0                | v4.12.0               |
+| gin          | https://github.com/gin-gonic/gin            | v1.7.0                | v1.10.0               |
+| go-redis     | https://github.com/redis/go-redis           | v9.0.5                | v9.5.1                |
+| gorm         | https://github.com/go-gorm/gorm             | v1.22.0               | v1.25.9               |
+| logrus       | https://github.com/sirupsen/logrus          | v1.5.0                | v1.9.3                |
+| mongodb      | https://github.com/mongodb/mongo-go-driver  | v1.11.1               | v1.15.2               |
+| mux          | https://github.com/gorilla/mux              | v1.3.0                | v1.8.1                |
+| net/http     | https://pkg.go.dev/net/http                 | -                     | -                     |
+| zap          | https://github.com/uber-go/zap              | v1.20.0               | v1.27.0               |
 
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome.
-Please refer to [this document](./docs/how-to-add-a-new-rule.md) for guidance on how to write instrumentation 
+Please refer to [this document](./docs/how-to-add-a-new-rule.md) for guidance on how to write instrumentation
 code for new frameworks.
 
 # Community
