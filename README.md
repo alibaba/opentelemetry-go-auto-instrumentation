@@ -80,7 +80,7 @@ You can also explore [these examples](./example/) to get hands-on experience.
 
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome.
-Please refer to [this document](./docs/how-to-add-a-new-rule.md) for guidance on how to write instrumentation 
+Please refer to [this document](./docs/how-to-add-a-new-rule.md) for guidance on how to write instrumentation
 code for new frameworks.
 
 # Community
