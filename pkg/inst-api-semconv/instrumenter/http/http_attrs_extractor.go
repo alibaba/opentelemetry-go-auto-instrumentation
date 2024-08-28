@@ -33,6 +33,9 @@ func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.HTTPRequestMethodKey,
 		Value: attribute.StringValue(h.HttpGetter.GetRequestMethod(request)),
+	}, attribute.KeyValue{
+		Key:   "component.name",
+		Value: attribute.StringValue(h.HttpGetter.GetComponentName(request)),
 	})
 	return attributes
 }

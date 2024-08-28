@@ -40,6 +40,14 @@ func (n muxHttpServerAttrsGetter) GetHttpResponseStatusCode(request muxHttpReque
 	return response.statusCode
 }
 
+func (n muxHttpServerAttrsGetter) GetSpanName(request muxHttpRequest) string {
+	return request.url.Path
+}
+
+func (n muxHttpServerAttrsGetter) GetComponentName(request muxHttpRequest) string {
+	return "mux-http-server"
+}
+
 func (n muxHttpServerAttrsGetter) GetHttpResponseHeader(request muxHttpRequest, response muxHttpResponse, name string) []string {
 	return response.header.Values(name)
 }

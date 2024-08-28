@@ -88,6 +88,14 @@ func (n netHttpClientAttrsGetter) GetNetworkPeerPort(request netHttpRequest, res
 	return port
 }
 
+func (n netHttpClientAttrsGetter) GetSpanName(request netHttpRequest) string {
+	return request.url.Path
+}
+
+func (n netHttpClientAttrsGetter) GetComponentName(request netHttpRequest) string {
+	return "net-http-client"
+}
+
 func (n netHttpClientAttrsGetter) GetUrlFull(request netHttpRequest) string {
 	return request.url.String()
 }
@@ -117,6 +125,14 @@ func (n netHttpServerAttrsGetter) GetHttpResponseHeader(request netHttpRequest, 
 
 func (n netHttpServerAttrsGetter) GetErrorType(request netHttpRequest, response netHttpResponse, err error) string {
 	return ""
+}
+
+func (n netHttpServerAttrsGetter) GetSpanName(request netHttpRequest) string {
+	return request.url.Path
+}
+
+func (n netHttpServerAttrsGetter) GetComponentName(request netHttpRequest) string {
+	return "net-http-server"
 }
 
 func (n netHttpServerAttrsGetter) GetUrlScheme(request netHttpRequest) string {

@@ -1,0 +1,14 @@
+dubbo:
+  protocols:
+    triple:
+      name: tri
+      port: 20000
+  provider:
+    services:
+      GreeterProvider:
+        interface: "" # read interface from pb
+  consumer:
+    references:
+      GreeterClientImpl:
+        url: tri://localhost:20000
+        protocol: tri

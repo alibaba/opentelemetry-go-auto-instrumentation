@@ -18,6 +18,8 @@ import "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-se
 
 type HttpCommonAttrsGetter[REQUEST any, RESPONSE any] interface {
 	GetRequestMethod(request REQUEST) string
+	GetSpanName(request REQUEST) string
+	GetComponentName(request REQUEST) string
 	GetHttpRequestHeader(request REQUEST, name string) []string
 	GetHttpResponseStatusCode(request REQUEST, response RESPONSE, err error) int
 	GetHttpResponseHeader(request REQUEST, response RESPONSE, name string) []string

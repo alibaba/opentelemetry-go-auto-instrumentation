@@ -39,6 +39,14 @@ func (n ginServerAttrsGetter) GetHttpResponseStatusCode(request ginRequest, resp
 	return response.statusCode
 }
 
+func (n ginServerAttrsGetter) GetSpanName(request ginRequest) string {
+	return request.url.Path
+}
+
+func (n ginServerAttrsGetter) GetComponentName(request ginRequest) string {
+	return "gin-server"
+}
+
 func (n ginServerAttrsGetter) GetHttpResponseHeader(request ginRequest, response ginResponse, name string) []string {
 	return response.header.Values(name)
 }

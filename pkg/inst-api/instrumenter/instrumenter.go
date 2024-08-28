@@ -106,6 +106,9 @@ func (i *Instrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUE
 
 func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
 	newCtx := p.base.Start(parentContext, request)
+	if p.propagator == nil || p.carrierGetter == nil {
+		return newCtx
+	}
 	p.propagator.Inject(newCtx, p.carrierGetter(request))
 	return newCtx
 }
@@ -115,6 +118,9 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context
 }
 
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
+	if p.propagator == nil || p.carrierGetter == nil {
+		return p.base.Start(parentContext, request)
+	}
 	extracted := p.propagator.Extract(parentContext, p.carrierGetter(request))
 	return p.base.Start(extracted, request)
 }

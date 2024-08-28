@@ -19,7 +19,7 @@ type HttpClientSpanNameExtractor[REQUEST any, RESPONSE any] struct {
 }
 
 func (h *HttpClientSpanNameExtractor[REQUEST, RESPONSE]) Extract(request REQUEST) string {
-	method := h.Getter.GetRequestMethod(request)
+	method := h.Getter.GetSpanName(request)
 	if method == "" {
 		return "HTTP"
 	}
@@ -31,7 +31,7 @@ type HttpServerSpanNameExtractor[REQUEST any, RESPONSE any] struct {
 }
 
 func (h *HttpServerSpanNameExtractor[REQUEST, RESPONSE]) Extract(request REQUEST) string {
-	method := h.Getter.GetRequestMethod(request)
+	method := h.Getter.GetSpanName(request)
 	route := h.Getter.GetHttpRoute(request)
 	if method == "" {
 		return "HTTP"
