@@ -233,7 +233,7 @@ func TestHttpClientExtractorStart(t *testing.T) {
 	if attrs[0].Key != semconv.HTTPRequestMethodKey || attrs[0].Value.AsString() != "GET" {
 		t.Fatalf("http method should be GET")
 	}
-	if attrs[1].Key != semconv.URLFullKey || attrs[1].Value.AsString() != "url-full" {
+	if attrs[2].Key != semconv.URLFullKey || attrs[2].Value.AsString() != "url-full" {
 		t.Fatalf("urlfull should be url-full")
 	}
 }
