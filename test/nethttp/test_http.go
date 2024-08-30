@@ -59,10 +59,10 @@ func main() {
 	defer resp.Body.Close()
 	time.Sleep(1 * time.Second)
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:"+strconv.Itoa(port)+"/a", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), 200, 0, int64(port))
-		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /a", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), "Go-http-client/1.1", "", "/a", "", "/a", 200)
-		verifier.VerifyHttpClientAttributes(stubs[0][2], "GET", "GET", "http://127.0.0.1:"+strconv.Itoa(port)+"/b", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), 200, 0, int64(port))
-		verifier.VerifyHttpServerAttributes(stubs[0][3], "GET /b", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), "Go-http-client/1.1", "", "/b", "", "/b", 200)
+		verifier.VerifyHttpClientAttributes(stubs[0][0], "/a", "GET", "http://127.0.0.1:"+strconv.Itoa(port)+"/a", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), 200, 0, int64(port))
+		verifier.VerifyHttpServerAttributes(stubs[0][1], "/a", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), "Go-http-client/1.1", "", "/a", "", "/a", 200)
+		verifier.VerifyHttpClientAttributes(stubs[0][2], "/b", "GET", "http://127.0.0.1:"+strconv.Itoa(port)+"/b", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), 200, 0, int64(port))
+		verifier.VerifyHttpServerAttributes(stubs[0][3], "/b", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:"+strconv.Itoa(port), "Go-http-client/1.1", "", "/b", "", "/b", 200)
 		if stubs[0][1].Parent.TraceID().String() != stubs[0][0].SpanContext.TraceID().String() {
 			log.Fatal("span 1 should be child of span 0")
 		}

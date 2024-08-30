@@ -32,12 +32,12 @@ type HttpServerSpanNameExtractor[REQUEST any, RESPONSE any] struct {
 
 func (h *HttpServerSpanNameExtractor[REQUEST, RESPONSE]) Extract(request REQUEST) string {
 	method := h.Getter.GetSpanName(request)
-	route := h.Getter.GetHttpRoute(request)
+	/*route := h.Getter.GetHttpRoute(request)
 	if method == "" {
 		return "HTTP"
 	}
 	if route == "" {
 		return method
-	}
-	return method + " " + route
+	}*/
+	return method
 }
