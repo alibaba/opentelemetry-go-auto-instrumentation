@@ -46,6 +46,13 @@ func (t testClientGetter) GetSpanName(request testRequest) string {
 	return "HTTP"
 }
 
+func (t testServerGetter) GetSpanName(request testRequest) string {
+	if request.Method != "" {
+		return request.Method
+	}
+	return "HTTP"
+}
+
 func (t testServerGetter) GetRequestMethod(request testRequest) string {
 	if request.Method != "" {
 		return request.Method
