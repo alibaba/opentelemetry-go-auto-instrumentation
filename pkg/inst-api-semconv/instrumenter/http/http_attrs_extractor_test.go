@@ -102,6 +102,14 @@ func (h httpClientAttrsGetter) GetNetworkType(request testRequest, response test
 	return "ipv4"
 }
 
+func (h httpClientAttrsGetter) GetSpanName(request testRequest) string {
+	return "GET"
+}
+
+func (h httpClientAttrsGetter) GetComponentName(request testRequest) string {
+	return "net-http-client"
+}
+
 func (h httpClientAttrsGetter) GetNetworkTransport(request testRequest, response testResponse) string {
 	return "TCP"
 }
@@ -156,6 +164,14 @@ func (h httpServerAttrsGetter) GetHttpResponseHeader(request testRequest, respon
 
 func (h httpServerAttrsGetter) GetErrorType(request testRequest, response testResponse, err error) string {
 	return "error-type"
+}
+
+func (h httpServerAttrsGetter) GetSpanName(request testRequest) string {
+	return "GET"
+}
+
+func (h httpServerAttrsGetter) GetComponentName(request testRequest) string {
+	return "net-http-server"
 }
 
 func (h httpServerAttrsGetter) GetUrlScheme(request testRequest) string {
