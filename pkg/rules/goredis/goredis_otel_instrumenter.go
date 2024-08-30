@@ -44,6 +44,10 @@ func (d goRedisAttrsGetter) GetStatement(request goRedisRequest) string {
 	return request.cmd.String()
 }
 
+func (n goRedisAttrsGetter) GetComponentName(request goRedisRequest) string {
+	return "go-redis"
+}
+
 func (d goRedisAttrsGetter) GetOperation(request goRedisRequest) string {
 	return request.cmd.FullName()
 }

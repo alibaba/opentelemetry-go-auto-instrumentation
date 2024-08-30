@@ -31,6 +31,10 @@ func (g gormAttrsGetter) GetUser(request gormRequest) string {
 	return request.User
 }
 
+func (n gormAttrsGetter) GetComponentName(request gormRequest) string {
+	return "gorm"
+}
+
 func (g gormAttrsGetter) GetName(request gormRequest) string {
 	return request.DbName
 }
