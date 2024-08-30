@@ -36,6 +36,10 @@ func (n echoServerAttrsGetter) GetComponentName(request echoRequest) string {
 	return "echo-server"
 }
 
+func (n echoServerAttrsGetter) GetSpanName(request echoRequest) string {
+	return request.url.Path
+}
+
 func (n echoServerAttrsGetter) GetHttpRequestHeader(request echoRequest, name string) []string {
 	return request.header.Values(name)
 }
