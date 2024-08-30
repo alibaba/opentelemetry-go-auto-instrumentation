@@ -293,19 +293,19 @@ func TestHttpServerExtractorStart(t *testing.T) {
 	if attrs[0].Key != semconv.HTTPRequestMethodKey || attrs[0].Value.AsString() != "GET" {
 		t.Fatalf("http method should be GET")
 	}
-	if attrs[1].Key != semconv.URLSchemeKey || attrs[1].Value.AsString() != "url-scheme" {
+	if attrs[2].Key != semconv.URLSchemeKey || attrs[2].Value.AsString() != "url-scheme" {
 		t.Fatalf("urlscheme should be url-scheme")
 	}
-	if attrs[2].Key != semconv.URLPathKey || attrs[2].Value.AsString() != "url-path" {
+	if attrs[3].Key != semconv.URLPathKey || attrs[3].Value.AsString() != "url-path" {
 		t.Fatalf("urlpath should be url-path")
 	}
-	if attrs[3].Key != semconv.URLQueryKey || attrs[3].Value.AsString() != "url-query" {
+	if attrs[4].Key != semconv.URLQueryKey || attrs[4].Value.AsString() != "url-query" {
 		t.Fatalf("urlquery should be url-query")
 	}
-	if attrs[4].Key != semconv.HTTPRouteKey || attrs[4].Value.AsString() != "http-route" {
+	if attrs[5].Key != semconv.HTTPRouteKey || attrs[5].Value.AsString() != "http-route" {
 		t.Fatalf("httproute should be http-route")
 	}
-	if attrs[5].Key != semconv.UserAgentOriginalKey || attrs[5].Value.AsString() != "request-header" {
+	if attrs[6].Key != semconv.UserAgentOriginalKey || attrs[6].Value.AsString() != "request-header" {
 		t.Fatalf("user agent original should be request-header")
 	}
 }
