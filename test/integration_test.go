@@ -33,7 +33,7 @@ func TestPlugins(t *testing.T) {
 			continue
 		}
 		t.Run(c.TestName, func(t *testing.T) {
-			c.TestFunc(t)
+			c.TestFunc(t, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
 		})
 	}
 }
