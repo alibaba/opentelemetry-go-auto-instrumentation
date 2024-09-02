@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pkgs
+package pkg
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	redis "github.com/redis/go-redis/v9"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
 
-func service3(w http.ResponseWriter, r *http.Request) {
+func traceService(w http.ResponseWriter, r *http.Request) {
 	header := r.Header
 	for key, value := range header {
 		values := strings.Join(value, ",")
@@ -56,20 +57,30 @@ func service3(w http.ResponseWriter, r *http.Request) {
 var rdb *redis.Client
 var err error
 
-func InitNetwork() {
+func InitDB() {
+	var redisAddr string
+	redisAddr = os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "127.0.0.1:6379"
+	}
+	var redisPassword string
+	redisPassword = os.Getenv("REDIS_PASSWORD")
+	if redisPassword == "" {
+		redisPassword = "test"
+	}
+	if os.Getenv("REDIS_PASSWORD") != "" {
+		redisPassword = os.Getenv("REDIS_PASSWORD")
+	}
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Password: "test",
+		Addr:     redisAddr,
+		Password: redisPassword,
 	})
-	_ = redis.NewFailoverClient(&redis.FailoverOptions{
-		MaxRetries: 3,
-	})
-
-	_ = redis.NewRing(&redis.RingOptions{})
-	_ = redis.NewClusterClient(&redis.ClusterOptions{})
-	mysql.ParseDSN("test:test@tcp(127.0.0.1:3306)/test")
-	db, err = sql.Open("mysql",
-		"test:test@tcp(127.0.0.1:3306)/test")
+	var mysqlDSN string
+	mysqlDSN = os.Getenv("MYSQL_DSN")
+	if mysqlDSN == "" {
+		mysqlDSN = "test:test@tcp(127.0.0.1:3306)/test"
+	}
+	db, err = sql.Open("mysql", mysqlDSN)
 	if err != nil {
 		return
 	}
@@ -108,7 +119,7 @@ func redisService() (string, error) {
 }
 
 func SetupHttp() {
-	http.Handle("/http-service1", http.HandlerFunc(service3))
+	http.Handle("/http-service", http.HandlerFunc(traceService))
 	err := http.ListenAndServe("0.0.0.0:9000", nil)
 	if err != nil {
 		panic(err)
