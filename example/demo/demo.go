@@ -14,7 +14,7 @@
 package main
 
 import (
-	"example/demo/pkgs"
+	"example/demo/pkg"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -24,8 +24,8 @@ import (
 
 func main() {
 	go func() {
-		pkgs.InitNetwork()
-		pkgs.SetupHttp()
+		pkg.InitDB()
+		pkg.SetupHttp()
 	}()
 
 	http.ListenAndServe("0.0.0.0:6060", nil)
