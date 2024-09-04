@@ -18,50 +18,16 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/dave/dst"
+	"golang.org/x/mod/semver"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
-
-// splitVersion splits the version string into three parts, major, minor and patch.
-func splitVersion(version string) (int, int, int) {
-	util.Assert(strings.Contains(version, "."), "invalid version format")
-	var (
-		majorVersionStr string
-		minorVersionStr string
-		patchVersionStr string
-		majorVersion    int
-		minorVersion    int
-		patchVersion    int
-		err             error
-	)
-
-	dotIdx := strings.Index(version, ".")
-	lastDotIdx := strings.LastIndex(version, ".")
-
-	majorVersionStr = version[:dotIdx]
-	majorVersion, err = strconv.Atoi(majorVersionStr)
-	util.Assert(err == nil,
-		"invalid version format, major version is %s", majorVersionStr)
-
-	minorVersionStr = version[dotIdx+1 : lastDotIdx]
-	minorVersion, err = strconv.Atoi(minorVersionStr)
-	util.Assert(err == nil,
-		"invalid version format, minor version is %s", minorVersionStr)
-
-	patchVersionStr = version[lastDotIdx+1:]
-	patchVersion, err = strconv.Atoi(patchVersionStr)
-	util.Assert(err == nil,
-		"invalid version format, patch version is %s", patchVersionStr)
-
-	return majorVersion, minorVersion, patchVersion
-}
 
 // splitVersionRange splits the version range into two parts, start and end.
 func splitVersionRange(vr string) (string, string) {
@@ -72,27 +38,6 @@ func splitVersionRange(vr string) (string, string) {
 	start := vr[1:strings.Index(vr, ",")]
 	end := vr[strings.Index(vr, ",")+1 : len(vr)-1]
 	return start, end
-}
-
-// verifyVersion splits version into three parts, and then verify their format.
-func verifyVersion(version string) bool {
-	dotIdx := strings.Index(version, ".")
-	lastDotIdx := strings.LastIndex(version, ".")
-	majorVersionStr := version[:dotIdx]
-	minorVersionStr := version[dotIdx+1 : lastDotIdx]
-	patchVersionStr := version[lastDotIdx+1:]
-	return verifyPureNumber(patchVersionStr) &&
-		verifyPureNumber(minorVersionStr) &&
-		verifyPureNumber(majorVersionStr)
-}
-
-func verifyPureNumber(subVersion string) bool {
-	for _, c := range subVersion {
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
 }
 
 // findVersionFromPath extracts the version number from file path. For example
@@ -126,36 +71,17 @@ func matchVersion(version string, ruleVersion string) (bool, error) {
 		!strings.Contains(ruleVersion, ")") ||
 		!strings.Contains(ruleVersion, ",") ||
 		strings.Contains(ruleVersion, "v") {
-		return false, fmt.Errorf("invalid version format in rule %v %v",
-			version, ruleVersion)
+		return false, fmt.Errorf("invalid version format in rule %v",
+			ruleVersion)
 	}
 	// Remove extra whitespace from the rule version string
 	ruleVersion = strings.ReplaceAll(ruleVersion, " ", "")
 
-	// Ignore the leading "v" in the version string
-	version = version[1:]
-
-	if !verifyVersion(version) {
-		return false, fmt.Errorf("matched snapshot version: v%v", version)
-	}
-
-	// Extract version number from the string
-	majorVersion, minorVersion, patchVersion := splitVersion(version)
-	if majorVersion > 999 || minorVersion > 999 || patchVersion > 999 {
-		return false, fmt.Errorf("illegal version number")
-	}
-
 	// Compare the version with the rule version, the rule version is in the
 	// format [start, end), where start is inclusive and end is exclusive
-	versionStart, versionEnd := splitVersionRange(ruleVersion)
-	majorStart, minorStart, patchStart := splitVersion(versionStart)
-	majorEnd, minorEnd, patchEnd := splitVersion(versionEnd)
-
-	U1, U2, U3 := 1000000, 1000, 1
-	ruleStart := majorStart*U1 + minorStart*U2 + patchStart*U3
-	ruleEnd := majorEnd*U1 + minorEnd*U2 + patchEnd*U3
-	v := majorVersion*U1 + minorVersion*U2 + patchVersion*U3
-	if v >= ruleStart && v < ruleEnd {
+	ruleVersionStart, ruleVersionEnd := splitVersionRange(ruleVersion)
+	if semver.Compare(version, ruleVersionStart) >= 0 &&
+		semver.Compare(version, ruleVersionEnd) < 0 {
 		return true, nil
 	}
 	return false, nil
@@ -260,7 +186,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 			// Basic check passed, let's match with the rule precisely
 			if rl, ok := rule.(*api.InstFileRule); ok {
 				// Rule is valid nevertheless, save it
-				log.Printf("Matched file rule %s", rule)
+				log.Printf("Match file rule %s", rule)
 				bundle.AddFileRule(rl)
 				availables = append(availables[:i], availables[i+1:]...)
 			} else {
@@ -269,7 +195,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 					if genDecl, ok := decl.(*dst.GenDecl); ok {
 						if rl, ok := rule.(*api.InstStructRule); ok {
 							if shared.MatchStructDecl(genDecl, rl.StructType) {
-								log.Printf("Matched struct rule %s", rule)
+								log.Printf("Match struct rule %s", rule)
 								bundle.AddFile2StructRule(file, rl)
 								valid = true
 							}
@@ -278,7 +204,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 						if rl, ok := rule.(*api.InstFuncRule); ok {
 							if shared.MatchFuncDecl(funcDecl, rl.Function,
 								rl.ReceiverType) {
-								log.Printf("Matched func rule %s", rule)
+								log.Printf("Match func rule %s", rule)
 								bundle.AddFile2FuncRule(file, rl)
 								valid = true
 							}
