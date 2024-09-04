@@ -63,6 +63,10 @@ func runGoGet(dep string) error {
 	return util.RunCmd("go", "get", dep)
 }
 
+func runCleanCache() error {
+	return util.RunCmd("go", "clean", "-cache")
+}
+
 func nullDevice() string {
 	if runtime.GOOS == "windows" {
 		return "NUL"

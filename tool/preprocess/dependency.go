@@ -88,6 +88,13 @@ func newDepProcessor() *DepProcessor {
 
 func (dp *DepProcessor) postProcess() {
 	shared.GuaranteeInPreprocess()
+	// Clean build cache as we may instrument some std packages(e.g. runtime)
+	// TODO: fine-grained cache cleanup
+	err := util.RunCmd("go", "clean", "-cache")
+	if err != nil {
+		log.Fatalf("failed to clean cache: %v", err)
+	}
+
 	// Using -debug? Leave all changes for debugging
 	if shared.Debug {
 		return
@@ -97,7 +104,7 @@ func (dp *DepProcessor) postProcess() {
 	_ = os.RemoveAll(OtelRules)
 
 	// Restore everything we have modified during instrumentation
-	err := dp.restoreBackupFiles()
+	err = dp.restoreBackupFiles()
 	if err != nil {
 		log.Fatalf("failed to restore: %v", err)
 	}
