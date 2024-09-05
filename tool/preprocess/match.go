@@ -37,7 +37,7 @@ func splitVersionRange(vr string) (string, string) {
 
 	start := vr[1:strings.Index(vr, ",")]
 	end := vr[strings.Index(vr, ",")+1 : len(vr)-1]
-	return start, end
+	return "v" + start, "v" + end
 }
 
 // findVersionFromPath extracts the version number from file path. For example
