@@ -3,7 +3,7 @@
 <img src="docs/logo.png" height="150" align="right" alt="logo">
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./docs)
-[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](README_CN.md)
+[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -48,7 +48,7 @@ $ ./otelbuild -debuglog    # print log to file
 $ ./otelbuild -verbose -- -gcflags="-m" cmd/app # print verbose log
 ```
 
-You can also explore [these examples](./example/) to get hands-on experience.
+You can also explore [**these examples**](./example/) to get hands-on experience.
 
 Also there are several [**documents**](./docs) that you may find useful
 
