@@ -527,19 +527,17 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if !shared.IsGoFile(file) {
 			continue
 		}
-		text, err := util.ReadFile(file)
-		if err != nil {
-			return fmt.Errorf("failed to read file %v: %w", file, err)
-		}
-		astRoot, err := shared.ParseAstFromSource(text)
+		astRoot, err := shared.ParseAstFromFile(file)
 		if err != nil {
 			return fmt.Errorf("failed to parse ast from source: %w", err)
 		}
 
 		foundInit := shared.FindFuncDecl(astRoot, FuncInit) != nil
-		foundMain := shared.FindFuncDecl(astRoot, FuncMain) != nil
-		if !foundInit && !foundMain {
-			continue
+		if !foundInit {
+			foundMain := shared.FindFuncDecl(astRoot, FuncMain) != nil
+			if !foundMain {
+				continue
+			}
 		}
 
 		// Prepend import path to the file

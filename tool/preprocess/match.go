@@ -136,7 +136,7 @@ func newRuleMatcher() *ruleMatcher {
 }
 
 // matchRuleBundle gives compilation arguments and finds out all interested rules
-// for it.
+// for it. N.B. This is performance critical, be careful to modify it.
 func (rm *ruleMatcher) matchRuleBundle(importPath string,
 	candidates []string) *resource.RuleBundle {
 	util.Assert(importPath != "", "sanity check")
@@ -149,33 +149,21 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 	if len(availables) == 0 {
 		return nil // fast fail
 	}
+	parsedAst := make(map[string]*dst.File)
 	bundle := resource.NewRuleBundle(importPath)
 	for _, candidate := range candidates {
 		// It's not a go file, ignore silently
 		if !shared.IsGoFile(candidate) {
 			continue
 		}
-
-		// Parse the file content
 		file := candidate
-		fileAst, err := shared.ParseAstFromFile(file)
-		if fileAst == nil {
-			// Failed to parse the file, stop here and log only
-			// sicne it's a tolerant failure
-			log.Printf("Failed to parse file %s from local fs: %v", file, err)
-			continue
-		}
-		if bundle.PackageName == "" {
-			bundle.PackageName = fileAst.Name.Name
-		} else {
-			util.Assert(bundle.PackageName == fileAst.Name.Name,
-				"inconsistent package name")
-		}
-		// Match the rules with the file
+		version := extractVersion(file)
+
 		for i := len(availables) - 1; i >= 0; i-- {
 			rule := availables[i]
-			util.Assert(rule.GetImportPath() == importPath, "sanity check")
-			matched, err := matchVersion(extractVersion(file), rule.GetVersion())
+
+			// Check if the version is supported
+			matched, err := matchVersion(version, rule.GetVersion())
 			if err != nil {
 				log.Printf("Failed to match version %v", err)
 				continue
@@ -183,39 +171,68 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 			if !matched {
 				continue
 			}
-			// Basic check passed, let's match with the rule precisely
-			if rl, ok := rule.(*api.InstFileRule); ok {
-				// Rule is valid nevertheless, save it
+			// Check if it matches with file rule early as we try to avoid
+			// parsing the file content, which is time consuming
+			if _, ok := rule.(*api.InstFileRule); ok {
 				log.Printf("Match file rule %s", rule)
-				bundle.AddFileRule(rl)
+				bundle.AddFileRule(rule.(*api.InstFileRule))
 				availables = append(availables[:i], availables[i+1:]...)
-			} else {
-				valid := false
-				for _, decl := range fileAst.Decls {
-					if genDecl, ok := decl.(*dst.GenDecl); ok {
-						if rl, ok := rule.(*api.InstStructRule); ok {
-							if shared.MatchStructDecl(genDecl, rl.StructType) {
-								log.Printf("Match struct rule %s", rule)
-								bundle.AddFile2StructRule(file, rl)
-								valid = true
-							}
-						}
-					} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
-						if rl, ok := rule.(*api.InstFuncRule); ok {
-							if shared.MatchFuncDecl(funcDecl, rl.Function,
-								rl.ReceiverType) {
-								log.Printf("Match func rule %s", rule)
-								bundle.AddFile2FuncRule(file, rl)
-								valid = true
-							}
-						}
+				continue
+			}
 
+			// Fair enough, parse the file content
+			var tree *dst.File
+			if _, ok := parsedAst[file]; !ok {
+				fileAst, err := shared.ParseAstFromFileFast(file)
+				if fileAst == nil || err != nil {
+					continue
+				}
+				parsedAst[file] = fileAst
+				util.Assert(fileAst.Name.Name != "", "empty package name")
+				if bundle.PackageName == "" {
+					bundle.PackageName = fileAst.Name.Name
+				}
+				util.Assert(bundle.PackageName == fileAst.Name.Name,
+					"inconsistent package name")
+				tree = fileAst
+			} else {
+				tree = parsedAst[file]
+			}
+
+			if tree == nil {
+				// Failed to parse the file, stop here and log only
+				// sicne it's a tolerant failure
+				log.Printf("Failed to parse file %s", file)
+				continue
+			}
+
+			// Let's match with the rule precisely
+			valid := false
+			for _, decl := range tree.Decls {
+				if genDecl, ok := decl.(*dst.GenDecl); ok {
+					if rl, ok := rule.(*api.InstStructRule); ok {
+						if shared.MatchStructDecl(genDecl, rl.StructType) {
+							log.Printf("Match struct rule %s", rule)
+							bundle.AddFile2StructRule(file, rl)
+							valid = true
+							break
+						}
+					}
+				} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
+					if rl, ok := rule.(*api.InstFuncRule); ok {
+						if shared.MatchFuncDecl(funcDecl, rl.Function,
+							rl.ReceiverType) {
+							log.Printf("Match func rule %s", rule)
+							bundle.AddFile2FuncRule(file, rl)
+							valid = true
+							break
+						}
 					}
 				}
-				if valid {
-					// Remove the rule from the available rules
-					availables = append(availables[:i], availables[i+1:]...)
-				}
+			}
+			if valid {
+				// Remove the rule from the available rules
+				availables = append(availables[:i], availables[i+1:]...)
 			}
 		}
 	}

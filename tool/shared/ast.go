@@ -360,6 +360,25 @@ func ParseAstFromSource(source string) (*dst.File, error) {
 	return dstRoot, nil
 }
 
+func ParseAstFromFileFast(filePath string) (*dst.File, error) {
+	name := filepath.Base(filePath)
+	fset := token.NewFileSet()
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	astFile, err := parser.ParseFile(fset, name, file, parser.SkipObjectResolution)
+	if err != nil {
+		return nil, err
+	}
+	dec := decorator.NewDecorator(fset)
+	dstFile, err := dec.DecorateFile(astFile)
+	if err != nil {
+		return nil, err
+	}
+	return dstFile, nil
+}
+
 // ParseAstFromFile parses the AST from complete source file.
 func ParseAstFromFile(filePath string) (*dst.File, error) {
 	name := filepath.Base(filePath)
