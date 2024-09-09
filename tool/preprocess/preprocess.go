@@ -142,7 +142,7 @@ func checkModularized() error {
 	}
 	found, err := shared.IsExistGoMod()
 	if !found {
-		return fmt.Errorf("go.mod not found")
+		return fmt.Errorf("go.mod not found %w", err)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to check go.mod: %w", err)
