@@ -183,7 +183,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 			// Fair enough, parse the file content
 			var tree *dst.File
 			if _, ok := parsedAst[file]; !ok {
-				fileAst, err := shared.ParseAstFromFile(file)
+				fileAst, err := shared.ParseAstFromFileFast(file)
 				if fileAst == nil || err != nil {
 					continue
 				}
