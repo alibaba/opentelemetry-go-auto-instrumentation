@@ -188,6 +188,8 @@ func Preprocess() error {
 		if err != nil {
 			return fmt.Errorf("failed to setup prerequisites: %w", err)
 		}
+		log.Printf("Setup rules took %v", time.Since(start))
+		start = time.Now()
 
 		// Update dependencies in go.mod to specific version
 		err = dp.updateDepVersion()

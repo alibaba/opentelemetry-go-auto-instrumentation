@@ -38,7 +38,6 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 			return fmt.Errorf("failed to read file %s: %w", rule.FileName, err)
 		}
 		source = shared.RemoveGoBuildComment(source)
-		source = shared.RenamePackage(source, bundle.PackageName)
 
 		// Get last section of file path as file name
 		fileName := filepath.Base(rule.FileName)

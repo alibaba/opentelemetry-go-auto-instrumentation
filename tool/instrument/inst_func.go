@@ -325,6 +325,10 @@ func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 }
 
 func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error) {
+	// Nothing to do if no func rules
+	if len(bundle.File2FuncRules) == 0 {
+		return nil
+	}
 	// Copy API file to compilation working directory
 	err = rp.copyOtelApi(bundle.PackageName)
 	if err != nil {
