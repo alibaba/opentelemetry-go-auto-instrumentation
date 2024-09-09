@@ -100,9 +100,10 @@ func GetGoModPath() (string, error) {
 	// os.DevNull ("/dev/null" on Unix-like systems, "NUL" on Windows).
 	// If module-aware mode is disabled, GOMOD will be the empty string.
 	cmd := exec.Command("go", "env", "GOMOD")
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to get go.mod directory: %w", err)
+		return "", fmt.Errorf("failed to get go.mod directory: %w\n%v",
+			err, string(out))
 	}
 	path := strings.TrimSpace(string(out))
 	return path, nil
