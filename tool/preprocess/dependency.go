@@ -161,13 +161,7 @@ func (dp *DepProcessor) addGeneratedDep(dep string) {
 }
 
 func getCompileCommands() ([]string, error) {
-	// Befor generating compile commands, let's run go mod tidy first
-	// to fetch all dependencies
-	err := runModTidy()
-	if err != nil {
-		return nil, fmt.Errorf("failed to run mod tidy: %w", err)
-	}
-	err = runDryBuild()
+	err := runDryBuild()
 	if err != nil {
 		// Tell us more about what happened in the dry run
 		errLog, _ := util.ReadFile(shared.GetLogPath(DryRunLog))
@@ -647,8 +641,6 @@ func (dp *DepProcessor) setupRules() (err error) {
 }
 
 func (dp *DepProcessor) addOtelImports() error {
-	// We want to instrument otel-sdk itself, we done this by adding otel import
-	// to the project, in this way, pkg/rules/otdk rules will always take effect.
 	err := dp.addExplicitImport(
 		OtelImportPath,
 		OtelBaggageImportPath,
@@ -661,21 +653,38 @@ func (dp *DepProcessor) addOtelImports() error {
 }
 
 func (dp *DepProcessor) setupDeps() error {
+	// Add otel import to the project so that we can instrument otel-sdk itself
 	err := dp.addOtelImports()
 	if err != nil {
 		return fmt.Errorf("failed to add otel imports: %w", err)
 	}
 
+	// Befor generating compile commands, let's run go mod tidy first
+	// to fetch all dependencies
+	err = runModTidy()
+	if err != nil {
+		return fmt.Errorf("failed to run mod tidy: %w", err)
+	}
+
+	// Pinning otel version in go.mod
+	err = dp.pinOtelVersion()
+	if err != nil {
+		return fmt.Errorf("failed to update otel: %w", err)
+	}
+
+	// Find compile commands from dry run log
 	compileCmds, err := getCompileCommands()
 	if err != nil {
 		return fmt.Errorf("failed to get compile commands: %w", err)
 	}
 
+	// Find used rules according to compile commands
 	err = dp.matchRules(compileCmds)
 	if err != nil {
 		return fmt.Errorf("failed to find dependencies: %w", err)
 	}
 
+	// Setup rules according to compile commands
 	err = dp.setupRules()
 	if err != nil {
 		return fmt.Errorf("failed to setup dependencies: %w", err)
