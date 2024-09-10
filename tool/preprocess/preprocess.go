@@ -40,6 +40,11 @@ const (
 	DryRunLog = "dry_run.log"
 )
 
+const (
+	FixedOtelDep    = "go.opentelemetry.io/otel@v1.28.0"
+	FixedOtelSdkDep = "go.opentelemetry.io/otel/sdk@v1.28.0"
+)
+
 // runDryBuild runs a dry build to get all dependencies needed for the project.
 func runDryBuild() error {
 	dryRunLog, err := os.Create(shared.GetLogPath(DryRunLog))
@@ -127,7 +132,7 @@ func (dp *DepProcessor) pinDepVersion() error {
 			log.Printf("Pin dependency version %v ", dep)
 			err := runGoGet(dep)
 			if err != nil {
-				return fmt.Errorf("failed to update dependency %v: %w", dep, err)
+				return fmt.Errorf("failed to pin dependency %v: %w", dep, err)
 			}
 		}
 	}
@@ -135,13 +140,13 @@ func (dp *DepProcessor) pinDepVersion() error {
 }
 
 func (dp *DepProcessor) pinOtelVersion() error {
-	err := runGoGet("go.opentelemetry.io/otel@v1.28.0")
+	err := runGoGet(FixedOtelDep)
 	if err != nil {
-		return fmt.Errorf("failed to update otel: %w", err)
+		return fmt.Errorf("failed to pin otel: %w", err)
 	}
-	err = runGoGet("go.opentelemetry.io/otel/sdk@v1.28.0")
+	err = runGoGet(FixedOtelSdkDep)
 	if err != nil {
-		return fmt.Errorf("failed to update otel/sdk: %w", err)
+		return fmt.Errorf("failed to pin otel/sdk: %w", err)
 	}
 	return nil
 }
