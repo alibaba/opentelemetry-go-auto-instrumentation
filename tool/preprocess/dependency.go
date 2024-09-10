@@ -425,7 +425,7 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 	}
 	c += "}\n"
 
-	f, err := util.WriteStringToFile(target, c)
+	_, err = util.WriteStringToFile(target, c)
 	if err != nil {
 		return err
 	}
