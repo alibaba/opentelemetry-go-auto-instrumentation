@@ -62,8 +62,7 @@ const (
 type DepProcessor struct {
 	bundles          []*resource.RuleBundle // All dependent rule bundles
 	funcRules        []uint64               // Function should be processed separately
-	generatedDeps    []string
-	sigc             chan os.Signal // Graceful shutdown
+	sigc             chan os.Signal         // Graceful shutdown
 	backups          map[string]string
 	localImportPath  string
 	importCandidates []string
@@ -75,7 +74,6 @@ func newDepProcessor() *DepProcessor {
 	return &DepProcessor{
 		bundles:          []*resource.RuleBundle{},
 		funcRules:        []uint64{},
-		generatedDeps:    []string{},
 		sigc:             sigc,
 		backups:          map[string]string{},
 		localImportPath:  "",
@@ -151,10 +149,6 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 		log.Printf("Restore %v\n", origin)
 	}
 	return nil
-}
-
-func (dp *DepProcessor) addGeneratedDep(dep string) {
-	dp.generatedDeps = append(dp.generatedDeps, dep)
 }
 
 func getCompileCommands() ([]string, error) {
@@ -346,7 +340,6 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to copy rule %v: %w", path, err)
 		}
-		dp.addGeneratedDep(ruleFile)
 		shared.SaveDebugFile("", ruleFile)
 	}
 	return nil
@@ -436,7 +429,6 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 	if err != nil {
 		return err
 	}
-	dp.addGeneratedDep(f)
 	shared.SaveDebugFile("", target)
 	return err
 }
@@ -445,7 +437,6 @@ func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
 	if err != nil {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
-	dp.addGeneratedDep(f)
 	shared.SaveDebugFile("", target)
 	return err
 }
