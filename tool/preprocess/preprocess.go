@@ -213,16 +213,16 @@ func Preprocess() error {
 			return fmt.Errorf("failed to update dependencies: %w", err)
 		}
 
-		// Run go mod tidy to fetch dependencies
-		err = runModTidy()
-		if err != nil {
-			return fmt.Errorf("failed to run mod tidy: %w", err)
-		}
-
 		// Pinning otel version in go.mod
 		err = dp.pinOtelVersion()
 		if err != nil {
 			return fmt.Errorf("failed to update otel: %w", err)
+		}
+
+		// Run go mod tidy to fetch dependencies
+		err = runModTidy()
+		if err != nil {
+			return fmt.Errorf("failed to run mod tidy: %w", err)
 		}
 
 		log.Printf("Preprocess took %v", time.Since(start))

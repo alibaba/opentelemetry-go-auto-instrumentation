@@ -341,7 +341,7 @@ func InitRules() error {
 		if err != nil {
 			return fmt.Errorf("failed to hash rule: %w", err)
 		}
-		if shared.Verbose {
+		if shared.Verbose && shared.InPreprocess() {
 			log.Printf("Rule %v hashed to %d", rule, h)
 		}
 		hash2Rules[h] = rule
