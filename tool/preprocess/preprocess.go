@@ -40,13 +40,15 @@ const (
 	DryRunLog = "dry_run.log"
 )
 
-const (
-	FixedOtelDep          = "go.opentelemetry.io/otel@v1.28.0"
-	FixedOtelSdkDep       = "go.opentelemetry.io/otel/sdk@v1.28.0"
-	FixedOtlptraceDep     = "go.opentelemetry.io/otel/exporters/otlp/otlptrace@v1.28.0"
-	FixedOtlptracegrpcDep = "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc@v1.28.0"
-	FixedOtlptracehttpDep = "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.28.0"
-)
+const FixedOtelDepVersion = "v1.28.0"
+
+var fixedOtelDeps = []string{
+	"go.opentelemetry.io/otel",
+	"go.opentelemetry.io/otel/sdk",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
+}
 
 // runDryBuild runs a dry build to get all dependencies needed for the project.
 func runDryBuild() error {
@@ -142,26 +144,17 @@ func (dp *DepProcessor) pinDepVersion() error {
 	return nil
 }
 
+// We want to fetch otel dependencies in a fixed version instead of the latest
+// version, so we need to pin the version in go.mod. All used otel dependencies
+// should be listed and pinned here, because go mod tidy  will fetch the latest
+// version even if we have pinned some of them.
 func (dp *DepProcessor) pinOtelVersion() error {
-	err := runGoGet(FixedOtelDep)
-	if err != nil {
-		return fmt.Errorf("failed to pin otel: %w", err)
-	}
-	err = runGoGet(FixedOtelSdkDep)
-	if err != nil {
-		return fmt.Errorf("failed to pin otel/sdk: %w", err)
-	}
-	err = runGoGet(FixedOtlptraceDep)
-	if err != nil {
-		return fmt.Errorf("failed to pin otel/sdk: %w", err)
-	}
-	err = runGoGet(FixedOtlptracegrpcDep)
-	if err != nil {
-		return fmt.Errorf("failed to pin otel/sdk: %w", err)
-	}
-	err = runGoGet(FixedOtlptracehttpDep)
-	if err != nil {
-		return fmt.Errorf("failed to pin otel/sdk: %w", err)
+	for _, dep := range fixedOtelDeps {
+		log.Printf("Pin otel dependency version %v ", dep)
+		err := runGoGet(dep + "@" + FixedOtelDepVersion)
+		if err != nil {
+			return fmt.Errorf("failed to pin otel dependency %v: %w", dep, err)
+		}
 	}
 	return nil
 }

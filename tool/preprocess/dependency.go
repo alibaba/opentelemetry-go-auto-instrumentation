@@ -34,14 +34,11 @@ import (
 )
 
 const (
-	OtelSetupInst          = "otel_setup_inst.go"
-	OtelSetupSDK           = "otel_setup_sdk.go"
-	OtelRules              = "otel_rules"
-	OtelBackups            = "backups"
-	OtelBackupSuffix       = ".bk"
-	OtelImportPath         = "go.opentelemetry.io/otel"
-	OtelBaggageImportPath  = "go.opentelemetry.io/otel/baggage"
-	OtelSdkTraceImportPath = "go.opentelemetry.io/otel/sdk/trace"
+	OtelSetupInst    = "otel_setup_inst.go"
+	OtelSetupSDK     = "otel_setup_sdk.go"
+	OtelRules        = "otel_rules"
+	OtelBackups      = "backups"
+	OtelBackupSuffix = ".bk"
 )
 
 // @@ Change should sync with trampoline template
@@ -460,7 +457,7 @@ func assembleImportCandidates() ([]string, error) {
 	candidates := make([]string, 0)
 	found := false
 
-	// Find from build arguments e.g. go build test_gorm_crud.go or go build cmd/app
+	// Find from build arguments e.g. go build test.go or go build cmd/app
 	for _, buildArg := range shared.BuildArgs {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
@@ -513,6 +510,9 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		dp.importCandidates = files
 		if shared.Verbose {
 			log.Printf("RuleImport candidates: %v", files)
+		}
+		if len(dp.importCandidates) == 0 {
+			return fmt.Errorf("no candidate found to add import")
 		}
 	}
 
@@ -641,11 +641,7 @@ func (dp *DepProcessor) setupRules() (err error) {
 }
 
 func (dp *DepProcessor) addOtelImports() error {
-	err := dp.addExplicitImport(
-		OtelImportPath,
-		OtelBaggageImportPath,
-		OtelSdkTraceImportPath,
-	)
+	err := dp.addExplicitImport(fixedOtelDeps...)
 	if err != nil {
 		return fmt.Errorf("failed to add otel import: %w", err)
 	}
@@ -659,17 +655,17 @@ func (dp *DepProcessor) setupDeps() error {
 		return fmt.Errorf("failed to add otel imports: %w", err)
 	}
 
+	// Pinning otel version in go.mod
+	err = dp.pinOtelVersion()
+	if err != nil {
+		return fmt.Errorf("failed to update otel: %w", err)
+	}
+
 	// Befor generating compile commands, let's run go mod tidy first
 	// to fetch all dependencies
 	err = runModTidy()
 	if err != nil {
 		return fmt.Errorf("failed to run mod tidy: %w", err)
-	}
-
-	// Pinning otel version in go.mod
-	err = dp.pinOtelVersion()
-	if err != nil {
-		return fmt.Errorf("failed to update otel: %w", err)
 	}
 
 	// Find compile commands from dry run log
