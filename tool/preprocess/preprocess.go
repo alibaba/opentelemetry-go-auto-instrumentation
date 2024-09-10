@@ -38,7 +38,6 @@ import (
 
 const (
 	DryRunLog = "dry_run.log"
-	GoModFile = "go.mod"
 )
 
 // runDryBuild runs a dry build to get all dependencies needed for the project.
@@ -117,7 +116,7 @@ func runBuildWithToolexec() error {
 	return util.RunCmd(append([]string{"go"}, args...)...)
 }
 
-func (dp *DepProcessor) updateDepVersion() error {
+func (dp *DepProcessor) pinDepVersion() error {
 	// This should be done before running go mod tidy, because we may relies on
 	// some packages that only presents in our specified version, running go mod
 	// tidy will report error since it nevertheless pulls the latest version,
@@ -125,12 +124,24 @@ func (dp *DepProcessor) updateDepVersion() error {
 	for _, ruleHash := range dp.funcRules {
 		rule := resource.FindFuncRuleByHash(ruleHash)
 		for _, dep := range rule.PackageDeps {
-			log.Printf("Update dependency %v ", dep)
+			log.Printf("Pin dependency version %v ", dep)
 			err := runGoGet(dep)
 			if err != nil {
 				return fmt.Errorf("failed to update dependency %v: %w", dep, err)
 			}
 		}
+	}
+	return nil
+}
+
+func (dp *DepProcessor) pinOtelVersion() error {
+	err := runGoGet("go.opentelemetry.io/otel@v1.28.0")
+	if err != nil {
+		return fmt.Errorf("failed to update otel: %w", err)
+	}
+	err = runGoGet("go.opentelemetry.io/otel/sdk@v1.28.0")
+	if err != nil {
+		return fmt.Errorf("failed to update otel/sdk: %w", err)
 	}
 	return nil
 }
@@ -191,10 +202,16 @@ func Preprocess() error {
 		log.Printf("Setup rules took %v", time.Since(start))
 		start = time.Now()
 
-		// Update dependencies in go.mod to specific version
-		err = dp.updateDepVersion()
+		// Pinning dependencies version in go.mod
+		err = dp.pinDepVersion()
 		if err != nil {
 			return fmt.Errorf("failed to update dependencies: %w", err)
+		}
+
+		// Pinning otel version in go.mod
+		err = dp.pinOtelVersion()
+		if err != nil {
+			return fmt.Errorf("failed to update otel: %w", err)
 		}
 
 		// Run go mod tidy to fetch dependencies

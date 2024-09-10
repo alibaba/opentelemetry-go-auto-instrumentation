@@ -90,9 +90,9 @@ func (dp *DepProcessor) postProcess() {
 	shared.GuaranteeInPreprocess()
 	// Clean build cache as we may instrument some std packages(e.g. runtime)
 	// TODO: fine-grained cache cleanup
-	err := util.RunCmd("go", "clean", "-cache")
+	err := runCleanCache()
 	if err != nil {
-		log.Fatalf("failed to clean cache: %v", err)
+		log.Printf("failed to clean cache: %v", err)
 	}
 
 	// Using -debug? Leave all changes for debugging
@@ -570,7 +570,7 @@ func getModuleName(gomod string) (string, error) {
 		return "", fmt.Errorf("failed to read go.mod: %w", err)
 	}
 
-	modFile, err := modfile.Parse("go.mod", []byte(data), nil)
+	modFile, err := modfile.Parse(shared.GoModFile, []byte(data), nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse go.mod: %w", err)
 	}
