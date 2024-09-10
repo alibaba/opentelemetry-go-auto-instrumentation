@@ -433,7 +433,7 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 	return err
 }
 func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
-	f, err := resource.CopyOtelSetupTo(pkgName, target)
+	_, err := resource.CopyOtelSetupTo(pkgName, target)
 	if err != nil {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
