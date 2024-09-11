@@ -213,22 +213,24 @@ func readImportPath(cmd []string) string {
 	return pkg
 }
 
+func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
+	cmdArgs := strings.Split(cmd, " ")
+	importPath := readImportPath(cmdArgs)
+	util.Assert(importPath != "", "sanity check")
+	if shared.Verbose {
+		log.Printf("Try to match rules for %v with %v\n",
+			importPath, cmdArgs)
+	}
+	bundle := matcher.matchRuleBundle(importPath, cmdArgs)
+	ch <- bundle
+}
+
 func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	matcher := newRuleMatcher()
 	// Find used instrumentation rule according to compile commands
 	ch := make(chan *resource.RuleBundle)
 	for _, cmd := range compileCmds {
-		go func(cmd string) {
-			cmdArgs := strings.Split(cmd, " ")
-			importPath := readImportPath(cmdArgs)
-			util.Assert(importPath != "", "sanity check")
-			if shared.Verbose {
-				log.Printf("Try to match rules for %v with %v\n",
-					importPath, cmdArgs)
-			}
-			bundle := matcher.matchRuleBundle(importPath, cmdArgs)
-			ch <- bundle
-		}(cmd)
+		go runMatch(matcher, cmd, ch)
 	}
 	cnt := 0
 	for cnt < len(compileCmds) {
