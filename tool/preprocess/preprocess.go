@@ -74,10 +74,10 @@ func nullDevice() string {
 	return "/dev/null"
 }
 
-func runBuildWithToolexec() error {
+func runBuildWithToolexec() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
-		return err
+		return "", err
 	}
 	args := []string{
 		"build",
@@ -99,7 +99,7 @@ func runBuildWithToolexec() error {
 	// According to go1.18.10/src/flag/flag.go#parseOne
 	if len(shared.BuildArgs) > 0 {
 		if shared.Restore {
-			return fmt.Errorf("args are not allowed when -restore is present")
+			return "", fmt.Errorf("args are not allowed when -restore presents")
 		}
 		// Append additional build arguments provided by the user
 		args = append(args, shared.BuildArgs...)
@@ -114,7 +114,7 @@ func runBuildWithToolexec() error {
 	if shared.Verbose {
 		log.Printf("Run go build with args %v in toolexec mode", args)
 	}
-	return util.RunCmd(append([]string{"go"}, args...)...)
+	return util.RunCmdWithOutput(append([]string{"go"}, args...)...)
 }
 
 func (dp *DepProcessor) updateDepVersion() error {
@@ -209,9 +209,10 @@ func Preprocess() error {
 	{
 		start := time.Now()
 		// Run go build with toolexec to start instrumentation
-		err := runBuildWithToolexec()
+		out, err := runBuildWithToolexec()
 		if err != nil {
-			return fmt.Errorf("failed to run go toolexec build: %w", err)
+			return fmt.Errorf("failed to run go toolexec build: %w\n%s",
+				err, out)
 		}
 		log.Printf("Instrument took %v", time.Since(start))
 	}
