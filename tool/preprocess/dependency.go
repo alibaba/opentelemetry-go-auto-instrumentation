@@ -213,25 +213,32 @@ func readImportPath(cmd []string) string {
 	return pkg
 }
 
+func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
+	cmdArgs := strings.Split(cmd, " ")
+	importPath := readImportPath(cmdArgs)
+	util.Assert(importPath != "", "sanity check")
+	if shared.Verbose {
+		log.Printf("Try to match rules for %v with %v\n",
+			importPath, cmdArgs)
+	}
+	bundle := matcher.matchRuleBundle(importPath, cmdArgs)
+	ch <- bundle
+}
+
 func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	matcher := newRuleMatcher()
 	// Find used instrumentation rule according to compile commands
+	ch := make(chan *resource.RuleBundle)
 	for _, cmd := range compileCmds {
-		cmdArgs := strings.Split(cmd, " ")
-		importPath := readImportPath(cmdArgs)
-		if importPath == "" {
-			return fmt.Errorf("failed to find import path: %v", cmd)
-		}
-		if shared.Verbose {
-			log.Printf("Try to match rules for %v with %v\n",
-				importPath, cmdArgs)
-		}
-		bundle := matcher.matchRuleBundle(importPath, cmdArgs)
+		go runMatch(matcher, cmd, ch)
+	}
+	cnt := 0
+	for cnt < len(compileCmds) {
+		bundle := <-ch
 		if bundle.IsValid() {
 			dp.bundles = append(dp.bundles, bundle)
-		} else if shared.Verbose {
-			log.Printf("No match for %v", importPath)
 		}
+		cnt++
 	}
 	// In rare case, we might instrument functions that are not in the project
 	// but introduced by InstFileRule/InstFuncRule. For instance, if InstFileRule
