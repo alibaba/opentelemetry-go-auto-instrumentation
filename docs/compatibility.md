@@ -39,7 +39,7 @@ are made for those systems currently.
 
 # OpenTelemetry Compatibility
 
-To address issues such as trace interruption caused by missing context, we have instrumented OpenTelemetry (OTel) itself with this `otelbuild`. This means that if users explicitly add OTel dependencies, the version of those dependencies must match the `otelbuild`'s requirements, otherwise, the tool will not function properly. Currently, the mapping of the `otelbuild` to the supported OTel versions is as follows:
+To address issues such as trace interruption caused by missing context, we need to instrument OpenTelemetry (OTel) itself with this `otelbuild`. This means that if users explicitly add OTel dependencies, the version of those dependencies must match the `otelbuild`'s requirements, otherwise, the tool will not function properly. Currently, the mapping of the `otelbuild` to the supported OTel versions is as follows:
 
 | Tool Version | OTel Version |
 | ----------------- | ------------ |

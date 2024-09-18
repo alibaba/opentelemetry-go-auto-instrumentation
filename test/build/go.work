@@ -4,5 +4,5 @@ use (
     ./mod1
     .
     //.proj1 // comment out proj1 to test if it affects otel version
-	./proj2
+    ./proj2
 )
