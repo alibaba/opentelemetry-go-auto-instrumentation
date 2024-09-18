@@ -3,4 +3,6 @@ go 1.21
 use (
     ./mod1
     .
+    //.proj1 // comment out proj1 to test if it affects otel version
+	./proj2
 )
