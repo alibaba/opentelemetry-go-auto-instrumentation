@@ -38,8 +38,17 @@ import (
 
 const (
 	DryRunLog = "dry_run.log"
-	GoModFile = "go.mod"
 )
+
+const FixedOtelDepVersion = "v1.28.0"
+
+var fixedOtelDeps = []string{
+	"go.opentelemetry.io/otel",
+	"go.opentelemetry.io/otel/sdk",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
+}
 
 // runDryBuild runs a dry build to get all dependencies needed for the project.
 func runDryBuild() error {
@@ -117,7 +126,7 @@ func runBuildWithToolexec() (string, error) {
 	return util.RunCmdWithOutput(append([]string{"go"}, args...)...)
 }
 
-func (dp *DepProcessor) updateDepVersion() error {
+func (dp *DepProcessor) pinDepVersion() error {
 	// This should be done before running go mod tidy, because we may relies on
 	// some packages that only presents in our specified version, running go mod
 	// tidy will report error since it nevertheless pulls the latest version,
@@ -125,11 +134,26 @@ func (dp *DepProcessor) updateDepVersion() error {
 	for _, ruleHash := range dp.funcRules {
 		rule := resource.FindFuncRuleByHash(ruleHash)
 		for _, dep := range rule.PackageDeps {
-			log.Printf("Update dependency %v ", dep)
+			log.Printf("Pin dependency version %v ", dep)
 			err := runGoGet(dep)
 			if err != nil {
-				return fmt.Errorf("failed to update dependency %v: %w", dep, err)
+				return fmt.Errorf("failed to pin dependency %v: %w", dep, err)
 			}
+		}
+	}
+	return nil
+}
+
+// We want to fetch otel dependencies in a fixed version instead of the latest
+// version, so we need to pin the version in go.mod. All used otel dependencies
+// should be listed and pinned here, because go mod tidy  will fetch the latest
+// version even if we have pinned some of them.
+func (dp *DepProcessor) pinOtelVersion() error {
+	for _, dep := range fixedOtelDeps {
+		log.Printf("Pin otel dependency version %v ", dep)
+		err := runGoGet(dep + "@" + FixedOtelDepVersion)
+		if err != nil {
+			return fmt.Errorf("failed to pin otel dependency %v: %w", dep, err)
 		}
 	}
 	return nil
@@ -191,10 +215,16 @@ func Preprocess() error {
 		log.Printf("Setup rules took %v", time.Since(start))
 		start = time.Now()
 
-		// Update dependencies in go.mod to specific version
-		err = dp.updateDepVersion()
+		// Pinning dependencies version in go.mod
+		err = dp.pinDepVersion()
 		if err != nil {
 			return fmt.Errorf("failed to update dependencies: %w", err)
+		}
+
+		// Pinning otel version in go.mod
+		err = dp.pinOtelVersion()
+		if err != nil {
+			return fmt.Errorf("failed to update otel: %w", err)
 		}
 
 		// Run go mod tidy to fetch dependencies

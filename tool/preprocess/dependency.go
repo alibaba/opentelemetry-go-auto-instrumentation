@@ -34,14 +34,11 @@ import (
 )
 
 const (
-	OtelSetupInst          = "otel_setup_inst.go"
-	OtelSetupSDK           = "otel_setup_sdk.go"
-	OtelRules              = "otel_rules"
-	OtelBackups            = "backups"
-	OtelBackupSuffix       = ".bk"
-	OtelImportPath         = "go.opentelemetry.io/otel"
-	OtelBaggageImportPath  = "go.opentelemetry.io/otel/baggage"
-	OtelSdkTraceImportPath = "go.opentelemetry.io/otel/sdk/trace"
+	OtelSetupInst    = "otel_setup_inst.go"
+	OtelSetupSDK     = "otel_setup_sdk.go"
+	OtelRules        = "otel_rules"
+	OtelBackups      = "backups"
+	OtelBackupSuffix = ".bk"
 )
 
 // @@ Change should sync with trampoline template
@@ -65,8 +62,7 @@ const (
 type DepProcessor struct {
 	bundles          []*resource.RuleBundle // All dependent rule bundles
 	funcRules        []uint64               // Function should be processed separately
-	generatedDeps    []string
-	sigc             chan os.Signal // Graceful shutdown
+	sigc             chan os.Signal         // Graceful shutdown
 	backups          map[string]string
 	localImportPath  string
 	importCandidates []string
@@ -78,7 +74,6 @@ func newDepProcessor() *DepProcessor {
 	return &DepProcessor{
 		bundles:          []*resource.RuleBundle{},
 		funcRules:        []uint64{},
-		generatedDeps:    []string{},
 		sigc:             sigc,
 		backups:          map[string]string{},
 		localImportPath:  "",
@@ -90,9 +85,9 @@ func (dp *DepProcessor) postProcess() {
 	shared.GuaranteeInPreprocess()
 	// Clean build cache as we may instrument some std packages(e.g. runtime)
 	// TODO: fine-grained cache cleanup
-	err := util.RunCmd("go", "clean", "-cache")
+	err := runCleanCache()
 	if err != nil {
-		log.Fatalf("failed to clean cache: %v", err)
+		log.Printf("failed to clean cache: %v", err)
 	}
 
 	// Using -debug? Leave all changes for debugging
@@ -156,18 +151,8 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 	return nil
 }
 
-func (dp *DepProcessor) addGeneratedDep(dep string) {
-	dp.generatedDeps = append(dp.generatedDeps, dep)
-}
-
 func getCompileCommands() ([]string, error) {
-	// Befor generating compile commands, let's run go mod tidy first
-	// to fetch all dependencies
-	err := runModTidy()
-	if err != nil {
-		return nil, fmt.Errorf("failed to run mod tidy: %w", err)
-	}
-	err = runDryBuild()
+	err := runDryBuild()
 	if err != nil {
 		// Tell us more about what happened in the dry run
 		errLog, _ := util.ReadFile(shared.GetLogPath(DryRunLog))
@@ -362,7 +347,6 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to copy rule %v: %w", path, err)
 		}
-		dp.addGeneratedDep(ruleFile)
 		shared.SaveDebugFile("", ruleFile)
 	}
 	return nil
@@ -448,20 +432,18 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 	}
 	c += "}\n"
 
-	f, err := util.WriteStringToFile(target, c)
+	_, err = util.WriteStringToFile(target, c)
 	if err != nil {
 		return err
 	}
-	dp.addGeneratedDep(f)
 	shared.SaveDebugFile("", target)
 	return err
 }
 func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
-	f, err := resource.CopyOtelSetupTo(pkgName, target)
+	_, err := resource.CopyOtelSetupTo(pkgName, target)
 	if err != nil {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
-	dp.addGeneratedDep(f)
 	shared.SaveDebugFile("", target)
 	return err
 }
@@ -473,7 +455,7 @@ func assembleImportCandidates() ([]string, error) {
 	candidates := make([]string, 0)
 	found := false
 
-	// Find from build arguments e.g. go build test_gorm_crud.go or go build cmd/app
+	// Find from build arguments e.g. go build test.go or go build cmd/app
 	for _, buildArg := range shared.BuildArgs {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
@@ -527,6 +509,9 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if shared.Verbose {
 			log.Printf("RuleImport candidates: %v", files)
 		}
+		if len(dp.importCandidates) == 0 {
+			return fmt.Errorf("no candidate found to add import")
+		}
 	}
 
 	addImport := false
@@ -577,7 +562,7 @@ func getModuleName(gomod string) (string, error) {
 		return "", fmt.Errorf("failed to read go.mod: %w", err)
 	}
 
-	modFile, err := modfile.Parse("go.mod", []byte(data), nil)
+	modFile, err := modfile.Parse(shared.GoModFile, []byte(data), nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse go.mod: %w", err)
 	}
@@ -654,13 +639,7 @@ func (dp *DepProcessor) setupRules() (err error) {
 }
 
 func (dp *DepProcessor) addOtelImports() error {
-	// We want to instrument otel-sdk itself, we done this by adding otel import
-	// to the project, in this way, pkg/rules/otdk rules will always take effect.
-	err := dp.addExplicitImport(
-		OtelImportPath,
-		OtelBaggageImportPath,
-		OtelSdkTraceImportPath,
-	)
+	err := dp.addExplicitImport(fixedOtelDeps...)
 	if err != nil {
 		return fmt.Errorf("failed to add otel import: %w", err)
 	}
@@ -668,21 +647,38 @@ func (dp *DepProcessor) addOtelImports() error {
 }
 
 func (dp *DepProcessor) setupDeps() error {
+	// Add otel import to the project so that we can instrument otel-sdk itself
 	err := dp.addOtelImports()
 	if err != nil {
 		return fmt.Errorf("failed to add otel imports: %w", err)
 	}
 
+	// Pinning otel version in go.mod
+	err = dp.pinOtelVersion()
+	if err != nil {
+		return fmt.Errorf("failed to update otel: %w", err)
+	}
+
+	// Befor generating compile commands, let's run go mod tidy first
+	// to fetch all dependencies
+	err = runModTidy()
+	if err != nil {
+		return fmt.Errorf("failed to run mod tidy: %w", err)
+	}
+
+	// Find compile commands from dry run log
 	compileCmds, err := getCompileCommands()
 	if err != nil {
 		return fmt.Errorf("failed to get compile commands: %w", err)
 	}
 
+	// Find used rules according to compile commands
 	err = dp.matchRules(compileCmds)
 	if err != nil {
 		return fmt.Errorf("failed to find dependencies: %w", err)
 	}
 
+	// Setup rules according to compile commands
 	err = dp.setupRules()
 	if err != nil {
 		return fmt.Errorf("failed to setup dependencies: %w", err)

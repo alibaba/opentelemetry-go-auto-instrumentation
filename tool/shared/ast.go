@@ -367,7 +367,8 @@ func ParseAstFromFileFast(filePath string) (*dst.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	astFile, err := parser.ParseFile(fset, name, file, parser.SkipObjectResolution)
+	astFile, err := parser.ParseFile(fset, name,
+		file, parser.SkipObjectResolution)
 	if err != nil {
 		return nil, err
 	}
