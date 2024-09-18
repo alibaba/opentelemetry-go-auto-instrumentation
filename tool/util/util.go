@@ -72,6 +72,14 @@ func RunCmd(args ...string) error {
 	return cmd.Run()
 }
 
+func RunCmdWithOutput(args ...string) (string, error) {
+	path := args[0]
+	args = args[1:]
+	cmd := exec.Command(path, args...)
+	bytes, err := cmd.CombinedOutput()
+	return string(bytes), err
+}
+
 func CopyFile(src, dst string) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {
