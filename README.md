@@ -10,21 +10,19 @@ leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, and the instrumentation is done at compile
 time. Simply replace `go build` with `otelbuild` to get started.
 
-# How to Build
+# Installation
+#### Precompiled binary
+We recommend using the precompiled latest release version. You can visit the
+[Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
+page to download them.
 
-Run the following command to build `otelbuild`:
-
+#### Build from source
+You can also clone the repository and build the project by running the following commands:
 ```bash
 $ make build
 ```
 
-To run all tests:
-
-```bash
-$ make test
-```
-
-# How to Use
+# Getting Started
 
 Replace `go build` with the following command to build your project:
 
