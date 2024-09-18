@@ -15,77 +15,16 @@
 package preprocess
 
 import (
-	"fmt"
 	"log"
-	"regexp"
 	"strings"
 
 	"github.com/dave/dst"
-	"golang.org/x/mod/semver"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
-
-// splitVersionRange splits the version range into two parts, start and end.
-func splitVersionRange(vr string) (string, string) {
-	util.Assert(strings.Contains(vr, ","), "invalid version range format")
-	util.Assert(strings.Contains(vr, "["), "invalid version range format")
-	util.Assert(strings.Contains(vr, ")"), "invalid version range format")
-
-	start := vr[1:strings.Index(vr, ",")]
-	end := vr[strings.Index(vr, ",")+1 : len(vr)-1]
-	return "v" + start, "v" + end
-}
-
-// findVersionFromPath extracts the version number from file path. For example
-// for the path "github.com/gin-gonic/gin@v1.9.1", it returns "v1.9.1". If the
-// path does not contain version number, it returns an empty string.
-var versionRegexp = regexp.MustCompile(`@v\d+\.\d+\.\d+(-.*?)?/`)
-
-func extractVersion(path string) string {
-	version := versionRegexp.FindString(path)
-	if version == "" {
-		return ""
-	}
-	// Extract version number from the string
-	return version[1 : len(version)-1]
-}
-
-// matchVersion checks if the version string matches the version range in the
-// rule. The version range is in format [start, end), where start is inclusive
-// and end is exclusive. If the rule version string is empty, it always matches.
-func matchVersion(version string, ruleVersion string) (bool, error) {
-	// Fast path, always match if the rule version is not specified
-	if ruleVersion == "" {
-		return true, nil
-	}
-	// Check if both rule version and package version are in sane
-	if !strings.Contains(version, "v") {
-		return false, fmt.Errorf("invalid version %v %v",
-			version, ruleVersion)
-	}
-	if !strings.Contains(ruleVersion, "[") ||
-		!strings.Contains(ruleVersion, ")") ||
-		!strings.Contains(ruleVersion, ",") ||
-		strings.Contains(ruleVersion, "v") {
-		return false, fmt.Errorf("invalid version format in rule %v",
-			ruleVersion)
-	}
-	// Remove extra whitespace from the rule version string
-	ruleVersion = strings.ReplaceAll(ruleVersion, " ", "")
-
-	// Compare the version with the rule version, the rule version is in the
-	// format [start, end), where start is inclusive and end is exclusive
-	ruleVersionStart, ruleVersionEnd := splitVersionRange(ruleVersion)
-	if semver.Compare(version, ruleVersionStart) >= 0 &&
-		semver.Compare(version, ruleVersionEnd) < 0 {
-		return true, nil
-	}
-	return false, nil
-}
 
 func findAvailableRules() []api.InstRule {
 	// Disable all rules
@@ -157,13 +96,13 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 			continue
 		}
 		file := candidate
-		version := extractVersion(file)
+		version := shared.ExtractVersion(file)
 
 		for i := len(availables) - 1; i >= 0; i-- {
 			rule := availables[i]
 
 			// Check if the version is supported
-			matched, err := matchVersion(version, rule.GetVersion())
+			matched, err := shared.MatchVersion(version, rule.GetVersion())
 			if err != nil {
 				log.Printf("Failed to match version %v", err)
 				continue

@@ -137,13 +137,60 @@ func (rp *RuleProcessor) applyRules(bundle *resource.RuleBundle) (err error) {
 	return nil
 }
 
-func matchCompileImportPath(importPath string, args []string) bool {
+func matchImportPath(importPath string, args []string) bool {
 	for _, arg := range args {
 		if arg == importPath {
 			return true
 		}
 	}
 	return false
+}
+
+// guaranteeVersion makes sure the rule bundle is still valid
+func guaranteeVersion(bundle *resource.RuleBundle, candidates []string) error {
+	for _, candidate := range candidates {
+		// It's not a go file, ignore silently
+		if !shared.IsGoFile(candidate) {
+			continue
+		}
+		version := shared.ExtractVersion(candidate)
+		for _, rules := range bundle.File2FuncRules {
+			for _, hashes := range rules {
+				for _, h := range hashes {
+					rule := resource.FindFuncRuleByHash(h)
+					matched, _ := shared.MatchVersion(version, rule.Version)
+					if !matched {
+						return fmt.Errorf("rule %v is outdated, new version %s",
+							rule, version)
+					}
+				}
+			}
+		}
+		for _, rules := range bundle.File2StructRules {
+			for _, hashes := range rules {
+				for _, h := range hashes {
+					rule := resource.FindStructRuleByHash(h)
+					matched, _ := shared.MatchVersion(version, rule.Version)
+					if !matched {
+						return fmt.Errorf("rule %v is outdated, new version %s",
+							rule, version)
+					}
+				}
+			}
+		}
+		for _, h := range bundle.FileRules {
+			rule := resource.FindFileRuleByHash(h)
+			matched, _ := shared.MatchVersion(version, rule.Version)
+			if !matched {
+				return fmt.Errorf("rule %v is outdated, new version %s",
+					rule, version)
+			}
+		}
+		// Good, the bundle is still valid, we not need to check all files
+		// in the package as they are mostly the same version
+		break
+	}
+	return nil
 }
 
 func Instrument() error {
@@ -161,7 +208,7 @@ func Instrument() error {
 		for _, bundle := range bundles {
 			util.Assert(bundle.IsValid(), "sanity check")
 			// Is compiling the target package?
-			if matchCompileImportPath(bundle.ImportPath, args) {
+			if matchImportPath(bundle.ImportPath, args) {
 				rp := newRuleProcessor(args, bundle.PackageName)
 				err = rp.applyRules(bundle)
 				if err != nil {
