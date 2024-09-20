@@ -1,8 +1,10 @@
-go 1.21
+go 1.22
+
+toolchain go1.23.0
 
 use (
-    ./mod1
-    .
-    //.proj1 // comment out proj1 to test if it affects otel version
-    ./proj2
+	.
+	./mod1
+	//.proj1 // comment out proj1 to test if it affects otel version
+	./proj2
 )
