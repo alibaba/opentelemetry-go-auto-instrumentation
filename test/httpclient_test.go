@@ -35,6 +35,6 @@ func TestRunHttpclient(t *testing.T) {
 	ExpectContains(t, stderr, "4008208820")
 	ExpectContains(t, stderr, "Prince of Qin Smashing the Battle line")
 
-	ExpectPreprocessContains(t, "debug.log", "go.opentelemetry.io/otel@v1.28.0")
-	ExpectInstrumentContains(t, "debug.log", "go.opentelemetry.io/otel@v1.28.0")
+	ExpectPreprocessContains(t, "debug.log", "go.opentelemetry.io/otel@v1.30.0")
+	ExpectInstrumentContains(t, "debug.log", "go.opentelemetry.io/otel@v1.30.0")
 }
