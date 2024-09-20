@@ -40,7 +40,7 @@ const (
 	DryRunLog = "dry_run.log"
 )
 
-const FixedOtelDepVersion = "v1.28.0"
+const FixedOtelDepVersion = "v1.30.0"
 
 var fixedOtelDeps = []string{
 	"go.opentelemetry.io/otel",

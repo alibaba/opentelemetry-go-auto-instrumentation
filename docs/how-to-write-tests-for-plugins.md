@@ -20,7 +20,7 @@ version, which is `v9.0.5` first. You may create a subdirectory named `v9.0.5` a
 ```
 module redis/v9.0.5
 
-go 1.21
+go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
@@ -28,8 +28,8 @@ require (
 	// import this dependency to use verifier
 	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.0-00010101000000-000000000000
 	github.com/redis/go-redis/v9 v9.0.5
-	go.opentelemetry.io/otel v1.28.0
-	go.opentelemetry.io/otel/sdk v1.28.0
+	go.opentelemetry.io/otel v1.30.0
+	go.opentelemetry.io/otel/sdk v1.30.0
 )
 ```
 
