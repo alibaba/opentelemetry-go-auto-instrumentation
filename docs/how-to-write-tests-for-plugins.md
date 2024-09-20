@@ -49,8 +49,8 @@ represents for the `get` redis operation. You should use the `verifier` to verif
 "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 
 verifier.WaitAndAssertTraces(func (stubs []tracetest.SpanStubs) {
-verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5: ", "set")
-verifier.VerifyDbAttributes(stubs[1][0], "get", "", "redis", "", "localhost", "get a: ", "get")
+	verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5: ", "set")
+	verifier.VerifyDbAttributes(stubs[1][0], "get", "", "redis", "", "localhost", "get a: ", "get")
 })
 ```
 
@@ -66,17 +66,18 @@ const redis_dependency_name = "github.com/redis/go-redis/v9"
 const redis_module_name = "redis"
 
 func init() {
-TestCases = append(TestCases, NewGeneralTestCase("redis-9.0.5-executing-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands)
+	TestCases = append(TestCases, NewGeneralTestCase("redis-9.0.5-executing-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands)
 }
 
 func TestExecutingCommands(t *testing.T, env ...string) {
-redisC, redisPort := initRedisContainer()
-defer clearRedisContainer(redisC)
-UseApp("redis/v9.0.5")
-RunInstrument(t, "-debuglog", "--", "test_executing_commands.go")
-env = append(env, "REDIS_PORT="+redisPort.Port())
-RunApp(t, "test_executing_commands", env...)
+	redisC, redisPort := initRedisContainer()
+	defer clearRedisContainer(redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_executing_commands.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_executing_commands", env...)
 }
+
 ```
 
 In `init` function, you need to wrap your test case with `NewGeneralTestCase`, `NewGeneralTestCase` receives the
@@ -100,12 +101,12 @@ verify the telemetry data.
 
 ```go
 func TestExecutingUnsupporetedCommands(t *testing.T, env ...string) {
-redisC, redisPort := initRedisContainer()
-defer clearRedisContainer(redisC)
-UseApp("redis/v9.0.5")
-RunInstrument(t, "-debuglog", "--", "test_executing_unsupported_commands.go")
-env = append(env, "REDIS_PORT="+redisPort.Port())
-RunApp(t, "test_executing_unsupported_commands", env...)
+	redisC, redisPort := initRedisContainer()
+	defer clearRedisContainer(redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_executing_unsupported_commands.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_executing_unsupported_commands", env...)
 }
 ```
 
