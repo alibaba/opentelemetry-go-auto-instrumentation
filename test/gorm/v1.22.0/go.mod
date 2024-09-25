@@ -4,7 +4,7 @@ go 1.21.4
 
 toolchain go1.21.9
 
-replace gitlab.alibaba-inc.com/go-agent/otel-go-auto-instrumentation => ../../../otel-go-auto-instrumentation
+replace gitlab.alibaba-inc.com/go-agent/otel-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
 
 require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.1
