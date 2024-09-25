@@ -309,32 +309,33 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 				dp.funcRules = append(dp.funcRules, rs...)
 				for _, ruleHash := range rs {
 					rule := resource.FindFuncRuleByHash(ruleHash)
-
-					// Find files where hooks relies on
-					for _, dep := range rule.FileDeps {
-						util.Assert(isValidFilePath(dep), "sanity check")
-						res, err := resource.FindRuleFile(dep)
-						if err != nil {
-							return fmt.Errorf("cannot find dep %v: %w", dep, err)
-						}
-						uniqueResources[res] = bundle.PackageName
-					}
 					// If rule inserts raw code directly, skip adding any
 					// further dependencies
 					if rule.UseRaw {
 						continue
 					}
+
+					// Find files where hooks relies on
+					for _, dep := range rule.FileDeps {
+						util.Assert(isValidFilePath(dep), "sanity check")
+						res, err := resource.FindRuleDepFile(rule, dep)
+						if err != nil {
+							return fmt.Errorf("cannot find dep %v: %w", dep, err)
+						}
+						if res == "" {
+							return fmt.Errorf("cannot find dep %v", dep)
+						}
+						uniqueResources[res] = bundle.PackageName
+					}
 					// Find files where hooks defines in
-					resources, err := resource.FindRuleFiles(rule)
+					res, err := resource.FindHookFile(rule)
 					if err != nil {
 						return err
 					}
-					if resources == nil {
+					if res == "" {
 						return fmt.Errorf("can not find resource for %v", rule)
 					}
-					for _, res := range resources {
-						uniqueResources[res] = bundle.PackageName
-					}
+					uniqueResources[res] = bundle.PackageName
 				}
 			}
 		}
