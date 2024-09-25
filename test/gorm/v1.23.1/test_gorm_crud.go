@@ -96,6 +96,5 @@ func main() {
 		verifier.VerifyDbAttributes(stubs[8][0], "update", "test", "mysql", "test", "127.0.0.1", "", "update")
 		verifier.VerifyDbAttributes(stubs[9][0], "START", "", "mysql", "", "127.0.0.1", "START TRANSACTION", "START")
 		verifier.VerifyDbAttributes(stubs[10][0], "delete", "test", "mysql", "test", "127.0.0.1", "", "delete")
-
-	})
+	}, 1)
 }
