@@ -48,7 +48,7 @@ func (d goRedisAttrsGetter) GetOperation(request goRedisRequest) string {
 	return request.cmd.FullName()
 }
 
-func BuildGoRedisOtelInstrumenter() *instrumenter.Instrumenter[goRedisRequest, interface{}] {
+func BuildGoRedisOtelInstrumenter() instrumenter.Instrumenter[goRedisRequest, interface{}] {
 	builder := instrumenter.Builder[goRedisRequest, interface{}]{}
 	getter := goRedisAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[goRedisRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[goRedisRequest]{}).

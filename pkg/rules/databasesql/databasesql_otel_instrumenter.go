@@ -56,7 +56,7 @@ func (d databaseSqlAttrsGetter) GetOperation(request databaseSqlRequest) string 
 	return request.opType
 }
 
-func BuildDatabaseSqlOtelInstrumenter() *instrumenter.Instrumenter[databaseSqlRequest, interface{}] {
+func BuildDatabaseSqlOtelInstrumenter() instrumenter.Instrumenter[databaseSqlRequest, interface{}] {
 	builder := instrumenter.Builder[databaseSqlRequest, interface{}]{}
 	getter := databaseSqlAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[databaseSqlRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[databaseSqlRequest]{}).

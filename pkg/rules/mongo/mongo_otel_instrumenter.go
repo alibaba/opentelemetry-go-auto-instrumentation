@@ -62,7 +62,7 @@ func (m *mongoSpanNameExtractor) Extract(request mongoRequest) string {
 	return request.CommandName
 }
 
-func BuildMongoOtelInstrumenter() *instrumenter.Instrumenter[mongoRequest, interface{}] {
+func BuildMongoOtelInstrumenter() instrumenter.Instrumenter[mongoRequest, interface{}] {
 	builder := instrumenter.Builder[mongoRequest, interface{}]{}
 	return builder.Init().SetSpanNameExtractor(&mongoSpanNameExtractor{}).SetSpanKindExtractor(&mongoSpanKindExtractor{}).AddAttributesExtractor(&db.DbClientAttrsExtractor[mongoRequest, any, mongoAttrsGetter]{}).BuildInstrumenter()
 }
