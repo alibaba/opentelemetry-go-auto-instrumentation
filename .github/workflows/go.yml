@@ -1,7 +1,7 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: TestGo21
+name: GoTest
 
 on:
   push:
@@ -10,20 +10,29 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
+    strategy:
+      # If you want to matrix build , you can append the following list.
+      matrix:
+        go_version:
+          - 1.21
+          - 1.22
+        os:
+          - ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: ${{ matrix.go_version }}
 
     - name: Build
       run: make build
     - name: InstUt
-      run: go test -v ./pkg/...
+      run: go test -v ./pkg/... -coverprofile=coverage.txt -covermode=atomic
+    - name: Coverage
+      run: bash <(curl -s https://codecov.io/bash)
     - name: Test
       run: go test -short -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test

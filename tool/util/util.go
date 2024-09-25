@@ -4,13 +4,14 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package util
 
 import (
@@ -69,6 +70,14 @@ func RunCmd(args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func RunCmdWithOutput(args ...string) (string, error) {
+	path := args[0]
+	args = args[1:]
+	cmd := exec.Command(path, args...)
+	bytes, err := cmd.CombinedOutput()
+	return string(bytes), err
 }
 
 func CopyFile(src, dst string) error {

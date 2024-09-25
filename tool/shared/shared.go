@@ -4,13 +4,14 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package shared
 
 import (
@@ -24,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"golang.org/x/mod/semver"
 )
 
 const GoBuildIgnoreComment = "//go:build ignore"
@@ -99,9 +101,10 @@ func GetGoModPath() (string, error) {
 	// os.DevNull ("/dev/null" on Unix-like systems, "NUL" on Windows).
 	// If module-aware mode is disabled, GOMOD will be the empty string.
 	cmd := exec.Command("go", "env", "GOMOD")
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to get go.mod directory: %w", err)
+		return "", fmt.Errorf("failed to get go.mod directory: %w\n%v",
+			err, string(out))
 	}
 	path := strings.TrimSpace(string(out))
 	return path, nil
@@ -149,4 +152,59 @@ func GuaranteeInPreprocess() {
 
 func GuaranteeInInstrument() {
 	util.Assert(InToolexec, "not in instrument stage")
+}
+
+// splitVersionRange splits the version range into two parts, start and end.
+func splitVersionRange(vr string) (string, string) {
+	util.Assert(strings.Contains(vr, ","), "invalid version range format")
+	util.Assert(strings.Contains(vr, "["), "invalid version range format")
+	util.Assert(strings.Contains(vr, ")"), "invalid version range format")
+
+	start := vr[1:strings.Index(vr, ",")]
+	end := vr[strings.Index(vr, ",")+1 : len(vr)-1]
+	return "v" + start, "v" + end
+}
+
+var versionRegexp = regexp.MustCompile(`@v\d+\.\d+\.\d+(-.*?)?/`)
+
+func ExtractVersion(path string) string {
+	version := versionRegexp.FindString(path)
+	if version == "" {
+		return ""
+	}
+	// Extract version number from the string
+	return version[1 : len(version)-1]
+}
+
+// MatchVersion checks if the version string matches the version range in the
+// rule. The version range is in format [start, end), where start is inclusive
+// and end is exclusive. If the rule version string is empty, it always matches.
+func MatchVersion(version string, ruleVersion string) (bool, error) {
+	// Fast path, always match if the rule version is not specified
+	if ruleVersion == "" {
+		return true, nil
+	}
+	// Check if both rule version and package version are in sane
+	if !strings.Contains(version, "v") {
+		return false, fmt.Errorf("invalid version %v %v",
+			version, ruleVersion)
+	}
+	if !strings.Contains(ruleVersion, "[") ||
+		!strings.Contains(ruleVersion, ")") ||
+		!strings.Contains(ruleVersion, ",") ||
+		strings.Contains(ruleVersion, "v") {
+		return false, fmt.Errorf("invalid version format in rule %v",
+			ruleVersion)
+	}
+	// Remove extra whitespace from the rule version string
+	ruleVersion = strings.ReplaceAll(ruleVersion, " ", "")
+
+	// Compare the version with the rule version, the rule version is in the
+	// format [start, end), where start is inclusive and end is exclusive
+	ruleVersionStart, ruleVersionEnd := splitVersionRange(ruleVersion)
+	if semver.Compare(version, ruleVersionStart) >= 0 &&
+		semver.Compare(version, ruleVersionEnd) < 0 {
+		return true, nil
+	}
+	return false, nil
 }
