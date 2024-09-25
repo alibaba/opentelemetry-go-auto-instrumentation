@@ -50,13 +50,24 @@ func MyMiddleware(next client.Endpoint) client.Endpoint {
 	}
 }
 
+func ExceptionMiddleware(next client.Endpoint) client.Endpoint {
+	return func(ctx context.Context, req *protocol.Request, resp *protocol.Response) (err error) {
+		err = next(ctx, req, resp)
+		if err == nil {
+			return errors.New("exception")
+		} else {
+			return err
+		}
+	}
+}
+
 func (m myTracer) Start(ctx context.Context, c *app.RequestContext) context.Context {
 	println("myTracer Start")
 	return ctx
 }
 
 func (m myTracer) Finish(ctx context.Context, c *app.RequestContext) {
-	println("myTracer finish")
+	fmt.Println("myTracer finish")
 	fmt.Printf("request path1 is %s\n", string(c.GetRequest().Path()))
 	fmt.Printf("request path2 is %s\n", c.FullPath())
 }
@@ -121,7 +132,7 @@ func GetException() {
 	if err != nil {
 		return
 	}
-	c.Use(MyMiddleware)
+	c.Use(ExceptionMiddleware)
 	status, body, _ := c.GetDeadline(context.Background(), nil, "http://127.0.0.1:8888/exception", time.Now().Add(1*time.Second))
 	fmt.Printf("status=%v body=%v\n", status, string(body))
 }
