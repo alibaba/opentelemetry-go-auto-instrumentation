@@ -16,7 +16,6 @@
 package rule
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/grpc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.opentelemetry.io/otel"
@@ -47,11 +46,11 @@ func (n grpcClientAttrsGetter) GetNetworkTransport(request grpcRequest, response
 }
 
 func (n grpcClientAttrsGetter) GetNetworkProtocolName(request grpcRequest, response grpcResponse) string {
-	return "grpc"
+	return "GRPC"
 }
 
 func (n grpcClientAttrsGetter) GetNetworkProtocolVersion(request grpcRequest, response grpcResponse) string {
-	return "http2"
+	return "HTTP2"
 }
 
 func (n grpcClientAttrsGetter) GetUrlFull(request grpcRequest) string {
@@ -113,7 +112,7 @@ func (n grpcServerAttrsGetter) GetNetworkLocalPort(request grpcRequest, response
 }
 
 func (n grpcServerAttrsGetter) GetNetworkProtocolName(request grpcRequest, response grpcResponse) string {
-	return "grpc"
+	return "GRPC"
 }
 
 func (n grpcServerAttrsGetter) GetNetworkLocalInetAddress(request grpcRequest, response grpcResponse) string {
@@ -121,7 +120,7 @@ func (n grpcServerAttrsGetter) GetNetworkLocalInetAddress(request grpcRequest, r
 }
 
 func (n grpcServerAttrsGetter) GetNetworkProtocolVersion(request grpcRequest, response grpcResponse) string {
-	return "http2"
+	return "HTTP2"
 }
 
 func (n grpcServerAttrsGetter) GetRequestMethod(request grpcRequest) string {
@@ -151,10 +150,10 @@ func BuildGrpcClientInstrumenter() *instrumenter.PropagatingToDownstreamInstrume
 	builder := instrumenter.Builder[grpcRequest, grpcResponse]{}
 	clientGetter := grpcClientAttrsGetter{}
 	networkExtractor := net.NetworkAttrsExtractor[grpcRequest, grpcResponse, grpcClientAttrsGetter]{Getter: clientGetter}
-	commonExtractor := grpc.GrpcCommonAttrsExtractor[grpcRequest, grpcResponse, grpcClientAttrsGetter, grpcClientAttrsGetter]{GrpcGetter: clientGetter, Converter: &grpc.ClientGrpcStatusCodeConverter{}}
-	return builder.Init().SetSpanNameExtractor(&grpc.GrpcClientSpanNameExtractor[grpcRequest, grpcResponse]{Getter: clientGetter}).
+	commonExtractor := GrpcCommonAttrsExtractor[grpcRequest, grpcResponse, grpcClientAttrsGetter, grpcClientAttrsGetter]{GrpcGetter: clientGetter, Converter: &ClientGrpcStatusCodeConverter{}}
+	return builder.Init().SetSpanNameExtractor(&GrpcClientSpanNameExtractor[grpcRequest, grpcResponse]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[grpcRequest]{}).
-		AddAttributesExtractor(&grpc.GrpcClientAttrsExtractor[grpcRequest, grpcResponse, grpcClientAttrsGetter, grpcClientAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).
+		AddAttributesExtractor(&GrpcClientAttrsExtractor[grpcRequest, grpcResponse, grpcClientAttrsGetter, grpcClientAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).
 		BuildPropagatingToDownstreamInstrumenter(nil, otel.GetTextMapPropagator())
 }
 
@@ -162,10 +161,10 @@ func BuildGrpcServerInstrumenter() *instrumenter.PropagatingFromUpstreamInstrume
 	builder := instrumenter.Builder[grpcRequest, grpcResponse]{}
 	serverGetter := grpcServerAttrsGetter{}
 	networkExtractor := net.NetworkAttrsExtractor[grpcRequest, grpcResponse, grpcServerAttrsGetter]{Getter: serverGetter}
-	commonExtractor := grpc.GrpcCommonAttrsExtractor[grpcRequest, grpcResponse, grpcServerAttrsGetter, grpcServerAttrsGetter]{GrpcGetter: serverGetter, Converter: &grpc.ServerGrpcStatusCodeConverter{}}
-	return builder.Init().SetSpanNameExtractor(&grpc.GrpcServerSpanNameExtractor[grpcRequest, grpcResponse]{Getter: serverGetter}).
+	commonExtractor := GrpcCommonAttrsExtractor[grpcRequest, grpcResponse, grpcServerAttrsGetter, grpcServerAttrsGetter]{GrpcGetter: serverGetter, Converter: &ServerGrpcStatusCodeConverter{}}
+	return builder.Init().SetSpanNameExtractor(&GrpcServerSpanNameExtractor[grpcRequest, grpcResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[grpcRequest]{}).
-		AddAttributesExtractor(&grpc.GrpcServerAttrsExtractor[grpcRequest, grpcResponse, grpcServerAttrsGetter, grpcServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).
+		AddAttributesExtractor(&GrpcServerAttrsExtractor[grpcRequest, grpcResponse, grpcServerAttrsGetter, grpcServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).
 		BuildPropagatingFromUpstreamInstrumenter(func(n grpcRequest) propagation.TextMapCarrier {
 			if n.propagators == nil {
 				return nil

@@ -13,7 +13,7 @@
 // limitations under the License.
 //go:build ignore
 
-package rule
+package gorm
 
 type gormRequest struct {
 	DbName    string
