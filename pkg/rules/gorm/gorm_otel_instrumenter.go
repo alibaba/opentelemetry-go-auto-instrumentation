@@ -13,7 +13,7 @@
 // limitations under the License.
 //go:build ignore
 
-package rule
+package gorm
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"

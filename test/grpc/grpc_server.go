@@ -12,18 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gorm
+package main
 
-import "github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+import (
+	"context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
 
-func init() {
-	// record dbinfo
-	api.NewStructRule("gorm.io/driver/mysql", "Dialector", "DbInfo", "interface{}").
-		Register()
-	// add callback
-	api.NewRule("gorm.io/gorm", "Open", "", "", "afterGormOpen").
-		WithVersion("[1.22.0,1.25.10)").
-		WithFileDeps("gorm_data_type.go", "gorm_otel_instrumenter.go").
-		Register()
+func SendReq(ctx context.Context) string {
+	conn, err := grpc.NewClient("localhost:9003", grpc.WithTransportCredentials(insecure.NewCredentials()))
 
+	if err != nil {
+		panic(err)
+	}
+
+	c := NewHelloGrpcClient(conn)
+
+	resp, err := c.Hello(ctx, &Req{})
+	if err != nil {
+		panic(err)
+	}
+	return resp.Message
 }

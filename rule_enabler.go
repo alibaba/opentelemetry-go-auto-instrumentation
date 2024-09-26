@@ -20,6 +20,7 @@ import (
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gin"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredis"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorm"
+	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/logrus"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mongo"
