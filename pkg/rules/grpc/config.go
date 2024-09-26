@@ -22,10 +22,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
-	"sync/atomic"
 )
 
 const (
@@ -67,11 +65,6 @@ func (c *config) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool
 	switch rs := rs.(type) {
 	case *stats.Begin:
 	case *stats.InPayload:
-		if gctx != nil {
-			messageId = atomic.AddInt64(&gctx.messagesReceived, 1)
-			//c.rpcRequestSize.Record(ctx, int64(rs.Length), metric.WithAttributes(metricAttrs...))
-		}
-
 		if c.ReceivedEvent {
 			span.AddEvent("message",
 				trace.WithAttributes(
@@ -82,11 +75,6 @@ func (c *config) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool
 			)
 		}
 	case *stats.OutPayload:
-		if gctx != nil {
-			messageId = atomic.AddInt64(&gctx.messagesSent, 1)
-			//c.rpcResponseSize.Record(ctx, int64(rs.Length), metric.WithAttributes(metricAttrs...))
-		}
-
 		if c.SentEvent {
 			span.AddEvent("message",
 				trace.WithAttributes(
@@ -98,13 +86,6 @@ func (c *config) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool
 			)
 		}
 	case *stats.OutTrailer:
-	case *stats.OutHeader:
-		if p, ok := peer.FromContext(ctx); ok {
-			if !isServer {
-				remoteAddr := p.Addr.String()
-				c.DestId = remoteAddr
-			}
-		}
 	case *stats.End:
 		if rs.Error != nil {
 			s, _ := status.FromError(rs.Error)
@@ -122,14 +103,12 @@ func (c *config) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool
 			if isServer {
 				grpcServerInstrument.End(ctx, grpcRequest{
 					methodName: gctx.methodName,
-					addr:       c.DestId,
 				}, grpcResponse{
 					statusCode: 200,
 				}, nil)
 			} else {
 				grpcClientInstrument.End(ctx, grpcRequest{
 					methodName: gctx.methodName,
-					addr:       c.DestId,
 				}, grpcResponse{
 					statusCode: 200,
 				}, nil)

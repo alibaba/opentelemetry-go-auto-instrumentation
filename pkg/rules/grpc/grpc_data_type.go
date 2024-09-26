@@ -23,7 +23,6 @@ var grpcClientInstrument = BuildGrpcClientInstrumenter()
 
 type grpcRequest struct {
 	methodName  string
-	addr        string
 	propagators propagation.TextMapCarrier
 }
 
@@ -34,9 +33,5 @@ type grpcResponse struct {
 type gRPCContextKey struct{}
 
 type gRPCContext struct {
-	messagesReceived int64
-	messagesSent     int64
-	methodName       string
-	prpc             string
-	ppid             string
+	methodName string
 }

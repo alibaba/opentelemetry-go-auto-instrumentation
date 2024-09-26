@@ -16,27 +16,29 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc"
-	"log"
-	"net"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"time"
 )
 
-type service struct {
-	HelloGrpcServer
+func setupHttp() {
+	SetupGRPC()
 }
 
-func (s *service) Hello(context.Context, *Req) (*Resp, error) {
-	return &Resp{Message: "Hello Gprc"}, nil
+func requestServer() {
+	SendReq(context.Background())
 }
 
-func SetupGRPC() {
-	lis, err := net.Listen("tcp", "0.0.0.0:9003")
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	s := grpc.NewServer()
-	RegisterHelloGrpcServer(s, &service{})
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+func main() {
+	// starter server
+	go setupHttp()
+	time.Sleep(3 * time.Second)
+	// use a http client to request to the server
+	requestServer()
+	// verify trace
+	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
+		verifier.VerifyRpcClientAttributes(stubs[0][0], "/HelloGrpc/Hello", "grpc", "/HelloGrpc", "Hello")
+		verifier.VerifyRpcServerAttributes(stubs[0][1], "/HelloGrpc/Hello", "grpc", "/HelloGrpc", "Hello")
+	}, 1)
+
 }

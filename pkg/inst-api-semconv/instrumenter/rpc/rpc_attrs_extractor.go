@@ -22,19 +22,19 @@ import (
 )
 
 type RpcAttrsExtractor[REQUEST any, RESPONSE any, GETTER RpcAttrsGetter[REQUEST]] struct {
-	getter GETTER
+	Getter GETTER
 }
 
 func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.RPCSystemKey,
-		Value: attribute.StringValue(r.getter.GetSystem(request)),
+		Value: attribute.StringValue(r.Getter.GetSystem(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.RPCServiceKey,
-		Value: attribute.StringValue(r.getter.GetService(request)),
+		Value: attribute.StringValue(r.Getter.GetService(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.RPCMethodKey,
-		Value: attribute.StringValue(r.getter.GetMethod(request)),
+		Value: attribute.StringValue(r.Getter.GetMethod(request)),
 	})
 	return attributes
 }
@@ -44,7 +44,7 @@ func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attrib
 }
 
 type ServerRpcAttrsExtractor[REQUEST any, RESPONSE any, GETTER RpcAttrsGetter[REQUEST]] struct {
-	base RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]
+	Base RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]
 }
 
 func (s *ServerRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribute.Key {
@@ -52,15 +52,15 @@ func (s *ServerRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attrib
 }
 
 func (s *ServerRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
-	return s.base.OnStart(attributes, parentContext, request)
+	return s.Base.OnStart(attributes, parentContext, request)
 }
 
 func (s *ServerRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
-	return s.base.OnEnd(attributes, context, request, response, err)
+	return s.Base.OnEnd(attributes, context, request, response, err)
 }
 
 type ClientRpcAttrsExtractor[REQUEST any, RESPONSE any, GETTER RpcAttrsGetter[REQUEST]] struct {
-	base RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]
+	Base RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]
 }
 
 func (s *ClientRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribute.Key {
@@ -68,9 +68,9 @@ func (s *ClientRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attrib
 }
 
 func (s *ClientRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
-	return s.base.OnStart(attributes, parentContext, request)
+	return s.Base.OnStart(attributes, parentContext, request)
 }
 
 func (s *ClientRpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
-	return s.base.OnEnd(attributes, context, request, response, err)
+	return s.Base.OnEnd(attributes, context, request, response, err)
 }

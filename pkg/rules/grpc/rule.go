@@ -21,20 +21,15 @@ import (
 func init() {
 	//client
 	api.NewRule("google.golang.org/grpc", "DialContext", "", "grpcClientOnEnter", "grpcClientOnExit").
-		WithFileDeps("config.go", "grpc_data_type.go", "interceptorinfo.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
-		WithFileDeps("grpc_attrs_extractor.go", "grpc_attrs_getter.go", "grpc_span_name_extractor.go", "grpc_status_code_converter.go").
-		WithVersion("[1.44.0,1.66.2)").
+		WithFileDeps("config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
 		Register()
 
 	api.NewRule("google.golang.org/grpc", "NewClient", "", "grpcNewClientOnEnter", "grpcNewClientOnExit").
-		WithFileDeps("config.go", "grpc_data_type.go", "interceptorinfo.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
-		WithFileDeps("grpc_attrs_extractor.go", "grpc_attrs_getter.go", "grpc_span_name_extractor.go", "grpc_status_code_converter.go").
-		WithVersion("[1.63.0,1.66.2)").
+		WithFileDeps("config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
 		Register()
 
 	//server
 	api.NewRule("google.golang.org/grpc", "NewServer", "", "grpcServerOnEnter", "grpcServerOnExit").
-		WithVersion("[1.44.0,1.66.2)").
 		Register()
 
 }
