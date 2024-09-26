@@ -26,11 +26,13 @@ func init() {
 func TestBasicGrpc(t *testing.T, env ...string) {
 	UseApp("grpc")
 	RunInstrument(t, "-debuglog", "--", "test_grpc_basic.go", "server.go", "grpc_server.go", "grpc.pb.go", "grpc_grpc.pb.go")
+	env = append(env, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
 	RunApp(t, "test_grpc_basic", env...)
 }
 
 func TestGrpcStream(t *testing.T, env ...string) {
 	UseApp("grpc_stream")
 	RunInstrument(t, "-debuglog", "--", "test_grpc_stream.go")
+	env = append(env, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
 	RunApp(t, "test_grpc_stream", env...)
 }
