@@ -18,7 +18,6 @@ package rule
 import (
 	"context"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 	"go.opentelemetry.io/otel/trace"
@@ -26,14 +25,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	GRPCStatusCodeKey = attribute.Key("rpc.grpc.status_code")
-)
-
 type Filter func(*InterceptorInfo) bool
 
-// config is a group of options for this instrumentation.
-type config struct {
+// grpcOtelConfig is a group of options for this instrumentation.
+type grpcOtelConfig struct {
 	Filter           Filter
 	Propagators      propagation.TextMapPropagator
 	TracerProvider   trace.TracerProvider
@@ -47,12 +42,12 @@ type config struct {
 	DestId string
 }
 
-// Option applies an option value for a config.
+// Option applies an option value for a grpcOtelConfig.
 type Option interface {
-	apply(*config)
+	apply(*grpcOtelConfig)
 }
 
-func (c *config) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool) { // nolint: revive  // isServer is not a control flag.
+func (c *grpcOtelConfig) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool) { // nolint: revive  // isServer is not a control flag.
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
 		return
@@ -120,9 +115,9 @@ func (c *config) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool
 	}
 }
 
-// newConfig returns a config configured with all the passed Options.
-func newConfig(opts []Option, role string) *config {
-	c := &config{
+// newConfig returns a grpcOtelConfig configured with all the passed Options.
+func newConfig(opts []Option, role string) *grpcOtelConfig {
+	c := &grpcOtelConfig{
 		Propagators: otel.GetTextMapPropagator(),
 	}
 	for _, o := range opts {
@@ -134,7 +129,7 @@ func newConfig(opts []Option, role string) *config {
 
 type propagatorsOption struct{ p propagation.TextMapPropagator }
 
-func (o propagatorsOption) apply(c *config) {
+func (o propagatorsOption) apply(c *grpcOtelConfig) {
 	if o.p != nil {
 		c.Propagators = o.p
 	}
@@ -148,7 +143,7 @@ func WithPropagators(p propagation.TextMapPropagator) Option {
 
 type tracerProviderOption struct{ tp trace.TracerProvider }
 
-func (o tracerProviderOption) apply(c *config) {
+func (o tracerProviderOption) apply(c *grpcOtelConfig) {
 	if o.tp != nil {
 		c.TracerProvider = o.tp
 	}
@@ -165,7 +160,7 @@ type interceptorFilterOption struct {
 	f Filter
 }
 
-func (o interceptorFilterOption) apply(c *config) {
+func (o interceptorFilterOption) apply(c *grpcOtelConfig) {
 	if o.f != nil {
 		c.Filter = o.f
 	}
@@ -179,7 +174,7 @@ func WithTracerProvider(tp trace.TracerProvider) Option {
 
 //type meterProviderOption struct{ mp metric.MeterProvider }
 
-/*func (o meterProviderOption) apply(c *config) {
+/*func (o meterProviderOption) apply(c *grpcOtelConfig) {
 	if o.mp != nil {
 		c.MeterProvider = o.mp
 	}
@@ -204,7 +199,7 @@ type messageEventsProviderOption struct {
 	events []Event
 }
 
-func (m messageEventsProviderOption) apply(c *config) {
+func (m messageEventsProviderOption) apply(c *grpcOtelConfig) {
 	for _, e := range m.events {
 		switch e {
 		case ReceivedEvents:
@@ -228,7 +223,7 @@ func WithMessageEvents(events ...Event) Option {
 
 type spanStartOption struct{ opts []trace.SpanStartOption }
 
-func (o spanStartOption) apply(c *config) {
+func (o spanStartOption) apply(c *grpcOtelConfig) {
 	c.SpanStartOptions = append(c.SpanStartOptions, o.opts...)
 }
 

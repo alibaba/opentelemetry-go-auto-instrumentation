@@ -48,7 +48,7 @@ func (g gormAttrsGetter) GetOperation(request gormRequest) string {
 	return request.Operation
 }
 
-func BuildGormInstrumenter() *instrumenter.Instrumenter[gormRequest, interface{}] {
+func BuildGormInstrumenter() instrumenter.Instrumenter[gormRequest, interface{}] {
 	builder := instrumenter.Builder[gormRequest, interface{}]{}
 	getter := gormAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[gormRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[gormRequest]{}).

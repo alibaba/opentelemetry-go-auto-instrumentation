@@ -16,15 +16,21 @@ package instrumenter
 
 import (
 	"context"
-	"time"
-
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+	"time"
 )
 
-type Instrumenter[REQUEST any, RESPONSE any] struct {
+type Instrumenter[REQUEST any, RESPONSE any] interface {
+	StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time)
+	Start(parentContext context.Context, request REQUEST) context.Context
+	End(ctx context.Context, request REQUEST, response RESPONSE, err error)
+}
+
+type InternalInstrumenter[REQUEST any, RESPONSE any] struct {
 	enabler              InstrumentEnabler
 	spanNameExtractor    SpanNameExtractor[REQUEST]
 	spanKindExtractor    SpanKindExtractor[REQUEST]
@@ -39,77 +45,104 @@ type Instrumenter[REQUEST any, RESPONSE any] struct {
 }
 
 type PropagatingToDownstreamInstrumenter[REQUEST any, RESPONSE any] struct {
-	propagator    propagation.TextMapPropagator
 	carrierGetter func(REQUEST) propagation.TextMapCarrier
-	base          Instrumenter[REQUEST, RESPONSE]
+	prop          propagation.TextMapPropagator
+	base          InternalInstrumenter[REQUEST, RESPONSE]
 }
 
 type PropagatingFromUpstreamInstrumenter[REQUEST any, RESPONSE any] struct {
-	propagator    propagation.TextMapPropagator
 	carrierGetter func(REQUEST) propagation.TextMapCarrier
-	base          Instrumenter[REQUEST, RESPONSE]
+	prop          propagation.TextMapPropagator
+	base          InternalInstrumenter[REQUEST, RESPONSE]
 }
 
-func (i *Instrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
-	if len(i.operationListeners) > 0 {
-		for _, listener := range i.operationListeners {
-			parentContext = listener.OnBeforeStart(parentContext, time.Now())
-		}
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
+	ctx := i.doStart(parentContext, request, startTime)
+	i.doEnd(ctx, request, response, err, endTime)
+}
+
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
+	return i.doStart(parentContext, request, time.Now())
+}
+
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) doStart(parentContext context.Context, request REQUEST, timestamp time.Time) context.Context {
+	if i.enabler != nil && !i.enabler.IsEnabled() {
+		return parentContext
+	}
+	for _, listener := range i.operationListeners {
+		parentContext = listener.OnBeforeStart(parentContext, timestamp)
 	}
 	// extract span name
 	spanName := i.spanNameExtractor.Extract(request)
 	spanKind := i.spanKindExtractor.Extract(request)
 	newCtx, span := i.tracer.Start(parentContext, spanName, trace.WithSpanKind(spanKind))
-	var attributes []attribute.KeyValue
-	// extract span attributes
+	attrs := make([]attribute.KeyValue, 0, 20)
+	// extract span attrs
 	for _, extractor := range i.attributesExtractors {
-		attributes = extractor.OnStart(attributes, newCtx, request)
+		attrs = extractor.OnStart(attrs, newCtx, request)
 	}
 	// execute context customizer hook
 	for _, customizer := range i.contextCustomizers {
-		newCtx = customizer.OnStart(newCtx, request, attributes)
+		newCtx = customizer.OnStart(newCtx, request, attrs)
 	}
-	if len(i.operationListeners) > 0 {
-		for _, listener := range i.operationListeners {
-			newCtx = listener.OnBeforeEnd(newCtx, attributes, time.Now())
-		}
+	for _, listener := range i.operationListeners {
+		newCtx = listener.OnBeforeEnd(newCtx, attrs, timestamp)
 	}
-	span.SetAttributes(attributes...)
+	span.SetAttributes(attrs...)
 	return i.spanSuppressor.StoreInContext(newCtx, spanKind, span)
 }
 
-func (i *Instrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error) {
-	if len(i.operationListeners) > 0 {
-		for _, listener := range i.operationListeners {
-			listener.OnAfterStart(ctx, time.Now())
-		}
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error) {
+	i.doEnd(ctx, request, response, err, time.Now())
+}
+
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) doEnd(ctx context.Context, request REQUEST, response RESPONSE, err error, timestamp time.Time) {
+	if i.enabler != nil && !i.enabler.IsEnabled() {
+		return
+	}
+	for _, listener := range i.operationListeners {
+		listener.OnAfterStart(ctx, timestamp)
 	}
 	span := trace.SpanFromContext(ctx)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 	}
-	var attributes []attribute.KeyValue
+	var attrs []attribute.KeyValue
 	// extract span attributes
 	for _, extractor := range i.attributesExtractors {
-		attributes = extractor.OnEnd(attributes, ctx, request, response, err)
+		attrs = extractor.OnEnd(attrs, ctx, request, response, err)
 	}
 	i.spanStatusExtractor.Extract(span, request, response, err)
-	span.SetAttributes(attributes...)
-	span.End()
-	if len(i.operationListeners) > 0 {
-		for _, listener := range i.operationListeners {
-			listener.OnAfterEnd(ctx, attributes, time.Now())
+	span.SetAttributes(attrs...)
+	span.End(trace.WithTimestamp(timestamp))
+	for _, listener := range i.operationListeners {
+		listener.OnAfterEnd(ctx, attrs, timestamp)
+	}
+}
+
+func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
+	newCtx := p.base.doStart(parentContext, request, startTime)
+	if p.carrierGetter != nil {
+		if p.prop != nil {
+			p.prop.Inject(newCtx, p.carrierGetter(request))
+		} else {
+			otel.GetTextMapPropagator().Inject(newCtx, p.carrierGetter(request))
 		}
 	}
+	p.base.doEnd(newCtx, request, response, err, endTime)
 }
 
 func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
 	newCtx := p.base.Start(parentContext, request)
-	if p.carrierGetter == nil {
-		return newCtx
+	if p.carrierGetter != nil {
+		if p.prop != nil {
+			p.prop.Inject(newCtx, p.carrierGetter(request))
+		} else {
+			otel.GetTextMapPropagator().Inject(newCtx, p.carrierGetter(request))
+		}
+
 	}
-	p.propagator.Inject(newCtx, p.carrierGetter(request))
 	return newCtx
 }
 
@@ -117,9 +150,34 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context
 	p.base.End(ctx, request, response, err)
 }
 
+func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
+	var ctx context.Context
+	if p.carrierGetter != nil {
+		var extracted context.Context
+		if p.prop != nil {
+			extracted = p.prop.Extract(parentContext, p.carrierGetter(request))
+		} else {
+			extracted = otel.GetTextMapPropagator().Extract(parentContext, p.carrierGetter(request))
+		}
+		ctx = p.base.doStart(extracted, request, startTime)
+	} else {
+		ctx = parentContext
+	}
+	p.base.doEnd(ctx, request, response, err, endTime)
+}
+
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
-	extracted := p.propagator.Extract(parentContext, p.carrierGetter(request))
-	return p.base.Start(extracted, request)
+	if p.carrierGetter != nil {
+		var extracted context.Context
+		if p.prop != nil {
+			extracted = p.prop.Extract(parentContext, p.carrierGetter(request))
+		} else {
+			extracted = otel.GetTextMapPropagator().Extract(parentContext, p.carrierGetter(request))
+		}
+		return p.base.Start(extracted, request)
+	} else {
+		return parentContext
+	}
 }
 
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error) {

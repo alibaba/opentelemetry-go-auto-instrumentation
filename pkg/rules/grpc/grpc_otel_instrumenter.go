@@ -46,7 +46,7 @@ func (g grpcAttrsGetter) GetMethod(request grpcRequest) string {
 	return fullMethodName[slashIndex+1:]
 }
 
-func BuildGrpcClientInstrumenter() *instrumenter.Instrumenter[grpcRequest, grpcResponse] {
+func BuildGrpcClientInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcResponse] {
 	builder := instrumenter.Builder[grpcRequest, grpcResponse]{}
 	clientGetter := grpcAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: clientGetter}).
@@ -55,7 +55,7 @@ func BuildGrpcClientInstrumenter() *instrumenter.Instrumenter[grpcRequest, grpcR
 		BuildInstrumenter()
 }
 
-func BuildGrpcServerInstrumenter() *instrumenter.Instrumenter[grpcRequest, grpcResponse] {
+func BuildGrpcServerInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcResponse] {
 	builder := instrumenter.Builder[grpcRequest, grpcResponse]{}
 	serverGetter := grpcAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: serverGetter}).

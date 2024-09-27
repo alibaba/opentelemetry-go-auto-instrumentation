@@ -38,14 +38,14 @@ func grpcServerOnExit(call grpc.CallContext, s *grpc.Server) {
 
 func NewServerHandler(opts ...Option) stats.Handler {
 	h := &serverHandler{
-		config: newConfig(opts, "server"),
+		grpcOtelConfig: newConfig(opts, "server"),
 	}
 
 	return h
 }
 
 type serverHandler struct {
-	*config
+	*grpcOtelConfig
 }
 
 // TagConn can attach some information to the given context.
@@ -60,7 +60,7 @@ func (h *serverHandler) HandleConn(ctx context.Context, info stats.ConnStats) {
 // TagRPC can attach some information to the given context.
 func (h *serverHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
 	var md metadata.MD
-	ctx, md = extract(ctx, h.config.Propagators)
+	ctx, md = extract(ctx, h.grpcOtelConfig.Propagators)
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		md = metadata.MD{}

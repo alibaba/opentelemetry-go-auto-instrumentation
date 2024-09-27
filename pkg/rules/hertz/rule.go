@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,24 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rule
+package hertz
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 )
 
 func init() {
-	//client
-	api.NewRule("google.golang.org/grpc", "DialContext", "", "grpcClientOnEnter", "grpcClientOnExit").
-		WithFileDeps("grpc_config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
+	api.NewRule("github.com/cloudwego/hertz/pkg/app/server", "New", "", "beforeHertzServerBuild", "").
+		WithFileDeps("hertz_http_otel_instrumenter.go").
 		Register()
 
-	api.NewRule("google.golang.org/grpc", "NewClient", "", "grpcNewClientOnEnter", "grpcNewClientOnExit").
-		WithFileDeps("grpc_config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
+	api.NewRule("github.com/cloudwego/hertz/pkg/app/client", "NewClient", "", "", "afterHertzClientBuild").
+		WithFileDeps("hertz_http_otel_instrumenter.go").
 		Register()
-
-	//server
-	api.NewRule("google.golang.org/grpc", "NewServer", "", "grpcServerOnEnter", "grpcServerOnExit").
-		Register()
-
 }

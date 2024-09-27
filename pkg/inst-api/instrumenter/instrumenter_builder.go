@@ -109,8 +109,9 @@ func (b *Builder[REQUEST, RESPONSE]) AddContextCustomizers(contextCustomizers ..
 	return b
 }
 
-func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *Instrumenter[REQUEST, RESPONSE] {
-	return &Instrumenter[REQUEST, RESPONSE]{
+func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *InternalInstrumenter[REQUEST, RESPONSE] {
+	return &InternalInstrumenter[REQUEST, RESPONSE]{
+		enabler:              b.Enabler,
 		spanNameExtractor:    b.SpanNameExtractor,
 		spanKindExtractor:    b.SpanKindExtractor,
 		spanStatusExtractor:  b.SpanStatusExtractor,
@@ -124,9 +125,9 @@ func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *Instrumenter[REQUEST, 
 	}
 }
 
-func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, propagator propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
 	return &PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]{
-		base: Instrumenter[REQUEST, RESPONSE]{
+		base: InternalInstrumenter[REQUEST, RESPONSE]{
 			enabler:              b.Enabler,
 			spanNameExtractor:    b.SpanNameExtractor,
 			spanKindExtractor:    b.SpanKindExtractor,
@@ -140,13 +141,13 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 			instVersion:          b.InstVersion,
 		},
 		carrierGetter: carrierGetter,
-		propagator:    propagator,
+		prop:          prop,
 	}
 }
 
-func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, propagator propagation.TextMapPropagator) *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE] {
-	return &PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]{
-		base: Instrumenter[REQUEST, RESPONSE]{
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenterWithProp(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
+	return &PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]{
+		base: InternalInstrumenter[REQUEST, RESPONSE]{
 			enabler:              b.Enabler,
 			spanNameExtractor:    b.SpanNameExtractor,
 			spanKindExtractor:    b.SpanKindExtractor,
@@ -160,7 +161,47 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(ca
 			instVersion:          b.InstVersion,
 		},
 		carrierGetter: carrierGetter,
-		propagator:    propagator,
+		prop:          prop,
+	}
+}
+
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenterWithProp(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE] {
+	return &PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]{
+		base: InternalInstrumenter[REQUEST, RESPONSE]{
+			enabler:              b.Enabler,
+			spanNameExtractor:    b.SpanNameExtractor,
+			spanKindExtractor:    b.SpanKindExtractor,
+			spanStatusExtractor:  b.SpanStatusExtractor,
+			attributesExtractors: b.AttributesExtractors,
+			operationListeners:   b.OperationListeners,
+			operationMetrics:     b.OperationMetrics,
+			contextCustomizers:   b.ContextCustomizers,
+			spanSuppressor:       b.SpanSuppressor,
+			tracer:               b.Tracer,
+			instVersion:          b.InstVersion,
+		},
+		carrierGetter: carrierGetter,
+		prop:          prop,
+	}
+}
+
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE] {
+	return &PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]{
+		base: InternalInstrumenter[REQUEST, RESPONSE]{
+			enabler:              b.Enabler,
+			spanNameExtractor:    b.SpanNameExtractor,
+			spanKindExtractor:    b.SpanKindExtractor,
+			spanStatusExtractor:  b.SpanStatusExtractor,
+			attributesExtractors: b.AttributesExtractors,
+			operationListeners:   b.OperationListeners,
+			operationMetrics:     b.OperationMetrics,
+			contextCustomizers:   b.ContextCustomizers,
+			spanSuppressor:       b.SpanSuppressor,
+			tracer:               b.Tracer,
+			instVersion:          b.InstVersion,
+		},
+		carrierGetter: carrierGetter,
+		prop:          prop,
 	}
 }
 
