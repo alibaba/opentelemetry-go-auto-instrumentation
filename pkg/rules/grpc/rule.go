@@ -21,11 +21,11 @@ import (
 func init() {
 	//client
 	api.NewRule("google.golang.org/grpc", "DialContext", "", "grpcClientOnEnter", "grpcClientOnExit").
-		WithFileDeps("config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
+		WithFileDeps("grpc_config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
 		Register()
 
 	api.NewRule("google.golang.org/grpc", "NewClient", "", "grpcNewClientOnEnter", "grpcNewClientOnExit").
-		WithFileDeps("config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
+		WithFileDeps("grpc_config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
 		Register()
 
 	//server

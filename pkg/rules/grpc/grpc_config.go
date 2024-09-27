@@ -18,16 +18,11 @@ package rule
 import (
 	"context"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	GRPCStatusCodeKey = attribute.Key("rpc.grpc.status_code")
 )
 
 type Filter func(*InterceptorInfo) bool
