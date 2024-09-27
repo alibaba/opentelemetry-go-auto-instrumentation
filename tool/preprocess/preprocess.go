@@ -243,6 +243,8 @@ func Preprocess() error {
 		if err != nil {
 			return fmt.Errorf("failed to run go toolexec build: %w\n%s",
 				err, out)
+		} else {
+			log.Printf("CompileRemix:%s", out)
 		}
 		log.Printf("Instrument took %v", time.Since(start))
 	}

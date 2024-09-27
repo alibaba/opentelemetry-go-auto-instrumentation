@@ -75,3 +75,20 @@ func VerifyHttpServerAttributes(span tracetest.SpanStub, name, method, protocolN
 	Assert(GetAttribute(span.Attributes, "http.route").AsString() == route, "Except http route to be %s, got %s", route, GetAttribute(span.Attributes, "http.route").AsString())
 	Assert(GetAttribute(span.Attributes, "http.response.status_code").AsInt64() == statusCode, "Except status code to be %d, got %d", statusCode, GetAttribute(span.Attributes, "http.response.status_code").AsInt64())
 }
+
+func VerifyRpcServerAttributes(span tracetest.SpanStub, name, system, service, method string) {
+	Assert(span.SpanKind == trace.SpanKindServer, "Expect to be server span, got %d", span.SpanKind)
+	verifyRpcAttributes(span, name, system, service, method)
+}
+
+func VerifyRpcClientAttributes(span tracetest.SpanStub, name, system, service, method string) {
+	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
+	verifyRpcAttributes(span, name, system, service, method)
+}
+
+func verifyRpcAttributes(span tracetest.SpanStub, name, system, service, method string) {
+	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
+	Assert(GetAttribute(span.Attributes, "rpc.system").AsString() == system, "Except rpc system to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.system").AsString())
+	Assert(GetAttribute(span.Attributes, "rpc.service").AsString() == service, "Except rpc service to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.service").AsString())
+	Assert(GetAttribute(span.Attributes, "rpc.method").AsString() == method, "Except rpc method to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.method").AsString())
+}

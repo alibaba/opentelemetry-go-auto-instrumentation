@@ -2,8 +2,6 @@ module gorm
 
 go 1.22
 
-toolchain go1.23.0
-
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
 require (

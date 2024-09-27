@@ -21,6 +21,7 @@ func init() {
 	api.NewRule("fmt", "Printf", "", "OnEnterPrintf1", "OnExitPrintf1").
 		WithExecOrder(api.ExecOrderOutermost).
 		WithFileDeps("long/sub/p2.go").
+		WithFileDeps("long/sub/p1.go").
 		WithPackageDep("google.golang.org/protobuf", "v1.34.0").
 		WithRuleName("testrule").
 		Register()
@@ -29,7 +30,6 @@ func init() {
 		"Printf", "", "", `if internalFn!=nil { internalFn() } else { internalFn() }`).
 		WithUseRaw(true).
 		WithExecOrder(api.ExecOrderInnermost).
-		WithFileDeps("long/sub/p1.go").
 		WithRuleName("testrule").
 		Register()
 

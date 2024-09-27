@@ -140,28 +140,26 @@ type ParamTrait struct {
 }
 
 func getHookFunc(t *api.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
-	res, err := resource.FindRuleFiles(t)
+	file, err := resource.FindHookFile(t)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find rule files: %w", err)
 	}
-	for _, file := range res {
-		source, err := resource.ReadRuleFile(file)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %w", file, err)
-		}
-		astRoot, err := shared.ParseAstFromSource(source)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse ast from source: %w", err)
-		}
-		var target *dst.FuncDecl
-		if onEnter {
-			target = shared.FindFuncDecl(astRoot, t.OnEnter)
-		} else {
-			target = shared.FindFuncDecl(astRoot, t.OnExit)
-		}
-		if target != nil {
-			return target, nil
-		}
+	source, err := resource.ReadRuleFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", file, err)
+	}
+	astRoot, err := shared.ParseAstFromSource(source)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse ast from source: %w", err)
+	}
+	var target *dst.FuncDecl
+	if onEnter {
+		target = shared.FindFuncDecl(astRoot, t.OnEnter)
+	} else {
+		target = shared.FindFuncDecl(astRoot, t.OnExit)
+	}
+	if target != nil {
+		return target, nil
 	}
 	return nil, errors.New("can not find hook func for rule")
 }
