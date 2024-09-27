@@ -378,17 +378,12 @@ func FindRuleByHash(hash uint64) api.InstRule {
 
 func StoreRuleBundles(bundles []*RuleBundle) error {
 	shared.GuaranteeInPreprocess()
-
-	ruleLines := make([]string, 0)
-	for _, bundle := range bundles {
-		bs, err := json.Marshal(*bundle)
-		if err != nil {
-			return fmt.Errorf("failed to marshal bundle: %w", err)
-		}
-		ruleLines = append(ruleLines, string(bs))
-	}
 	ruleFile := shared.GetPreprocessLogPath(UsedRuleJsonFile)
-	_, err := util.WriteStringToFile(ruleFile, strings.Join(ruleLines, "\n"))
+	bs, err := json.Marshal(bundles)
+	if err != nil {
+		return fmt.Errorf("failed to marshal bundles: %w", err)
+	}
+	_, err = util.WriteStringToFile(ruleFile, string(bs))
 	if err != nil {
 		return fmt.Errorf("failed to write used rules: %w", err)
 	}
@@ -403,18 +398,10 @@ func LoadRuleBundles() ([]*RuleBundle, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read used rules: %w", err)
 	}
-	lines := strings.Split(data, "\n")
-	bundles := make([]*RuleBundle, 0)
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		bundle := &RuleBundle{}
-		err := json.Unmarshal([]byte(line), bundle)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal bundle: %w", err)
-		}
-		bundles = append(bundles, bundle)
+	var bundles []*RuleBundle
+	err = json.Unmarshal([]byte(data), &bundles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal bundles: %w", err)
 	}
 	return bundles, nil
 }
