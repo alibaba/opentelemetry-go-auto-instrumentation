@@ -172,7 +172,7 @@ func (dp *DepProcessor) tryPinInstVersion() error {
 	if instVersion == "" {
 		instVersion = version.Tag
 	}
-	err := runGoGet(instDependency + "@" + FixedOtelDepVersion)
+	err := runGoGet(instDependency + "@" + instVersion)
 	if err != nil {
 		return fmt.Errorf("failed to pin %s %w", instDependency, err)
 	}
@@ -241,10 +241,21 @@ func Preprocess() error {
 			return fmt.Errorf("failed to update dependencies: %w", err)
 		}
 
+		// Pinning otel sdk dependencies version in go.mod
+		err = dp.pinOtelVersion()
+		if err != nil {
+			return fmt.Errorf("failed to update otel: %w", err)
+		}
+
 		// Run go mod tidy to fetch dependencies
 		err = runModTidy()
 		if err != nil {
 			return fmt.Errorf("failed to run mod tidy: %w", err)
+		}
+
+		tpe := dp.tryPinInstVersion()
+		if tpe != nil {
+			log.Printf("failed to pin opentelemetry-go-auto-instrumentation itself")
 		}
 
 		log.Printf("Preprocess took %v", time.Since(start))
