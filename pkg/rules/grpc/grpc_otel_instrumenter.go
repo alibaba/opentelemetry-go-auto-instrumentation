@@ -16,8 +16,11 @@
 package rule
 
 import (
+	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"strings"
 )
 
@@ -46,10 +49,25 @@ func (g grpcAttrsGetter) GetMethod(request grpcRequest) string {
 	return fullMethodName[slashIndex+1:]
 }
 
+type grpcStatusCodeExtractor[REQUEST grpcRequest, RESPONSE grpcResponse] struct {
+}
+
+func (g grpcStatusCodeExtractor[REQUEST, RESPONSE]) Extract(span trace.Span, request grpcRequest, response grpcResponse, err error) {
+	statusCode := response.statusCode
+	if statusCode != 0 {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Error, fmt.Sprintf("wrong grpc status code %d", statusCode))
+		}
+	}
+}
+
 func BuildGrpcClientInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcResponse] {
 	builder := instrumenter.Builder[grpcRequest, grpcResponse]{}
 	clientGetter := grpcAttrsGetter{}
-	return builder.Init().SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: clientGetter}).
+	return builder.Init().SetSpanStatusExtractor(&grpcStatusCodeExtractor[grpcRequest, grpcResponse]{}).SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[grpcRequest]{}).
 		AddAttributesExtractor(&rpc.ClientRpcAttrsExtractor[grpcRequest, grpcResponse, grpcAttrsGetter]{}).
 		BuildInstrumenter()
@@ -58,7 +76,7 @@ func BuildGrpcClientInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcRe
 func BuildGrpcServerInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcResponse] {
 	builder := instrumenter.Builder[grpcRequest, grpcResponse]{}
 	serverGetter := grpcAttrsGetter{}
-	return builder.Init().SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: serverGetter}).
+	return builder.Init().SetSpanStatusExtractor(&grpcStatusCodeExtractor[grpcRequest, grpcResponse]{}).SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[grpcRequest]{}).
 		AddAttributesExtractor(&rpc.ServerRpcAttrsExtractor[grpcRequest, grpcResponse, grpcAttrsGetter]{}).
 		BuildInstrumenter()

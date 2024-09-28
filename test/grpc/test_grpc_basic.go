@@ -21,24 +21,15 @@ import (
 	"time"
 )
 
-func setupHttp() {
-	SetupGRPC()
-}
-
-func requestServer() {
-	SendReq(context.Background())
-}
-
 func main() {
 	// starter server
-	go setupHttp()
+	go setupGRPC()
 	time.Sleep(3 * time.Second)
 	// use a http client to request to the server
-	requestServer()
+	sendReq(context.Background())
 	// verify trace
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyRpcClientAttributes(stubs[0][0], "/HelloGrpc/Hello", "grpc", "/HelloGrpc", "Hello")
 		verifier.VerifyRpcServerAttributes(stubs[0][1], "/HelloGrpc/Hello", "grpc", "/HelloGrpc", "Hello")
 	}, 1)
-
 }

@@ -7,7 +7,7 @@ service HelloGrpc {
 }
 
 message Req {
-
+  bool error = 1;
 }
 
 message Resp {
