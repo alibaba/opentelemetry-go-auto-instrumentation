@@ -67,7 +67,10 @@ func sendErrReq(ctx context.Context) string {
 	c := NewHelloGrpcClient(conn)
 	resp, err := c.Hello(ctx, &Req{Error: true})
 	if err != nil {
-		panic(err)
+		log.Printf("error %v\n", err)
 	}
-	return resp.Message
+	if resp != nil {
+		return resp.Message
+	}
+	return "error resp"
 }

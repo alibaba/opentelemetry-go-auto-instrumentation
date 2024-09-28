@@ -22,7 +22,7 @@ func main() {
 			panic("wrong span status on span 0")
 		}
 		if stubs[0][1].Status.Code != codes.Error {
-			panic("wrong span status on span 0")
+			panic("wrong span status on span 1")
 		}
 	}, 1)
 
