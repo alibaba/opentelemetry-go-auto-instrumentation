@@ -660,7 +660,13 @@ func (dp *DepProcessor) setupDeps() error {
 		return fmt.Errorf("failed to update otel: %w", err)
 	}
 
-	// Befor generating compile commands, let's run go mod tidy first
+	// Try to pin opentelemetry-go-auto-instrumentation itself
+	tpe := dp.tryPinInstVersion()
+	if tpe != nil {
+		log.Printf("failed to pin opentelemetry-go-auto-instrumentation itself")
+	}
+
+	// Before generating compile commands, let's run go mod tidy first
 	// to fetch all dependencies
 	err = runModTidy()
 	if err != nil {

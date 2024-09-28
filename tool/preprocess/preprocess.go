@@ -16,6 +16,7 @@ package preprocess
 
 import (
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
 	"log"
 	"os"
 	"os/exec"
@@ -41,6 +42,10 @@ const (
 )
 
 const FixedOtelDepVersion = "v1.30.0"
+
+const instDependency = "github.com/alibaba/opentelemetry-go-auto-instrumentation"
+
+const OTEL_INST_VERSION = "OTEL_INST_VERSION"
 
 var fixedOtelDeps = []string{
 	"go.opentelemetry.io/otel",
@@ -146,7 +151,7 @@ func (dp *DepProcessor) pinDepVersion() error {
 
 // We want to fetch otel dependencies in a fixed version instead of the latest
 // version, so we need to pin the version in go.mod. All used otel dependencies
-// should be listed and pinned here, because go mod tidy  will fetch the latest
+// should be listed and pinned here, because go mod tidy will fetch the latest
 // version even if we have pinned some of them.
 func (dp *DepProcessor) pinOtelVersion() error {
 	for _, dep := range fixedOtelDeps {
@@ -155,6 +160,21 @@ func (dp *DepProcessor) pinOtelVersion() error {
 		if err != nil {
 			return fmt.Errorf("failed to pin otel dependency %v: %w", dep, err)
 		}
+	}
+	return nil
+}
+
+// Users will import github.com/alibaba/opentelemetry-go-auto-instrumentation
+// dependency while using otelbuild to use the inst-api and inst-semconv package.
+// We need to pin the version to let the users use the fixed version
+func (dp *DepProcessor) tryPinInstVersion() error {
+	instVersion := os.Getenv(OTEL_INST_VERSION)
+	if instVersion == "" {
+		instVersion = version.Tag
+	}
+	err := runGoGet(instDependency + "@" + instVersion)
+	if err != nil {
+		return fmt.Errorf("failed to pin %s %w", instDependency, err)
 	}
 	return nil
 }
@@ -221,7 +241,7 @@ func Preprocess() error {
 			return fmt.Errorf("failed to update dependencies: %w", err)
 		}
 
-		// Pinning otel version in go.mod
+		// Pinning otel sdk dependencies version in go.mod
 		err = dp.pinOtelVersion()
 		if err != nil {
 			return fmt.Errorf("failed to update otel: %w", err)
@@ -231,6 +251,11 @@ func Preprocess() error {
 		err = runModTidy()
 		if err != nil {
 			return fmt.Errorf("failed to run mod tidy: %w", err)
+		}
+
+		tpe := dp.tryPinInstVersion()
+		if tpe != nil {
+			log.Printf("failed to pin opentelemetry-go-auto-instrumentation itself")
 		}
 
 		log.Printf("Preprocess took %v", time.Since(start))
