@@ -107,10 +107,10 @@ func (n echoServerAttrsGetter) GetHttpRoute(request echoRequest) string {
 func BuildEchoServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[echoRequest, echoResponse] {
 	builder := instrumenter.Builder[echoRequest, echoResponse]{}
 	serverGetter := echoServerAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[echoRequest, echoResponse, echoServerAttrsGetter, echoServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter, Converter: &http.ServerHttpStatusCodeConverter{}}
+	commonExtractor := http.HttpCommonAttrsExtractor[echoRequest, echoResponse, echoServerAttrsGetter, echoServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter}
 	networkExtractor := net.NetworkAttrsExtractor[echoRequest, echoResponse, echoServerAttrsGetter]{Getter: serverGetter}
 	urlExtractor := net.UrlAttrsExtractor[echoRequest, echoResponse, echoServerAttrsGetter]{Getter: serverGetter}
-	return builder.Init().SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[echoRequest, echoResponse]{Getter: serverGetter}).
+	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[echoRequest, echoResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[echoRequest, echoResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[echoRequest]{}).
 		AddAttributesExtractor(&http.HttpServerAttrsExtractor[echoRequest, echoResponse, echoServerAttrsGetter, echoServerAttrsGetter, echoServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n echoRequest) propagation.TextMapCarrier {
 		if n.header == nil {

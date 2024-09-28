@@ -16,22 +16,20 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"time"
 )
 
-func SendReq(ctx context.Context) string {
-	conn, err := grpc.NewClient("localhost:9003", grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	if err != nil {
-		panic(err)
-	}
-
-	c := NewHelloGrpcClient(conn)
-
-	resp, err := c.Hello(ctx, &Req{})
-	if err != nil {
-		panic(err)
-	}
-	return resp.Message
+func main() {
+	// starter server
+	go setupGRPC()
+	time.Sleep(3 * time.Second)
+	// use a http client to request to the server
+	sendReq(context.Background())
+	// verify trace
+	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
+		verifier.VerifyRpcClientAttributes(stubs[0][0], "/HelloGrpc/Hello", "grpc", "/HelloGrpc", "Hello")
+		verifier.VerifyRpcServerAttributes(stubs[0][1], "/HelloGrpc/Hello", "grpc", "/HelloGrpc", "Hello")
+	}, 1)
 }

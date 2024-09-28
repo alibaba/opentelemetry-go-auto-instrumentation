@@ -107,10 +107,10 @@ func (n muxHttpServerAttrsGetter) GetHttpRoute(request muxHttpRequest) string {
 func BuildMuxHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[muxHttpRequest, muxHttpResponse] {
 	builder := instrumenter.Builder[muxHttpRequest, muxHttpResponse]{}
 	serverGetter := muxHttpServerAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter, muxHttpServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter, Converter: &http.ServerHttpStatusCodeConverter{}}
+	commonExtractor := http.HttpCommonAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter, muxHttpServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter}
 	networkExtractor := net.NetworkAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter]{Getter: serverGetter}
 	urlExtractor := net.UrlAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter]{Getter: serverGetter}
-	return builder.Init().SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[muxHttpRequest, muxHttpResponse]{Getter: serverGetter}).
+	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[muxHttpRequest, muxHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[muxHttpRequest, muxHttpResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[muxHttpRequest]{}).
 		AddAttributesExtractor(&http.HttpServerAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter, muxHttpServerAttrsGetter, muxHttpServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n muxHttpRequest) propagation.TextMapCarrier {
 		if n.header == nil {
