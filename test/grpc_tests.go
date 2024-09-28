@@ -30,15 +30,15 @@ func init() {
 }
 
 func TestBasicGrpc(t *testing.T, env ...string) {
-	UseApp("grpc")
-	RunInstrument(t, "-debuglog", "--", "test_grpc_basic.go", "grpc_common.go", "grpc_server.go", "grpc.pb.go", "grpc_grpc.pb.go")
+	UseApp("grpc/v1.44.0")
+	RunInstrument(t, "-debuglog", "--", "test_grpc_basic.go", "grpc_common.go", "grpc.pb.go", "grpc_grpc.pb.go")
 	env = append(env, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
 	RunApp(t, "test_grpc_basic", env...)
 }
 
 func TestGrpcStatus(t *testing.T, env ...string) {
-	UseApp("grpc")
-	RunInstrument(t, "-debuglog", "--", "test_grpc_fail_status.go", "grpc_common.go", "grpc_server.go", "grpc.pb.go", "grpc_grpc.pb.go")
+	UseApp("grpc/v1.44.0")
+	RunInstrument(t, "-debuglog", "--", "test_grpc_fail_status.go", "grpc_common.go", "grpc.pb.go", "grpc_grpc.pb.go")
 	env = append(env, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
 	RunApp(t, "test_grpc_fail_status", env...)
 }
