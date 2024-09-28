@@ -232,7 +232,7 @@ func BuildHertzClientInstrumenter() *instrumenter.PropagatingToDownstreamInstrum
 	clientGetter := hertzHttpClientAttrsGetter{}
 	commonExtractor := http.HttpCommonAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpClientAttrsGetter, hertzHttpClientAttrsGetter]{HttpGetter: clientGetter, NetGetter: clientGetter}
 	networkExtractor := net.NetworkAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpClientAttrsGetter]{Getter: clientGetter}
-	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[*protocol.Request, *protocol.Response]{}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: clientGetter}).
+	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[*protocol.Request, *protocol.Response]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*protocol.Request]{}).
 		AddAttributesExtractor(&http.HttpClientAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpClientAttrsGetter, hertzHttpClientAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).BuildPropagatingToDownstreamInstrumenter(func(n *protocol.Request) propagation.TextMapCarrier {
 		return hertzTextMapCarrier{n}
@@ -245,7 +245,7 @@ func BuildHertzServerInstrumenter() *instrumenter.PropagatingFromUpstreamInstrum
 	commonExtractor := http.HttpCommonAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter, hertzHttpServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter}
 	networkExtractor := net.NetworkAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter]{Getter: serverGetter}
 	urlExtractor := net.UrlAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter]{Getter: serverGetter}
-	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*protocol.Request, *protocol.Response]{}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: serverGetter}).
+	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*protocol.Request, *protocol.Response]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[*protocol.Request]{}).
 		AddAttributesExtractor(&http.HttpServerAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter, hertzHttpServerAttrsGetter, hertzHttpServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n *protocol.Request) propagation.TextMapCarrier {
 		return hertzTextMapCarrier{n}
