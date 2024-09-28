@@ -16,7 +16,7 @@ package test
 
 import "testing"
 
-const grpc_dependency_name = "go.mongodb.org/mongo-driver"
+const grpc_dependency_name = "google.golang.org/grpc"
 const grpc_module_name = "grpc"
 
 func init() {
