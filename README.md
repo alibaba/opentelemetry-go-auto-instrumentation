@@ -77,8 +77,7 @@ Also there are several [**documents**](./docs) that you may find useful
 | net/http     | https://pkg.go.dev/net/http                | -                     | -                     |
 | zap          | https://github.com/uber-go/zap             | v1.20.0               | v1.27.0               |
 
-We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome :
-sparkling_heart: .
+We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
 
 Please refer to [this document](./docs/how-to-add-a-new-rule.md) for guidance on how to write instrumentation
 code for new frameworks.
