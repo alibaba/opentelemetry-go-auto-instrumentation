@@ -61,49 +61,6 @@ func (rb *RuleBundle) IsValid() bool {
 			len(rb.File2StructRules) > 0)
 }
 
-func (rb *RuleBundle) Merge(new *RuleBundle) (*RuleBundle, error) {
-	if !new.IsValid() {
-		return rb, nil
-	}
-	util.Assert(rb.ImportPath == new.ImportPath, "inconsistent import path")
-	util.Assert(rb.PackageName == new.PackageName, "inconsistent package name")
-	fileRules := make(map[uint64]bool)
-	for _, h := range rb.FileRules {
-		fileRules[h] = true
-	}
-	for _, h := range new.FileRules {
-		if _, exist := fileRules[h]; !exist {
-			rb.FileRules = append(rb.FileRules, h)
-		}
-	}
-
-	for file, rules := range new.File2FuncRules {
-		if _, exist := rb.File2FuncRules[file]; !exist {
-			rb.File2FuncRules[file] = make(map[string][]uint64)
-		}
-		for fn, hashes := range rules {
-			if _, exist := rb.File2FuncRules[file][fn]; !exist {
-				rb.File2FuncRules[file][fn] = make([]uint64, 0)
-			}
-			rb.File2FuncRules[file][fn] =
-				append(rb.File2FuncRules[file][fn], hashes...)
-		}
-	}
-	for file, rules := range new.File2StructRules {
-		if _, exist := rb.File2StructRules[file]; !exist {
-			rb.File2StructRules[file] = make(map[string][]uint64)
-		}
-		for st, hashes := range rules {
-			if _, exist := rb.File2StructRules[file][st]; !exist {
-				rb.File2StructRules[file][st] = make([]uint64, 0)
-			}
-			rb.File2StructRules[file][st] =
-				append(rb.File2StructRules[file][st], hashes...)
-		}
-	}
-	return rb, nil
-}
-
 func (rb *RuleBundle) AddFile2FuncRule(file string, rule *api.InstFuncRule) {
 	fn := rule.Function + "," + rule.ReceiverType
 	util.Assert(fn != "", "sanity check")

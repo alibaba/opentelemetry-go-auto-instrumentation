@@ -225,35 +225,6 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 		}
 		cnt++
 	}
-	// In rare case, we might instrument functions that are not in the project
-	// but introduced by InstFileRule/InstFuncRule. For instance, if InstFileRule
-	// adds a foo.go file containing the Foo function, we would want to further
-	// instrument that one. In such cases, we need to match rules for them again.
-	for _, bundle := range dp.bundles {
-		// FIXME: Support further instrumenting onEnter/onExit hook
-		if len(bundle.FileRules) == 0 {
-			continue
-		}
-		candidates := make([]string, 0)
-		for _, ruleHash := range bundle.FileRules {
-			rule := resource.FindFileRuleByHash(ruleHash)
-			// @@ File rules that intended to REPLACE the original file should
-			// not be considered as candidates because logically they do not
-			// introduce any new dependencies, but APPEND mode does.
-			if !rule.Replace {
-				candidates = append(candidates, rule.FileName)
-			}
-		}
-		log.Printf("Try to match additional %v for %v\n",
-			candidates, bundle.ImportPath)
-		newBundle := matcher.matchRuleBundle(bundle.ImportPath, candidates)
-		// One rule bundle represents one import path, so we should merge
-		// them together instead of adding a brand new one
-		_, err := bundle.Merge(newBundle)
-		if err != nil {
-			return fmt.Errorf("failed to merge rule bundle: %w", err)
-		}
-	}
 	// Save used rules to file, so that we can restore them in instrument phase
 	// rather than re-matching them again
 	err := resource.StoreRuleBundles(dp.bundles)

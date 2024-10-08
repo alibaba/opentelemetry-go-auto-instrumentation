@@ -40,11 +40,9 @@ func TestRunHelloworld(t *testing.T) {
 	ExpectContains(t, stderr, "Exiting hook1")
 	ExpectContains(t, stderr, "555")
 	ExpectContains(t, stderr, "internalFn")
-	ExpectContains(t, stderr, "GCMG")
 	ExpectContains(t, stderr, "7632")
 	ExpectContains(t, stderr, "init")
 	ExpectContains(t, stderr, "init2")
-	ExpectContains(t, stderr, "512")
 	ExpectContains(t, stderr, "30258") //0x7632
 	ExpectContains(t, stderr, "GOOD")
 	ExpectNotContains(t, stderr, "BAD")

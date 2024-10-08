@@ -74,11 +74,6 @@ func init() {
 		WithRuleName("testrule").
 		Register()
 
-	api.NewRule("fmt", "internalFn", "", `println(MyPoint{x:1024,y:512}.y)`, "").
-		WithUseRaw(true).
-		WithRuleName("testrule").
-		Register()
-
 	api.NewRule("net/http", "NewRequest", "", "onEnterNewRequest1", "").
 		WithRuleName("testrule").
 		Register()
