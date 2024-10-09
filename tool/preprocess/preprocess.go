@@ -43,6 +43,8 @@ const (
 
 const FixedOtelDepVersion = "v1.30.0"
 
+const FixedOtelContribVersion = "v0.55.0"
+
 const instDependency = "github.com/alibaba/opentelemetry-go-auto-instrumentation"
 
 const OTEL_INST_VERSION = "OTEL_INST_VERSION"
@@ -53,6 +55,12 @@ var fixedOtelDeps = []string{
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc",
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp",
+}
+
+var fixedOtelContribDeps = []string{
+	"go.opentelemetry.io/contrib/instrumentation/runtime",
 }
 
 // runDryBuild runs a dry build to get all dependencies needed for the project.
@@ -154,11 +162,20 @@ func (dp *DepProcessor) pinDepVersion() error {
 // should be listed and pinned here, because go mod tidy will fetch the latest
 // version even if we have pinned some of them.
 func (dp *DepProcessor) pinOtelVersion() error {
+	// otel related sdk dependencies
 	for _, dep := range fixedOtelDeps {
 		log.Printf("Pin otel dependency version %v ", dep)
 		err := runGoGet(dep + "@" + FixedOtelDepVersion)
 		if err != nil {
 			return fmt.Errorf("failed to pin otel dependency %v: %w", dep, err)
+		}
+	}
+	// otel related sdk dependencies
+	for _, dep := range fixedOtelContribDeps {
+		log.Printf("Pin otel contrib dependency version %v ", dep)
+		err := runGoGet(dep + "@" + FixedOtelContribVersion)
+		if err != nil {
+			return fmt.Errorf("failed to pin otel contrib dependency %v: %w", dep, err)
 		}
 	}
 	return nil

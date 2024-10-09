@@ -17,26 +17,29 @@ package pkg
 
 import (
 	"context"
-	"go.opentelemetry.io/otel/sdk/trace"
-	"log"
-	"os"
-	"strings"
-	"time"
-
+	"errors"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/trace"
 	_ "go.opentelemetry.io/otel/sdk/trace"
+	"log"
+	"os"
+	"strings"
 )
 
 // set the following environment variables based on https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
 // your service name: OTEL_SERVICE_NAME
-// your otlp endpoint: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+// your otlp endpoint: OTEL_EXPORTER_OTLP_ENDPOINT OTEL_EXPORTER_OTLP_TRACES_ENDPOINT OTEL_EXPORTER_OTLP_METRICS_ENDPOINT OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
 // your otlp header: OTEL_EXPORTER_OTLP_HEADERS
 const exec_name = "otelbuild"
 const report_protocol = "OTEL_EXPORTER_OTLP_PROTOCOL"
@@ -51,7 +54,9 @@ func init() {
 	if strings.HasSuffix(path, exec_name) {
 		return
 	}
-	initOpenTelemetry()
+	if err = initOpenTelemetry(); err != nil {
+		log.Fatalf("%s: %v", "Failed to initialize runtime metrics", err)
+	}
 }
 
 func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
@@ -79,7 +84,7 @@ func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
 	}
 }
 
-func initOpenTelemetry() func() {
+func initOpenTelemetry() error {
 	ctx := context.Background()
 
 	var batchSpanProcessor trace.SpanProcessor
@@ -96,12 +101,33 @@ func initOpenTelemetry() func() {
 
 	otel.SetTracerProvider(traceProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return initRuntimeMetrics()
+}
 
-	return func() {
-		cxt, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		if err := traceProvider.Shutdown(cxt); err != nil {
-			otel.Handle(err)
+func initRuntimeMetrics() error {
+	ctx := context.Background()
+	var mp *metric.MeterProvider
+	if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
+		exporter, err := otlpmetricgrpc.New(ctx)
+		if err != nil {
+			log.Fatalf("new otlp metric grpc exporter failed: %v", err)
 		}
+		mp = metric.NewMeterProvider(
+			metric.WithReader(metric.NewPeriodicReader(exporter)),
+		)
+	} else {
+		exporter, err := otlpmetrichttp.New(ctx)
+		if err != nil {
+			log.Fatalf("new otlp metric http exporter failed: %v", err)
+		}
+		mp = metric.NewMeterProvider(
+			metric.WithReader(metric.NewPeriodicReader(exporter)),
+		)
 	}
+	if mp == nil {
+		return errors.New("No MeterProvider is provided")
+	}
+	otel.SetMeterProvider(mp)
+	// DefaultMinimumReadMemStatsInterval is 15 second
+	return runtime.Start(runtime.WithMeterProvider(mp))
 }
