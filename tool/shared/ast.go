@@ -361,6 +361,7 @@ func ParseAstFromSource(source string) (*dst.File, error) {
 }
 
 func ParseAstFromFileFast(filePath string) (*dst.File, error) {
+	util.Assert(IsGoFile(filePath), "file is not a go file")
 	name := filepath.Base(filePath)
 	fset := token.NewFileSet()
 	file, err := os.Open(filePath)
@@ -382,6 +383,7 @@ func ParseAstFromFileFast(filePath string) (*dst.File, error) {
 
 // ParseAstFromFile parses the AST from complete source file.
 func ParseAstFromFile(filePath string) (*dst.File, error) {
+	util.Assert(IsGoFile(filePath), "file is not a go file")
 	name := filepath.Base(filePath)
 	fset := token.NewFileSet()
 	file, err := os.Open(filePath)

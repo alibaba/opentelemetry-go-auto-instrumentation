@@ -548,6 +548,7 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to write ast to %v: %w", file, err)
 		}
+		shared.SaveDebugFile("user_", file)
 	}
 	if !addImport {
 		return fmt.Errorf("failed to add rule import, candidates are %v",
