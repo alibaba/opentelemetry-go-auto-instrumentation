@@ -14,9 +14,8 @@ time. Simply replace `go build` with `otelbuild` to get started.
 
 #### Precompiled binary
 
-We recommend using the precompiled latest release version. You can visit the
-[Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
-page to download them.
+We recommend using the latest precompiled release version. You can download it from the [Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
+page.
 
 #### Build from source
 
