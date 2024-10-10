@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	TempBuildDir    = ".otel-build"
-	BuildModeVendor = "-mod=vendor"
-	BuildModeMod    = "-mod=mod"
+	TempBuildDir = ".otel-build"
+	BuildMode    = "-mod="
+	BuildModeMod = "-mod=mod"
 )
 
 // InToolexec true means this tool is being invoked in the go build process.
@@ -92,13 +92,9 @@ func ParseOptions() {
 	// -mod=mod tells the go command to ignore the vendor directory and to
 	// automatically update go.mod, for example, when an imported package is not
 	//  provided by any known module.
-	for _, buildArg := range BuildArgs {
-		if buildArg == BuildModeVendor {
-			if Verbose {
-				fmt.Printf("Using -mod mode instead of -mod=vendor\n")
-			}
-			BuildArgs = append(BuildArgs[:0], BuildArgs[1:]...)
-			break
+	for i := len(BuildArgs) - 1; i >= 0; i-- {
+		if BuildArgs[i] == BuildMode {
+			BuildArgs = append(BuildArgs[:i], BuildArgs[i+1:]...)
 		}
 	}
 	BuildArgs = append(BuildArgs, BuildModeMod)
