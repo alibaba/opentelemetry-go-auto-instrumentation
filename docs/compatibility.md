@@ -20,7 +20,7 @@ stop ensuring compatibility with these versions in the following manner:
 This project is tested on the following systems.
 
 | OS       | Go Version | Architecture |
-| -------- | ---------- | ------------ |
+|----------|------------|--------------|
 | Ubuntu   | 1.22       | amd64        |
 | Ubuntu   | 1.21       | amd64        |
 | Ubuntu   | 1.22       | 386          |
@@ -39,8 +39,12 @@ are made for those systems currently.
 
 # OpenTelemetry Compatibility
 
-To address issues such as trace interruption caused by missing context, we need to instrument OpenTelemetry (OTel) itself with this `otelbuild`. This means that if users explicitly add OTel dependencies, the version of those dependencies must match the `otelbuild`'s requirements, otherwise, the tool will not function properly. Currently, the mapping of the `otelbuild` to the supported OTel versions is as follows:
+To address issues such as trace interruption caused by missing context, we need to instrument OpenTelemetry (OTel)
+itself with this `otelbuild`. This means that if users explicitly add OTel dependencies, the version of those
+dependencies must match the `otelbuild`'s requirements, otherwise, the tool will not function properly. Currently, the
+mapping of the `otelbuild` to the supported OTel versions is as follows:
 
 | Tool Version | OTel Version |
-| ----------------- | ------------ |
-| 0.1.0-RC   | v1.28.0      |
+|--------------|--------------|
+| 0.1.0-RC     | v1.28.0      |
+| v0.2.0       | v1.30.0      |
