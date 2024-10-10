@@ -22,7 +22,11 @@ import (
 	"strconv"
 )
 
-const TempBuildDir = ".otel-build"
+const (
+	TempBuildDir    = ".otel-build"
+	BuildModeVendor = "-mod=vendor"
+	BuildModeMod    = "-mod=mod"
+)
 
 // InToolexec true means this tool is being invoked in the go build process.
 // This flag should not be set manually by users.
@@ -81,6 +85,23 @@ func ParseOptions() {
 	// Any non-flag command-line arguments behind "--" separator will be treated
 	// as build arguments and transparently passed to the go build command.
 	BuildArgs = flag.Args()
+
+	// We always use -mod=mod mode even if -mod=vendor is specified.
+	// -mod=vendor tells the go command to use the vendor directory.
+	// In this mode, the go command will not use the network or the module cache.
+	// -mod=mod tells the go command to ignore the vendor directory and to
+	// automatically update go.mod, for example, when an imported package is not
+	//  provided by any known module.
+	for _, buildArg := range BuildArgs {
+		if buildArg == BuildModeVendor {
+			if Verbose {
+				fmt.Printf("Using -mod mode instead of -mod=vendor\n")
+			}
+			BuildArgs = append(BuildArgs[:0], BuildArgs[1:]...)
+			break
+		}
+	}
+	BuildArgs = append(BuildArgs, BuildModeMod)
 }
 
 func InitOptions() (err error) {
