@@ -85,7 +85,7 @@ to https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variab
 if run on loacal machine:
 
 ```shell
-OTEL_EXPORTER_ENDPOINT="localhost:4318" OTEL_EXPORTER_OTLP_INSECURE=true OTEL_SERVICE_NAME=demo ./demo
+OTEL_EXPORTER_OTLP_ENDPOINT="localhost:4318" OTEL_EXPORTER_OTLP_INSECURE=true OTEL_SERVICE_NAME=demo ./demo
 ```
 
 if run on k8s, apply the `demo.yaml`:
