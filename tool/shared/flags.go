@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -95,7 +96,7 @@ func ParseOptions() {
 	// -mod=readonly tells the go command to ignore the vendor directory and to
 	// report an error if go.mod needs to be updated.
 	for i := len(BuildArgs) - 1; i >= 0; i-- {
-		if BuildArgs[i] == BuildMode {
+		if strings.HasPrefix(BuildArgs[i], BuildMode) {
 			BuildArgs = append(BuildArgs[:i], BuildArgs[i+1:]...)
 		}
 	}
