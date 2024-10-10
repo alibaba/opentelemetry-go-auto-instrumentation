@@ -34,14 +34,11 @@ import (
 )
 
 const (
-	OtelSetupInst          = "otel_setup_inst.go"
-	OtelSetupSDK           = "otel_setup_sdk.go"
-	OtelRules              = "otel_rules"
-	OtelBackups            = "backups"
-	OtelBackupSuffix       = ".bk"
-	OtelImportPath         = "go.opentelemetry.io/otel"
-	OtelBaggageImportPath  = "go.opentelemetry.io/otel/baggage"
-	OtelSdkTraceImportPath = "go.opentelemetry.io/otel/sdk/trace"
+	OtelSetupInst    = "otel_setup_inst.go"
+	OtelSetupSDK     = "otel_setup_sdk.go"
+	OtelRules        = "otel_rules"
+	OtelBackups      = "backups"
+	OtelBackupSuffix = ".bk"
 )
 
 // @@ Change should sync with trampoline template
@@ -65,8 +62,7 @@ const (
 type DepProcessor struct {
 	bundles          []*resource.RuleBundle // All dependent rule bundles
 	funcRules        []uint64               // Function should be processed separately
-	generatedDeps    []string
-	sigc             chan os.Signal // Graceful shutdown
+	sigc             chan os.Signal         // Graceful shutdown
 	backups          map[string]string
 	localImportPath  string
 	importCandidates []string
@@ -78,7 +74,6 @@ func newDepProcessor() *DepProcessor {
 	return &DepProcessor{
 		bundles:          []*resource.RuleBundle{},
 		funcRules:        []uint64{},
-		generatedDeps:    []string{},
 		sigc:             sigc,
 		backups:          map[string]string{},
 		localImportPath:  "",
@@ -88,6 +83,13 @@ func newDepProcessor() *DepProcessor {
 
 func (dp *DepProcessor) postProcess() {
 	shared.GuaranteeInPreprocess()
+	// Clean build cache as we may instrument some std packages(e.g. runtime)
+	// TODO: fine-grained cache cleanup
+	err := runCleanCache()
+	if err != nil {
+		log.Printf("failed to clean cache: %v", err)
+	}
+
 	// Using -debug? Leave all changes for debugging
 	if shared.Debug {
 		return
@@ -97,7 +99,7 @@ func (dp *DepProcessor) postProcess() {
 	_ = os.RemoveAll(OtelRules)
 
 	// Restore everything we have modified during instrumentation
-	err := dp.restoreBackupFiles()
+	err = dp.restoreBackupFiles()
 	if err != nil {
 		log.Fatalf("failed to restore: %v", err)
 	}
@@ -149,18 +151,8 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 	return nil
 }
 
-func (dp *DepProcessor) addGeneratedDep(dep string) {
-	dp.generatedDeps = append(dp.generatedDeps, dep)
-}
-
 func getCompileCommands() ([]string, error) {
-	// Befor generating compile commands, let's run go mod tidy first
-	// to fetch all dependencies
-	err := runModTidy()
-	if err != nil {
-		return nil, fmt.Errorf("failed to run mod tidy: %w", err)
-	}
-	err = runDryBuild()
+	err := runDryBuild()
 	if err != nil {
 		// Tell us more about what happened in the dry run
 		errLog, _ := util.ReadFile(shared.GetLogPath(DryRunLog))
@@ -206,25 +198,32 @@ func readImportPath(cmd []string) string {
 	return pkg
 }
 
+func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
+	cmdArgs := strings.Split(cmd, " ")
+	importPath := readImportPath(cmdArgs)
+	util.Assert(importPath != "", "sanity check")
+	if shared.Verbose {
+		log.Printf("Try to match rules for %v with %v\n",
+			importPath, cmdArgs)
+	}
+	bundle := matcher.matchRuleBundle(importPath, cmdArgs)
+	ch <- bundle
+}
+
 func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	matcher := newRuleMatcher()
 	// Find used instrumentation rule according to compile commands
+	ch := make(chan *resource.RuleBundle)
 	for _, cmd := range compileCmds {
-		cmdArgs := strings.Split(cmd, " ")
-		importPath := readImportPath(cmdArgs)
-		if importPath == "" {
-			return fmt.Errorf("failed to find import path: %v", cmd)
-		}
-		if shared.Verbose {
-			log.Printf("Try to match rules for %v with %v\n",
-				importPath, cmdArgs)
-		}
-		bundle := matcher.matchRuleBundle(importPath, cmdArgs)
+		go runMatch(matcher, cmd, ch)
+	}
+	cnt := 0
+	for cnt < len(compileCmds) {
+		bundle := <-ch
 		if bundle.IsValid() {
 			dp.bundles = append(dp.bundles, bundle)
-		} else if shared.Verbose {
-			log.Printf("No match for %v", importPath)
 		}
+		cnt++
 	}
 	// In rare case, we might instrument functions that are not in the project
 	// but introduced by InstFileRule/InstFuncRule. For instance, if InstFileRule
@@ -310,32 +309,33 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 				dp.funcRules = append(dp.funcRules, rs...)
 				for _, ruleHash := range rs {
 					rule := resource.FindFuncRuleByHash(ruleHash)
-
-					// Find files where hooks relies on
-					for _, dep := range rule.FileDeps {
-						util.Assert(isValidFilePath(dep), "sanity check")
-						res, err := resource.FindRuleFile(dep)
-						if err != nil {
-							return fmt.Errorf("cannot find dep %v: %w", dep, err)
-						}
-						uniqueResources[res] = bundle.PackageName
-					}
 					// If rule inserts raw code directly, skip adding any
 					// further dependencies
 					if rule.UseRaw {
 						continue
 					}
+
+					// Find files where hooks relies on
+					for _, dep := range rule.FileDeps {
+						util.Assert(isValidFilePath(dep), "sanity check")
+						res, err := resource.FindRuleDepFile(rule, dep)
+						if err != nil {
+							return fmt.Errorf("cannot find dep %v: %w", dep, err)
+						}
+						if res == "" {
+							return fmt.Errorf("cannot find dep %v", dep)
+						}
+						uniqueResources[res] = bundle.PackageName
+					}
 					// Find files where hooks defines in
-					resources, err := resource.FindRuleFiles(rule)
+					res, err := resource.FindHookFile(rule)
 					if err != nil {
 						return err
 					}
-					if resources == nil {
+					if res == "" {
 						return fmt.Errorf("can not find resource for %v", rule)
 					}
-					for _, res := range resources {
-						uniqueResources[res] = bundle.PackageName
-					}
+					uniqueResources[res] = bundle.PackageName
 				}
 			}
 		}
@@ -348,7 +348,6 @@ func (dp *DepProcessor) copyRules(targetDir string) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to copy rule %v: %w", path, err)
 		}
-		dp.addGeneratedDep(ruleFile)
 		shared.SaveDebugFile("", ruleFile)
 	}
 	return nil
@@ -434,20 +433,18 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 	}
 	c += "}\n"
 
-	f, err := util.WriteStringToFile(target, c)
+	_, err = util.WriteStringToFile(target, c)
 	if err != nil {
 		return err
 	}
-	dp.addGeneratedDep(f)
 	shared.SaveDebugFile("", target)
 	return err
 }
 func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
-	f, err := resource.CopyOtelSetupTo(pkgName, target)
+	_, err := resource.CopyOtelSetupTo(pkgName, target)
 	if err != nil {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
-	dp.addGeneratedDep(f)
 	shared.SaveDebugFile("", target)
 	return err
 }
@@ -459,7 +456,7 @@ func assembleImportCandidates() ([]string, error) {
 	candidates := make([]string, 0)
 	found := false
 
-	// Find from build arguments e.g. go build test_gorm_crud.go or go build cmd/app
+	// Find from build arguments e.g. go build test.go or go build cmd/app
 	for _, buildArg := range shared.BuildArgs {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
@@ -513,6 +510,9 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if shared.Verbose {
 			log.Printf("RuleImport candidates: %v", files)
 		}
+		if len(dp.importCandidates) == 0 {
+			return fmt.Errorf("no candidate found to add import")
+		}
 	}
 
 	addImport := false
@@ -520,19 +520,17 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if !shared.IsGoFile(file) {
 			continue
 		}
-		text, err := util.ReadFile(file)
-		if err != nil {
-			return fmt.Errorf("failed to read file %v: %w", file, err)
-		}
-		astRoot, err := shared.ParseAstFromSource(text)
+		astRoot, err := shared.ParseAstFromFile(file)
 		if err != nil {
 			return fmt.Errorf("failed to parse ast from source: %w", err)
 		}
 
 		foundInit := shared.FindFuncDecl(astRoot, FuncInit) != nil
-		foundMain := shared.FindFuncDecl(astRoot, FuncMain) != nil
-		if !foundInit && !foundMain {
-			continue
+		if !foundInit {
+			foundMain := shared.FindFuncDecl(astRoot, FuncMain) != nil
+			if !foundMain {
+				continue
+			}
 		}
 
 		// Prepend import path to the file
@@ -550,6 +548,7 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to write ast to %v: %w", file, err)
 		}
+		shared.SaveDebugFile("user_", file)
 	}
 	if !addImport {
 		return fmt.Errorf("failed to add rule import, candidates are %v",
@@ -565,7 +564,7 @@ func getModuleName(gomod string) (string, error) {
 		return "", fmt.Errorf("failed to read go.mod: %w", err)
 	}
 
-	modFile, err := modfile.Parse("go.mod", []byte(data), nil)
+	modFile, err := modfile.Parse(shared.GoModFile, []byte(data), nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse go.mod: %w", err)
 	}
@@ -642,13 +641,7 @@ func (dp *DepProcessor) setupRules() (err error) {
 }
 
 func (dp *DepProcessor) addOtelImports() error {
-	// We want to instrument otel-sdk itself, we done this by adding otel import
-	// to the project, in this way, pkg/rules/otdk rules will always take effect.
-	err := dp.addExplicitImport(
-		OtelImportPath,
-		OtelBaggageImportPath,
-		OtelSdkTraceImportPath,
-	)
+	err := dp.addExplicitImport(fixedOtelDeps...)
 	if err != nil {
 		return fmt.Errorf("failed to add otel import: %w", err)
 	}
@@ -656,21 +649,43 @@ func (dp *DepProcessor) addOtelImports() error {
 }
 
 func (dp *DepProcessor) setupDeps() error {
+	// Add otel import to the project so that we can instrument otel-sdk itself
 	err := dp.addOtelImports()
 	if err != nil {
 		return fmt.Errorf("failed to add otel imports: %w", err)
 	}
 
+	// Pinning otel version in go.mod
+	err = dp.pinOtelVersion()
+	if err != nil {
+		return fmt.Errorf("failed to update otel: %w", err)
+	}
+
+	// Try to pin opentelemetry-go-auto-instrumentation itself
+	tpe := dp.tryPinInstVersion()
+	if tpe != nil {
+		log.Printf("failed to pin opentelemetry-go-auto-instrumentation itself")
+	}
+
+	// Run go mod tidy first to fetch all dependencies
+	err = runModTidy()
+	if err != nil {
+		return fmt.Errorf("failed to run mod tidy: %w", err)
+	}
+
+	// Find compile commands from dry run log
 	compileCmds, err := getCompileCommands()
 	if err != nil {
 		return fmt.Errorf("failed to get compile commands: %w", err)
 	}
 
+	// Find used rules according to compile commands
 	err = dp.matchRules(compileCmds)
 	if err != nil {
 		return fmt.Errorf("failed to find dependencies: %w", err)
 	}
 
+	// Setup rules according to compile commands
 	err = dp.setupRules()
 	if err != nil {
 		return fmt.Errorf("failed to setup dependencies: %w", err)

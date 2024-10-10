@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 //go:build ignore
 
 package rule
@@ -35,12 +34,12 @@ func grpcNewClientOnExit(call grpc.CallContext, cc *grpc.ClientConn, err error) 
 }
 
 type clientNewHandler struct {
-	*config
+	*grpcOtelConfig
 }
 
 func NewClientNewHandler(opts ...Option) stats.Handler {
 	h := &clientNewHandler{
-		config: newConfig(opts, "client"),
+		grpcOtelConfig: newConfig(opts, "client"),
 	}
 
 	return h
@@ -54,7 +53,7 @@ func (h *clientNewHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) c
 	gctx := gRPCContext{
 		methodName: info.FullMethodName,
 	}
-	return inject(context.WithValue(nCtx, gRPCContextKey{}, &gctx), h.config.Propagators, info.FullMethodName)
+	return inject(context.WithValue(nCtx, gRPCContextKey{}, &gctx), h.grpcOtelConfig.Propagators, info.FullMethodName)
 }
 
 // HandleRPC processes the RPC stats.

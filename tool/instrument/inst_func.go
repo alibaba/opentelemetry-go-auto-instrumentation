@@ -103,6 +103,19 @@ func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
 	return nil
 }
 
+var recordedSuffixes = make(map[string]bool)
+
+func getVarSuffix() string {
+	for {
+		s := util.RandomString(5)
+		// Random suffix collision? Reroll until we get a unique one
+		if _, ok := recordedSuffixes[s]; !ok {
+			recordedSuffixes[s] = true
+			return s
+		}
+	}
+}
+
 func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl) error {
 	util.Assert(t.OnEnter != "" || t.OnExit != "", "sanity check")
 
@@ -142,7 +155,7 @@ func (rp *RuleProcessor) insertTJump(t *api.InstFuncRule, funcDecl *dst.FuncDecl
 		}
 	}
 
-	varSuffix := util.RandomString(5)
+	varSuffix := getVarSuffix()
 	rp.rule2Suffix[t] = varSuffix
 
 	// Generate the trampoline-jump-if. N.B. Note that future optimization pass
@@ -325,6 +338,10 @@ func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 }
 
 func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error) {
+	// Nothing to do if no func rules
+	if len(bundle.File2FuncRules) == 0 {
+		return nil
+	}
 	// Copy API file to compilation working directory
 	err = rp.copyOtelApi(bundle.PackageName)
 	if err != nil {

@@ -47,7 +47,7 @@ func (t testGetter) GetMethod(request testRequest) string {
 }
 
 func TestExtractSpanName(t *testing.T) {
-	r := RpcSpanNameExtractor[testRequest]{getter: testGetter{}}
+	r := RpcSpanNameExtractor[testRequest]{Getter: testGetter{}}
 	spanName := r.Extract(testRequest{Method: "method", Service: "service"})
 	if spanName != "service/method" {
 		t.Fatalf("extract span name extractor failed, expected 'service/method', got '%s'", spanName)

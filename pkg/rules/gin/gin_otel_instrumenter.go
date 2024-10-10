@@ -114,10 +114,10 @@ func (n ginServerAttrsGetter) GetHttpRoute(request ginRequest) string {
 func BuildGinServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[ginRequest, ginResponse] {
 	builder := instrumenter.Builder[ginRequest, ginResponse]{}
 	serverGetter := ginServerAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[ginRequest, ginResponse, ginServerAttrsGetter, ginServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter, Converter: &http.ServerHttpStatusCodeConverter{}}
+	commonExtractor := http.HttpCommonAttrsExtractor[ginRequest, ginResponse, ginServerAttrsGetter, ginServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter}
 	networkExtractor := net.NetworkAttrsExtractor[ginRequest, ginResponse, ginServerAttrsGetter]{Getter: serverGetter}
 	urlExtractor := net.UrlAttrsExtractor[ginRequest, ginResponse, ginServerAttrsGetter]{Getter: serverGetter}
-	return builder.Init().SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[ginRequest, ginResponse]{Getter: serverGetter}).
+	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[ginRequest, ginResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[ginRequest, ginResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[ginRequest]{}).
 		AddAttributesExtractor(&http.HttpServerAttrsExtractor[ginRequest, ginResponse, ginServerAttrsGetter, ginServerAttrsGetter, ginServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n ginRequest) propagation.TextMapCarrier {
 		if n.header == nil {

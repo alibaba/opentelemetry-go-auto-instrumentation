@@ -13,7 +13,7 @@
 // limitations under the License.
 //go:build ignore
 
-package rule
+package gorm
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
@@ -52,7 +52,7 @@ func (g gormAttrsGetter) GetOperation(request gormRequest) string {
 	return request.Operation
 }
 
-func BuildGormInstrumenter() *instrumenter.Instrumenter[gormRequest, interface{}] {
+func BuildGormInstrumenter() instrumenter.Instrumenter[gormRequest, interface{}] {
 	builder := instrumenter.Builder[gormRequest, interface{}]{}
 	getter := gormAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[gormRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[gormRequest]{}).

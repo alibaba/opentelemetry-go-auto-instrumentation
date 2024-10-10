@@ -15,12 +15,12 @@
 package rpc
 
 type RpcSpanNameExtractor[REQUEST any] struct {
-	getter RpcAttrsGetter[REQUEST]
+	Getter RpcAttrsGetter[REQUEST]
 }
 
 func (r *RpcSpanNameExtractor[REQUEST]) Extract(request REQUEST) string {
-	service := r.getter.GetService(request)
-	method := r.getter.GetMethod(request)
+	service := r.Getter.GetService(request)
+	method := r.Getter.GetMethod(request)
 	if service == "" || method == "" {
 		return "RPC request"
 	}

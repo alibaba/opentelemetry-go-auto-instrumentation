@@ -213,16 +213,31 @@ func isHookDefined(text string, rule *api.InstFuncRule) bool {
 	return true
 }
 
-func FindRuleFile(path string) (string, error) {
-	files, err := findFiles(pkg.ExportRuleFS(), ".")
+func FindRuleDepFile(rule api.InstRule, path string) (string, error) {
+	files, err := FindRuleFiles(rule)
 	if err != nil {
 		return "", err
 	}
-	for _, paths := range files {
-		for _, p := range paths {
-			if strings.Contains(p, path) {
-				return p, nil
-			}
+	for _, file := range files {
+		if strings.Contains(file, path) {
+			return file, nil
+		}
+	}
+	return "", nil
+}
+
+func FindHookFile(rule *api.InstFuncRule) (string, error) {
+	files, err := FindRuleFiles(rule)
+	if err != nil {
+		return "", err
+	}
+	for _, file := range files {
+		text, err := ReadRuleFile(file)
+		if err != nil {
+			return "", err
+		}
+		if isHookDefined(text, rule) {
+			return file, nil
 		}
 	}
 	return "", nil
@@ -238,31 +253,24 @@ func FindRuleFiles(rule api.InstRule) ([]string, error) {
 		if rt.UseRaw {
 			util.ShouldNotReachHereT("insane rule type")
 		}
-		// For function rule, we need to find files where onEnter and onExit
-		// are defined
-		for _, paths := range files {
+		for dir, paths := range files {
 			// Now all path files are in same directory, iterate over them to see
 			// if there is a rule.go file which indicates an instrumentation rule
 			// definition. If so, link it to the rule resource
-			for i, path := range paths {
+			for _, path := range paths {
 				if strings.HasSuffix(path, RuleFile) {
 					text, err := ReadRuleFile(path)
 					if err == nil && isRuleDefined(text, rt) {
-						// No rule.go please
-						paths = append(paths[:i], paths[i+1:]...)
-						// Find files where onEnter and onExit are defined
-						for _, p := range paths {
-							text, err := ReadRuleFile(p)
-							if err != nil {
-								return nil, err
-							}
-							if isHookDefined(text, rt) {
-								return []string{p}, nil
+						all := make([]string, 0)
+						all = append(all, paths...)
+						// all its subdirectories are also included
+						for k, v := range files {
+							if strings.HasPrefix(k, dir) {
+								all = append(all, v...)
 							}
 						}
-						return nil, nil
+						return all, nil
 					}
-					break
 				}
 			}
 		}
@@ -341,7 +349,7 @@ func InitRules() error {
 		if err != nil {
 			return fmt.Errorf("failed to hash rule: %w", err)
 		}
-		if shared.Verbose {
+		if shared.Verbose && shared.InPreprocess() {
 			log.Printf("Rule %v hashed to %d", rule, h)
 		}
 		hash2Rules[h] = rule
@@ -370,17 +378,12 @@ func FindRuleByHash(hash uint64) api.InstRule {
 
 func StoreRuleBundles(bundles []*RuleBundle) error {
 	shared.GuaranteeInPreprocess()
-
-	ruleLines := make([]string, 0)
-	for _, bundle := range bundles {
-		bs, err := json.Marshal(*bundle)
-		if err != nil {
-			return fmt.Errorf("failed to marshal bundle: %w", err)
-		}
-		ruleLines = append(ruleLines, string(bs))
-	}
 	ruleFile := shared.GetPreprocessLogPath(UsedRuleJsonFile)
-	_, err := util.WriteStringToFile(ruleFile, strings.Join(ruleLines, "\n"))
+	bs, err := json.Marshal(bundles)
+	if err != nil {
+		return fmt.Errorf("failed to marshal bundles: %w", err)
+	}
+	_, err = util.WriteStringToFile(ruleFile, string(bs))
 	if err != nil {
 		return fmt.Errorf("failed to write used rules: %w", err)
 	}
@@ -395,18 +398,10 @@ func LoadRuleBundles() ([]*RuleBundle, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read used rules: %w", err)
 	}
-	lines := strings.Split(data, "\n")
-	bundles := make([]*RuleBundle, 0)
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		bundle := &RuleBundle{}
-		err := json.Unmarshal([]byte(line), bundle)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal bundle: %w", err)
-		}
-		bundles = append(bundles, bundle)
+	var bundles []*RuleBundle
+	err = json.Unmarshal([]byte(data), &bundles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal bundles: %w", err)
 	}
 	return bundles, nil
 }

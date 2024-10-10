@@ -34,12 +34,12 @@ func grpcClientOnExit(call grpc.CallContext, cc *grpc.ClientConn, err error) {
 }
 
 type clientHandler struct {
-	*config
+	*grpcOtelConfig
 }
 
 func NewClientHandler(opts ...Option) stats.Handler {
 	h := &clientHandler{
-		config: newConfig(opts, "client"),
+		grpcOtelConfig: newConfig(opts, "client"),
 	}
 
 	return h
@@ -54,7 +54,7 @@ func (h *clientHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) cont
 		methodName: info.FullMethodName,
 	}
 
-	return inject(context.WithValue(nCtx, gRPCContextKey{}, &gctx), h.config.Propagators, info.FullMethodName)
+	return inject(context.WithValue(nCtx, gRPCContextKey{}, &gctx), h.grpcOtelConfig.Propagators, info.FullMethodName)
 }
 
 // HandleRPC processes the RPC stats.

@@ -20,7 +20,7 @@ version, which is `v9.0.5` first. You may create a subdirectory named `v9.0.5` a
 ```
 module redis/v9.0.5
 
-go 1.21
+go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
@@ -28,8 +28,8 @@ require (
 	// import this dependency to use verifier
 	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.0-00010101000000-000000000000
 	github.com/redis/go-redis/v9 v9.0.5
-	go.opentelemetry.io/otel v1.28.0
-	go.opentelemetry.io/otel/sdk v1.28.0
+	go.opentelemetry.io/otel v1.30.0
+	go.opentelemetry.io/otel/sdk v1.30.0
 )
 ```
 
@@ -49,8 +49,8 @@ represents for the `get` redis operation. You should use the `verifier` to verif
 "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 
 verifier.WaitAndAssertTraces(func (stubs []tracetest.SpanStubs) {
-verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5: ", "set")
-verifier.VerifyDbAttributes(stubs[1][0], "get", "", "redis", "", "localhost", "get a: ", "get")
+	verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5: ", "set")
+	verifier.VerifyDbAttributes(stubs[1][0], "get", "", "redis", "", "localhost", "get a: ", "get")
 })
 ```
 
@@ -66,17 +66,18 @@ const redis_dependency_name = "github.com/redis/go-redis/v9"
 const redis_module_name = "redis"
 
 func init() {
-TestCases = append(TestCases, NewGeneralTestCase("redis-9.0.5-executing-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands)
+	TestCases = append(TestCases, NewGeneralTestCase("redis-9.0.5-executing-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands)
 }
 
 func TestExecutingCommands(t *testing.T, env ...string) {
-redisC, redisPort := initRedisContainer()
-defer clearRedisContainer(redisC)
-UseApp("redis/v9.0.5")
-RunInstrument(t, "-debuglog", "--", "test_executing_commands.go")
-env = append(env, "REDIS_PORT="+redisPort.Port())
-RunApp(t, "test_executing_commands", env...)
+	redisC, redisPort := initRedisContainer()
+	defer clearRedisContainer(redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_executing_commands.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_executing_commands", env...)
 }
+
 ```
 
 In `init` function, you need to wrap your test case with `NewGeneralTestCase`, `NewGeneralTestCase` receives the
@@ -100,12 +101,12 @@ verify the telemetry data.
 
 ```go
 func TestExecutingUnsupporetedCommands(t *testing.T, env ...string) {
-redisC, redisPort := initRedisContainer()
-defer clearRedisContainer(redisC)
-UseApp("redis/v9.0.5")
-RunInstrument(t, "-debuglog", "--", "test_executing_unsupported_commands.go")
-env = append(env, "REDIS_PORT="+redisPort.Port())
-RunApp(t, "test_executing_unsupported_commands", env...)
+	redisC, redisPort := initRedisContainer()
+	defer clearRedisContainer(redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_executing_unsupported_commands.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_executing_unsupported_commands", env...)
 }
 ```
 

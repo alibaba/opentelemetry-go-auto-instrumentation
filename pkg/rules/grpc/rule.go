@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package rule
 
 import (
@@ -20,26 +21,15 @@ import (
 func init() {
 	//client
 	api.NewRule("google.golang.org/grpc", "DialContext", "", "grpcClientOnEnter", "grpcClientOnExit").
-		WithFileDeps("config.go").
-		WithFileDeps("grpc_data_type.go").
-		WithFileDeps("interceptorinfo.go").
-		WithFileDeps("metadata_supplier.go").
-		WithFileDeps("grpc_otel_instrumenter.go").
-		WithVersion("[1.44.0,1.65.1)").
+		WithFileDeps("grpc_config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
 		Register()
 
 	api.NewRule("google.golang.org/grpc", "NewClient", "", "grpcNewClientOnEnter", "grpcNewClientOnExit").
-		WithFileDeps("config.go").
-		WithFileDeps("grpc_data_type.go").
-		WithFileDeps("interceptorinfo.go").
-		WithFileDeps("metadata_supplier.go").
-		WithFileDeps("grpc_otel_instrumenter.go").
-		WithVersion("[1.63.0,1.65.1)").
+		WithFileDeps("grpc_config.go", "grpc_data_type.go", "interceptor_info.go", "metadata_supplier.go", "grpc_otel_instrumenter.go").
 		Register()
 
 	//server
 	api.NewRule("google.golang.org/grpc", "NewServer", "", "grpcServerOnEnter", "grpcServerOnExit").
-		WithVersion("[1.44.0,1.65.1)").
 		Register()
 
 }

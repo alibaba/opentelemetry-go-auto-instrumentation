@@ -89,5 +89,5 @@ func main() {
 		if stubs[1][3].Parent.TraceID().String() != stubs[1][2].SpanContext.TraceID().String() {
 			log.Fatal("span 3 should be child of span 2")
 		}
-	})
+	}, 2)
 }

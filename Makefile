@@ -48,32 +48,26 @@ all: clean darwin_amd64 linux_amd64 windows_amd64 darwin_arm64 linux_arm64
 .PHONY: build
 build:
 	go mod tidy
-	go mod vendor
 	$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BASE))
 
 darwin_amd64:
 	go mod tidy
-	go mod vendor
 	$(call BUILD_CMD,darwin,amd64,$(OUTPUT_DARWIN_AMD64))
 
 linux_amd64:
 	go mod tidy
-	go mod vendor
 	$(call BUILD_CMD,linux,amd64,$(OUTPUT_LINUX_AMD64))
 
 windows_amd64:
 	go mod tidy
-	go mod vendor
 	$(call BUILD_CMD,windows,amd64,$(OUTPUT_WINDOWS_AMD64))
 
 darwin_arm64:
 	go mod tidy
-	go mod vendor
 	$(call BUILD_CMD,darwin,arm64,$(OUTPUT_DARWIN_ARM64))
 
 linux_arm64:
 	go mod tidy
-	go mod vendor
 	$(call BUILD_CMD,linux,arm64,$(OUTPUT_LINUX_ARM64))
 
 clean:
