@@ -100,7 +100,7 @@ func ParseOptions() {
 			BuildArgs = append(BuildArgs[:i], BuildArgs[i+1:]...)
 		}
 	}
-	BuildArgs = append(BuildArgs, BuildModeMod)
+	BuildArgs = append([]string{BuildModeMod}, BuildArgs...)
 }
 
 func InitOptions() (err error) {
