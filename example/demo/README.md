@@ -45,7 +45,7 @@ docker build -t demo:test .
 docker push demo
 ```
 
-you can run application use our docker image.
+You can also run application using our docker image:
 
 ```shell
 registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:demo
@@ -53,13 +53,13 @@ registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:demo
 
 ### 5. run jaeger
 
-if you run on k8s
+If you run on k8s
 
 ```shell
 kubectl apply -f jaeger.yaml
 ```
 
-if you run on loacal machine:
+If you run on loacal machine:
 
 ```shell
 docker run --rm --name jaeger \
@@ -74,7 +74,7 @@ docker run --rm --name jaeger \
   -p 14268:14268 \
   -p 14269:14269 \
   -p 9411:9411 \
-  registry.cn-hangzhou.aliyuncs.com/private-mesh/hellob:jaeger
+  jaegertracing/all-in-one:1.53.0
 ```
 
 ### 6. run application
