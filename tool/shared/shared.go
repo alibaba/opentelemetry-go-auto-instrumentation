@@ -110,6 +110,16 @@ func GetGoModPath() (string, error) {
 	return path, nil
 }
 
+// GetGoModDir returns the directory of go.mod file.
+func GetGoModDir() (string, error) {
+	gomod, err := GetGoModPath()
+	if err != nil {
+		return "", fmt.Errorf("failed to get go.mod directory: %w", err)
+	}
+	projectDir := filepath.Dir(gomod)
+	return projectDir, nil
+}
+
 func IsGoFile(path string) bool {
 	return strings.HasSuffix(path, ".go")
 }

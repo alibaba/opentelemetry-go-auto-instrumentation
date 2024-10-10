@@ -667,8 +667,7 @@ func (dp *DepProcessor) setupDeps() error {
 		log.Printf("failed to pin opentelemetry-go-auto-instrumentation itself")
 	}
 
-	// Before generating compile commands, let's run go mod tidy first
-	// to fetch all dependencies
+	// Run go mod tidy first to fetch all dependencies
 	err = runModTidy()
 	if err != nil {
 		return fmt.Errorf("failed to run mod tidy: %w", err)

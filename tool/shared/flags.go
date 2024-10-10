@@ -20,13 +20,15 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 const (
-	TempBuildDir = ".otel-build"
-	BuildMode    = "-mod="
-	BuildModeMod = "-mod=mod"
+	TempBuildDir    = ".otel-build"
+	VendorDir       = "vendor"
+	BuildModeVendor = "-mod=vendor"
+	BuildModeMod    = "-mod=mod"
 )
 
 // InToolexec true means this tool is being invoked in the go build process.
@@ -86,21 +88,36 @@ func ParseOptions() {
 	// Any non-flag command-line arguments behind "--" separator will be treated
 	// as build arguments and transparently passed to the go build command.
 	BuildArgs = flag.Args()
+}
 
-	// We always use -mod=mod mode even if -mod=vendor is specified.
-	// -mod=vendor tells the go command to use the vendor directory.
-	// In this mode, the go command will not use the network or the module cache.
-	// -mod=mod tells the go command to ignore the vendor directory and to
-	// automatically update go.mod, for example, when an imported package is not
-	//  provided by any known module.
-	// -mod=readonly tells the go command to ignore the vendor directory and to
-	// report an error if go.mod needs to be updated.
-	for i := len(BuildArgs) - 1; i >= 0; i-- {
-		if strings.HasPrefix(BuildArgs[i], BuildMode) {
-			BuildArgs = append(BuildArgs[:i], BuildArgs[i+1:]...)
+func SetBuildMode() error {
+	// We can't brutely always add -mod=mod here because -mod may only be set to
+	// readonly or vendor when in workspace mode. We need to check if provided
+	// -mod is vendor or vendor directory exists, then we set -mod=mod mode.
+	// For all other cases, we just leave it as is.
+
+	// Check if -mod=vendor is set, replace it with -mod=mod
+	for i, arg := range BuildArgs {
+		if arg == BuildModeVendor {
+			BuildArgs[i] = BuildModeMod
+			return nil
 		}
 	}
-	BuildArgs = append([]string{BuildModeMod}, BuildArgs...)
+
+	// Check if vendor directory exists, explicitly set -mod=mod
+	gomodDir, err := GetGoModDir()
+	if err != nil {
+		return fmt.Errorf("failed to get go.mod directory: %w", err)
+	}
+	vendor := filepath.Join(gomodDir, VendorDir)
+	exist, err := util.PathExists(vendor)
+	if err != nil {
+		return fmt.Errorf("failed to check vendor directory: %w", err)
+	}
+	if exist {
+		BuildArgs = append([]string{BuildModeMod}, BuildArgs...)
+	}
+	return nil
 }
 
 func InitOptions() (err error) {
@@ -119,7 +136,7 @@ func InitOptions() (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to get working directory: %w", err)
 		}
-		// Otherwise, set environment variables for further go build with toolexec
+		// Otherwise, set environment variables for further go toolexec build
 		if err = os.Setenv(WorkingDirEnv, wd); err != nil {
 			return fmt.Errorf("failed to set working directory: %w", err)
 		}
@@ -132,7 +149,6 @@ func InitOptions() (err error) {
 		if err = os.Setenv(VerboseEnv, strconv.FormatBool(Verbose)); err != nil {
 			return fmt.Errorf("failed to set use rules flag: %w", err)
 		}
-
 	}
-	return nil
+	return SetBuildMode()
 }
