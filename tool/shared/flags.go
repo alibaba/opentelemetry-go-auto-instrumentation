@@ -92,6 +92,8 @@ func ParseOptions() {
 	// -mod=mod tells the go command to ignore the vendor directory and to
 	// automatically update go.mod, for example, when an imported package is not
 	//  provided by any known module.
+	// -mod=readonly tells the go command to ignore the vendor directory and to
+	// report an error if go.mod needs to be updated.
 	for i := len(BuildArgs) - 1; i >= 0; i-- {
 		if BuildArgs[i] == BuildMode {
 			BuildArgs = append(BuildArgs[:i], BuildArgs[i+1:]...)
