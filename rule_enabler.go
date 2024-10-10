@@ -23,6 +23,7 @@ import (
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/hertz"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http"
+	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kratos"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/logrus"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mongo"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mux"
