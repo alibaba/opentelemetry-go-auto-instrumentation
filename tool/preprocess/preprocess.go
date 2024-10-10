@@ -16,12 +16,13 @@ package preprocess
 
 import (
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
 	"time"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -117,15 +118,8 @@ func runBuildWithToolexec() (string, error) {
 		args = append(args, "-gcflags=all=-N -l")
 	}
 
-	// Avoid conflicts between args and flags with -- symbol
-	// According to go1.18.10/src/flag/flag.go#parseOne
-	if len(shared.BuildArgs) > 0 {
-		if shared.Restore {
-			return "", fmt.Errorf("args are not allowed when -restore presents")
-		}
-		// Append additional build arguments provided by the user
-		args = append(args, shared.BuildArgs...)
-	}
+	// Append additional build arguments provided by the user
+	args = append(args, shared.BuildArgs...)
 
 	if shared.Restore {
 		// Dont generate any compiled binary when using -restore

@@ -20,9 +20,16 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
-const TempBuildDir = ".otel-build"
+const (
+	TempBuildDir    = ".otel-build"
+	VendorDir       = "vendor"
+	BuildModeVendor = "-mod=vendor"
+	BuildModeMod    = "-mod=mod"
+)
 
 // InToolexec true means this tool is being invoked in the go build process.
 // This flag should not be set manually by users.
@@ -83,6 +90,36 @@ func ParseOptions() {
 	BuildArgs = flag.Args()
 }
 
+func SetBuildMode() error {
+	// We can't brutely always add -mod=mod here because -mod may only be set to
+	// readonly or vendor when in workspace mode. We need to check if provided
+	// -mod is vendor or vendor directory exists, then we set -mod=mod mode.
+	// For all other cases, we just leave it as is.
+
+	// Check if -mod=vendor is set, replace it with -mod=mod
+	for i, arg := range BuildArgs {
+		if arg == BuildModeVendor {
+			BuildArgs[i] = BuildModeMod
+			return nil
+		}
+	}
+
+	// Check if vendor directory exists, explicitly set -mod=mod
+	gomodDir, err := GetGoModDir()
+	if err != nil {
+		return fmt.Errorf("failed to get go.mod directory: %w", err)
+	}
+	vendor := filepath.Join(gomodDir, VendorDir)
+	exist, err := util.PathExists(vendor)
+	if err != nil {
+		return fmt.Errorf("failed to check vendor directory: %w", err)
+	}
+	if exist {
+		BuildArgs = append([]string{BuildModeMod}, BuildArgs...)
+	}
+	return nil
+}
+
 func InitOptions() (err error) {
 	if InToolexec {
 		// Inherit options from environment variables
@@ -99,7 +136,7 @@ func InitOptions() (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to get working directory: %w", err)
 		}
-		// Otherwise, set environment variables for further go build with toolexec
+		// Otherwise, set environment variables for further go toolexec build
 		if err = os.Setenv(WorkingDirEnv, wd); err != nil {
 			return fmt.Errorf("failed to set working directory: %w", err)
 		}
@@ -112,7 +149,6 @@ func InitOptions() (err error) {
 		if err = os.Setenv(VerboseEnv, strconv.FormatBool(Verbose)); err != nil {
 			return fmt.Errorf("failed to set use rules flag: %w", err)
 		}
-
 	}
-	return nil
+	return SetBuildMode()
 }
