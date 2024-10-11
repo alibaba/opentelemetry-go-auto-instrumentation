@@ -15,7 +15,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
@@ -23,10 +22,6 @@ import (
 	"strings"
 	"time"
 )
-
-func init() {
-	flag.StringVar(&flagconf, "conf", "pkg/configs", "config path, eg: -conf config.yaml")
-}
 
 func main() {
 	go func() {
