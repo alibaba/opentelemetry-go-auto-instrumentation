@@ -353,6 +353,12 @@ func ParseAstFromSnippet(codeSnippnet string) ([]dst.Stmt, error) {
 // ParseAstFromSource parses the AST from complete source code.
 func ParseAstFromSource(source string) (*dst.File, error) {
 	dec := decorator.NewDecorator(token.NewFileSet())
+	if dec == nil {
+		panic("[ParseAstFromSource] get nil decorator")
+	}
+	if source == "" {
+		panic("[ParseAstFromSource] get empty source")
+	}
 	dstRoot, err := dec.Parse(source)
 	if err != nil {
 		return nil, err
