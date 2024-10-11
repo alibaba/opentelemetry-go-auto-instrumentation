@@ -11,24 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package biz
 
-import (
-	"context"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
-	kgrpc "google.golang.org/grpc"
-)
+import "github.com/google/wire"
 
-func KratosDialInsecureOnEnter(call grpc.CallContext, ctx context.Context, opts ...grpc.ClientOption) {
-	nopts := []grpc.ClientOption{
-		grpc.WithMiddleware(ClientTracingMiddleWare()),
-	}
-	nopts = append(nopts, opts...)
-	call.SetParam(1, nopts)
-}
-
-func KratosDialInsecureOnExit(call grpc.CallContext, conn *kgrpc.ClientConn, err error) {
-	return
-}
+// ProviderSet is biz providers.
+var ProviderSet = wire.NewSet(NewGreeterUsecase)

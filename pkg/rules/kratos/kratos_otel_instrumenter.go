@@ -16,233 +16,70 @@
 package rule
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
+	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
-	"go.opentelemetry.io/otel/propagation"
-	"strconv"
-	"strings"
+	"go.opentelemetry.io/otel/attribute"
 )
 
-type kratosClientAttrsGetter struct {
+const kratos_protocol_type = "kratos.protocol.type"
+const kratos_service_name = "kratos.service.name"
+const kratos_service_id = "kratos.service.id"
+const kratos_service_version = "kratos.service.version"
+const kratos_service_meta = "kratos.service.meta"
+const kratos_service_endpoint = "kratos.service.endpoint"
+
+type kratosExperimentalAttributeExtractor struct {
 }
 
-func (n kratosClientAttrsGetter) GetComponentName(request kratosRequest) string {
-	return request.componentName
-}
-
-func (n kratosClientAttrsGetter) GetErrorType(request kratosRequest, response kratosResponse, err error) string {
-	return ""
-}
-
-func (n kratosClientAttrsGetter) GetNetworkType(request kratosRequest, response kratosResponse) string {
-	return "ipv4"
-}
-
-func (n kratosClientAttrsGetter) GetNetworkTransport(request kratosRequest, response kratosResponse) string {
-	return "tcp"
-}
-
-func (n kratosClientAttrsGetter) GetNetworkProtocolName(request kratosRequest, response kratosResponse) string {
-	if request.httpMethod != "" {
-		return "http"
-	} else {
-		return "grpc"
+func (k kratosExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kratosRequest) []attribute.KeyValue {
+	attributes = append(attributes, attribute.KeyValue{
+		Key:   kratos_protocol_type,
+		Value: attribute.StringValue(request.protocolType),
+	}, attribute.KeyValue{
+		Key:   kratos_service_name,
+		Value: attribute.StringValue(request.serviceName),
+	}, attribute.KeyValue{
+		Key:   kratos_service_id,
+		Value: attribute.StringValue(request.serviceId),
+	}, attribute.KeyValue{
+		Key:   kratos_service_version,
+		Value: attribute.StringValue(request.serviceVersion),
+	}, attribute.KeyValue{
+		Key:   kratos_service_endpoint,
+		Value: attribute.StringSliceValue(request.serviceEndpoint),
+	})
+	if request.serviceMeta != nil {
+		for k, v := range request.serviceMeta {
+			attributes = append(attributes, attribute.KeyValue{
+				Key:   attribute.Key(kratos_service_meta + "." + k),
+				Value: attribute.StringValue(v),
+			})
+		}
 	}
+	return attributes
 }
 
-func (n kratosClientAttrsGetter) GetNetworkProtocolVersion(request kratosRequest, response kratosResponse) string {
-	return ""
+func (k kratosExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request kratosRequest, response any, err error) []attribute.KeyValue {
+	return attributes
 }
 
-func (n kratosClientAttrsGetter) GetNetworkLocalInetAddress(request kratosRequest, response kratosResponse) string {
-	return ""
+type kratosExperimentalSpanNameExtractor struct {
 }
 
-func (n kratosClientAttrsGetter) GetNetworkLocalPort(request kratosRequest, response kratosResponse) int {
-	return 0
-}
-
-func (n kratosClientAttrsGetter) GetNetworkPeerInetAddress(request kratosRequest, response kratosResponse) string {
-	return request.addr
-}
-
-func (n kratosClientAttrsGetter) GetNetworkPeerPort(request kratosRequest, response kratosResponse) int {
-	ports := strings.Split(request.addr, ":")
-	if len(ports) != 2 {
-		return 0
+func (k kratosExperimentalSpanNameExtractor) Extract(request kratosRequest) string {
+	if request.protocolType == "grpc" {
+		return "kratos.grpc." + request.serviceName
 	}
-	port, err := strconv.Atoi(ports[1])
-	if err != nil {
-		return 0
+	if request.protocolType == "http" {
+		return "kratos.http." + request.serviceName
 	}
-	return port
+	return "kratos.unknown"
 }
 
-func (n kratosClientAttrsGetter) GetRequestMethod(request kratosRequest) string {
-	return request.httpMethod
-}
-
-func (n kratosClientAttrsGetter) GetSpanName(request kratosRequest) string {
-	return request.method
-}
-
-func (n kratosClientAttrsGetter) GetHttpRequestHeader(request kratosRequest, name string) []string {
-	return []string{}
-}
-
-func (n kratosClientAttrsGetter) GetHttpResponseHeader(request kratosRequest, response kratosResponse, name string) []string {
-	return []string{}
-}
-
-func (n kratosClientAttrsGetter) GetHttpResponseStatusCode(request kratosRequest, response kratosResponse, err error) int {
-	return response.statusCode
-}
-
-func (n kratosClientAttrsGetter) GetHttpMethod(request kratosRequest) string {
-	return request.httpMethod
-}
-
-func (n kratosClientAttrsGetter) GetUrlFull(request kratosRequest) string {
-	return ""
-}
-
-func (n kratosClientAttrsGetter) GetServerAddress(request kratosRequest) string {
-	return request.addr
-}
-
-type kratosServerAttrsGetter struct {
-}
-
-func (n kratosServerAttrsGetter) GetComponentName(request kratosRequest) string {
-	return request.componentName
-}
-
-func (n kratosServerAttrsGetter) GetSpanName(request kratosRequest) string {
-	return request.method
-}
-
-func (n kratosServerAttrsGetter) GetHttpResponseStatusCode(request kratosRequest, response kratosResponse, err error) int {
-	return response.statusCode
-}
-
-func (n kratosServerAttrsGetter) GetHttpRequestHeader(request kratosRequest, name string) []string {
-	return []string{}
-}
-
-func (n kratosServerAttrsGetter) GetHttpResponseHeader(request kratosRequest, response kratosResponse, name string) []string {
-	return []string{}
-}
-
-func (n kratosServerAttrsGetter) GetHttpMethod(request kratosRequest) string {
-	return request.httpMethod
-}
-
-func (n kratosServerAttrsGetter) GetErrorType(request kratosRequest, response kratosResponse, err error) string {
-	return ""
-}
-
-func (n kratosServerAttrsGetter) GetNetworkType(request kratosRequest, response kratosResponse) string {
-	return "ipv4"
-}
-
-func (n kratosServerAttrsGetter) GetNetworkTransport(request kratosRequest, response kratosResponse) string {
-	return "tcp"
-}
-
-func (n kratosServerAttrsGetter) GetNetworkProtocolName(request kratosRequest, response kratosResponse) string {
-	if request.httpMethod != "" {
-		return "http"
-	} else {
-		return "grpc"
-	}
-}
-
-func (n kratosServerAttrsGetter) GetNetworkProtocolVersion(request kratosRequest, response kratosResponse) string {
-	return ""
-}
-
-func (n kratosServerAttrsGetter) GetNetworkLocalInetAddress(request kratosRequest, response kratosResponse) string {
-	return ""
-}
-
-func (n kratosServerAttrsGetter) GetNetworkLocalPort(request kratosRequest, response kratosResponse) int {
-	return 0
-}
-
-func (n kratosServerAttrsGetter) GetRequestMethod(request kratosRequest) string {
-	return request.httpMethod
-}
-
-func (n kratosServerAttrsGetter) GetNetworkPeerInetAddress(request kratosRequest, response kratosResponse) string {
-	return request.addr
-}
-
-func (n kratosServerAttrsGetter) GetUrlScheme(request kratosRequest) string {
-	return ""
-}
-
-func (n kratosServerAttrsGetter) GetUrlPath(request kratosRequest) string {
-	return request.method
-}
-
-func (n kratosServerAttrsGetter) GetHttpRoute(request kratosRequest) string {
-	return ""
-}
-
-func (n kratosServerAttrsGetter) GetUrlQuery(request kratosRequest) string {
-	return ""
-}
-
-func (n kratosServerAttrsGetter) GetNetworkPeerPort(request kratosRequest, response kratosResponse) int {
-	ports := strings.Split(request.addr, ":")
-	if len(ports) != 2 {
-		return 0
-	}
-	port, err := strconv.Atoi(ports[1])
-	if err != nil {
-		return 0
-	}
-	return port
-}
-
-type kratosClientSpanNameExtractor struct {
-}
-
-func (n kratosClientSpanNameExtractor) Extract(request kratosRequest) string {
-	return request.method
-}
-
-type kratosServerSpanNameExtractor struct {
-}
-
-func (n kratosServerSpanNameExtractor) Extract(request kratosRequest) string {
-	return request.method
-}
-
-func BuildKratosClientInstrumenter() *instrumenter.PropagatingToDownstreamInstrumenter[kratosRequest, kratosResponse] {
-	builder := instrumenter.Builder[kratosRequest, kratosResponse]{}
-	clientGetter := kratosClientAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[kratosRequest, kratosResponse, kratosClientAttrsGetter, kratosClientAttrsGetter]{HttpGetter: clientGetter, NetGetter: clientGetter, Converter: &http.ClientHttpStatusCodeConverter{}}
-	networkExtractor := net.NetworkAttrsExtractor[kratosRequest, kratosResponse, kratosClientAttrsGetter]{Getter: clientGetter}
-	return builder.Init().SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[kratosRequest, kratosResponse]{Getter: clientGetter}).
-		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[kratosRequest]{}).
-		AddAttributesExtractor(&http.HttpClientAttrsExtractor[kratosRequest, kratosResponse, kratosClientAttrsGetter, kratosClientAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).
-		BuildPropagatingToDownstreamInstrumenter(func(n kratosRequest) propagation.TextMapCarrier {
-			return n.header
-		}, kratosPropagators)
-}
-
-func BuildKratosServerInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[kratosRequest, kratosResponse] {
-	builder := instrumenter.Builder[kratosRequest, kratosResponse]{}
-	serverGetter := kratosServerAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[kratosRequest, kratosResponse, kratosServerAttrsGetter, kratosServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter, Converter: &http.ServerHttpStatusCodeConverter{}}
-	networkExtractor := net.NetworkAttrsExtractor[kratosRequest, kratosResponse, kratosServerAttrsGetter]{Getter: serverGetter}
-	urlExtractor := net.UrlAttrsExtractor[kratosRequest, kratosResponse, kratosServerAttrsGetter]{Getter: serverGetter}
-	return builder.Init().SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[kratosRequest, kratosResponse]{Getter: serverGetter}).
-		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[kratosRequest]{}).
-		AddAttributesExtractor(&http.HttpServerAttrsExtractor[kratosRequest, kratosResponse, kratosServerAttrsGetter, kratosServerAttrsGetter, kratosServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).
-		BuildPropagatingFromUpstreamInstrumenter(func(n kratosRequest) propagation.TextMapCarrier {
-			return n.header
-		}, kratosPropagators)
+func BuildKratosInternalInstrumenter() instrumenter.Instrumenter[kratosRequest, any] {
+	builder := instrumenter.Builder[kratosRequest, any]{}
+	return builder.Init().SetSpanNameExtractor(&kratosExperimentalSpanNameExtractor{}).
+		SetSpanKindExtractor(&instrumenter.AlwaysInternalExtractor[kratosRequest]{}).
+		AddAttributesExtractor(&kratosExperimentalAttributeExtractor{}).
+		BuildInstrumenter()
 }

@@ -17,19 +17,30 @@ package rule
 
 import (
 	"context"
-	"github.com/go-kratos/kratos/v2/errors"
+	kt "github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	transhttp "github.com/go-kratos/kratos/v2/transport/http"
+	"os"
 )
 
+const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES = "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES"
+
+var kratosInternalInstrument = BuildKratosInternalInstrumenter()
+
 func KratosNewHTTPServiceOnEnter(call transhttp.CallContext, opts ...transhttp.ServerOption) {
+	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES) != "true" {
+		return
+	}
 	opts = append(opts, AddHTTPMiddleware(ServerTracingMiddleWare()))
 	call.SetParam(0, opts)
 }
 
 func KratosNewGRPCServiceOnEnter(call grpc.CallContext, opts ...grpc.ServerOption) {
+	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES) != "true" {
+		return
+	}
 	opts = append(opts, AddGRPCMiddleware(ServerTracingMiddleWare()))
 	call.SetParam(0, opts)
 }
@@ -47,57 +58,43 @@ func AddGRPCMiddleware(m middleware.Middleware) grpc.ServerOption {
 	}
 }
 
-func KratosGRPCWithMiddlewareOnEnter(call grpc.CallContext, m ...middleware.Middleware) {
-	m = append(m, ClientTracingMiddleWare())
-	call.SetParam(0, m)
-}
-
 func ServerTracingMiddleWare() middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
 			if tr, ok := transport.FromServerContext(ctx); ok {
+				serviceName, serviceId, serviceVersion := "", "", ""
+				serviceEndpoint := make([]string, 0, 0)
+				serviceMeta := make(map[string]string)
+				app, hasApp := kt.FromContext(ctx)
+				if hasApp {
+					serviceName, serviceId, serviceVersion, serviceEndpoint = app.Name(), app.ID(), app.Version(), app.Endpoint()
+					serviceMeta = app.Metadata()
+				}
 				var (
 					request kratosRequest
 					sCtx    context.Context
 				)
+				request = kratosRequest{
+					serviceId:       serviceId,
+					serviceName:     serviceName,
+					serviceVersion:  serviceVersion,
+					serviceEndpoint: serviceEndpoint,
+					serviceMeta:     serviceMeta,
+				}
 				switch tr.Kind() {
 				case transport.KindGRPC:
-					remote, _ := otelParseTarget(tr.Endpoint())
-					request = kratosRequest{
-						method:        tr.Operation(),
-						componentName: "kratos-grpc-server",
-						header:        tr.RequestHeader(),
-						addr:          remote,
-					}
-					sCtx = kratosServerInstrument.Start(ctx, request)
+					request.protocolType = "grpc"
+					sCtx = kratosInternalInstrument.Start(ctx, request)
 				case transport.KindHTTP:
-					if ht, ok := tr.(transhttp.Transporter); ok {
-						remote := ht.Request().Host
-						request = kratosRequest{
-							method:        ht.Request().URL.Path,
-							componentName: "kratos-http-server",
-							header:        tr.RequestHeader(),
-							addr:          remote,
-							httpMethod:    ht.Request().Method,
-						}
-						sCtx = kratosServerInstrument.Start(ctx, request)
-					}
+					request.protocolType = "http"
+					sCtx = kratosInternalInstrument.Start(ctx, request)
 				}
 				defer func() {
 					if err != nil {
-						var code int
-						if e := errors.FromError(err); e != nil {
-							code = int(e.Code)
-						}
-						kratosServerInstrument.End(sCtx, request, kratosResponse{
-							statusCode: code,
-						}, err)
+						kratosInternalInstrument.End(sCtx, request, nil, err)
 					} else {
-						kratosServerInstrument.End(sCtx, request, kratosResponse{
-							statusCode: 200,
-						}, err)
+						kratosInternalInstrument.End(sCtx, request, nil, err)
 					}
-
 				}()
 
 			}
