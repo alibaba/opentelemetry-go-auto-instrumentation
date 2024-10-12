@@ -375,7 +375,11 @@ func (dp *DepProcessor) initializeRules(pkgName, target string) (err error) {
 					}
 					var aliasPkg string
 					if !addedImport {
-						aliasPkg = bundle.PackageName + util.RandomString(3)
+						if bundle.PackageName == OtelPrintStackImportPath {
+							aliasPkg = OtelPrintStackPkgAlias
+						} else {
+							aliasPkg = bundle.PackageName + util.RandomString(3)
+						}
 						imports[bundle.ImportPath] = aliasPkg
 						addedImport = true
 					} else {

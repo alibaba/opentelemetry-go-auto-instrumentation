@@ -12,15 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mux
+package main
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
+	"time"
 )
 
-func init() {
-	api.NewRule("github.com/gorilla/mux", "ServeHTTP", "*Router", "muxServerOnEnter", "muxServerOnExit").
-		WithVersion("[1.3.0,1.8.2)").
-		WithFileDeps("mux_data_type.go", "mux_otel_instrumenter.go").
-		Register()
+func hello(w http.ResponseWriter, r *http.Request) {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	logger.Info("slog logger")
+	log.Printf("go log")
+	w.Write([]byte("hello world"))
+}
+
+func main() {
+	http.HandleFunc("/hello", hello)
+	go func() {
+		http.ListenAndServe(":8080", nil)
+	}()
+	time.Sleep(5 * time.Second)
+	client := http.Client{}
+	client.Get("http://localhost:8080/hello")
 }

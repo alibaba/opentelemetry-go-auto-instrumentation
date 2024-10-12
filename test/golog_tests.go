@@ -12,15 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mux
+package test
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+	"bufio"
+	"strings"
+	"testing"
 )
 
 func init() {
-	api.NewRule("github.com/gorilla/mux", "ServeHTTP", "*Router", "muxServerOnEnter", "muxServerOnExit").
-		WithVersion("[1.3.0,1.8.2)").
-		WithFileDeps("mux_data_type.go", "mux_otel_instrumenter.go").
-		Register()
+	TestCases = append(TestCases,
+		NewGeneralTestCase("golog-test", "golog", "", "", "1.18", "", TestGoLog),
+	)
+}
+
+func TestGoLog(t *testing.T, env ...string) {
+	UseApp("golog")
+	RunInstrument(t, "-debuglog", "--", "test_glog.go")
+	_, stderr := RunApp(t, "test_glog", env...)
+	reader := strings.NewReader(stderr)
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		ExpectContains(t, line, "trace_id")
+		ExpectContains(t, line, "span_id")
+	}
 }

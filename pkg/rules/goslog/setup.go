@@ -12,15 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mux
+//go:build ignore
+
+package golog
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+	"context"
+	"go.opentelemetry.io/otel/sdk/trace"
+	"log/slog"
 )
 
-func init() {
-	api.NewRule("github.com/gorilla/mux", "ServeHTTP", "*Router", "muxServerOnEnter", "muxServerOnExit").
-		WithVersion("[1.3.0,1.8.2)").
-		WithFileDeps("mux_data_type.go", "mux_otel_instrumenter.go").
-		Register()
+func goSlogWriteOnEnter(call slog.CallContext, ce *slog.Logger, ctx context.Context, level slog.Level, msg string, args ...any) {
+	traceId, spanId := trace.GetTraceAndSpanId()
+	if traceId != "" {
+		msg = msg + " trace_id=" + traceId
+	}
+	if spanId != "" {
+		msg = msg + " span_id=" + spanId
+	}
+	call.SetParam(3, msg)
+	return
 }

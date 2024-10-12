@@ -11,28 +11,34 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 //go:build ignore
 
-package zap
+package golog
 
 import (
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"log"
+	"strings"
 )
 
-func zapLogWriteOnEnter(call zapcore.CallContext, ce *zapcore.CheckedEntry, fields ...zap.Field) {
-	var fieldsTemp []zap.Field
+func goLogWriteOnEnter(call log.CallContext, ce *log.Logger, pc uintptr, calldepth int, appendOutput func([]byte) []byte) {
 	traceId, spanId := trace.GetTraceAndSpanId()
-	if traceId != "" {
-		fieldsTemp = append(fieldsTemp, zap.String("trace_id", traceId))
+	newAppendOutput := func(bytes []byte) []byte {
+		sb := strings.Builder{}
+		if traceId != "" {
+			sb.WriteString(" trace_id=")
+			sb.WriteString(traceId)
+		}
+		if spanId != "" {
+			sb.WriteString(" span_id=")
+			sb.WriteString(spanId)
+		}
+		bytes = append(bytes, []byte(sb.String())...)
+		bytes = appendOutput(bytes)
+		sb.Reset()
+		return bytes
 	}
-	if spanId != "" {
-		fieldsTemp = append(fieldsTemp, zap.String("span_id", spanId))
-	}
-	if fields == nil {
-		fields = fieldsTemp
-	}
-	call.SetParam(1, fields)
+	call.SetParam(3, newAppendOutput)
 	return
 }
