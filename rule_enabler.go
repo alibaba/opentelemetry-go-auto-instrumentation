@@ -17,6 +17,7 @@ package main
 import (
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/echo"
+	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fasthttp"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gin"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/golog"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredis"
