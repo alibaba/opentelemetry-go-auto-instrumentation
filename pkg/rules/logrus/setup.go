@@ -13,7 +13,7 @@
 // limitations under the License.
 //go:build ignore
 
-package rule
+package logrus
 
 import (
 	"github.com/sirupsen/logrus"

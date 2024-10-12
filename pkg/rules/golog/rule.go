@@ -12,15 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mux
+package golog
 
-import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
-)
+import "github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 
 func init() {
-	api.NewRule("github.com/gorilla/mux", "ServeHTTP", "*Router", "muxServerOnEnter", "muxServerOnExit").
-		WithVersion("[1.3.0,1.8.2)").
-		WithFileDeps("mux_data_type.go", "mux_otel_instrumenter.go").
+	api.NewRule("log", "output", "*Logger", "goLogWriteOnEnter", "").
 		Register()
 }

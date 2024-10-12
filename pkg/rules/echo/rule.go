@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rule
+package echo
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
