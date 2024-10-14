@@ -57,7 +57,17 @@ func TestShadower(t *testing.T) {
 	}
 
 	n := NoopAttrsShadower{}
-	num, newAttrs := n.Shadow(originAttrs)
+	num, newAttrs := n.ShadowStartAttributes(originAttrs)
+	if num != len(originAttrs) {
+		log.Fatal("origin attrs length is not equal to new attrs length")
+	}
+	for i := 0; i < num; i++ {
+		if newAttrs[i].Value != originAttrs[i].Value {
+			log.Fatal("origin attrs value is not equal to new attrs value")
+		}
+	}
+
+	num, newAttrs = n.ShadowEndAttributes(originAttrs)
 	if num != len(originAttrs) {
 		log.Fatal("origin attrs length is not equal to new attrs length")
 	}
