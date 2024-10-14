@@ -70,3 +70,9 @@ func TestBuildHelloworldWithVendor2(t *testing.T) {
 	util.RunCmd("go", "mod", "vendor")
 	RunInstrument(t, "-debuglog", "--", "-mod=vendor")
 }
+
+func TestBuildHelloworldWithVendor3(t *testing.T) {
+	UseApp(HelloworldAppName)
+	util.RunCmd("go", "mod", "vendor")
+	RunInstrument(t, "-debuglog", "--", "-mod", "vendor")
+}
