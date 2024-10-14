@@ -29,18 +29,23 @@ type OperationListener interface {
 }
 
 type AttrsShadower interface {
-	Shadow(attrs []attribute.KeyValue) (int, []attribute.KeyValue)
+	ShadowStartAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue)
+	ShadowEndAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue)
 }
 
 type NoopAttrsShadower struct{}
 
-func (n NoopAttrsShadower) Shadow(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
+func (n NoopAttrsShadower) ShadowStartAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
+	return len(attrs), attrs
+}
+
+func (n NoopAttrsShadower) ShadowEndAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
 	return len(attrs), attrs
 }
 
 type OperationListenerWrapper struct {
-	listener       OperationListener
-	attrCustomizer AttrsShadower
+	listener     OperationListener
+	attrShadower AttrsShadower
 }
 
 func (w *OperationListenerWrapper) OnBeforeStart(parentContext context.Context, startTimestamp time.Time) context.Context {
@@ -48,8 +53,8 @@ func (w *OperationListenerWrapper) OnBeforeStart(parentContext context.Context, 
 }
 
 func (w *OperationListenerWrapper) OnBeforeEnd(context context.Context, startAttributes []attribute.KeyValue, startTimestamp time.Time) context.Context {
-	if w.attrCustomizer != nil {
-		validNum, startAttributes := w.attrCustomizer.Shadow(startAttributes)
+	if w.attrShadower != nil {
+		validNum, startAttributes := w.attrShadower.ShadowStartAttributes(startAttributes)
 		return w.listener.OnBeforeEnd(context, startAttributes[:validNum], startTimestamp)
 	} else {
 		return w.listener.OnBeforeEnd(context, startAttributes, startTimestamp)
@@ -61,8 +66,8 @@ func (w *OperationListenerWrapper) OnAfterStart(context context.Context, endTime
 }
 
 func (w *OperationListenerWrapper) OnAfterEnd(context context.Context, endAttributes []attribute.KeyValue, endTimestamp time.Time) {
-	if w.attrCustomizer != nil {
-		validNum, endAttributes := w.attrCustomizer.Shadow(endAttributes)
+	if w.attrShadower != nil {
+		validNum, endAttributes := w.attrShadower.ShadowEndAttributes(endAttributes)
 		w.listener.OnAfterEnd(context, endAttributes[:validNum], endTimestamp)
 	} else {
 		w.listener.OnAfterEnd(context, endAttributes, endTimestamp)

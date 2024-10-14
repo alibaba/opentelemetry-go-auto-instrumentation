@@ -19,7 +19,6 @@ import (
 )
 
 func init() {
-
 	//client
 	api.NewRule("net/http", "RoundTrip", "*Transport", "clientOnEnter", "clientOnExit").
 		WithFileDeps("net_http_data_type.go").

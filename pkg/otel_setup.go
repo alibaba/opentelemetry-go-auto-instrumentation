@@ -18,6 +18,7 @@ package pkg
 import (
 	"context"
 	"errors"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
@@ -128,6 +129,7 @@ func initRuntimeMetrics() error {
 		return errors.New("No MeterProvider is provided")
 	}
 	otel.SetMeterProvider(mp)
+	meter.SetMeter(mp.Meter("opentelemetry-global-meter"))
 	// DefaultMinimumReadMemStatsInterval is 15 second
 	return runtime.Start(runtime.WithMeterProvider(mp))
 }

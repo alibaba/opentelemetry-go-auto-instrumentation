@@ -15,19 +15,13 @@
 package instrumenter
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // TODO: add route updater here, now we do not support such controller layer to update route.
-type OperationMetrics interface {
-	Create(meter metric.Meter) *OperationListenerWrapper
-	Match(meta meter.MeterMeta) bool
-}
 
 type InstrumentEnabler interface {
 	IsEnabled() bool
@@ -51,7 +45,6 @@ type Builder[REQUEST any, RESPONSE any] struct {
 	SpanStatusExtractor  SpanStatusExtractor[REQUEST, RESPONSE]
 	AttributesExtractors []AttributesExtractor[REQUEST, RESPONSE]
 	OperationListeners   []*OperationListenerWrapper
-	OperationMetrics     []OperationMetrics
 	ContextCustomizers   []ContextCustomizer[REQUEST]
 	SpanSuppressor       SpanSuppressor
 	Tracer               trace.Tracer
@@ -61,7 +54,6 @@ type Builder[REQUEST any, RESPONSE any] struct {
 func (b *Builder[REQUEST, RESPONSE]) Init() *Builder[REQUEST, RESPONSE] {
 	b.Enabler = &defaultInstrumentEnabler{}
 	b.AttributesExtractors = make([]AttributesExtractor[REQUEST, RESPONSE], 0)
-	b.OperationListeners = b.buildOperationListeners()
 	b.ContextCustomizers = make([]ContextCustomizer[REQUEST], 0)
 	b.SpanSuppressor = b.buildSpanSuppressor()
 	b.SpanStatusExtractor = &defaultSpanStatusExtractor[REQUEST, RESPONSE]{}
@@ -117,7 +109,6 @@ func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *InternalInstrumenter[R
 		spanStatusExtractor:  b.SpanStatusExtractor,
 		attributesExtractors: b.AttributesExtractors,
 		operationListeners:   b.OperationListeners,
-		operationMetrics:     b.OperationMetrics,
 		contextCustomizers:   b.ContextCustomizers,
 		spanSuppressor:       b.SpanSuppressor,
 		tracer:               b.Tracer,
@@ -134,7 +125,6 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 			spanStatusExtractor:  b.SpanStatusExtractor,
 			attributesExtractors: b.AttributesExtractors,
 			operationListeners:   b.OperationListeners,
-			operationMetrics:     b.OperationMetrics,
 			contextCustomizers:   b.ContextCustomizers,
 			spanSuppressor:       b.SpanSuppressor,
 			tracer:               b.Tracer,
@@ -154,7 +144,6 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenterWit
 			spanStatusExtractor:  b.SpanStatusExtractor,
 			attributesExtractors: b.AttributesExtractors,
 			operationListeners:   b.OperationListeners,
-			operationMetrics:     b.OperationMetrics,
 			contextCustomizers:   b.ContextCustomizers,
 			spanSuppressor:       b.SpanSuppressor,
 			tracer:               b.Tracer,
@@ -174,7 +163,6 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenterWit
 			spanStatusExtractor:  b.SpanStatusExtractor,
 			attributesExtractors: b.AttributesExtractors,
 			operationListeners:   b.OperationListeners,
-			operationMetrics:     b.OperationMetrics,
 			contextCustomizers:   b.ContextCustomizers,
 			spanSuppressor:       b.SpanSuppressor,
 			tracer:               b.Tracer,
@@ -194,7 +182,6 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(ca
 			spanStatusExtractor:  b.SpanStatusExtractor,
 			attributesExtractors: b.AttributesExtractors,
 			operationListeners:   b.OperationListeners,
-			operationMetrics:     b.OperationMetrics,
 			contextCustomizers:   b.ContextCustomizers,
 			spanSuppressor:       b.SpanSuppressor,
 			tracer:               b.Tracer,
@@ -203,28 +190,6 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(ca
 		carrierGetter: carrierGetter,
 		prop:          prop,
 	}
-}
-
-func (b *Builder[REQUEST, RESPONSE]) buildOperationListeners() []*OperationListenerWrapper {
-	if len(b.OperationMetrics) == 0 {
-		return make([]*OperationListenerWrapper, 0)
-	}
-	meterProvider := meter.GetMeterProvider()
-	if meterProvider == nil {
-		return make([]*OperationListenerWrapper, 0)
-	}
-
-	listeners := make([]*OperationListenerWrapper, 0, len(b.OperationMetrics)+len(b.OperationListeners))
-
-	meters := meterProvider.GetMeters()
-	for _, m := range meters {
-		for _, factory := range b.OperationMetrics {
-			if factory.Match(m.Metas()) {
-				listeners = append(listeners, factory.Create(m.Meter()))
-			}
-		}
-	}
-	return listeners
 }
 
 // TODO: create suppressor by otel.instrumentation.experimental.span-suppression-strategy
