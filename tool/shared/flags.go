@@ -97,10 +97,23 @@ func SetBuildMode() error {
 	// For all other cases, we just leave it as is.
 
 	// Check if -mod=vendor is set, replace it with -mod=mod
+	const buildModeVendor = "-mod=vendor"
+	const buildModePrefix = "-mod"
 	for i, arg := range BuildArgs {
-		if arg == BuildModeVendor {
+		// -mod=vendor?
+		if arg == buildModeVendor {
 			BuildArgs[i] = BuildModeMod
 			return nil
+		}
+		// -mod vendor?
+		if arg == buildModePrefix {
+			if len(BuildArgs) > i+1 {
+				arg1 := BuildArgs[i+1]
+				if arg1 == "vendor" {
+					BuildArgs[i+1] = "mod"
+					return nil
+				}
+			}
 		}
 	}
 
