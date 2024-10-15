@@ -1,11 +1,15 @@
 .idea
 .vscode
+
+**/go.sum
+**/vendor
+
 otel-go-auto-instrumentation
 otelbuild
 otelbuild-*
 *.log
 .otel-build
-vendor
+
 test/errors-test/errors-test
 test/helloworld/helloworld
 test/httpclient/httpclient
