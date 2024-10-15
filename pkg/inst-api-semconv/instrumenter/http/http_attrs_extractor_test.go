@@ -138,6 +138,10 @@ func (h httpClientAttrsGetter) GetServerAddress(request testRequest) string {
 	return "server-address"
 }
 
+func (h httpClientAttrsGetter) GetServerPort(request testRequest) int {
+	return 8080
+}
+
 func (h httpServerAttrsGetter) GetRequestMethod(request testRequest) string {
 	return "GET"
 }
