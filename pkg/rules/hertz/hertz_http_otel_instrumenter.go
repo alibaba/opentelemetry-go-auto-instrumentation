@@ -105,15 +105,15 @@ func (h hertzHttpClientAttrsGetter) GetUrlFull(request *protocol.Request) string
 }
 
 func (h hertzHttpClientAttrsGetter) GetServerAddress(request *protocol.Request) string {
+	return string(request.Host())
+}
+
+func (h hertzHttpClientAttrsGetter) GetServerPort(request *protocol.Request) int {
 	u, err := url.Parse(GetRequest(request).URI().String())
 	if err != nil {
 		return 0
 	}
 	return u.Port()
-}
-
-func (h hertzHttpClientAttrsGetter) GetServerPort(request *protocol.Request) int {
-	return string(request.Host())
 }
 
 type hertzHttpServerAttrsGetter struct {
