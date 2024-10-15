@@ -49,6 +49,6 @@ func main() {
 		// TODO: we should update route in mux
 		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:8080/test/1", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:8080", 200, 0, 8080)
 		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /test/1", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "http", "/test/1", "", "/test/1", 200)
-		verifier.VerifyHttpServerAttributes(stubs[0][2], "GET /test/1", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "http", "/test/1", "", "/test/1", 200)
+		verifier.VerifyHttpServerAttributes(stubs[0][2], "GET /test/1", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "", "/test/1", "", "/test/1", 200)
 	}, 1)
 }

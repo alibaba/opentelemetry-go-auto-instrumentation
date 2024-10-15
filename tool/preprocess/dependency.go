@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	OtelSetupInst    = "otel_setup_zinst.go"
+	OtelSetupInst    = "otel_setup_inst.go"
 	OtelSetupSDK     = "otel_setup_sdk.go"
 	OtelRules        = "otel_rules"
 	OtelBackups      = "backups"
