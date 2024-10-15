@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -205,17 +206,22 @@ func checkModularized() error {
 	return nil
 }
 
-func (dp *DepProcessor) backupGoMod() error {
-	gomod, err := shared.GetGoModPath()
+func (dp *DepProcessor) backupMod() error {
+	gomodDir, err := shared.GetGoModDir()
 	if err != nil {
 		return fmt.Errorf("failed to get go.mod directory: %w", err)
 	}
-	if gomod == "" {
-		return fmt.Errorf("failed to get go.mod directory")
-	}
-	err = dp.backupFile(gomod)
-	if err != nil {
-		return fmt.Errorf("failed to backup go.mod: %w", err)
+	files := []string{}
+	files = append(files, filepath.Join(gomodDir, shared.GoModFile))
+	files = append(files, filepath.Join(gomodDir, shared.GoSumFile))
+	files = append(files, filepath.Join(gomodDir, shared.GoWorkSumFile))
+	for _, file := range files {
+		if exist, _ := util.PathExists(file); exist {
+			err = dp.backupFile(file)
+			if err != nil {
+				return fmt.Errorf("failed to backup %s: %w", file, err)
+			}
+		}
 	}
 	return nil
 }
@@ -233,7 +239,7 @@ func Preprocess() error {
 	{
 		start := time.Now()
 		// Backup go.mod as we are likely modifing it later
-		err = dp.backupGoMod()
+		err = dp.backupMod()
 		if err != nil {
 			return fmt.Errorf("failed to backup go.mod: %w", err)
 		}

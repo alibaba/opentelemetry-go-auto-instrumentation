@@ -28,15 +28,14 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-const GoBuildIgnoreComment = "//go:build ignore"
-
-const GoModFile = "go.mod"
-
-const DebugLogFile = "debug.log"
-
 const (
-	TInstrument = "instrument"
-	TPreprocess = "preprocess"
+	GoBuildIgnoreComment = "//go:build ignore"
+	GoModFile            = "go.mod"
+	GoSumFile            = "go.sum"
+	GoWorkSumFile        = "go.work.sum"
+	DebugLogFile         = "debug.log"
+	TInstrument          = "instrument"
+	TPreprocess          = "preprocess"
 )
 
 func IsCompileCommand(line string) bool {
