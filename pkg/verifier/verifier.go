@@ -66,8 +66,8 @@ func VerifyHttpClientMetricsAttributes(attrs []attribute.KeyValue, method, serve
 	Assert(GetAttribute(attrs, "error.type").AsString() == errorType, "Except error.type to be %s, got %s", errorType, GetAttribute(attrs, "error.type").AsString())
 	Assert(GetAttribute(attrs, "network.protocol.name").AsString() == protocolName, "Except network.protocol.name to be %s, got %s", protocolName, GetAttribute(attrs, "network.protocol.name").AsString())
 	Assert(GetAttribute(attrs, "network.protocol.version").AsString() == protocolVersion, "Except network.protocol.version to be %s, got %s", protocolVersion, GetAttribute(attrs, "network.protocol.version").AsString())
-	Assert(GetAttribute(attrs, "server.port").AsInt64() == int64(serverPort), "Except server.port to be %s, got %s", serverPort, GetAttribute(attrs, "server.port").AsInt64())
-	Assert(GetAttribute(attrs, "http.response.status_code").AsInt64() == int64(statusCode), "Except status code to be %s, got %s", statusCode, GetAttribute(attrs, "http.response.status_code").AsInt64())
+	Assert(GetAttribute(attrs, "server.port").AsInt64() == int64(serverPort), "Except server.port to be %d, got %d", serverPort, GetAttribute(attrs, "server.port").AsInt64())
+	Assert(GetAttribute(attrs, "http.response.status_code").AsInt64() == int64(statusCode), "Except status code to be %d, got %d", statusCode, GetAttribute(attrs, "http.response.status_code").AsInt64())
 }
 
 func VerifyHttpServerAttributes(span tracetest.SpanStub, name, method, protocolName, networkTransport, networkType, localAddr, peerAddr, agent, scheme, path, query, route string, statusCode int64) {
@@ -94,7 +94,7 @@ func VerifyHttpServerMetricsAttributes(attrs []attribute.KeyValue, method, httpR
 	Assert(GetAttribute(attrs, "network.protocol.name").AsString() == protocolName, "Except network.protocol.name to be %s, got %s", protocolName, GetAttribute(attrs, "network.protocol.name").AsString())
 	Assert(GetAttribute(attrs, "network.protocol.version").AsString() == protocolVersion, "Except network.protocol.version to be %s, got %s", protocolVersion, GetAttribute(attrs, "network.protocol.version").AsString())
 	Assert(GetAttribute(attrs, "url.scheme").AsString() == urlScheme, "Except url.scheme to be %s, got %s", urlScheme, GetAttribute(attrs, "url.scheme").AsString())
-	Assert(GetAttribute(attrs, "http.response.status_code").AsInt64() == int64(statusCode), "Except status code to be %s, got %s", statusCode, GetAttribute(attrs, "http.response.status_code").AsInt64())
+	Assert(GetAttribute(attrs, "http.response.status_code").AsInt64() == int64(statusCode), "Except status code to be %d, got %d", statusCode, GetAttribute(attrs, "http.response.status_code").AsInt64())
 }
 
 func VerifyRpcServerAttributes(span tracetest.SpanStub, name, system, service, method string) {
