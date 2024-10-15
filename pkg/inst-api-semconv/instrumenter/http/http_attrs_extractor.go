@@ -60,7 +60,7 @@ type HttpClientAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpClientAttrs
 
 func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attributes = h.Base.OnStart(attributes, parentContext, request)
-	attributes = append(attributes, h.NetworkExtractor.OnStart(attributes, parentContext, request)...)
+	attributes = h.NetworkExtractor.OnStart(attributes, parentContext, request)
 	fullUrl := h.Base.HttpGetter.GetUrlFull(request)
 	// TODO: add resend count
 	attributes = append(attributes, attribute.KeyValue{
