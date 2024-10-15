@@ -29,49 +29,13 @@ type OperationListener interface {
 }
 
 type AttrsShadower interface {
-	ShadowStartAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue)
-	ShadowEndAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue)
+	Shadow(attrs []attribute.KeyValue) (int, []attribute.KeyValue)
 }
 
 type NoopAttrsShadower struct{}
 
-func (n NoopAttrsShadower) ShadowStartAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
+func (n NoopAttrsShadower) Shadow(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
 	return len(attrs), attrs
-}
-
-func (n NoopAttrsShadower) ShadowEndAttributes(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
-	return len(attrs), attrs
-}
-
-type OperationListenerWrapper struct {
-	listener     OperationListener
-	attrShadower AttrsShadower
-}
-
-func (w *OperationListenerWrapper) OnBeforeStart(parentContext context.Context, startTimestamp time.Time) context.Context {
-	return w.listener.OnBeforeStart(parentContext, startTimestamp)
-}
-
-func (w *OperationListenerWrapper) OnBeforeEnd(context context.Context, startAttributes []attribute.KeyValue, startTimestamp time.Time) context.Context {
-	if w.attrShadower != nil {
-		validNum, startAttributes := w.attrShadower.ShadowStartAttributes(startAttributes)
-		return w.listener.OnBeforeEnd(context, startAttributes[:validNum], startTimestamp)
-	} else {
-		return w.listener.OnBeforeEnd(context, startAttributes, startTimestamp)
-	}
-}
-
-func (w *OperationListenerWrapper) OnAfterStart(context context.Context, endTimestamp time.Time) {
-	w.listener.OnAfterStart(context, endTimestamp)
-}
-
-func (w *OperationListenerWrapper) OnAfterEnd(context context.Context, endAttributes []attribute.KeyValue, endTimestamp time.Time) {
-	if w.attrShadower != nil {
-		validNum, endAttributes := w.attrShadower.ShadowEndAttributes(endAttributes)
-		w.listener.OnAfterEnd(context, endAttributes[:validNum], endTimestamp)
-	} else {
-		w.listener.OnAfterEnd(context, endAttributes, endTimestamp)
-	}
 }
 
 type ContextCustomizer[REQUEST interface{}] interface {

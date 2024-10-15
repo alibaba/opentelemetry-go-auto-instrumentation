@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/dave/dst v0.27.3
 	github.com/docker/go-connections v0.5.0
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/testcontainers/testcontainers-go v0.32.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.32.0
 	go.opentelemetry.io/otel v1.30.0

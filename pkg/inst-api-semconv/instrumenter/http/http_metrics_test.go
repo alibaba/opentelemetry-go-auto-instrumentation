@@ -34,7 +34,7 @@ func TestHttpServerMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	meter := mp.Meter("test-meter")
-	server, err := NewHttpServerMetric("test", meter)
+	server, err := newHttpServerMetric("test", meter)
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +60,7 @@ func TestHttpClientMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	meter := mp.Meter("test-meter")
-	client, err := NewHttpClientMetric("test", meter)
+	client, err := newHttpClientMetric("test", meter)
 	if err != nil {
 		panic(err)
 	}

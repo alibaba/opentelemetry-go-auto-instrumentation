@@ -60,11 +60,18 @@ type HttpClientAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpClientAttrs
 
 func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
 	attributes = h.Base.OnStart(attributes, parentContext, request)
+	attributes = append(attributes, h.NetworkExtractor.OnStart(attributes, parentContext, request)...)
 	fullUrl := h.Base.HttpGetter.GetUrlFull(request)
 	// TODO: add resend count
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.URLFullKey,
 		Value: attribute.StringValue(fullUrl),
+	}, attribute.KeyValue{
+		Key:   semconv.ServerAddressKey,
+		Value: attribute.StringValue(h.Base.HttpGetter.GetServerAddress(request)),
+	}, attribute.KeyValue{
+		Key:   semconv.ServerPortKey,
+		Value: attribute.IntValue(h.Base.HttpGetter.GetServerPort(request)),
 	})
 	return attributes
 }
@@ -102,6 +109,7 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 
 func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
 	attributes = h.Base.OnEnd(attributes, context, request, response, err)
+	attributes = h.UrlExtractor.OnStart(attributes, context, request)
 	attributes = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
 	return attributes
 }

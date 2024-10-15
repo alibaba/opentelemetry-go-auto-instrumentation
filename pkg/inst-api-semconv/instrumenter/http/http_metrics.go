@@ -18,8 +18,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"log"
+	"sync"
 	"time"
 )
 
@@ -37,7 +41,59 @@ type HttpClientMetric struct {
 	clientRequestDuration metric.Float64Histogram
 }
 
-func NewHttpServerMetric(key string, meter metric.Meter) (*HttpServerMetric, error) {
+var mu sync.Mutex
+var httpServerOperationListener *HttpServerMetric
+var httpClientOperationListener *HttpClientMetric
+var shadower = httpMetricAttributesShadower{}
+
+var httpMetricsConv = map[attribute.Key]bool{
+	semconv.HTTPRequestMethodKey:      true,
+	semconv.URLSchemeKey:              true,
+	semconv.ErrorTypeKey:              true,
+	semconv.HTTPResponseStatusCodeKey: true,
+	semconv.HTTPRouteKey:              true,
+	semconv.NetworkProtocolNameKey:    true,
+	semconv.NetworkProtocolVersionKey: true,
+	semconv.ServerAddressKey:          true,
+	semconv.ServerPortKey:             true,
+}
+
+// InitHttpMetrics TODO: The init function may be executed after the HttpServerOperationListener() method
+// so we need to make sure the otel_setup is executed before all the init() function
+// related to issue https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/48
+func InitHttpMetrics(meter metric.Meter) {
+	var err error
+	httpServerOperationListener, err = newHttpServerMetric("net.http.server", meter)
+	if err != nil {
+		panic(err)
+	}
+	httpClientOperationListener, err = newHttpClientMetric("net.http.client", meter)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func HttpServerMetrics() *HttpServerMetric {
+	mu.Lock()
+	defer mu.Unlock()
+	if httpServerOperationListener != nil {
+		return httpServerOperationListener
+	} else {
+		return &HttpServerMetric{}
+	}
+}
+
+func HttpClientMetrics() *HttpClientMetric {
+	mu.Lock()
+	defer mu.Unlock()
+	if httpClientOperationListener != nil {
+		return httpClientOperationListener
+	} else {
+		return &HttpClientMetric{}
+	}
+}
+
+func newHttpServerMetric(key string, meter metric.Meter) (*HttpServerMetric, error) {
 	m := &HttpServerMetric{
 		key: attribute.Key(key),
 	}
@@ -50,6 +106,11 @@ func NewHttpServerMetric(key string, meter metric.Meter) (*HttpServerMetric, err
 }
 
 func newHttpServerRequestDurationMeasures(meter metric.Meter) (metric.Float64Histogram, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if meter == nil {
+		return nil, errors.New("nil meter")
+	}
 	d, err := meter.Float64Histogram(http_server_request_duration,
 		metric.WithUnit("ms"),
 		metric.WithDescription("Duration of HTTP server requests."))
@@ -60,7 +121,7 @@ func newHttpServerRequestDurationMeasures(meter metric.Meter) (metric.Float64His
 	}
 }
 
-func NewHttpClientMetric(key string, meter metric.Meter) (*HttpClientMetric, error) {
+func newHttpClientMetric(key string, meter metric.Meter) (*HttpClientMetric, error) {
 	m := &HttpClientMetric{
 		key: attribute.Key(key),
 	}
@@ -73,6 +134,11 @@ func NewHttpClientMetric(key string, meter metric.Meter) (*HttpClientMetric, err
 }
 
 func newHttpClientRequestDurationMeasures(meter metric.Meter) (metric.Float64Histogram, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if meter == nil {
+		return nil, errors.New("nil meter")
+	}
 	d, err := meter.Float64Histogram(http_client_request_duration,
 		metric.WithUnit("ms"),
 		metric.WithDescription("Duration of HTTP client requests."))
@@ -83,42 +149,95 @@ func newHttpClientRequestDurationMeasures(meter metric.Meter) (metric.Float64His
 	}
 }
 
-func (h *HttpServerMetric) OnBeforeStart(parentContext context.Context, startTimestamp time.Time) context.Context {
-	return context.WithValue(parentContext, h.key, startTimestamp)
+type httpMetricContext struct {
+	startTime       time.Time
+	startAttributes []attribute.KeyValue
 }
 
-func (h *HttpServerMetric) OnBeforeEnd(context context.Context, startAttributes []attribute.KeyValue, startTimestamp time.Time) context.Context {
-	return context
+func (h *HttpServerMetric) OnBeforeStart(parentContext context.Context, startTime time.Time) context.Context {
+	return parentContext
 }
 
-func (h *HttpServerMetric) OnAfterStart(context context.Context, endTimestamp time.Time) {
+func (h *HttpServerMetric) OnBeforeEnd(ctx context.Context, startAttributes []attribute.KeyValue, startTime time.Time) context.Context {
+	return context.WithValue(ctx, h.key, httpMetricContext{
+		startTime:       startTime,
+		startAttributes: startAttributes,
+	})
+}
+
+func (h *HttpServerMetric) OnAfterStart(context context.Context, endTime time.Time) {
 	return
 }
 
-func (h *HttpServerMetric) OnAfterEnd(context context.Context, endAttributes []attribute.KeyValue, endTimestamp time.Time) {
-	startTime := context.Value(h.key).(time.Time)
+func (h *HttpServerMetric) OnAfterEnd(context context.Context, endAttributes []attribute.KeyValue, endTime time.Time) {
+	mc := context.Value(h.key).(httpMetricContext)
+	startTime, startAttributes := mc.startTime, mc.startAttributes
 	// end attributes should be shadowed by AttrsShadower
+	if h.serverRequestDuration == nil {
+		var err error
+		h.serverRequestDuration, err = newHttpServerRequestDurationMeasures(meter.GetMeter())
+		if err != nil {
+			log.Printf("failed to create serverRequestDuration, err is %v\n", err)
+		}
+	}
+	endAttributes = append(endAttributes, startAttributes...)
+	n, metricsAttrs := shadower.Shadow(endAttributes)
 	if h.serverRequestDuration != nil {
-		h.serverRequestDuration.Record(context, float64(endTimestamp.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(endAttributes...)))
+		h.serverRequestDuration.Record(context, float64(endTime.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))
 	}
 }
 
-func (h HttpClientMetric) OnBeforeStart(parentContext context.Context, startTimestamp time.Time) context.Context {
-	return context.WithValue(parentContext, h.key, startTimestamp)
+func (h HttpClientMetric) OnBeforeStart(parentContext context.Context, startTime time.Time) context.Context {
+	return parentContext
 }
 
-func (h HttpClientMetric) OnBeforeEnd(context context.Context, startAttributes []attribute.KeyValue, startTimestamp time.Time) context.Context {
-	return context
+func (h HttpClientMetric) OnBeforeEnd(ctx context.Context, startAttributes []attribute.KeyValue, startTime time.Time) context.Context {
+	return context.WithValue(ctx, h.key, httpMetricContext{
+		startTime:       startTime,
+		startAttributes: startAttributes,
+	})
 }
 
-func (h HttpClientMetric) OnAfterStart(context context.Context, endTimestamp time.Time) {
+func (h HttpClientMetric) OnAfterStart(context context.Context, endTime time.Time) {
 	return
 }
 
-func (h HttpClientMetric) OnAfterEnd(context context.Context, endAttributes []attribute.KeyValue, endTimestamp time.Time) {
-	startTime := context.Value(h.key).(time.Time)
+func (h HttpClientMetric) OnAfterEnd(context context.Context, endAttributes []attribute.KeyValue, endTime time.Time) {
+	mc := context.Value(h.key).(httpMetricContext)
+	startTime, startAttributes := mc.startTime, mc.startAttributes
 	// end attributes should be shadowed by AttrsShadower
-	if h.clientRequestDuration != nil {
-		h.clientRequestDuration.Record(context, float64(endTimestamp.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(endAttributes...)))
+	if h.clientRequestDuration == nil {
+		var err error
+		// second change to init the metric
+		h.clientRequestDuration, err = newHttpClientRequestDurationMeasures(meter.GetMeter())
+		if err != nil {
+			log.Printf("failed to create clientRequestDuration, err is %v\n", err)
+		}
 	}
+	fmt.Printf("start attributes %v\n", startAttributes)
+	endAttributes = append(endAttributes, startAttributes...)
+	n, metricsAttrs := shadower.Shadow(endAttributes)
+	if h.clientRequestDuration != nil {
+		h.clientRequestDuration.Record(context, float64(endTime.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))
+	}
+}
+
+type httpMetricAttributesShadower struct{}
+
+func (h httpMetricAttributesShadower) Shadow(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
+	swap := func(attrs []attribute.KeyValue, i, j int) {
+		tmp := attrs[i]
+		attrs[i] = attrs[j]
+		attrs[j] = tmp
+	}
+	index := 0
+	for i, attr := range attrs {
+		if _, ok := httpMetricsConv[attr.Key]; ok {
+			if index != i {
+				swap(attrs, i, index)
+			}
+			index++
+		}
+	}
+	return index, attrs
 }

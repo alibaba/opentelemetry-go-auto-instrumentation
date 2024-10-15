@@ -39,4 +39,5 @@ type HttpClientAttrsGetter[REQUEST any, RESPONSE any] interface {
 	net.NetworkAttrsGetter[REQUEST, RESPONSE]
 	GetUrlFull(request REQUEST) string
 	GetServerAddress(request REQUEST) string
+	GetServerPort(request REQUEST) int
 }

@@ -26,6 +26,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
+var emptyFastHttpResponse = fastHttpResponse{}
+
 type fastHttpClientAttrsGetter struct {
 }
 
@@ -103,6 +105,10 @@ func (n fastHttpClientAttrsGetter) GetUrlFull(request fastHttpRequest) string {
 
 func (n fastHttpClientAttrsGetter) GetServerAddress(request fastHttpRequest) string {
 	return request.url.Host
+}
+
+func (n fastHttpClientAttrsGetter) GetServerPort(request fastHttpRequest) int {
+	return n.GetNetworkPeerPort(request, emptyFastHttpResponse)
 }
 
 type fastHttpServerAttrsGetter struct {

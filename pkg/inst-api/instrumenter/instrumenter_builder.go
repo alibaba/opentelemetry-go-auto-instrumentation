@@ -44,7 +44,7 @@ type Builder[REQUEST any, RESPONSE any] struct {
 	SpanKindExtractor    SpanKindExtractor[REQUEST]
 	SpanStatusExtractor  SpanStatusExtractor[REQUEST, RESPONSE]
 	AttributesExtractors []AttributesExtractor[REQUEST, RESPONSE]
-	OperationListeners   []*OperationListenerWrapper
+	OperationListeners   []OperationListener
 	ContextCustomizers   []ContextCustomizer[REQUEST]
 	SpanSuppressor       SpanSuppressor
 	Tracer               trace.Tracer
@@ -91,7 +91,7 @@ func (b *Builder[REQUEST, RESPONSE]) AddAttributesExtractor(attributesExtractor 
 	return b
 }
 
-func (b *Builder[REQUEST, RESPONSE]) AddOperationListeners(operationListener ...*OperationListenerWrapper) *Builder[REQUEST, RESPONSE] {
+func (b *Builder[REQUEST, RESPONSE]) AddOperationListeners(operationListener ...OperationListener) *Builder[REQUEST, RESPONSE] {
 	b.OperationListeners = append(b.OperationListeners, operationListener...)
 	return b
 }

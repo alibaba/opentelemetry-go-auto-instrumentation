@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
@@ -56,7 +57,7 @@ func init() {
 		return
 	}
 	if err = initOpenTelemetry(); err != nil {
-		log.Fatalf("%s: %v", "Failed to initialize runtime metrics", err)
+		log.Fatalf("%s: %v", "Failed to initialize opentelemetry resource", err)
 	}
 }
 
@@ -102,34 +103,44 @@ func initOpenTelemetry() error {
 
 	otel.SetTracerProvider(traceProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	return initRuntimeMetrics()
+	return initMetrics()
 }
 
-func initRuntimeMetrics() error {
+func initMetrics() error {
 	ctx := context.Background()
 	var mp *metric.MeterProvider
-	if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
-		exporter, err := otlpmetricgrpc.New(ctx)
-		if err != nil {
-			log.Fatalf("new otlp metric grpc exporter failed: %v", err)
-		}
+	// TODO: abstract the if-else
+	if verifier.IsInTest() {
 		mp = metric.NewMeterProvider(
-			metric.WithReader(metric.NewPeriodicReader(exporter)),
+			metric.WithReader(verifier.ManualReader),
 		)
 	} else {
-		exporter, err := otlpmetrichttp.New(ctx)
-		if err != nil {
-			log.Fatalf("new otlp metric http exporter failed: %v", err)
+		if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
+			exporter, err := otlpmetricgrpc.New(ctx)
+			if err != nil {
+				log.Fatalf("new otlp metric grpc exporter failed: %v", err)
+			}
+			mp = metric.NewMeterProvider(
+				metric.WithReader(metric.NewPeriodicReader(exporter)),
+			)
+		} else {
+			exporter, err := otlpmetrichttp.New(ctx)
+			if err != nil {
+				log.Fatalf("new otlp metric http exporter failed: %v", err)
+			}
+			mp = metric.NewMeterProvider(
+				metric.WithReader(metric.NewPeriodicReader(exporter)),
+			)
 		}
-		mp = metric.NewMeterProvider(
-			metric.WithReader(metric.NewPeriodicReader(exporter)),
-		)
 	}
 	if mp == nil {
 		return errors.New("No MeterProvider is provided")
 	}
 	otel.SetMeterProvider(mp)
-	meter.SetMeter(mp.Meter("opentelemetry-global-meter"))
+	m := mp.Meter("opentelemetry-global-meter")
+	meter.SetMeter(m)
+	// init http metrics
+	http.InitHttpMetrics(m)
 	// DefaultMinimumReadMemStatsInterval is 15 second
 	return runtime.Start(runtime.WithMeterProvider(mp))
 }
