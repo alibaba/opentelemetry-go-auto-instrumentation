@@ -108,6 +108,10 @@ func (h hertzHttpClientAttrsGetter) GetServerAddress(request *protocol.Request) 
 	return string(request.Host())
 }
 
+func (h hertzHttpClientAttrsGetter) GetServerPort(request *protocol.Request) int {
+	return getPeerPort(request)
+}
+
 type hertzHttpServerAttrsGetter struct {
 }
 

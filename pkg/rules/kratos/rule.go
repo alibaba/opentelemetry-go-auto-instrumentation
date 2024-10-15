@@ -19,13 +19,13 @@ import "github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 func init() {
 
 	api.NewRule("github.com/go-kratos/kratos/v2/transport/http", "NewServer", "", "KratosNewHTTPServiceOnEnter", "").
-		WithVersion("[2.6.3,2.8.1)").
+		WithVersion("[2.6.3,2.8.2)").
 		WithFileDeps("kratos_data_type.go").
 		WithFileDeps("kratos_otel_instrumenter.go").
 		Register()
 
 	api.NewRule("github.com/go-kratos/kratos/v2/transport/grpc", "NewServer", "", "KratosNewGRPCServiceOnEnter", "").
-		WithVersion("[2.6.3,2.8.1)").
+		WithVersion("[2.6.3,2.8.2)").
 		WithFileDeps("kratos_data_type.go").
 		WithFileDeps("kratos_otel_instrumenter.go").
 		Register()

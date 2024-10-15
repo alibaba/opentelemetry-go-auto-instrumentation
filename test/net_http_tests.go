@@ -21,6 +21,7 @@ func init() {
 		NewGeneralTestCase("nethttp-basic-test", "nethttp", "", "", "1.18", "", TestBasicNetHttp),
 		NewGeneralTestCase("nethttp-http-2-test", "nethttp", "", "", "1.18", "", TestHttp2),
 		NewGeneralTestCase("nethttp-https-test", "nethttp", "", "", "1.18", "", TestHttps),
+		NewGeneralTestCase("nethttp-metric-test", "nethttp", "", "", "1.18", "", TestHttpMetric),
 	)
 }
 
@@ -40,4 +41,10 @@ func TestHttps(t *testing.T, env ...string) {
 	UseApp("nethttp")
 	RunInstrument(t, "-debuglog", "--", "test_https.go", "http_server.go")
 	RunApp(t, "test_https", env...)
+}
+
+func TestHttpMetric(t *testing.T, env ...string) {
+	UseApp("nethttp")
+	RunInstrument(t, "-debuglog", "--", "test_http_metrics.go", "http_server.go")
+	RunApp(t, "test_http_metrics", env...)
 }

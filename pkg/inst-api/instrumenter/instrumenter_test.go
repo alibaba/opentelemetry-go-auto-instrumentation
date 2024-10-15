@@ -101,10 +101,7 @@ func TestInstrumenter(t *testing.T) {
 		SetSpanNameExtractor(testNameExtractor{}).
 		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
 		AddAttributesExtractor(testAttributesExtractor{}).
-		AddOperationListeners(&OperationListenerWrapper{
-			listener:       &testOperationListener{},
-			attrCustomizer: NoopAttrsShadower{},
-		}).AddContextCustomizers(testContextCustomizer{})
+		AddOperationListeners(&testOperationListener{}).AddContextCustomizers(testContextCustomizer{})
 	instrumenter := builder.BuildInstrumenter()
 	ctx := context.Background()
 	newCtx := instrumenter.Start(ctx, testRequest{})

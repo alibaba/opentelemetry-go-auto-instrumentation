@@ -69,10 +69,9 @@ func TestShadower(t *testing.T) {
 }
 
 func TestOnBeforeStart(t *testing.T) {
-	w := OperationListenerWrapper{listener: &testListener{}}
+	w := &testListener{}
 	newCtx := w.OnBeforeStart(context.Background(), time.UnixMilli(123412341234))
-	wListener := w.listener.(*testListener)
-	if wListener.startTime.UnixMilli() != 123412341234 {
+	if w.startTime.UnixMilli() != 123412341234 {
 		log.Fatal("start time is not equal to new start time")
 	}
 	if newCtx.Value("test1") != "a" {
@@ -81,40 +80,37 @@ func TestOnBeforeStart(t *testing.T) {
 }
 
 func TestOnBeforeEnd(t *testing.T) {
-	w := OperationListenerWrapper{listener: &testListener{}}
+	w := &testListener{}
 	w.OnBeforeEnd(context.Background(), []attribute.KeyValue{{
 		Key:   "123",
 		Value: attribute.StringValue("abcde"),
 	}}, time.UnixMilli(123412341234))
-	wListener := w.listener.(*testListener)
-	if wListener.startAttributes[0].Key != "123" {
+	if w.startAttributes[0].Key != "123" {
 		log.Fatal("start attribute key is not equal to new start attribute key")
 	}
-	if wListener.startAttributes[0].Value.AsString() != "abcde" {
+	if w.startAttributes[0].Value.AsString() != "abcde" {
 		log.Fatal("start attribute value is not equal to new start attribute value")
 	}
 }
 
 func TestOnAfterStart(t *testing.T) {
-	w := OperationListenerWrapper{listener: &testListener{}}
+	w := &testListener{}
 	w.OnAfterStart(context.Background(), time.UnixMilli(123412341234))
-	wListener := w.listener.(*testListener)
-	if wListener.endTime.UnixMilli() != 123412341234 {
+	if w.endTime.UnixMilli() != 123412341234 {
 		log.Fatal("start time is not equal to new start time")
 	}
 }
 
 func TestOnAfterEnd(t *testing.T) {
-	w := OperationListenerWrapper{listener: &testListener{}}
+	w := &testListener{}
 	w.OnAfterEnd(context.Background(), []attribute.KeyValue{{
 		Key:   "123",
 		Value: attribute.StringValue("abcde"),
 	}}, time.UnixMilli(123412341234))
-	wListener := w.listener.(*testListener)
-	if wListener.endAttributes[0].Key != "123" {
+	if w.endAttributes[0].Key != "123" {
 		log.Fatal("start attribute key is not equal to new start attribute key")
 	}
-	if wListener.endAttributes[0].Value.AsString() != "abcde" {
+	if w.endAttributes[0].Value.AsString() != "abcde" {
 		log.Fatal("start attribute value is not equal to new start attribute value")
 	}
 }

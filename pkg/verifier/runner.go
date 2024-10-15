@@ -15,6 +15,7 @@
 package verifier
 
 import (
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"log"
 	"sort"
 	"time"
@@ -31,6 +32,52 @@ type node struct {
 func WaitAndAssertTraces(traceVerifiers func([]tracetest.SpanStubs), numTraces int) {
 	traces := waitForTraces(numTraces)
 	traceVerifiers(traces)
+}
+
+func WaitAndAssertMetrics(metricName string, metricVerifiers ...func(metricdata.ResourceMetrics)) {
+	mrs, err := waitForMetrics(metricName)
+	if err != nil {
+		log.Fatalf("Failed to wait for metric %s: %v", metricName, err)
+	}
+	for _, v := range metricVerifiers {
+		v(mrs)
+	}
+}
+
+func waitForMetrics(metricName string) (metricdata.ResourceMetrics, error) {
+	// 最多等30s
+	var (
+		mrs metricdata.ResourceMetrics
+		err error
+	)
+	finish := false
+	for !finish {
+		select {
+		case <-time.After(30 * time.Second):
+			finish = true
+		default:
+			mrs, err = filterMetricByName(metricName)
+			if err == nil {
+				finish = true
+				break
+			}
+		}
+	}
+	return mrs, err
+}
+
+func filterMetricByName(name string) (metricdata.ResourceMetrics, error) {
+	data := GetTestMetrics()
+	for i, s := range data.ScopeMetrics {
+		scms := make([]metricdata.Metrics, 0)
+		for _, sm := range s.Metrics {
+			if sm.Name == name {
+				scms = append(scms, sm)
+			}
+		}
+		data.ScopeMetrics[i].Metrics = scms
+	}
+	return data, nil
 }
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {

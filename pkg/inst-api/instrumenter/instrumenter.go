@@ -36,8 +36,7 @@ type InternalInstrumenter[REQUEST any, RESPONSE any] struct {
 	spanKindExtractor    SpanKindExtractor[REQUEST]
 	spanStatusExtractor  SpanStatusExtractor[REQUEST, RESPONSE]
 	attributesExtractors []AttributesExtractor[REQUEST, RESPONSE]
-	operationListeners   []*OperationListenerWrapper
-	operationMetrics     []OperationMetrics
+	operationListeners   []OperationListener
 	contextCustomizers   []ContextCustomizer[REQUEST]
 	spanSuppressor       SpanSuppressor
 	tracer               trace.Tracer

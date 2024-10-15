@@ -33,6 +33,14 @@ func main() {
 	fmt.Printf("Send http request to kratos")
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
+		for i, _ := range stubs[0] {
+			span := stubs[0][i]
+			println(span.Name)
+			for _, attr := range span.Attributes {
+				fmt.Printf("%v %v\n", attr.Key, attr.Value)
+			}
+			println()
+		}
 		protocolType := verifier.GetAttribute(stubs[0][3].Attributes, "kratos.protocol.type").AsString()
 		if protocolType != "http" {
 			panic("protocol type should be http, actually got " + protocolType)
