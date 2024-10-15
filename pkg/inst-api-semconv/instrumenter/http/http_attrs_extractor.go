@@ -109,7 +109,7 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 
 func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
 	attributes = h.Base.OnEnd(attributes, context, request, response, err)
-	attributes = h.UrlExtractor.OnStart(attributes, context, request)
+	attributes = h.UrlExtractor.OnEnd(attributes, context, request, response, err)
 	attributes = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
 	return attributes
 }
