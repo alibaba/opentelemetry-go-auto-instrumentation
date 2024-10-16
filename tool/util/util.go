@@ -17,12 +17,14 @@ package util
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var Guarantee = Assert // More meaningful name:)
@@ -72,12 +74,12 @@ func RunCmd(args ...string) error {
 	return cmd.Run()
 }
 
-func RunCmdWithOutput(args ...string) (string, error) {
+func RunCmdOutput(args ...string) (string, error) {
 	path := args[0]
 	args = args[1:]
 	cmd := exec.Command(path, args...)
-	bytes, err := cmd.CombinedOutput()
-	return string(bytes), err
+	out, err := cmd.CombinedOutput()
+	return string(out), err
 }
 
 func CopyFile(src, dst string) error {
@@ -131,7 +133,7 @@ func ReadFile(filePath string) (string, error) {
 
 }
 
-func WriteStringToFile(filePath string, content string) (string, error) {
+func WriteFile(filePath string, content string) (string, error) {
 	file, err := os.Create(filePath)
 	if err != nil {
 		return "", err
@@ -177,6 +179,45 @@ func ListFilesFlat(dir string) ([]string, error) {
 	return paths, nil
 }
 
+func CopyDir(src string, dst string) error {
+	// Get the properties of the source directory
+	sourceInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	// Create the destination directory
+	if err := os.MkdirAll(dst, sourceInfo.Mode()); err != nil {
+		return err
+	}
+
+	// Read the contents of the source directory
+	entries, err := ioutil.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	// Iterate through each entry in the source directory
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			// Recursively copy subdirectories
+			if err := CopyDir(srcPath, dstPath); err != nil {
+				return err
+			}
+		} else {
+			// Copy files
+			if err := CopyFile(srcPath, dstPath); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -186,4 +227,12 @@ func PathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func PhaseTimer(name string) func() {
+	start := time.Now()
+	return func() {
+		log.Printf("%s took %f s",
+			name, time.Now().Sub(start).Seconds())
+	}
 }

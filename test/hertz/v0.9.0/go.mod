@@ -2,8 +2,6 @@ module hertz/v0.9.0
 
 go 1.22
 
-toolchain go1.22.7
-
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
 require (
