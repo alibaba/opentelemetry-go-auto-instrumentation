@@ -43,9 +43,9 @@ const (
 	DryRunLog = "dry_run.log"
 )
 
-const FixedOtelDepVersion = "v1.30.0"
+const FixedOtelDepVersion = "v1.31.0"
 
-const FixedOtelContribVersion = "v0.55.0"
+const FixedOtelContribVersion = "v0.56.0"
 
 const instDependency = "github.com/alibaba/opentelemetry-go-auto-instrumentation"
 
