@@ -42,7 +42,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 	verifier.WaitAndAssertMetrics("http.server.request.duration", func(mrs metricdata.ResourceMetrics) {
 		if len(mrs.ScopeMetrics) <= 0 {
 			panic("No http.server.request.duration metrics received!")
