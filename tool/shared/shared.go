@@ -39,10 +39,21 @@ const (
 )
 
 func IsCompileCommand(line string) bool {
-	return strings.Contains(line, "compile -o") &&
-		strings.Contains(line, "buildid")
+	check := []string{"-o", "-p", "-buildid"}
+	if util.IsWindows() {
+		check = append(check, "compile.exe")
+	} else if util.IsUnix() {
+		check = append(check, "compile")
+	} else {
+		util.ShouldNotReachHere()
+	}
+	for _, id := range check {
+		if !strings.Contains(line, id) {
+			return false
+		}
+	}
+	return true
 }
-
 func GetLogPath(name string) string {
 	if InToolexec {
 		return filepath.Join(TempBuildDir, TInstrument, name)
@@ -174,9 +185,11 @@ func splitVersionRange(vr string) (string, string) {
 	return "v" + start, "v" + end
 }
 
-var versionRegexp = regexp.MustCompile(`@v\d+\.\d+\.\d+(-.*?)?/`)
+var versionRegexp = regexp.MustCompile(`@v\d+\.\d+\.\d+(-.*?)?`)
 
 func ExtractVersion(path string) string {
+	// Unify the path to Unix style
+	path = filepath.ToSlash(path)
 	version := versionRegexp.FindString(path)
 	if version == "" {
 		return ""
@@ -216,4 +229,37 @@ func MatchVersion(version string, ruleVersion string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+// SplitCmds splits the command line by space, but keep the quoted part as a
+// whole. For example, "a b" c will be split into ["a b", "c"].
+func SplitCmds(input string) []string {
+	var args []string
+	var inQuotes bool
+	var arg strings.Builder
+
+	for i := 0; i < len(input); i++ {
+		c := input[i]
+
+		if c == '"' {
+			inQuotes = !inQuotes
+			continue
+		}
+
+		if c == ' ' && !inQuotes {
+			if arg.Len() > 0 {
+				args = append(args, arg.String())
+				arg.Reset()
+			}
+			continue
+		}
+
+		arg.WriteByte(c)
+	}
+
+	if arg.Len() > 0 {
+		args = append(args, arg.String())
+	}
+
+	return args
 }
