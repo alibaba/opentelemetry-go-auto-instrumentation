@@ -261,5 +261,11 @@ func SplitCmds(input string) []string {
 		args = append(args, arg.String())
 	}
 
+	// Fix the escaped backslashes on Windows
+	if util.IsWindows() {
+		for i, arg := range args {
+			args[i] = strings.ReplaceAll(arg, `\\`, `\`)
+		}
+	}
 	return args
 }
