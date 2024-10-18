@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -56,10 +57,6 @@ func RandomString(n int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
-}
-
-func StringQuote(s string) string {
-	return `"` + s + `"`
 }
 
 func RunCmd(args ...string) error {
@@ -186,4 +183,12 @@ func PathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func IsWindows() bool {
+	return runtime.GOOS == "windows"
+}
+
+func IsUnix() bool {
+	return runtime.GOOS == "linux" || runtime.GOOS == "darwin"
 }
