@@ -14,31 +14,40 @@
 
 #!/bin/bash
 
-set -x
+set -e
 
-CURRENT_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-CURRENT_ARCH=$(uname -m)
-if [ "${CURRENT_ARCH}" == "x86_64" ]; then
-    CURRENT_ARCH="amd64"
-fi
+detect() {
+    CURRENT_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    CURRENT_ARCH=$(uname -m)
+    if [ "${CURRENT_ARCH}" == "x86_64" ]; then
+        CURRENT_ARCH="amd64"
+    fi
 
-echo "Detected platform: ${CURRENT_OS} ${CURRENT_ARCH}"
+    echo "Detected platform: ${CURRENT_OS} ${CURRENT_ARCH}"
+}
 
+download() {
+    DOWNLOAD_URL="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases/download/v0.2.0/otelbuild-${CURRENT_OS}-${CURRENT_ARCH}"
+    EXECUTABLE="otelbuild"
 
-DOWNLOAD_URL="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases/download/v0.2.0/otelbuild-${CURRENT_OS}-${CURRENT_ARCH}"
-EXECUTABLE="otelbuild"
+    echo "Downloading from $DOWNLOAD_URL"
+   wget -q --show-progress -O "$EXECUTABLE" "$DOWNLOAD_URL"
 
-echo "Downloading from $DOWNLOAD_URL"
-wget -q --show-progress -O "$EXECUTABLE" "$DOWNLOAD_URL"
+    if [ $? -ne 0 ]; then
+        echo "Failed to download $DOWNLOAD_URL"
+        exit 1
+    fi
+}
 
-if [ $? -ne 0 ]; then
-    echo "Failed to download $DOWNLOAD_URL"
-    exit 1
-fi
+install() {
+    INSTALL_DIR="/usr/local/bin"
+    echo "Installing $EXECUTABLE to $INSTALL_DIR"
+    sudo mv "$EXECUTABLE" "$INSTALL_DIR/"
+    sudo chmod +x "$INSTALL_DIR/$EXECUTABLE"
 
-INSTALL_DIR="/usr/local/bin"
-echo "Installing $EXECUTABLE to $INSTALL_DIR"
-sudo mv "$EXECUTABLE" "$INSTALL_DIR/"
-sudo chmod +x "$INSTALL_DIR/$EXECUTABLE"
+    echo "Installation completed. You can run it using: $INSTALL_DIR/$EXECUTABLE"
+}
 
-echo "Installation completed. You can run it using: $INSTALL_DIR/$EXECUTABLE"
+detect
+download
+install
