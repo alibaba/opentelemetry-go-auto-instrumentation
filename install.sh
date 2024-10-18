@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright (c) 2024 Alibaba Group Holding Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/bin/bash
-
 set -e
 
 detect() {
@@ -27,7 +27,7 @@ detect() {
 }
 
 download() {
-    DOWNLOAD_URL="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases/download/v0.2.0/otelbuild-${CURRENT_OS}-${CURRENT_ARCH}"
+    DOWNLOAD_URL="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases/latest/download/otelbuild-${CURRENT_OS}-${CURRENT_ARCH}"
     EXECUTABLE="otelbuild"
 
     echo "Downloading from $DOWNLOAD_URL"

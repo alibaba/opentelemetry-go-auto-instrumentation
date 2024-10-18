@@ -13,10 +13,11 @@ time. Simply replace `go build` with `otelbuild` to get started.
 # Installation
 
 #### Install via Bash 
-For **Linux and MacOS** users, install the tool by running the following command :rocket::
+For **Linux and MacOS** users, install the tool by running the following command :rocket:
 ```bash
-sudo curl -fsSL https://raw.githubusercontent.com/alibaba/opentelemetry-go-auto-instrumentation/main/install.sh | sudo bash
+$ sudo curl -fsSL https://raw.githubusercontent.com/alibaba/opentelemetry-go-auto-instrumentation/main/install.sh | sudo bash
 ```
+It will be installed in `/usr/local/bin/otelbuild` by default.
 
 #### Precompiled Binary
 
