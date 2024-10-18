@@ -185,7 +185,7 @@ func splitVersionRange(vr string) (string, string) {
 	return "v" + start, "v" + end
 }
 
-var versionRegexp = regexp.MustCompile(`@v\d+\.\d+\.\d+(-.*?)?`)
+var versionRegexp = regexp.MustCompile(`@v\d+\.\d+\.\d+(-.*?)?/`)
 
 func ExtractVersion(path string) string {
 	// Unify the path to Unix style
