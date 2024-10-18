@@ -31,7 +31,8 @@ download() {
     EXECUTABLE="otelbuild"
 
     echo "Downloading from $DOWNLOAD_URL"
-   wget -q --show-progress -O "$EXECUTABLE" "$DOWNLOAD_URL"
+    # curl and show progress
+    curl -L -o "$EXECUTABLE" "$DOWNLOAD_URL"
 
     if [ $? -ne 0 ]; then
         echo "Failed to download $DOWNLOAD_URL"
@@ -41,6 +42,10 @@ download() {
 
 install() {
     INSTALL_DIR="/usr/local/bin"
+    if [ ! -f "$EXECUTABLE" ]; then
+        echo "Executable $EXECUTABLE not found"
+        exit 1
+    fi
     echo "Installing $EXECUTABLE to $INSTALL_DIR"
     sudo mv "$EXECUTABLE" "$INSTALL_DIR/"
     sudo chmod +x "$INSTALL_DIR/$EXECUTABLE"
