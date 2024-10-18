@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"go/token"
+	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
@@ -297,7 +298,7 @@ func (rp *RuleProcessor) renameFunc(t *api.InstFuncRule) {
 		if basicLit, ok := node.(*dst.BasicLit); ok {
 			// Replace OtelOnEnterTrampolinePlaceHolder to real hook func name
 			if basicLit.Value == TrampolineOnEnterNamePlaceholder {
-				basicLit.Value = util.StringQuote(t.OnEnter)
+				basicLit.Value = strconv.Quote(t.OnEnter)
 			}
 		}
 		return true
@@ -306,7 +307,7 @@ func (rp *RuleProcessor) renameFunc(t *api.InstFuncRule) {
 	dst.Inspect(rp.onExitHookFunc, func(node dst.Node) bool {
 		if basicLit, ok := node.(*dst.BasicLit); ok {
 			if basicLit.Value == TrampolineOnExitNamePlaceholder {
-				basicLit.Value = util.StringQuote(t.OnExit)
+				basicLit.Value = strconv.Quote(t.OnExit)
 			}
 		}
 		return true

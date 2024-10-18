@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
@@ -167,27 +168,27 @@ func ReadRuleFile(path string) (string, error) {
 
 func isRuleDefined(text string, rule *api.InstFuncRule) bool {
 	if rule.Version != "" &&
-		!strings.Contains(text, util.StringQuote(rule.GetVersion())) {
+		!strings.Contains(text, strconv.Quote(rule.GetVersion())) {
 		return false
 	}
 	util.Assert(rule.ImportPath != "", "import path must be set")
-	if !strings.Contains(text, util.StringQuote(rule.GetImportPath())) {
+	if !strings.Contains(text, strconv.Quote(rule.GetImportPath())) {
 		return false
 	}
 	if rule.ReceiverType != "" &&
-		!strings.Contains(text, util.StringQuote(rule.ReceiverType)) {
+		!strings.Contains(text, strconv.Quote(rule.ReceiverType)) {
 		return false
 	}
 	if rule.Function != "" &&
-		!strings.Contains(text, util.StringQuote(rule.Function)) {
+		!strings.Contains(text, strconv.Quote(rule.Function)) {
 		return false
 	}
 	if rule.OnEnter != "" &&
-		!strings.Contains(text, util.StringQuote(rule.OnEnter)) {
+		!strings.Contains(text, strconv.Quote(rule.OnEnter)) {
 		return false
 	}
 	if rule.OnExit != "" &&
-		!strings.Contains(text, util.StringQuote(rule.OnExit)) {
+		!strings.Contains(text, strconv.Quote(rule.OnExit)) {
 		return false
 	}
 	return true
