@@ -12,8 +12,8 @@ time. Simply replace `go build` with `otelbuild` to get started.
 
 # Installation
 
-#### Install via Bash
-For Linux and MacOS users, use bash to install:
+#### Install via Bash 
+For **Linux and MacOS** users, install the tool by running the following command :rocket::
 ```bash
 sudo curl -fsSL https://raw.githubusercontent.com/alibaba/opentelemetry-go-auto-instrumentation/main/install.sh | sudo bash
 ```
@@ -26,7 +26,7 @@ page.
 
 #### Build From Source
 
-You can also clone the repository and build the project by running the following commands:
+Checkout the source code and build the tool by running the following command:
 
 ```bash
 $ make build
