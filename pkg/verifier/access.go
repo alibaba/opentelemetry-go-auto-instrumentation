@@ -41,9 +41,12 @@ func ResetTestSpans() {
 	spanExporter.Reset()
 }
 
-func GetTestMetrics() metricdata.ResourceMetrics {
+func GetTestMetrics() (metricdata.ResourceMetrics, error) {
 	var tmp, result metricdata.ResourceMetrics
-	_ = ManualReader.Collect(context.Background(), &tmp)
+	err := ManualReader.Collect(context.Background(), &tmp)
+	if err != nil {
+		return metricdata.ResourceMetrics{}, err
+	}
 	result = deepcopy.Copy(tmp).(metricdata.ResourceMetrics)
 	// The deepcopy can not copy the attributes
 	// so we just copy the data again to retain the attributes
@@ -52,5 +55,5 @@ func GetTestMetrics() metricdata.ResourceMetrics {
 			result.ScopeMetrics[i].Metrics[j].Data = m.Data
 		}
 	}
-	return result
+	return result, nil
 }
