@@ -16,7 +16,6 @@ package verifier
 
 import (
 	"context"
-	"github.com/mohae/deepcopy"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -47,13 +46,6 @@ func GetTestMetrics() (metricdata.ResourceMetrics, error) {
 	if err != nil {
 		return metricdata.ResourceMetrics{}, err
 	}
-	result = deepcopy.Copy(tmp).(metricdata.ResourceMetrics)
-	// The deepcopy can not copy the attributes
-	// so we just copy the data again to retain the attributes
-	for i, s := range tmp.ScopeMetrics {
-		for j, m := range s.Metrics {
-			result.ScopeMetrics[i].Metrics[j].Data = m.Data
-		}
-	}
+	result = deepCopyMetric(tmp)
 	return result, nil
 }
