@@ -45,15 +45,16 @@ func WaitAndAssertMetrics(metricName string, metricVerifiers ...func(metricdata.
 }
 
 func waitForMetrics(metricName string) (metricdata.ResourceMetrics, error) {
-	// 最多等30s
 	var (
 		mrs metricdata.ResourceMetrics
 		err error
 	)
 	finish := false
+	var i int
 	for !finish {
 		select {
-		case <-time.After(30 * time.Second):
+		case <-time.After(20 * time.Second):
+			log.Printf("Timeout waiting for metrics!")
 			finish = true
 		default:
 			mrs, err = filterMetricByName(metricName)
@@ -61,6 +62,10 @@ func waitForMetrics(metricName string) (metricdata.ResourceMetrics, error) {
 				finish = true
 				break
 			}
+			i++
+		}
+		if i == 10 {
+			break
 		}
 	}
 	return mrs, err
@@ -82,7 +87,6 @@ func filterMetricByName(name string) (metricdata.ResourceMetrics, error) {
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 	defer ResetTestSpans()
-	// 最多等20s
 	finish := false
 	var traces []tracetest.SpanStubs
 	var i int

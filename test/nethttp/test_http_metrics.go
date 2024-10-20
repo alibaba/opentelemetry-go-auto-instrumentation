@@ -56,7 +56,7 @@ func main() {
 
 	verifier.WaitAndAssertMetrics("http.client.request.duration", func(mrs metricdata.ResourceMetrics) {
 		if len(mrs.ScopeMetrics) <= 0 {
-			panic("No http.server.request.duration metrics received!")
+			panic("No http.client.request.duration metrics received!")
 		}
 		point := mrs.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
 		if point.DataPoints[0].Count != 1 {
