@@ -15,11 +15,12 @@
 package test
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 	"log"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 )
 
 type TestCase struct {

@@ -11,18 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package gin
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
 	"reflect"
 	"strconv"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/gin-gonic/gin"
 )
 
-func nextOnEnter(call gin.CallContext, c *gin.Context) {
+func nextOnEnter(call api.CallContext, c *gin.Context) {
 	if c == nil {
 		return
 	}
@@ -49,7 +50,7 @@ func nextOnEnter(call gin.CallContext, c *gin.Context) {
 	return
 }
 
-func nextOnExit(call gin.CallContext) {
+func nextOnExit(call api.CallContext) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return

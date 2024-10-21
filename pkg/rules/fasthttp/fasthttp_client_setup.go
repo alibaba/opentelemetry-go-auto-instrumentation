@@ -11,19 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package fasthttp
 
 import (
 	"context"
-	"github.com/valyala/fasthttp"
 	"net/url"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/valyala/fasthttp"
 )
 
 var fastHttpClientInstrumenter = BuildFastHttpClientOtelInstrumenter()
 
-func clientFastHttpOnEnter(call fasthttp.CallContext, c *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) {
+func clientFastHttpOnEnter(call api.CallContext, c *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) {
 	scheme := req.URI().Scheme()
 	isTLS := false
 	if string(scheme) == "https" {
@@ -47,7 +48,7 @@ func clientFastHttpOnEnter(call fasthttp.CallContext, c *fasthttp.HostClient, re
 	call.SetData(data)
 }
 
-func clientFastHttpOnExit(call fasthttp.CallContext, err error) {
+func clientFastHttpOnExit(call api.CallContext, err error) {
 	data := call.GetData().(map[string]interface{})
 	ctx := data["ctx"].(context.Context)
 	request := data["request"].(fastHttpRequest)

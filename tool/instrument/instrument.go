@@ -15,6 +15,7 @@
 package instrument
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -22,11 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
-
 	"github.com/dave/dst"
 )
 
@@ -42,7 +41,7 @@ type RuleProcessor struct {
 	workDir         string
 	target          *dst.File // The target file to be instrumented
 	compileArgs     []string
-	rule2Suffix     map[*api.InstFuncRule]string
+	rule2Suffix     map[*resource.InstFuncRule]string
 	rawFunc         *dst.FuncDecl
 	onEnterHookFunc *dst.FuncDecl
 	onExitHookFunc  *dst.FuncDecl
@@ -69,7 +68,7 @@ func newRuleProcessor(args []string, pkgName string) *RuleProcessor {
 		workDir:     outputDir,
 		target:      nil,
 		compileArgs: args,
-		rule2Suffix: make(map[*api.InstFuncRule]string),
+		rule2Suffix: make(map[*resource.InstFuncRule]string),
 		relocated:   make(map[string]string),
 	}
 	return rp
@@ -114,7 +113,28 @@ func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool
 			return nil
 		}
 	}
-	return fmt.Errorf("failed to replace compile arg %v", newArg)
+	return errors.New("no matching compile arg found")
+}
+
+func (rp *RuleProcessor) saveDebugFile(path string) {
+	escape := func(s string) string {
+		dirName := strings.ReplaceAll(s, "/", "_")
+		dirName = strings.ReplaceAll(dirName, ".", "_")
+		return dirName
+	}
+	dest := filepath.Base(path)
+	util.Assert(rp.packageName != "", "sanity check")
+	dest = filepath.Join(escape(rp.packageName), dest)
+	dest = shared.GetInstrumentLogPath(dest)
+	err := os.MkdirAll(filepath.Dir(dest), os.ModePerm)
+	if err != nil { // error is tolerable here
+		log.Printf("failed to create debug file directory %s: %v", dest, err)
+		return
+	}
+	err = util.CopyFile(path, dest)
+	if err != nil { // error is tolerable here
+		log.Printf("failed to save debug file %s: %v", dest, err)
+	}
 }
 
 func (rp *RuleProcessor) applyRules(bundle *resource.RuleBundle) (err error) {
@@ -154,36 +174,30 @@ func guaranteeVersion(bundle *resource.RuleBundle, candidates []string) error {
 			continue
 		}
 		version := shared.ExtractVersion(candidate)
-		for _, rules := range bundle.File2FuncRules {
-			for _, hashes := range rules {
-				for _, h := range hashes {
-					rule := resource.FindFuncRuleByHash(h)
-					matched, _ := shared.MatchVersion(version, rule.Version)
-					if !matched {
-						return fmt.Errorf("rule %v is outdated, new version %s",
-							rule, version)
+		for _, funcRules := range bundle.File2FuncRules {
+			for _, rules := range funcRules {
+				for _, rule := range rules {
+					matched, err := shared.MatchVersion(version, rule.GetVersion())
+					if err != nil || !matched {
+						return fmt.Errorf("failed to match version %v", err)
 					}
 				}
 			}
 		}
-		for _, rules := range bundle.File2StructRules {
-			for _, hashes := range rules {
-				for _, h := range hashes {
-					rule := resource.FindStructRuleByHash(h)
-					matched, _ := shared.MatchVersion(version, rule.Version)
-					if !matched {
-						return fmt.Errorf("rule %v is outdated, new version %s",
-							rule, version)
-					}
-				}
+		for _, fileRule := range bundle.FileRules {
+			matched, err := shared.MatchVersion(version, fileRule.GetVersion())
+			if err != nil || !matched {
+				return fmt.Errorf("failed to match version %v", err)
 			}
 		}
-		for _, h := range bundle.FileRules {
-			rule := resource.FindFileRuleByHash(h)
-			matched, _ := shared.MatchVersion(version, rule.Version)
-			if !matched {
-				return fmt.Errorf("rule %v is outdated, new version %s",
-					rule, version)
+		for _, structRules := range bundle.File2StructRules {
+			for _, rules := range structRules {
+				for _, rule := range rules {
+					matched, err := shared.MatchVersion(version, rule.GetVersion())
+					if err != nil || !matched {
+						return fmt.Errorf("failed to match version %v", err)
+					}
+				}
 			}
 		}
 		// Good, the bundle is still valid, we not need to check all files
@@ -193,13 +207,32 @@ func guaranteeVersion(bundle *resource.RuleBundle, candidates []string) error {
 	return nil
 }
 
+func compileRemix(bundle *resource.RuleBundle, args []string) error {
+	start := time.Now()
+	guaranteeVersion(bundle, args)
+	rp := newRuleProcessor(args, bundle.PackageName)
+	err := rp.applyRules(bundle)
+	if err != nil {
+		return fmt.Errorf("failed to apply rules: %w", err)
+	}
+	// Good, run final compilation after instrumentation
+	err = util.RunCmd(rp.compileArgs...)
+	if shared.Verbose {
+		log.Printf("RunCmd: %v (%v)\n",
+			rp.compileArgs, time.Since(start))
+	} else {
+		log.Printf("RunCmd: %v (%v)\n",
+			bundle.ImportPath, time.Since(start))
+	}
+	return err
+}
+
 func Instrument() error {
 	args := os.Args[2:]
 	// Is compile command?
 	if shared.IsCompileCommand(strings.Join(args, " ")) {
-		start := time.Now()
 		if shared.Verbose {
-			log.Printf("CompileCmdInit: %v\n", args)
+			log.Printf("RunCmd: %v\n", args)
 		}
 		bundles, err := resource.LoadRuleBundles()
 		if err != nil {
@@ -209,20 +242,8 @@ func Instrument() error {
 			util.Assert(bundle.IsValid(), "sanity check")
 			// Is compiling the target package?
 			if matchImportPath(bundle.ImportPath, args) {
-				rp := newRuleProcessor(args, bundle.PackageName)
-				err = rp.applyRules(bundle)
-				if err != nil {
-					return fmt.Errorf("failed to apply rules: %w", err)
-				}
-				// Good, run final compilation after instrumentation
-				err = util.RunCmd(rp.compileArgs...)
-				took := time.Since(start)
-				if !shared.Verbose {
-					log.Printf("CompileCmd: %v took %v (%v)\n",
-						bundle.ImportPath, took, bundle.PackageName)
-				} else {
-					log.Printf("CompileCmd: %v took %v\n", rp.compileArgs, took)
-				}
+				err = compileRemix(bundle, args)
+
 				return err
 			}
 		}

@@ -21,14 +21,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"time"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 // -----------------------------------------------------------------------------
@@ -43,26 +38,30 @@ const (
 	DryRunLog = "dry_run.log"
 )
 
-const FixedOtelDepVersion = "v1.30.0"
-
-const FixedOtelContribVersion = "v0.55.0"
-
-const instDependency = "github.com/alibaba/opentelemetry-go-auto-instrumentation"
-
-const OTEL_INST_VERSION = "OTEL_INST_VERSION"
-
-var fixedOtelDeps = []string{
-	"go.opentelemetry.io/otel",
-	"go.opentelemetry.io/otel/sdk",
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc",
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp",
-}
-
-var fixedOtelContribDeps = []string{
-	"go.opentelemetry.io/contrib/instrumentation/runtime",
+var fixedDeps = []struct {
+	dep, version string
+	addImport    bool
+	fallible     bool
+}{
+	// otel sdk
+	{"go.opentelemetry.io/otel",
+		"v1.30.0", true, false},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
+		"v1.30.0", true, false},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
+		"v1.30.0", true, false},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
+		"v1.30.0", true, false},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc",
+		"v1.30.0", true, false},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp",
+		"v1.30.0", true, false},
+	// otel contrib
+	{"go.opentelemetry.io/contrib/instrumentation/runtime",
+		"v0.55.0", false, false},
+	// otelbuild itself
+	{"github.com/alibaba/opentelemetry-go-auto-instrumentation",
+		"v0.2.0.dev", false, true},
 }
 
 // runDryBuild runs a dry build to get all dependencies needed for the project.
@@ -131,62 +130,30 @@ func runBuildWithToolexec() (string, error) {
 	if shared.Verbose {
 		log.Printf("Run go build with args %v in toolexec mode", args)
 	}
-	return util.RunCmdWithOutput(append([]string{"go"}, args...)...)
-}
-
-func (dp *DepProcessor) pinDepVersion() error {
-	// This should be done before running go mod tidy, because we may relies on
-	// some packages that only presents in our specified version, running go mod
-	// tidy will report error since it nevertheless pulls the latest version,
-	// which is not what we want.
-	for _, ruleHash := range dp.funcRules {
-		rule := resource.FindFuncRuleByHash(ruleHash)
-		for _, dep := range rule.PackageDeps {
-			log.Printf("Pin dependency version %v ", dep)
-			err := runGoGet(dep)
-			if err != nil {
-				return fmt.Errorf("failed to pin dependency %v: %w", dep, err)
-			}
-		}
-	}
-	return nil
+	return util.RunCmdOutput(append([]string{"go"}, args...)...)
 }
 
 // We want to fetch otel dependencies in a fixed version instead of the latest
 // version, so we need to pin the version in go.mod. All used otel dependencies
 // should be listed and pinned here, because go mod tidy will fetch the latest
 // version even if we have pinned some of them.
-func (dp *DepProcessor) pinOtelVersion() error {
-	// otel related sdk dependencies
-	for _, dep := range fixedOtelDeps {
-		log.Printf("Pin otel dependency version %v ", dep)
-		err := runGoGet(dep + "@" + FixedOtelDepVersion)
-		if err != nil {
-			return fmt.Errorf("failed to pin otel dependency %v: %w", dep, err)
-		}
-	}
-	// otel related sdk dependencies
-	for _, dep := range fixedOtelContribDeps {
-		log.Printf("Pin otel contrib dependency version %v ", dep)
-		err := runGoGet(dep + "@" + FixedOtelContribVersion)
-		if err != nil {
-			return fmt.Errorf("failed to pin otel contrib dependency %v: %w", dep, err)
-		}
-	}
-	return nil
-}
-
 // Users will import github.com/alibaba/opentelemetry-go-auto-instrumentation
 // dependency while using otelbuild to use the inst-api and inst-semconv package.
-// We need to pin the version to let the users use the fixed version
-func (dp *DepProcessor) tryPinInstVersion() error {
-	instVersion := os.Getenv(OTEL_INST_VERSION)
-	if instVersion == "" {
-		instVersion = version.Tag
-	}
-	err := runGoGet(instDependency + "@" + instVersion)
-	if err != nil {
-		return fmt.Errorf("failed to pin %s %w", instDependency, err)
+// We also need to pin its version to let the users use the fixed version
+func (dp *DepProcessor) pinDepVersion() error {
+	// otel related sdk dependencies
+	for _, dep := range fixedDeps {
+		p := dep.dep
+		v := dep.version
+		log.Printf("Pin dependency version %v@%v", p, v)
+		err := runGoGet(p)
+		if err != nil {
+			if dep.fallible {
+				log.Printf("Failed to pin dependency %v: %v", p, err)
+				continue
+			}
+			return fmt.Errorf("failed to pin dependency %v: %w", dep, err)
+		}
 	}
 	return nil
 }
@@ -226,40 +193,51 @@ func (dp *DepProcessor) backupMod() error {
 	return nil
 }
 
+func (dp *DepProcessor) saveDebugFiles() {
+	dir := filepath.Join(shared.GetTempBuildDir(), OtelRules)
+	err := os.MkdirAll(dir, os.ModePerm)
+	if err == nil {
+		util.CopyDir(OtelRules, dir)
+	}
+	dir = filepath.Join(shared.GetTempBuildDir(), OtelUser)
+	err = os.MkdirAll(dir, os.ModePerm)
+	if err == nil {
+		for origin := range dp.backups {
+			util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))
+		}
+	}
+}
+
 func Preprocess() error {
+	// Make sure the project is modularized otherwise we cannot proceed
 	err := checkModularized()
 	if err != nil {
 		return fmt.Errorf("not modularized project: %w", err)
 	}
 
 	dp := newDepProcessor()
-	// Aware of both normal exit and interrupt signal, clean up temporary files
 	defer func() { dp.postProcess() }()
 	dp.catchSignal()
+
 	{
-		start := time.Now()
+		defer util.PhaseTimer("Preprocess")()
+
 		// Backup go.mod as we are likely modifing it later
 		err = dp.backupMod()
 		if err != nil {
 			return fmt.Errorf("failed to backup go.mod: %w", err)
 		}
 
-		// Find rule dependencies according to compile commands
+		// Run a dry build to get all dependencies needed for the project
+		// Match the dependencies with available rules and prepare them
+		// for the actual instrumentation
 		err = dp.setupDeps()
 		if err != nil {
 			return fmt.Errorf("failed to setup prerequisites: %w", err)
 		}
-		log.Printf("Setup rules took %v", time.Since(start))
-		start = time.Now()
 
 		// Pinning dependencies version in go.mod
 		err = dp.pinDepVersion()
-		if err != nil {
-			return fmt.Errorf("failed to update dependencies: %w", err)
-		}
-
-		// Pinning otel sdk dependencies version in go.mod
-		err = dp.pinOtelVersion()
 		if err != nil {
 			return fmt.Errorf("failed to update otel: %w", err)
 		}
@@ -270,25 +248,21 @@ func Preprocess() error {
 			return fmt.Errorf("failed to run mod tidy: %w", err)
 		}
 
-		tpe := dp.tryPinInstVersion()
-		if tpe != nil {
-			log.Printf("failed to pin opentelemetry-go-auto-instrumentation itself")
-		}
-
-		log.Printf("Preprocess took %v", time.Since(start))
+		// 	// Retain otel rules and modified user files for debugging
+		dp.saveDebugFiles()
 	}
 
 	{
-		start := time.Now()
+		defer util.PhaseTimer("Instrument")()
+
 		// Run go build with toolexec to start instrumentation
 		out, err := runBuildWithToolexec()
 		if err != nil {
 			return fmt.Errorf("failed to run go toolexec build: %w\n%s",
 				err, out)
 		} else {
-			log.Printf("CompileRemix:%s", out)
+			log.Printf("CompileRemix: %s", out)
 		}
-		log.Printf("Instrument took %v", time.Since(start))
 	}
 	return nil
 }

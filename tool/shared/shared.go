@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 )
 
@@ -54,12 +55,17 @@ func IsCompileCommand(line string) bool {
 	}
 	return true
 }
-func GetLogPath(name string) string {
+
+func GetTempBuildDir() string {
 	if InToolexec {
-		return filepath.Join(TempBuildDir, TInstrument, name)
+		return filepath.Join(TempBuildDir, TInstrument)
 	} else {
-		return filepath.Join(TempBuildDir, TPreprocess, name)
+		return filepath.Join(TempBuildDir, TPreprocess)
 	}
+}
+
+func GetLogPath(name string) string {
+	return filepath.Join(GetTempBuildDir(), name)
 }
 
 func GetInstrumentLogPath(name string) string {
@@ -74,13 +80,6 @@ func GetVarNameOfFunc(fn string) string {
 	const varDeclSuffix = "Impl"
 	fn = strings.Title(fn)
 	return fn + varDeclSuffix
-}
-
-func SaveDebugFile(prefix string, path string) {
-	targetName := filepath.Base(path)
-	util.Assert(IsGoFile(targetName), "sanity check")
-	counterpart := GetLogPath("debug_" + prefix + targetName)
-	_ = util.CopyFile(path, counterpart)
 }
 
 var packageRegexp = regexp.MustCompile(`(?m)^package\s+\w+`)
@@ -130,8 +129,29 @@ func GetGoModDir() (string, error) {
 	return projectDir, nil
 }
 
+// IsModPath checks if the provided module path is valid.
+func IsModPath(path string) bool {
+	if strings.Contains(path, "@") {
+		pathOnly := strings.Split(path, "@")[0]
+		return module.CheckPath(pathOnly) == nil
+	}
+	return module.CheckPath(path) == nil
+}
+
 func IsGoFile(path string) bool {
 	return strings.HasSuffix(path, ".go")
+}
+
+func IsGoModFile(path string) bool {
+	return strings.HasSuffix(path, GoModFile)
+}
+
+func IsGoSumFile(path string) bool {
+	return strings.HasSuffix(path, "go.sum")
+}
+
+func IsGoTestFile(path string) bool {
+	return strings.HasSuffix(path, "_test.go")
 }
 
 func IsExistGoMod() (bool, error) {
@@ -156,6 +176,10 @@ func HashStruct(st interface{}) (uint64, error) {
 		return 0, err
 	}
 	return hasher.Sum64(), nil
+}
+
+func MakePublic(name string) string {
+	return strings.Title(name)
 }
 
 func InPreprocess() bool {

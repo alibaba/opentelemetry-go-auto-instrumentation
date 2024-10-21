@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package mongo
 
@@ -21,14 +20,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"go.mongodb.org/mongo-driver/event"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var mongoInstrumenter = BuildMongoOtelInstrumenter()
 
-func mongoOnEnter(call mongo.CallContext, opts ...*options.ClientOptions) {
+func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
 	syncMap := sync.Map{}
 	for _, opt := range opts {
 		hosts := opt.Hosts
