@@ -19,16 +19,10 @@ import (
 	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 )
 
 func main() {
-	shared.ParseOptions()
-	if shared.PrintVersion {
-		shared.PrintTheVersion()
-		os.Exit(0)
-	}
-	err := shared.InitOptions()
+	err := tool.Init()
 	if err != nil {
 		log.Printf("failed to init options: %v", err)
 		os.Exit(1)

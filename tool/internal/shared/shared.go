@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/util"
 	"golang.org/x/mod/semver"
 )
 

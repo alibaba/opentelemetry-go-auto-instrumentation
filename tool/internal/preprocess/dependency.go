@@ -26,9 +26,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/util"
 
 	"golang.org/x/mod/modfile"
 )

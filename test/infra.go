@@ -25,12 +25,15 @@ import (
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
-const execName = "otelbuild"
+const (
+	execName     = "otelbuild"
+	TempBuildDir = ".otel-build"
+	TPreprocess  = "preprocess"
+	TInstrument  = "instrument"
+	DebugLogFile = "debug.log"
+)
 
 func RunCmd(args []string) *exec.Cmd {
 	path := args[0]
@@ -48,22 +51,23 @@ func RunCmd(args []string) *exec.Cmd {
 	return cmd
 }
 
-func ReadInstrumentLog(t *testing.T, fileName string) string {
-	path := filepath.Join(shared.TempBuildDir, shared.TInstrument, fileName)
-	content, err := util.ReadFile(path)
+func ReadFile(t *testing.T, fileName string) string {
+	path := filepath.Join(TempBuildDir, fileName)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return content
+	return string(content)
+}
+
+func ReadInstrumentLog(t *testing.T, fileName string) string {
+	path := filepath.Join(TempBuildDir, TInstrument, fileName)
+	return ReadFile(t, path)
 }
 
 func ReadPreprocessLog(t *testing.T, fileName string) string {
-	path := filepath.Join(shared.TempBuildDir, shared.TPreprocess, fileName)
-	content, err := util.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return content
+	path := filepath.Join(TempBuildDir, TPreprocess, fileName)
+	return ReadFile(t, path)
 }
 
 func readStdoutLog(t *testing.T) string {
@@ -75,7 +79,6 @@ func readStderrLog(t *testing.T) string {
 }
 
 func RunGoBuild(t *testing.T, args ...string) {
-	util.Assert(pwd != "", "pwd is empty")
 	cmd := RunCmd(append([]string{"go", "build"}, args...))
 	err := cmd.Run()
 	if err != nil {
@@ -84,7 +87,6 @@ func RunGoBuild(t *testing.T, args ...string) {
 }
 
 func RunInstrumentFallible(t *testing.T, args ...string) {
-	util.Assert(pwd != "", "pwd is empty")
 	path := filepath.Join(filepath.Dir(pwd), execName)
 	cmd := RunCmd(append([]string{path}, args...))
 	err := cmd.Run()
@@ -94,14 +96,13 @@ func RunInstrumentFallible(t *testing.T, args ...string) {
 }
 
 func RunInstrument(t *testing.T, args ...string) {
-	util.Assert(pwd != "", "pwd is empty")
 	path := filepath.Join(filepath.Dir(pwd), execName)
 	cmd := RunCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err != nil {
 		stderr := readStderrLog(t)
-		log1 := ReadPreprocessLog(t, shared.DebugLogFile)
-		log2 := ReadInstrumentLog(t, shared.DebugLogFile)
+		log1 := ReadPreprocessLog(t, DebugLogFile)
+		log2 := ReadInstrumentLog(t, DebugLogFile)
 		text := fmt.Sprintf("failed to run instrument: %v\n", err)
 		text += fmt.Sprintf("stderr: %v\n", stderr)
 		text += fmt.Sprintf("preprocess: %v\n", log1)
@@ -188,25 +189,25 @@ func ExpectStderrContains(t *testing.T, expect string) {
 }
 
 func ExpectInstrumentContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TInstrument, log)
+	path := filepath.Join(TempBuildDir, TInstrument, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
 func ExpectInstrumentNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TInstrument, log)
+	path := filepath.Join(TempBuildDir, TInstrument, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
 }
 
 func ExpectPreprocessContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TPreprocess, log)
+	path := filepath.Join(TempBuildDir, TPreprocess, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
 func ExpectPreprocessNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TPreprocess, log)
+	path := filepath.Join(TempBuildDir, TPreprocess, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
 }
