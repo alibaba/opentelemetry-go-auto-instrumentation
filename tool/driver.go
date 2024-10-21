@@ -20,10 +20,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/instrument"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/preprocess"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/instrument"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/preprocess"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/shared"
 )
 
 func initLogs(names ...string) error {
@@ -97,6 +97,17 @@ func initEnv() (err error) {
 		shared.DisableRules = "*"
 	}
 	return nil
+}
+
+func Init() error {
+	shared.ParseOptions()
+
+	if shared.PrintVersion {
+		shared.PrintTheVersion()
+		os.Exit(0)
+	}
+
+	return shared.InitOptions()
 }
 
 func Run() (err error) {

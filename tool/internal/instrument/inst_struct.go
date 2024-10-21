@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/shared"
 )
 
 func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {

@@ -22,7 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/util"
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 )

@@ -23,12 +23,12 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/version"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/resource"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/util"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/internal/shared"
 )
 
 // -----------------------------------------------------------------------------
