@@ -199,12 +199,11 @@ func readImportPath(cmd []string) string {
 }
 
 func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
-	cmdArgs := strings.Split(cmd, " ")
+	cmdArgs := shared.SplitCmds(cmd)
 	importPath := readImportPath(cmdArgs)
 	util.Assert(importPath != "", "sanity check")
 	if shared.Verbose {
-		log.Printf("Try to match rules for %v with %v\n",
-			importPath, cmdArgs)
+		log.Printf("Matching %v with %v\n", importPath, cmdArgs)
 	}
 	bundle := matcher.matchRuleBundle(importPath, cmdArgs)
 	ch <- bundle
