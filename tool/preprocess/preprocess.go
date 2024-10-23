@@ -87,6 +87,14 @@ func runGoGet(dep string) error {
 	return util.RunCmd("go", "get", dep)
 }
 
+func runGoModDownload(path string) error {
+	return util.RunCmd("go", "mod", "download", path)
+}
+
+func runGoModEdit(require string) error {
+	return util.RunCmd("go", "mod", "edit", "-require="+require)
+}
+
 func runCleanCache() error {
 	return util.RunCmd("go", "clean", "-cache")
 }
@@ -134,6 +142,18 @@ func runBuildWithToolexec() (string, error) {
 	return util.RunCmdWithOutput(append([]string{"go"}, args...)...)
 }
 
+func fetchDep(path string) error {
+	err := runGoModDownload(path)
+	if err != nil {
+		return fmt.Errorf("failed to fetch dependency %v: %w", path, err)
+	}
+	err = runGoModEdit(path)
+	if err != nil {
+		return fmt.Errorf("failed to edit go.mod: %w", err)
+	}
+	return nil
+}
+
 func (dp *DepProcessor) pinDepVersion() error {
 	// This should be done before running go mod tidy, because we may relies on
 	// some packages that only presents in our specified version, running go mod
@@ -143,7 +163,7 @@ func (dp *DepProcessor) pinDepVersion() error {
 		rule := resource.FindFuncRuleByHash(ruleHash)
 		for _, dep := range rule.PackageDeps {
 			log.Printf("Pin dependency version %v ", dep)
-			err := runGoGet(dep)
+			err := fetchDep(dep)
 			if err != nil {
 				return fmt.Errorf("failed to pin dependency %v: %w", dep, err)
 			}
@@ -160,7 +180,7 @@ func (dp *DepProcessor) pinOtelVersion() error {
 	// otel related sdk dependencies
 	for _, dep := range fixedOtelDeps {
 		log.Printf("Pin otel dependency version %v ", dep)
-		err := runGoGet(dep + "@" + FixedOtelDepVersion)
+		err := fetchDep(dep + "@" + FixedOtelDepVersion)
 		if err != nil {
 			return fmt.Errorf("failed to pin otel dependency %v: %w", dep, err)
 		}
@@ -168,7 +188,7 @@ func (dp *DepProcessor) pinOtelVersion() error {
 	// otel related sdk dependencies
 	for _, dep := range fixedOtelContribDeps {
 		log.Printf("Pin otel contrib dependency version %v ", dep)
-		err := runGoGet(dep + "@" + FixedOtelContribVersion)
+		err := fetchDep(dep + "@" + FixedOtelContribVersion)
 		if err != nil {
 			return fmt.Errorf("failed to pin otel contrib dependency %v: %w", dep, err)
 		}
@@ -184,7 +204,7 @@ func (dp *DepProcessor) tryPinInstVersion() error {
 	if instVersion == "" {
 		instVersion = version.Tag
 	}
-	err := runGoGet(instDependency + "@" + instVersion)
+	err := fetchDep(instDependency + "@" + instVersion)
 	if err != nil {
 		return fmt.Errorf("failed to pin %s %w", instDependency, err)
 	}

@@ -15,6 +15,9 @@
 package verifier
 
 import (
+	"errors"
+	"fmt"
+	"github.com/mohae/deepcopy"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"log"
 	"sort"
@@ -34,45 +37,57 @@ func WaitAndAssertTraces(traceVerifiers func([]tracetest.SpanStubs), numTraces i
 	traceVerifiers(traces)
 }
 
-func WaitAndAssertMetrics(metricName string, metricVerifiers ...func(metricdata.ResourceMetrics)) {
-	mrs, err := waitForMetrics(metricName)
+func WaitAndAssertMetrics(metricVerifiers map[string]func(metricdata.ResourceMetrics)) {
+	mrs, err := waitForMetrics()
 	if err != nil {
-		log.Fatalf("Failed to wait for metric %s: %v", metricName, err)
+		log.Fatalf("Failed to wait for metric: %v", err)
 	}
-	for _, v := range metricVerifiers {
-		v(mrs)
+	for k, v := range metricVerifiers {
+		mrsCpy := deepCopyMetric(mrs)
+		d, err := filterMetricByName(mrsCpy, k)
+		if err != nil {
+			log.Fatalf("Failed to wait for metric: %v", err)
+		}
+		v(d)
 	}
 }
 
-func waitForMetrics(metricName string) (metricdata.ResourceMetrics, error) {
-	// 最多等30s
+func waitForMetrics() (metricdata.ResourceMetrics, error) {
 	var (
 		mrs metricdata.ResourceMetrics
 		err error
 	)
 	finish := false
+	var i int
 	for !finish {
 		select {
-		case <-time.After(30 * time.Second):
+		case <-time.After(20 * time.Second):
+			log.Printf("Timeout waiting for metrics!")
 			finish = true
 		default:
-			mrs, err = filterMetricByName(metricName)
+			mrs, err = GetTestMetrics()
 			if err == nil {
 				finish = true
 				break
 			}
+			i++
+		}
+		if i == 10 {
+			break
 		}
 	}
 	return mrs, err
 }
 
-func filterMetricByName(name string) (metricdata.ResourceMetrics, error) {
-	data := GetTestMetrics()
+func filterMetricByName(data metricdata.ResourceMetrics, name string) (metricdata.ResourceMetrics, error) {
+	if len(data.ScopeMetrics) == 0 {
+		return data, errors.New(fmt.Sprintf("No metrics named %s", name))
+	}
 	for i, s := range data.ScopeMetrics {
 		scms := make([]metricdata.Metrics, 0)
-		for _, sm := range s.Metrics {
+		for j, sm := range s.Metrics {
 			if sm.Name == name {
-				scms = append(scms, sm)
+				scms = append(scms, s.Metrics[j])
 			}
 		}
 		data.ScopeMetrics[i].Metrics = scms
@@ -82,7 +97,6 @@ func filterMetricByName(name string) (metricdata.ResourceMetrics, error) {
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 	defer ResetTestSpans()
-	// 最多等20s
 	finish := false
 	var traces []tracetest.SpanStubs
 	var i int
@@ -127,7 +141,7 @@ func sortTrace(traceMap map[string][]tracetest.SpanStub) []tracetest.SpanStubs {
 	for _, trace := range traceMap {
 		traces = append(traces, trace)
 	}
-	// 按开始时间从小到大排
+	// ordered by start time
 	sort.Slice(traces, func(i, j int) bool {
 		return traces[i][0].StartTime.UnixNano() < traces[j][0].StartTime.UnixNano()
 	})
@@ -142,7 +156,7 @@ func sortTrace(traceMap map[string][]tracetest.SpanStub) []tracetest.SpanStubs {
 }
 
 func sortSingleTrace(stubs []tracetest.SpanStub) []tracetest.SpanStub {
-	// 同一条trace的按span的父子关系排
+	// spans are ordered by their father-child relationship
 	lookup := make(map[string]*node)
 	for _, stub := range stubs {
 		lookup[stub.SpanContext.SpanID().String()] = &node{
@@ -156,7 +170,7 @@ func sortSingleTrace(stubs []tracetest.SpanStub) []tracetest.SpanStub {
 		if !ok {
 			panic("no span id in stub " + stub.Name)
 		}
-		// 发现了父节点，就添加到父节点的子节点列表里面去
+		// find the parent node, then put it into parent node's childNodes
 		if n.span.Parent.SpanID().IsValid() {
 			parentSpanId := n.span.Parent.SpanID().String()
 			parentNode, ok := lookup[parentSpanId]
@@ -166,7 +180,7 @@ func sortSingleTrace(stubs []tracetest.SpanStub) []tracetest.SpanStub {
 			}
 		}
 	}
-	// 寻找根节点
+	// find root
 	rootNodes := make([]*node, 0)
 	for _, stub := range stubs {
 		n, ok := lookup[stub.SpanContext.SpanID().String()]
@@ -183,7 +197,7 @@ func sortSingleTrace(stubs []tracetest.SpanStub) []tracetest.SpanStub {
 	sort.Slice(rootNodes, func(i, j int) bool {
 		return rootNodes[i].span.StartTime.UnixNano() < rootNodes[j].span.StartTime.UnixNano()
 	})
-	// 层序遍历，获取排序后的span
+	// walk the span tree
 	t := make([]tracetest.SpanStub, 0)
 	for _, rootNode := range rootNodes {
 		traversePreOrder(rootNode, &t)
@@ -196,4 +210,17 @@ func traversePreOrder(n *node, acc *[]tracetest.SpanStub) {
 	for _, child := range n.childNodes {
 		traversePreOrder(child, acc)
 	}
+}
+
+func deepCopyMetric(mrs metricdata.ResourceMetrics) metricdata.ResourceMetrics {
+	// do a deep copy in before each metric verifier executed
+	mrsCpy := deepcopy.Copy(mrs).(metricdata.ResourceMetrics)
+	// The deepcopy can not copy the attributes
+	// so we just copy the data again to retain the attributes
+	for i, s := range mrs.ScopeMetrics {
+		for j, m := range s.Metrics {
+			mrsCpy.ScopeMetrics[i].Metrics[j].Data = m.Data
+		}
+	}
+	return mrsCpy
 }

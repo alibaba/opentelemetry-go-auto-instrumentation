@@ -124,6 +124,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 			if _, ok := parsedAst[file]; !ok {
 				fileAst, err := shared.ParseAstFromFileFast(file)
 				if fileAst == nil || err != nil {
+					log.Printf("failed to parse file %s: %v", file, err)
 					continue
 				}
 				parsedAst[file] = fileAst

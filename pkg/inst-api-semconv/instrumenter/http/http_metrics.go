@@ -214,7 +214,6 @@ func (h HttpClientMetric) OnAfterEnd(context context.Context, endAttributes []at
 			log.Printf("failed to create clientRequestDuration, err is %v\n", err)
 		}
 	}
-	fmt.Printf("start attributes %v\n", startAttributes)
 	endAttributes = append(endAttributes, startAttributes...)
 	n, metricsAttrs := shadower.Shadow(endAttributes)
 	if h.clientRequestDuration != nil {
