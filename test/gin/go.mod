@@ -2,10 +2,10 @@ module gin
 
 go 1.22
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier => ../../../opentelemetry-go-auto-instrumentation
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.0-00010101000000-000000000000
+	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.10.0
 	go.opentelemetry.io/otel/sdk v1.30.0
 )
