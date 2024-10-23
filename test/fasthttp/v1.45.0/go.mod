@@ -2,7 +2,9 @@ module fasthttp/v1.45.0
 
 go 1.22
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier => ../../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier => ../../../../opentelemetry-go-auto-instrumentation/verifier
+
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
 require github.com/valyala/fasthttp v1.52.0
 

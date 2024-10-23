@@ -2,6 +2,8 @@ module grpc
 
 go 1.22
 
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier => ../../../../opentelemetry-go-auto-instrumentation/verifier
+
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier => ../../../../opentelemetry-go-auto-instrumentation
 
 require (
