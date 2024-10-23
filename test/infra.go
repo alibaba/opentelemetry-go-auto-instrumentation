@@ -23,8 +23,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"

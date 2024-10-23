@@ -2,10 +2,10 @@ module gorm/v1.22.0
 
 go 1.22
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier => ../../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier => ../../../../opentelemetry-go-auto-instrumentation
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier v0.0.0-00010101000000-000000000000
+	github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier v0.0.0-00010101000000-000000000000
 	go.opentelemetry.io/otel/sdk v1.30.0
 	gorm.io/driver/mysql v1.1.3
 	gorm.io/gorm v1.22.0

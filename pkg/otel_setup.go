@@ -20,7 +20,7 @@ import (
 	"errors"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel"

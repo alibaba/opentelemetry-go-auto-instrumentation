@@ -1,4 +1,4 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier
+module github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier
 
 go 1.22
 

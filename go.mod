@@ -2,10 +2,10 @@ module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
 go 1.22
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier => ./pkg/verifier
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier => ./verifier
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier v0.0.0-00010101000000-000000000000
+	github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier v0.0.0-00010101000000-000000000000
 	github.com/dave/dst v0.27.3
 	github.com/docker/go-connections v0.5.0
 	github.com/testcontainers/testcontainers-go v0.32.0
@@ -46,6 +46,7 @@ require (
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/user v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect

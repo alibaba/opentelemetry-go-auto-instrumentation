@@ -16,7 +16,7 @@ package main
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"time"
 )
