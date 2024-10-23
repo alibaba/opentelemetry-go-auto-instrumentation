@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build ignore
-
 package golog
 
 import (
-	"go.opentelemetry.io/otel/sdk/trace"
 	"log"
 	"strings"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-func goLogWriteOnEnter(call log.CallContext, ce *log.Logger, pc uintptr, calldepth int, appendOutput func([]byte) []byte) {
+func goLogWriteOnEnter(call api.CallContext, ce *log.Logger, pc uintptr, calldepth int, appendOutput func([]byte) []byte) {
 	traceId, spanId := trace.GetTraceAndSpanId()
 	newAppendOutput := func(bytes []byte) []byte {
 		sb := strings.Builder{}

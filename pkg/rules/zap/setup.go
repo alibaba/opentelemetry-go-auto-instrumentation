@@ -11,17 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package zap
 
 import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func zapLogWriteOnEnter(call zapcore.CallContext, ce *zapcore.CheckedEntry, fields ...zap.Field) {
+func zapLogWriteOnEnter(call api.CallContext, ce *zapcore.CheckedEntry, fields ...zap.Field) {
 	var fieldsTemp []zap.Field
 	traceId, spanId := trace.GetTraceAndSpanId()
 	if traceId != "" {

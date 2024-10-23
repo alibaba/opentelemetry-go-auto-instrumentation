@@ -40,3 +40,12 @@ func TestBuildProject3(t *testing.T) {
 	RunInstrument(t, "--", "m1")
 	RunInstrumentFallible(t, "--", "m2") // not used in go.work
 }
+
+func TestBuildProject4(t *testing.T) {
+	const AppName = "build"
+	UseApp(AppName)
+
+	RunInstrument(t, "-rule=../../pkg/data/default.json", "--", "m1")
+	RunInstrumentFallible(t, "-rule=../../pkg/data/default", "--", "m1")
+	RunInstrument(t, "-rule=../../pkg/data/default.json,../../pkg/data/test_fmt.json", "--", "m1")
+}

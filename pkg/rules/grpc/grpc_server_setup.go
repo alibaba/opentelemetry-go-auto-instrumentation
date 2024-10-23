@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package grpc
 
 import (
 	"context"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/stats"
@@ -24,7 +25,7 @@ import (
 
 var grpcServerInstrument = BuildGrpcServerInstrumenter()
 
-func grpcServerOnEnter(call grpc.CallContext, opts ...grpc.ServerOption) {
+func grpcServerOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
 	h := grpc.StatsHandler(NewServerHandler())
 	var opt []grpc.ServerOption
 	opt = append(opt, h)
@@ -32,7 +33,7 @@ func grpcServerOnEnter(call grpc.CallContext, opts ...grpc.ServerOption) {
 	call.SetParam(0, opt)
 }
 
-func grpcServerOnExit(call grpc.CallContext, s *grpc.Server) {
+func grpcServerOnExit(call api.CallContext, s *grpc.Server) {
 	return
 }
 
