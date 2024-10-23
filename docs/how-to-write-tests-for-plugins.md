@@ -46,7 +46,7 @@ there should be two spans in `test_executing_commands.go`, one represents for th
 represents for the `get` redis operation. You should use the `verifier` to verify the correctness:
 
 ```go
-"github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier"
+import "github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier"
 
 verifier.WaitAndAssertTraces(func (stubs []tracetest.SpanStubs) {
 	verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5: ", "set")
