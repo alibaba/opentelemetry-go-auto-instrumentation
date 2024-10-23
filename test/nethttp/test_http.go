@@ -16,7 +16,7 @@ package main
 
 import (
 	"bytes"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"net/http"

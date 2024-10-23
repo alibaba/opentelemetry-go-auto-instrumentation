@@ -4,10 +4,12 @@ go 1.22
 
 toolchain go1.22.7
 
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier => ../../../../opentelemetry-go-auto-instrumentation/verifier
+
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.0-00010101000000-000000000000
+	github.com/alibaba/opentelemetry-go-auto-instrumentation/verifier v0.0.0-00010101000000-000000000000
 	github.com/cloudwego/hertz v0.9.0
 )
 
