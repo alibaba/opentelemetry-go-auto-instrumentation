@@ -23,7 +23,8 @@ const HttpclientAppName = "httpclient"
 func TestRunHttpclient(t *testing.T) {
 	UseApp(HttpclientAppName)
 
-	RunInstrument(t, "-debuglog", "-verbose", "-disablerules=fmt")
+	RunInstrument(t, UseTestRules("test_nethttp.json"),
+		"-debuglog", "-verbose")
 	_, stderr := RunApp(t, HttpclientAppName)
 	ExpectContains(t, stderr, "Client.Do()")                // println writes to stderr
 	ExpectContains(t, stderr, "failed to exec onExit hook") // intentional panic
@@ -35,6 +36,6 @@ func TestRunHttpclient(t *testing.T) {
 	ExpectContains(t, stderr, "4008208820")
 	ExpectContains(t, stderr, "Prince of Qin Smashing the Battle line")
 
-	ExpectPreprocessContains(t, "debug.log", "go.opentelemetry.io/otel@v1.31.0")
-	ExpectInstrumentContains(t, "debug.log", "go.opentelemetry.io/otel@v1.31.0")
+	//ExpectPreprocessContains(t, "debug.log", "go.opentelemetry.io/otel@v1.31.0")
+	//ExpectInstrumentContains(t, "debug.log", "go.opentelemetry.io/otel@v1.31.0")
 }

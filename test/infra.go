@@ -23,14 +23,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
-const execName = "otelbuild"
+const (
+	ExecName = "otelbuild"
+)
 
 func RunCmd(args []string) *exec.Cmd {
 	path := args[0]
@@ -85,7 +87,7 @@ func RunGoBuild(t *testing.T, args ...string) {
 
 func RunInstrumentFallible(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
-	path := filepath.Join(filepath.Dir(pwd), execName)
+	path := filepath.Join(filepath.Dir(pwd), ExecName)
 	cmd := RunCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err == nil {
@@ -95,7 +97,7 @@ func RunInstrumentFallible(t *testing.T, args ...string) {
 
 func RunInstrument(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
-	path := filepath.Join(filepath.Dir(pwd), execName)
+	path := filepath.Join(filepath.Dir(pwd), ExecName)
 	cmd := RunCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err != nil {
@@ -110,23 +112,9 @@ func RunInstrument(t *testing.T, args ...string) {
 	}
 }
 
-func TBuildAppNoop(t *testing.T, appName string, muzzleClasses ...string) {
-	UseApp(appName)
-	if muzzleClasses == nil || len(muzzleClasses) == 0 {
-		RunInstrument(t)
-	} else {
-		RunInstrument(t, muzzleClasses...)
-	}
-}
-
-func BuildApp(t *testing.B, appName string) {
-	UseApp(appName)
-	RunInstrument(&testing.T{})
-}
-
-func BuildAppNoop(t *testing.B, appName string) {
-	UseApp(appName)
-	RunGoBuild(&testing.T{}, "-a" /*force rebuilding*/)
+func UseTestRules(name string) string {
+	path := filepath.Join(filepath.Dir(pwd), "pkg", "data", name)
+	return "-rule=" + path
 }
 
 var pwd string
@@ -254,6 +242,15 @@ func ExpectContainsAllItem(t *testing.T, actualItems []string, expectedItems ...
 func ExpectContainsNothing(t *testing.T, actualItems []string) {
 	if len(actualItems) > 0 {
 		t.Fatalf("-- expected: []\n-- actual: [%s]", strings.Join(actualItems, ", "))
+	}
+}
+
+func TBuildAppNoop(t *testing.T, appName string, muzzleClasses ...string) {
+	UseApp(appName)
+	if muzzleClasses == nil || len(muzzleClasses) == 0 {
+		RunInstrument(t)
+	} else {
+		RunInstrument(t, muzzleClasses...)
 	}
 }
 

@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package databasesql
 
@@ -20,11 +19,13 @@ import (
 	"database/sql"
 	"log"
 	"strings"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 var databaseSqlInstrumenter = BuildDatabaseSqlOtelInstrumenter()
 
-func beforeOpenInstrumentation(call sql.CallContext, driverName, dataSourceName string) {
+func beforeOpenInstrumentation(call api.CallContext, driverName, dataSourceName string) {
 	addr, err := parseDSN(driverName, dataSourceName)
 	if err != nil {
 		log.Printf("failed to parse dsn: %v", err)
@@ -36,7 +37,7 @@ func beforeOpenInstrumentation(call sql.CallContext, driverName, dataSourceName 
 	})
 }
 
-func afterOpenInstrumentation(call sql.CallContext, db *sql.DB, err error) {
+func afterOpenInstrumentation(call api.CallContext, db *sql.DB, err error) {
 	if db == nil {
 		return
 	}
@@ -58,18 +59,18 @@ func afterOpenInstrumentation(call sql.CallContext, db *sql.DB, err error) {
 	}
 }
 
-func beforePingContextInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Context) {
+func beforePingContextInstrumentation(call api.CallContext, db *sql.DB, ctx context.Context) {
 	if db == nil {
 		return
 	}
 	instrumentStart(call, ctx, "ping", "ping", db.Endpoint, db.DriverName, db.DSN)
 }
 
-func afterPingContextInstrumentation(call sql.CallContext, err error) {
+func afterPingContextInstrumentation(call api.CallContext, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforePrepareContextInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Context, query string) {
+func beforePrepareContextInstrumentation(call api.CallContext, db *sql.DB, ctx context.Context, query string) {
 	if db == nil {
 		return
 	}
@@ -81,7 +82,7 @@ func beforePrepareContextInstrumentation(call sql.CallContext, db *sql.DB, ctx c
 	})
 }
 
-func afterPrepareContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, err error) {
+func afterPrepareContextInstrumentation(call api.CallContext, stmt *sql.Stmt, err error) {
 	if stmt == nil {
 		return
 	}
@@ -97,36 +98,36 @@ func afterPrepareContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, er
 	stmt.DSN = callDataMap["dsn"]
 }
 
-func beforeExecContextInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Context, query string, args ...any) {
+func beforeExecContextInstrumentation(call api.CallContext, db *sql.DB, ctx context.Context, query string, args ...any) {
 	if db == nil {
 		return
 	}
 	instrumentStart(call, ctx, "exec", query, db.Endpoint, db.DriverName, db.DSN)
 }
 
-func afterExecContextInstrumentation(call sql.CallContext, result sql.Result, err error) {
+func afterExecContextInstrumentation(call api.CallContext, result sql.Result, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeQueryContextInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Context, query string, args ...any) {
+func beforeQueryContextInstrumentation(call api.CallContext, db *sql.DB, ctx context.Context, query string, args ...any) {
 	if db == nil {
 		return
 	}
 	instrumentStart(call, ctx, "query", query, db.Endpoint, db.DriverName, db.DSN)
 }
 
-func afterQueryContextInstrumentation(call sql.CallContext, rows *sql.Rows, err error) {
+func afterQueryContextInstrumentation(call api.CallContext, rows *sql.Rows, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeTxInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Context, opts *sql.TxOptions) {
+func beforeTxInstrumentation(call api.CallContext, db *sql.DB, ctx context.Context, opts *sql.TxOptions) {
 	if db == nil {
 		return
 	}
 	instrumentStart(call, ctx, "begin", "START TRANSACTION", db.Endpoint, db.DriverName, db.DSN)
 }
 
-func afterTxInstrumentation(call sql.CallContext, tx *sql.Tx, err error) {
+func afterTxInstrumentation(call api.CallContext, tx *sql.Tx, err error) {
 	if tx == nil {
 		return
 	}
@@ -144,7 +145,7 @@ func afterTxInstrumentation(call sql.CallContext, tx *sql.Tx, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeConnInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Context) {
+func beforeConnInstrumentation(call api.CallContext, db *sql.DB, ctx context.Context) {
 	if db == nil {
 		return
 	}
@@ -155,7 +156,7 @@ func beforeConnInstrumentation(call sql.CallContext, db *sql.DB, ctx context.Con
 	})
 }
 
-func afterConnInstrumentation(call sql.CallContext, conn *sql.Conn, err error) {
+func afterConnInstrumentation(call api.CallContext, conn *sql.Conn, err error) {
 	if conn == nil {
 		return
 	}
@@ -177,18 +178,18 @@ func afterConnInstrumentation(call sql.CallContext, conn *sql.Conn, err error) {
 	}
 }
 
-func beforeConnPingContextInstrumentation(call sql.CallContext, conn *sql.Conn, ctx context.Context) {
+func beforeConnPingContextInstrumentation(call api.CallContext, conn *sql.Conn, ctx context.Context) {
 	if conn == nil {
 		return
 	}
 	instrumentStart(call, ctx, "ping", "ping", conn.Endpoint, conn.DriverName, conn.DSN)
 }
 
-func afterConnPingContextInstrumentation(call sql.CallContext, err error) {
+func afterConnPingContextInstrumentation(call api.CallContext, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeConnPrepareContextInstrumentation(call sql.CallContext, conn *sql.Conn, ctx context.Context, query string) {
+func beforeConnPrepareContextInstrumentation(call api.CallContext, conn *sql.Conn, ctx context.Context, query string) {
 	if conn == nil {
 		return
 	}
@@ -200,7 +201,7 @@ func beforeConnPrepareContextInstrumentation(call sql.CallContext, conn *sql.Con
 	})
 }
 
-func afterConnPrepareContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, err error) {
+func afterConnPrepareContextInstrumentation(call api.CallContext, stmt *sql.Stmt, err error) {
 	if stmt == nil {
 		return
 	}
@@ -216,40 +217,40 @@ func afterConnPrepareContextInstrumentation(call sql.CallContext, stmt *sql.Stmt
 	stmt.DSN = callDataMap["dsn"]
 }
 
-func beforeConnExecContextInstrumentation(call sql.CallContext, conn *sql.Conn, ctx context.Context, query string, args ...any) {
+func beforeConnExecContextInstrumentation(call api.CallContext, conn *sql.Conn, ctx context.Context, query string, args ...any) {
 	if conn == nil {
 		return
 	}
 	instrumentStart(call, ctx, "exec", query, conn.Endpoint, conn.DriverName, conn.DSN)
 }
 
-func afterConnExecContextInstrumentation(call sql.CallContext, result sql.Result, err error) {
+func afterConnExecContextInstrumentation(call api.CallContext, result sql.Result, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeConnQueryContextInstrumentation(call sql.CallContext, conn *sql.Conn, ctx context.Context, query string, args ...any) {
+func beforeConnQueryContextInstrumentation(call api.CallContext, conn *sql.Conn, ctx context.Context, query string, args ...any) {
 	if conn == nil {
 		return
 	}
 	instrumentStart(call, ctx, "query", query, conn.Endpoint, conn.DriverName, conn.DSN)
 }
 
-func afterConnQueryContextInstrumentation(call sql.CallContext, rows *sql.Rows, err error) {
+func afterConnQueryContextInstrumentation(call api.CallContext, rows *sql.Rows, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeConnTxInstrumentation(call sql.CallContext, conn *sql.Conn, ctx context.Context, opts *sql.TxOptions) {
+func beforeConnTxInstrumentation(call api.CallContext, conn *sql.Conn, ctx context.Context, opts *sql.TxOptions) {
 	if conn == nil {
 		return
 	}
 	instrumentStart(call, ctx, "start", "START TRANSACTION", conn.Endpoint, conn.DriverName, conn.DSN)
 }
 
-func afterConnTxInstrumentation(call sql.CallContext, tx *sql.Tx, err error) {
+func afterConnTxInstrumentation(call api.CallContext, tx *sql.Tx, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeTxPrepareContextInstrumentation(call sql.CallContext, tx *sql.Tx, ctx context.Context, query string) {
+func beforeTxPrepareContextInstrumentation(call api.CallContext, tx *sql.Tx, ctx context.Context, query string) {
 	if tx == nil {
 		return
 	}
@@ -261,7 +262,7 @@ func beforeTxPrepareContextInstrumentation(call sql.CallContext, tx *sql.Tx, ctx
 	})
 }
 
-func afterTxPrepareContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, err error) {
+func afterTxPrepareContextInstrumentation(call api.CallContext, stmt *sql.Stmt, err error) {
 	if stmt == nil {
 		return
 	}
@@ -277,7 +278,7 @@ func afterTxPrepareContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, 
 	stmt.DSN = callDataMap["dsn"]
 }
 
-func beforeTxStmtContextInstrumentation(call sql.CallContext, tx *sql.Tx, ctx context.Context, stmt *sql.Stmt) {
+func beforeTxStmtContextInstrumentation(call api.CallContext, tx *sql.Tx, ctx context.Context, stmt *sql.Stmt) {
 	if stmt == nil {
 		return
 	}
@@ -288,7 +289,7 @@ func beforeTxStmtContextInstrumentation(call sql.CallContext, tx *sql.Tx, ctx co
 	})
 }
 
-func afterTxStmtContextInstrumentation(call sql.CallContext, stmt *sql.Stmt) {
+func afterTxStmtContextInstrumentation(call api.CallContext, stmt *sql.Stmt) {
 	if stmt == nil {
 		return
 	}
@@ -311,51 +312,51 @@ func afterTxStmtContextInstrumentation(call sql.CallContext, stmt *sql.Stmt) {
 	}
 }
 
-func beforeTxExecContextInstrumentation(call sql.CallContext, tx *sql.Tx, ctx context.Context, query string, args ...any) {
+func beforeTxExecContextInstrumentation(call api.CallContext, tx *sql.Tx, ctx context.Context, query string, args ...any) {
 	if tx == nil {
 		return
 	}
 	instrumentStart(call, ctx, "exec", query, tx.Endpoint, tx.DriverName, tx.DSN)
 }
 
-func afterTxExecContextInstrumentation(call sql.CallContext, result sql.Result, err error) {
+func afterTxExecContextInstrumentation(call api.CallContext, result sql.Result, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeTxQueryContextInstrumentation(call sql.CallContext, tx *sql.Tx, ctx context.Context, query string, args ...any) {
+func beforeTxQueryContextInstrumentation(call api.CallContext, tx *sql.Tx, ctx context.Context, query string, args ...any) {
 	if tx == nil {
 		return
 	}
 	instrumentStart(call, ctx, "query", query, tx.Endpoint, tx.DriverName, tx.DSN)
 }
 
-func afterTxQueryContextInstrumentation(call sql.CallContext, rows *sql.Rows, err error) {
+func afterTxQueryContextInstrumentation(call api.CallContext, rows *sql.Rows, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeTxCommitInstrumentation(call sql.CallContext, tx *sql.Tx) {
+func beforeTxCommitInstrumentation(call api.CallContext, tx *sql.Tx) {
 	if tx == nil {
 		return
 	}
 	instrumentStart(call, context.Background(), "commit", "COMMIT", tx.Endpoint, tx.DriverName, tx.DSN)
 }
 
-func afterTxCommitInstrumentation(call sql.CallContext, err error) {
+func afterTxCommitInstrumentation(call api.CallContext, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeTxRollbackInstrumentation(call sql.CallContext, tx *sql.Tx) {
+func beforeTxRollbackInstrumentation(call api.CallContext, tx *sql.Tx) {
 	if tx == nil {
 		return
 	}
 	instrumentStart(call, context.Background(), "rollback", "ROLLBACK", tx.Endpoint, tx.DriverName, tx.DSN)
 }
 
-func afterTxRollbackInstrumentation(call sql.CallContext, err error) {
+func afterTxRollbackInstrumentation(call api.CallContext, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeStmtExecContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, ctx context.Context, args ...any) {
+func beforeStmtExecContextInstrumentation(call api.CallContext, stmt *sql.Stmt, ctx context.Context, args ...any) {
 	if stmt == nil {
 		return
 	}
@@ -366,11 +367,11 @@ func beforeStmtExecContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, 
 	instrumentStart(call, ctx, "exec", sql, endpoint, driverName, dsn)
 }
 
-func afterStmtExecContextInstrumentation(call sql.CallContext, result sql.Result, err error) {
+func afterStmtExecContextInstrumentation(call api.CallContext, result sql.Result, err error) {
 	instrumentEnd(call, err)
 }
 
-func beforeStmtQueryContextInstrumentation(call sql.CallContext, stmt *sql.Stmt, ctx context.Context, args ...any) {
+func beforeStmtQueryContextInstrumentation(call api.CallContext, stmt *sql.Stmt, ctx context.Context, args ...any) {
 	if stmt == nil {
 		return
 	}
@@ -381,11 +382,11 @@ func beforeStmtQueryContextInstrumentation(call sql.CallContext, stmt *sql.Stmt,
 	instrumentStart(call, ctx, "query", sql, endpoint, driverName, dsn)
 }
 
-func afterStmtQueryContextInstrumentation(call sql.CallContext, rows *sql.Rows, err error) {
+func afterStmtQueryContextInstrumentation(call api.CallContext, rows *sql.Rows, err error) {
 	instrumentEnd(call, err)
 }
 
-func instrumentStart(call sql.CallContext, ctx context.Context, spanName, query, endpoint, driverName, dsn string) {
+func instrumentStart(call api.CallContext, ctx context.Context, spanName, query, endpoint, driverName, dsn string) {
 	req := databaseSqlRequest{
 		opType:     calOp(query),
 		sql:        query,
@@ -400,7 +401,7 @@ func instrumentStart(call sql.CallContext, ctx context.Context, spanName, query,
 	})
 }
 
-func instrumentEnd(call sql.CallContext, err error) {
+func instrumentEnd(call api.CallContext, err error) {
 	callData, ok := call.GetData().(map[string]interface{})
 	if !ok {
 		return

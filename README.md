@@ -13,20 +13,20 @@ time. Simply replace `go build` with `otelbuild` to get started.
 
 # Installation
 
-#### Install via Bash 
+### Install via Bash
 For **Linux and MacOS** users, install the tool by running the following command :rocket:
 ```bash
-$ sudo curl -fsSL https://raw.githubusercontent.com/alibaba/opentelemetry-go-auto-instrumentation/main/install.sh | sudo bash
+$ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
 ```
 It will be installed in `/usr/local/bin/otelbuild` by default.
 
-#### Precompiled Binary
+### Precompiled Binary
 
 Please download the latest precompiled release version from
 the [Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
 page.
 
-#### Build From Source
+### Build From Source
 
 Checkout the source code and build the tool by running the following command:
 
@@ -53,17 +53,18 @@ $ ./otelbuild -- -gcflags="-m" cmd/app
 The arguments for the tool itself should be placed before the `--` delimiter:
 
 ```bash
-$ ./otelbuild -help        # print help doc
-$ ./otelbuild -debuglog    # print log to file
+$ ./otelbuild -help                             # print help doc
+$ ./otelbuild -debug                            # enable debug mode
 $ ./otelbuild -verbose -- -gcflags="-m" cmd/app # print verbose log
+$ ./otelbuild -rule=custom.json                 # use custom rule
 ```
 
 You can also explore [**these examples**](./example/) to get hands-on experience.
 
-Also there are several [**documents**](./docs) that you may find useful
+Also there are several [**documents**](./docs) that you may find useful for either understanding the project or contributing to it.
 
 > [!NOTE]
-> If you find any compilation failures during the process, it's likely a bug.
+> If you find any compilation failures while `go build` works, it's likely a bug.
 > Please feel free to file a bug
 > at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
 > to help us enhance this project.
@@ -71,7 +72,7 @@ Also there are several [**documents**](./docs) that you may find useful
 # Supported Libraries
 
 | Plugin Name  | Repository Url                             | Min Supported Version | Max Supported Version |
-|--------------|--------------------------------------------|-----------------------|-----------------------|
+| ------------ | ------------------------------------------ | --------------------- | --------------------- |
 | database/sql | https://pkg.go.dev/database/sql            | -                     | -                     |
 | echo         | https://github.com/labstack/echo           | v4.0.0                | v4.12.0               |
 | fasthttp     | https://github.com/valyala/fasthttp        | v1.45.0               | v1.55.0               |
@@ -91,8 +92,10 @@ Also there are several [**documents**](./docs) that you may find useful
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
 
-Please refer to [this document](./docs/how-to-add-a-new-rule.md) for guidance on how to write instrumentation
-code for new frameworks.
+> [!IMPORTANT]
+> The framework you expected is not in the list? Don't worry, you can easily inject your code into any frameworks/libraries that are not officially supported.
+>
+> Please refer to [this document](./docs/how-to-add-a-new-rule.md) to get started.
 
 # Community
 

@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package gorm
 
 import (
 	"context"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	driver "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -27,7 +28,7 @@ var requestKey = "otel-request"
 
 var gormInstrumenter = BuildGormInstrumenter()
 
-func afterGormOpen(call gorm.CallContext, db *gorm.DB, err error) {
+func afterGormOpen(call api.CallContext, db *gorm.DB, err error) {
 	if err != nil || db == nil {
 		return
 	}

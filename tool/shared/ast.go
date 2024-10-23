@@ -158,7 +158,8 @@ func ArrayType(elem dst.Expr) *dst.ArrayType {
 	return &dst.ArrayType{Elt: elem}
 }
 
-func IfStmt(init dst.Stmt, cond dst.Expr, body, elseBody *dst.BlockStmt) *dst.IfStmt {
+func IfStmt(init dst.Stmt, cond dst.Expr,
+	body, elseBody *dst.BlockStmt) *dst.IfStmt {
 	return &dst.IfStmt{
 		Init: dst.Clone(init).(dst.Stmt),
 		Cond: dst.Clone(cond).(dst.Expr),
@@ -248,6 +249,49 @@ func AddImportForcely(root *dst.File, path string) {
 		},
 	}
 	root.Decls = append([]dst.Decl{importStmt}, root.Decls...)
+}
+
+func RemoveImport(root *dst.File, path string) bool {
+	for j, decl := range root.Decls {
+		if genDecl, ok := decl.(*dst.GenDecl); ok &&
+			genDecl.Tok == token.IMPORT {
+			for i, spec := range genDecl.Specs {
+				if importSpec, ok := spec.(*dst.ImportSpec); ok {
+					if importSpec.Path.Value == fmt.Sprintf("\"%s\"", path) {
+						genDecl.Specs =
+							append(genDecl.Specs[:i],
+								genDecl.Specs[i+1:]...)
+						if len(genDecl.Specs) == 0 {
+							root.Decls =
+								append(root.Decls[:j], root.Decls[j+1:]...)
+						}
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+func ReplaceImport(root *dst.File, oldPath, newPath string) bool {
+	for _, decl := range root.Decls {
+		if genDecl, ok := decl.(*dst.GenDecl); ok &&
+			genDecl.Tok == token.IMPORT {
+			for _, spec := range genDecl.Specs {
+				if importSpec, ok := spec.(*dst.ImportSpec); ok {
+					if importSpec.Path.Value == fmt.Sprintf("\"%s\"", oldPath) {
+						// In case the import is already present, try to remove
+						// it first
+						RemoveImport(root, newPath)
+						importSpec.Path.Value = fmt.Sprintf("\"%s\"", newPath)
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 func NewVarDecl(name string, paramTypes *dst.FieldList) *dst.GenDecl {
@@ -352,13 +396,8 @@ func ParseAstFromSnippet(codeSnippnet string) ([]dst.Stmt, error) {
 
 // ParseAstFromSource parses the AST from complete source code.
 func ParseAstFromSource(source string) (*dst.File, error) {
+	util.Assert(source != "", "empty source")
 	dec := decorator.NewDecorator(token.NewFileSet())
-	if dec == nil {
-		panic("[ParseAstFromSource] get nil decorator")
-	}
-	if source == "" {
-		panic("[ParseAstFromSource] get empty source")
-	}
 	dstRoot, err := dec.Parse(source)
 	if err != nil {
 		return nil, err
@@ -366,16 +405,20 @@ func ParseAstFromSource(source string) (*dst.File, error) {
 	return dstRoot, nil
 }
 
-func ParseAstFromFileFast(filePath string) (*dst.File, error) {
-	util.Assert(IsGoFile(filePath), "file is not a go file")
+func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
 	name := filepath.Base(filePath)
 	fset := token.NewFileSet()
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
-	astFile, err := parser.ParseFile(fset, name,
-		file, parser.SkipObjectResolution)
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Fatalf("failed to close file %s: %v", file.Name(), err)
+		}
+	}(file)
+	astFile, err := parser.ParseFile(fset, name, file, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -387,25 +430,17 @@ func ParseAstFromFileFast(filePath string) (*dst.File, error) {
 	return dstFile, nil
 }
 
+func ParseAstFromFileOnlyPackage(filePath string) (*dst.File, error) {
+	return parseAstMode(filePath, parser.PackageClauseOnly)
+}
+
+func ParseAstFromFileFast(filePath string) (*dst.File, error) {
+	return parseAstMode(filePath, parser.SkipObjectResolution)
+}
+
 // ParseAstFromFile parses the AST from complete source file.
 func ParseAstFromFile(filePath string) (*dst.File, error) {
-	util.Assert(IsGoFile(filePath), "file is not a go file")
-	name := filepath.Base(filePath)
-	fset := token.NewFileSet()
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	astFile, err := parser.ParseFile(fset, name, file, parser.ParseComments)
-	if err != nil {
-		return nil, err
-	}
-	dec := decorator.NewDecorator(fset)
-	dstFile, err := dec.DecorateFile(astFile)
-	if err != nil {
-		return nil, err
-	}
-	return dstFile, nil
+	return parseAstMode(filePath, parser.ParseComments)
 }
 
 // WriteAstToFile writes the AST to source file.

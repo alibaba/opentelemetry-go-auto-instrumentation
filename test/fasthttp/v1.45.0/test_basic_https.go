@@ -16,10 +16,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"time"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"time"
 )
 
 func main() {

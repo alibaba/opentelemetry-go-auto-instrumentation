@@ -16,11 +16,12 @@ package test
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/docker/go-connections/nat"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const redis_dependency_name = "github.com/redis/go-redis/v9"
@@ -39,7 +40,8 @@ func init() {
 
 func TestExecutingCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
-	defer clearRedisContainer(redisC)
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
 	UseApp("redis/v9.0.5")
 	RunInstrument(t, "-debuglog", "--", "test_executing_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
@@ -48,7 +50,8 @@ func TestExecutingCommands(t *testing.T, env ...string) {
 
 func TestExecutingUnsupporetedCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
-	defer clearRedisContainer(redisC)
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
 	UseApp("redis/v9.0.5")
 	RunInstrument(t, "-debuglog", "--", "test_executing_unsupported_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
@@ -57,7 +60,8 @@ func TestExecutingUnsupporetedCommands(t *testing.T, env ...string) {
 
 func TestRedisConn(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
-	defer clearRedisContainer(redisC)
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
 	UseApp("redis/v9.0.5")
 	RunInstrument(t, "-debuglog", "--", "test_redis_conn.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
@@ -66,7 +70,8 @@ func TestRedisConn(t *testing.T, env ...string) {
 
 func TestRedisRing(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
-	defer clearRedisContainer(redisC)
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
 	UseApp("redis/v9.0.5")
 	RunInstrument(t, "-debuglog", "--", "test_redis_ring.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
@@ -75,7 +80,8 @@ func TestRedisRing(t *testing.T, env ...string) {
 
 func TestRedisTransactions(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
-	defer clearRedisContainer(redisC)
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
 	UseApp("redis/v9.0.5")
 	RunInstrument(t, "-debuglog", "--", "test_redis_transactions.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
@@ -84,7 +90,8 @@ func TestRedisTransactions(t *testing.T, env ...string) {
 
 func TestRedisUniversal(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
-	defer clearRedisContainer(redisC)
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
 	UseApp("redis/v9.0.5")
 	RunInstrument(t, "-debuglog", "--", "test_universal_client.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())

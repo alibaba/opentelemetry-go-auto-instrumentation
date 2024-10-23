@@ -29,6 +29,8 @@ docker run -d -p 6379:6379 redis:latest
 
 ### 3. do hybrid compilation
 
+First, please make sure your `go` version is [compatible](../../docs/compatibility.md) with otelbuild.
+
 Change directory to `example/demo` and execute the following command:
 
 ```shell

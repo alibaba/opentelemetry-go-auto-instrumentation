@@ -2,10 +2,12 @@ module kratos/v2.5.2
 
 go 1.22
 
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.0-00010101000000-000000000000
+	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/go-kratos/kratos/v2 v2.6.3
 	github.com/google/wire v0.6.0
 	go.opentelemetry.io/otel/sdk v1.31.0

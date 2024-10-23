@@ -11,17 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package gin
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/gin-gonic/gin"
 )
 
-func htmlOnEnter(call gin.CallContext, c *gin.Context, code int, name string, obj any) {
+func htmlOnEnter(call api.CallContext, c *gin.Context, code int, name string, obj any) {
 	if c == nil {
 		return
 	}
@@ -40,7 +41,7 @@ func htmlOnEnter(call gin.CallContext, c *gin.Context, code int, name string, ob
 	return
 }
 
-func htmlOnExit(call gin.CallContext) {
+func htmlOnExit(call api.CallContext) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return

@@ -11,19 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package http
 
 import (
 	"context"
 	"net/http"
 	"strconv"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 var netHttpClientInstrumenter = BuildNetHttpClientOtelInstrumenter()
 
-func clientOnEnter(call http.CallContext, t *http.Transport, req *http.Request) {
+func clientOnEnter(call api.CallContext, t *http.Transport, req *http.Request) {
 	ctx := netHttpClientInstrumenter.Start(req.Context(), netHttpRequest{
 		method:  req.Method,
 		url:     *req.URL,
@@ -40,7 +41,7 @@ func clientOnEnter(call http.CallContext, t *http.Transport, req *http.Request) 
 	return
 }
 
-func clientOnExit(call http.CallContext, res *http.Response, err error) {
+func clientOnExit(call api.CallContext, res *http.Response, err error) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return

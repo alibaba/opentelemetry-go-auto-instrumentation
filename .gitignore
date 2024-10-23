@@ -11,6 +11,7 @@ otelbuild-*
 .otel-build
 
 test/errors-test/errors-test
+test/errorstest/errorstest
 test/helloworld/helloworld
 test/httpclient/httpclient
 test/flags/flags
@@ -24,3 +25,10 @@ otel_pkgdep
 opentelemetry-go-auto-instrumentation
 *_cache
 example/demo/demo
+test/zap/test_zap
+test/gorm/v1.22.0/test_gorm_crud
+test/gorm/v1.23.1/test_gorm_crud
+test/golog/test_glog
+test/grpc/v1.44.0/test_grpc_basic
+test/fasthttp/v1.45.0/test_basic_http
+test/hertz/v0.9.0/test_hertz_basic

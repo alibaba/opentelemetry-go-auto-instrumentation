@@ -4,24 +4,22 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
-
-package rule
+package fasthttp
 
 import (
-	"github.com/valyala/fasthttp"
 	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 )
@@ -34,7 +32,6 @@ type fastHttpClientAttrsGetter struct {
 func (n fastHttpClientAttrsGetter) GetRequestMethod(request fastHttpRequest) string {
 	return request.method
 }
-
 func (n fastHttpClientAttrsGetter) GetHttpRequestHeader(request fastHttpRequest, name string) []string {
 	all := make([]string, 0)
 	for _, header := range request.header.PeekAll(name) {
@@ -42,11 +39,9 @@ func (n fastHttpClientAttrsGetter) GetHttpRequestHeader(request fastHttpRequest,
 	}
 	return all
 }
-
 func (n fastHttpClientAttrsGetter) GetHttpResponseStatusCode(request fastHttpRequest, response fastHttpResponse, err error) int {
 	return response.statusCode
 }
-
 func (n fastHttpClientAttrsGetter) GetHttpResponseHeader(request fastHttpRequest, response fastHttpResponse, name string) []string {
 	all := make([]string, 0)
 	for _, header := range response.header.PeekAll(name) {
@@ -54,19 +49,15 @@ func (n fastHttpClientAttrsGetter) GetHttpResponseHeader(request fastHttpRequest
 	}
 	return all
 }
-
 func (n fastHttpClientAttrsGetter) GetErrorType(request fastHttpRequest, response fastHttpResponse, err error) string {
 	return ""
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkType(request fastHttpRequest, response fastHttpResponse) string {
 	return "ipv4"
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkTransport(request fastHttpRequest, response fastHttpResponse) string {
 	return "tcp"
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkProtocolName(request fastHttpRequest, response fastHttpResponse) string {
 	if request.isTls == false {
 		return "http"
@@ -74,23 +65,18 @@ func (n fastHttpClientAttrsGetter) GetNetworkProtocolName(request fastHttpReques
 		return "https"
 	}
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkProtocolVersion(request fastHttpRequest, response fastHttpResponse) string {
 	return ""
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkLocalInetAddress(request fastHttpRequest, response fastHttpResponse) string {
 	return ""
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkLocalPort(request fastHttpRequest, response fastHttpResponse) int {
 	return 0
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkPeerInetAddress(request fastHttpRequest, response fastHttpResponse) string {
 	return request.url.Host
 }
-
 func (n fastHttpClientAttrsGetter) GetNetworkPeerPort(request fastHttpRequest, response fastHttpResponse) int {
 	port, err := strconv.Atoi(request.url.Port())
 	if err != nil {
@@ -98,11 +84,9 @@ func (n fastHttpClientAttrsGetter) GetNetworkPeerPort(request fastHttpRequest, r
 	}
 	return port
 }
-
 func (n fastHttpClientAttrsGetter) GetUrlFull(request fastHttpRequest) string {
 	return request.url.String()
 }
-
 func (n fastHttpClientAttrsGetter) GetServerAddress(request fastHttpRequest) string {
 	return request.url.Host
 }
@@ -117,7 +101,6 @@ type fastHttpServerAttrsGetter struct {
 func (n fastHttpServerAttrsGetter) GetRequestMethod(request fastHttpRequest) string {
 	return request.method
 }
-
 func (n fastHttpServerAttrsGetter) GetHttpRequestHeader(request fastHttpRequest, name string) []string {
 	all := make([]string, 0)
 	for _, header := range request.header.PeekAll(name) {
@@ -125,11 +108,9 @@ func (n fastHttpServerAttrsGetter) GetHttpRequestHeader(request fastHttpRequest,
 	}
 	return all
 }
-
 func (n fastHttpServerAttrsGetter) GetHttpResponseStatusCode(request fastHttpRequest, response fastHttpResponse, err error) int {
 	return response.statusCode
 }
-
 func (n fastHttpServerAttrsGetter) GetHttpResponseHeader(request fastHttpRequest, response fastHttpResponse, name string) []string {
 	all := make([]string, 0)
 	for _, header := range response.header.PeekAll(name) {
@@ -137,31 +118,24 @@ func (n fastHttpServerAttrsGetter) GetHttpResponseHeader(request fastHttpRequest
 	}
 	return all
 }
-
 func (n fastHttpServerAttrsGetter) GetErrorType(request fastHttpRequest, response fastHttpResponse, err error) string {
 	return ""
 }
-
 func (n fastHttpServerAttrsGetter) GetUrlScheme(request fastHttpRequest) string {
 	return request.url.Scheme
 }
-
 func (n fastHttpServerAttrsGetter) GetUrlPath(request fastHttpRequest) string {
 	return request.url.Path
 }
-
 func (n fastHttpServerAttrsGetter) GetUrlQuery(request fastHttpRequest) string {
 	return request.url.RawQuery
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkType(request fastHttpRequest, response fastHttpResponse) string {
 	return "ipv4"
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkTransport(request fastHttpRequest, response fastHttpResponse) string {
 	return "tcp"
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkProtocolName(request fastHttpRequest, response fastHttpResponse) string {
 	if request.isTls == false {
 		return "http"
@@ -169,23 +143,18 @@ func (n fastHttpServerAttrsGetter) GetNetworkProtocolName(request fastHttpReques
 		return "https"
 	}
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkProtocolVersion(request fastHttpRequest, response fastHttpResponse) string {
 	return ""
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkLocalInetAddress(request fastHttpRequest, response fastHttpResponse) string {
 	return ""
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkLocalPort(request fastHttpRequest, response fastHttpResponse) int {
 	return 0
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkPeerInetAddress(request fastHttpRequest, response fastHttpResponse) string {
 	return request.url.Host
 }
-
 func (n fastHttpServerAttrsGetter) GetNetworkPeerPort(request fastHttpRequest, response fastHttpResponse) int {
 	port, err := strconv.Atoi(request.url.Port())
 	if err != nil {
@@ -193,7 +162,6 @@ func (n fastHttpServerAttrsGetter) GetNetworkPeerPort(request fastHttpRequest, r
 	}
 	return port
 }
-
 func (n fastHttpServerAttrsGetter) GetHttpRoute(request fastHttpRequest) string {
 	return request.url.Path
 }
@@ -205,11 +173,9 @@ type fastHttpRequestCarrier struct {
 func (f fastHttpRequestCarrier) Get(key string) string {
 	return string(f.req.Peek(key))
 }
-
 func (f fastHttpRequestCarrier) Set(key string, value string) {
 	f.req.Set(key, value)
 }
-
 func (f fastHttpRequestCarrier) Keys() []string {
 	keyStrs := make([]string, 0)
 	peekKeys := f.req.PeekKeys()
@@ -218,7 +184,6 @@ func (f fastHttpRequestCarrier) Keys() []string {
 	}
 	return keyStrs
 }
-
 func BuildFastHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstreamInstrumenter[fastHttpRequest, fastHttpResponse] {
 	builder := instrumenter.Builder[fastHttpRequest, fastHttpResponse]{}
 	clientGetter := fastHttpClientAttrsGetter{}
@@ -230,7 +195,6 @@ func BuildFastHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstream
 		return fastHttpRequestCarrier{req: n.header}
 	}, otel.GetTextMapPropagator())
 }
-
 func BuildFastHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[fastHttpRequest, fastHttpResponse] {
 	builder := instrumenter.Builder[fastHttpRequest, fastHttpResponse]{}
 	serverGetter := fastHttpServerAttrsGetter{}

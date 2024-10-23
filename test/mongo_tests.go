@@ -16,11 +16,12 @@ package test
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/docker/go-connections/nat"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const mongo_dependency_name = "go.mongodb.org/mongo-driver"
@@ -38,7 +39,8 @@ func init() {
 
 func TestCrudMongo(t *testing.T, env ...string) {
 	mongoC, mongoPort := initMongoContainer()
-	defer clearMongoContainer(mongoC)
+	// defer clearMongoContainer(mongoC)
+	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
 	RunInstrument(t, "-debuglog", "--", "test_crud_mongo.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
@@ -47,7 +49,8 @@ func TestCrudMongo(t *testing.T, env ...string) {
 
 func TestCursor(t *testing.T, env ...string) {
 	mongoC, mongoPort := initMongoContainer()
-	defer clearMongoContainer(mongoC)
+	// defer clearMongoContainer(mongoC)
+	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
 	RunInstrument(t, "-debuglog", "--", "test_cursor.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
@@ -56,7 +59,8 @@ func TestCursor(t *testing.T, env ...string) {
 
 func TestBatch(t *testing.T, env ...string) {
 	mongoC, mongoPort := initMongoContainer()
-	defer clearMongoContainer(mongoC)
+	// defer clearMongoContainer(mongoC)
+	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
 	RunInstrument(t, "-debuglog", "--", "test_batch.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())

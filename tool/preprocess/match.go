@@ -15,71 +15,127 @@
 package preprocess
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
+	"os"
 	"strings"
 
-	"github.com/dave/dst"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/dave/dst"
 )
 
-func findAvailableRules() []api.InstRule {
-	// Disable all rules
-	if shared.DisableRules == "*" {
-		return make([]api.InstRule, 0)
-	}
-
-	availables := make([]api.InstRule, len(api.Rules))
-	copy(availables, api.Rules)
-	if shared.DisableRules == "" {
-		return availables
-	}
-
-	list := strings.Split(shared.DisableRules, ",")
-	rules := make([]api.InstRule, 0)
-	for _, v := range availables {
-		disabled := false
-		for _, disable := range list {
-			if v.GetRuleName() != "" && disable == v.GetRuleName() {
-				disabled = true
-				break
-			}
-			if disable == v.GetImportPath() {
-				disabled = true
-				break
-			}
-		}
-		if !disabled {
-			rules = append(rules, v)
-		}
-	}
-	if shared.Verbose {
-		log.Printf("Available rule: %v", rules)
-	}
-	return rules
-}
-
 type ruleMatcher struct {
-	availableRules map[string][]api.InstRule
+	availableRules map[string][]resource.InstRule
 }
 
 func newRuleMatcher() *ruleMatcher {
-	rules := make(map[string][]api.InstRule)
+	rules := make(map[string][]resource.InstRule)
 	for _, rule := range findAvailableRules() {
 		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
+	}
+	if shared.Verbose {
+		log.Printf("Available rules: %v", rules)
 	}
 	return &ruleMatcher{availableRules: rules}
 }
 
-// matchRuleBundle gives compilation arguments and finds out all interested rules
-// for it. N.B. This is performance critical, be careful to modify it.
-func (rm *ruleMatcher) matchRuleBundle(importPath string,
+type ruleHolder struct {
+	resource.InstBaseRule
+	resource.InstFileRule
+	resource.InstStructRule
+	resource.InstFuncRule
+}
+
+func loadRuleFile(path string) ([]resource.InstRule, error) {
+	content, err := util.ReadFile(path)
+	if err != nil {
+		currentDir, _ := os.Getwd()
+		return nil, fmt.Errorf("failed to read rule file: %w %v",
+			err, currentDir)
+	}
+	return loadRuleRaw(content)
+}
+
+func loadRuleRaw(content string) ([]resource.InstRule, error) {
+	var h []*ruleHolder
+	err := json.Unmarshal([]byte(content), &h)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal rules: %w", err)
+	}
+	rules := make([]resource.InstRule, 0)
+	for _, rule := range h {
+		if rule.StructType != "" {
+			r := &rule.InstStructRule
+			r.InstBaseRule = rule.InstBaseRule
+			rules = append(rules, r)
+		} else if rule.Function != "" {
+			r := &rule.InstFuncRule
+			r.InstBaseRule = rule.InstBaseRule
+			rules = append(rules, r)
+		} else if rule.FileName != "" {
+			r := &rule.InstFileRule
+			r.InstBaseRule = rule.InstBaseRule
+			rules = append(rules, r)
+		} else {
+			util.ShouldNotReachHereT("invalid rule type")
+		}
+	}
+	return rules, nil
+}
+
+func findAvailableRules() []resource.InstRule {
+	shared.GuaranteeInPreprocess()
+	// Disable all instrumentation rules and rebuild the whole project to restore
+	// all instrumentation actions, this also reverts the modification on Golang
+	// runtime package.
+	if shared.Restore {
+		return nil
+	}
+
+	// If rule file is not set, we will use the default rules
+	if shared.RuleJsonFiles == "" {
+		rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
+		if err != nil {
+			log.Printf("Failed to load default rules: %v", err)
+			return nil
+		}
+		return rules
+	}
+
+	// If set, check if there are multiple rule files
+	if strings.Contains(shared.RuleJsonFiles, ",") {
+		ruleFiles := strings.Split(shared.RuleJsonFiles, ",")
+		rules := make([]resource.InstRule, 0)
+		for _, ruleFile := range ruleFiles {
+			r, err := loadRuleFile(ruleFile)
+			if err != nil {
+				log.Printf("Failed to load rules: %v", err)
+				continue
+			}
+			rules = append(rules, r...)
+		}
+		return rules
+	}
+
+	// Load the rule file provided by the user
+	rules, err := loadRuleFile(shared.RuleJsonFiles)
+	if err != nil {
+		log.Printf("Failed to load rules: %v", err)
+		return nil
+	}
+	return rules
+}
+
+// match gives compilation arguments and finds out all interested rules
+// for it.
+func (rm *ruleMatcher) match(importPath string,
 	candidates []string) *resource.RuleBundle {
 	util.Assert(importPath != "", "sanity check")
-	availables := make([]api.InstRule, len(rm.availableRules[importPath]))
+	availables := make([]resource.InstRule, len(rm.availableRules[importPath]))
 
 	// Okay, we are interested in these candidates, let's read it and match with
 	// the instrumentation rule, but first we need to check if the package name
@@ -112,9 +168,15 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 			}
 			// Check if it matches with file rule early as we try to avoid
 			// parsing the file content, which is time consuming
-			if _, ok := rule.(*api.InstFileRule); ok {
+			if _, ok := rule.(*resource.InstFileRule); ok {
+				ast, err := shared.ParseAstFromFileOnlyPackage(file)
+				if ast == nil || err != nil {
+					log.Printf("Failed to parse %s %v", file, err)
+					continue
+				}
 				log.Printf("Match file rule %s", rule)
-				bundle.AddFileRule(rule.(*api.InstFileRule))
+				bundle.AddFileRule(rule.(*resource.InstFileRule))
+				bundle.SetPackageName(ast.Name.Name)
 				availables = append(availables[:i], availables[i+1:]...)
 				continue
 			}
@@ -129,11 +191,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 				}
 				parsedAst[file] = fileAst
 				util.Assert(fileAst.Name.Name != "", "empty package name")
-				if bundle.PackageName == "" {
-					bundle.PackageName = fileAst.Name.Name
-				}
-				util.Assert(bundle.PackageName == fileAst.Name.Name,
-					"inconsistent package name")
+				bundle.SetPackageName(fileAst.Name.Name)
 				tree = fileAst
 			} else {
 				tree = parsedAst[file]
@@ -150,7 +208,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 			valid := false
 			for _, decl := range tree.Decls {
 				if genDecl, ok := decl.(*dst.GenDecl); ok {
-					if rl, ok := rule.(*api.InstStructRule); ok {
+					if rl, ok := rule.(*resource.InstStructRule); ok {
 						if shared.MatchStructDecl(genDecl, rl.StructType) {
 							log.Printf("Match struct rule %s", rule)
 							bundle.AddFile2StructRule(file, rl)
@@ -159,7 +217,7 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 						}
 					}
 				} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
-					if rl, ok := rule.(*api.InstFuncRule); ok {
+					if rl, ok := rule.(*resource.InstFuncRule); ok {
 						if shared.MatchFuncDecl(funcDecl, rl.Function,
 							rl.ReceiverType) {
 							log.Printf("Match func rule %s", rule)
@@ -177,4 +235,44 @@ func (rm *ruleMatcher) matchRuleBundle(importPath string,
 		}
 	}
 	return bundle
+}
+
+func readImportPath(cmd []string) string {
+	var pkg string
+	for i, v := range cmd {
+		if v == "-p" {
+			return cmd[i+1]
+		}
+	}
+	return pkg
+}
+
+func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
+	cmdArgs := shared.SplitCmds(cmd)
+	importPath := readImportPath(cmdArgs)
+	util.Assert(importPath != "", "sanity check")
+	if shared.Verbose {
+		log.Printf("Matching %v with %v\n", importPath, cmdArgs)
+	}
+	bundle := matcher.match(importPath, cmdArgs)
+	ch <- bundle
+}
+
+func (dp *DepProcessor) matchRules(compileCmds []string) error {
+	defer util.PhaseTimer("Match")()
+	matcher := newRuleMatcher()
+	// Find used instrumentation rule according to compile commands
+	ch := make(chan *resource.RuleBundle)
+	for _, cmd := range compileCmds {
+		go runMatch(matcher, cmd, ch)
+	}
+	cnt := 0
+	for cnt < len(compileCmds) {
+		bundle := <-ch
+		if bundle.IsValid() {
+			dp.bundles = append(dp.bundles, bundle)
+		}
+		cnt++
+	}
+	return nil
 }
