@@ -14,8 +14,17 @@
 
 package main
 
+import _ "gorm/otel_rules"
+
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+import _ "go.opentelemetry.io/otel"
+
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"os"

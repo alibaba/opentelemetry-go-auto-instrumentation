@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"net/http"
 	"strconv"

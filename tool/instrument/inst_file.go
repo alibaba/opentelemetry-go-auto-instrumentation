@@ -26,8 +26,7 @@ import (
 )
 
 func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error) {
-	for _, ruleHash := range bundle.FileRules {
-		rule := resource.FindFileRuleByHash(ruleHash)
+	for _, rule := range bundle.FileRules {
 		if rule.FileName == "" {
 			return fmt.Errorf("file rule must have a file name")
 		}
@@ -41,8 +40,9 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 
 		// Get last section of file path as file name
 		fileName := filepath.Base(rule.FileName)
-		target := filepath.Join(rp.workDir, fmt.Sprintf("otel_inst_file_%s", fileName))
-		_, err = util.WriteStringToFile(target, source)
+		target := filepath.Join(rp.workDir,
+			fmt.Sprintf("otel_inst_file_%s", fileName))
+		_, err = util.WriteFile(target, source)
 		if err != nil {
 			return fmt.Errorf("failed to write extra file %s: %w", target, err)
 		}
@@ -65,7 +65,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 			rp.addCompileArg(target)
 		}
 		log.Printf("Apply file rule %v by %s mode", fileName, mode)
-		shared.SaveDebugFile("file_", target)
+		rp.saveDebugFile(target)
 	}
 	return nil
 }

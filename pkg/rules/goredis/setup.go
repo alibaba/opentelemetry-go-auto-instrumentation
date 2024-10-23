@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package goredis
 
@@ -20,36 +19,37 @@ import (
 	"net"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	redis "github.com/redis/go-redis/v9"
 )
 
 var goRedisInstrumenter = BuildGoRedisOtelInstrumenter()
 
-func afterNewRedisClient(call redis.CallContext, client *redis.Client) {
+func afterNewRedisClient(call api.CallContext, client *redis.Client) {
 	client.AddHook(newOtRedisHook(client.Options().Addr))
 }
 
-func afterNewFailOverRedisClient(call redis.CallContext, client *redis.Client) {
+func afterNewFailOverRedisClient(call api.CallContext, client *redis.Client) {
 	client.AddHook(newOtRedisHook(client.Options().Addr))
 }
 
-func afterNewClusterClient(call redis.CallContext, client *redis.ClusterClient) {
+func afterNewClusterClient(call api.CallContext, client *redis.ClusterClient) {
 	client.OnNewNode(func(rdb *redis.Client) {
 		rdb.AddHook(newOtRedisHook(rdb.Options().Addr))
 	})
 }
 
-func afterNewRingClient(call redis.CallContext, client *redis.Ring) {
+func afterNewRingClient(call api.CallContext, client *redis.Ring) {
 	client.OnNewNode(func(rdb *redis.Client) {
 		rdb.AddHook(newOtRedisHook(rdb.Options().Addr))
 	})
 }
 
-func afterNewSentinelClient(call redis.CallContext, client *redis.SentinelClient) {
+func afterNewSentinelClient(call api.CallContext, client *redis.SentinelClient) {
 	client.AddHook(newOtRedisHook(client.String()))
 }
 
-func afterClientConn(call redis.CallContext, client *redis.Conn) {
+func afterClientConn(call api.CallContext, client *redis.Conn) {
 	client.AddHook(newOtRedisHook(client.String()))
 }
 
