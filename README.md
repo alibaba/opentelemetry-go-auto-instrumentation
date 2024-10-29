@@ -101,3 +101,4 @@ our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fU
 to engage with us.
 
 <img src="docs/dingtalk.png" height="200">
+<img src="docs/wechat.png" height="200">
