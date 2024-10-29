@@ -18,12 +18,12 @@ import "github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 
 func init() {
 	api.NewRule("github.com/valyala/fasthttp", "Do", "*HostClient", "clientFastHttpOnEnter", "clientFastHttpOnExit").
-		WithVersion("[1.45.0,1.56.1)").
+		WithVersion("[1.45.0,1.57.1)").
 		WithFileDeps("fasthttp_data_type.go", "fasthttp_otel_instrumenter.go").
 		Register()
 
 	api.NewRule("github.com/valyala/fasthttp", "ListenAndServe", "*Server", "listenAndServeFastHttpOnEnter", "").
-		WithVersion("[1.45.0,1.56.1)").
+		WithVersion("[1.45.0,1.57.1)").
 		WithFileDeps("fasthttp_data_type.go", "fasthttp_otel_instrumenter.go").
 		Register()
 }

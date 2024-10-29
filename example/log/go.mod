@@ -1,6 +1,8 @@
 module test
 
-go 1.22.0
+go 1.22
+
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
 
 require (
 	go.opentelemetry.io/otel/sdk v1.30.0
