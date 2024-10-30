@@ -160,6 +160,15 @@ func TestStartAndEnd(t *testing.T) {
 	instrumenter := builder.BuildInstrumenter()
 	ctx := context.Background()
 	instrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	prop := mockProp{"test"}
+	dsInstrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	dsInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	upInstrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	upInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
 	// no panic here
 }
 
@@ -196,6 +205,7 @@ func TestPropFromUpStream(t *testing.T) {
 	}, &myTextMapProp{})
 	ctx := context.Background()
 	newCtx := instrumenter.Start(ctx, testRequest{})
+	instrumenter.End(ctx, testRequest{}, testResponse{}, nil)
 	if newCtx.Value("test") != "test" {
 		panic("test attributes in context should be test")
 	}
@@ -217,6 +227,7 @@ func TestPropToDownStream(t *testing.T) {
 	}, &myTextMapProp{})
 	ctx := context.Background()
 	instrumenter.Start(ctx, testRequest{})
+	instrumenter.End(ctx, testRequest{}, testResponse{}, nil)
 	if prop.val != "test" {
 		panic("prop val should be test!")
 	}
