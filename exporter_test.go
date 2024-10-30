@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pkg
+package main
 
-import (
-	"embed"
-	_ "embed"
-)
+import "testing"
 
-//go:embed core inst-api inst-api-semconv
+/**
 var embedDir embed.FS
 
 func ExportPkgDirList() []string {
@@ -56,4 +53,9 @@ var ruleCache embed.FS
 
 func ExportRuleCache() embed.FS {
 	return ruleCache
+}
+*/
+
+func TestExporter(t *testing.T) {
+
 }
