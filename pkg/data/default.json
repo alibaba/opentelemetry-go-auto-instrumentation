@@ -489,14 +489,14 @@
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goslog"
     },
     {
-        "Version": "[2.6.3,2.8.2)",
+        "Version": "[2.6.3,2.8.3)",
         "ImportPath": "github.com/go-kratos/kratos/v2/transport/http",
         "Function": "NewServer",
         "OnEnter": "KratosNewHTTPServiceOnEnter",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kratos/http"
     },
     {
-        "Version": "[2.6.3,2.8.2)",
+        "Version": "[2.6.3,2.8.3)",
         "ImportPath": "github.com/go-kratos/kratos/v2/transport/grpc",
         "Function": "NewServer",
         "OnEnter": "KratosNewGRPCServiceOnEnter",
