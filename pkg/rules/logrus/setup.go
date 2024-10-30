@@ -11,16 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package logrus
 
 import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-func logNewOnExit(call logrus.CallContext) {
+func logNewOnExit(call api.CallContext) {
 	std := logrus.StandardLogger()
 	std.AddHook(&logHook{})
 	return

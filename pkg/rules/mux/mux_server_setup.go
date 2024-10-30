@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build ignore
-
-package rule
+package mux
 
 import (
 	"bufio"
 	"context"
 	"fmt"
-	mux "github.com/gorilla/mux"
 	"net"
 	"net/http"
 	"strconv"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	mux "github.com/gorilla/mux"
 )
 
 var muxInstrumenter = BuildMuxHttpServerOtelInstrumenter()
 
-func muxServerOnEnter(call mux.CallContext, router *mux.Router, w http.ResponseWriter, req *http.Request) {
+func muxServerOnEnter(call api.CallContext, router *mux.Router, w http.ResponseWriter, req *http.Request) {
 	muxRequest := muxHttpRequest{
 		method:  req.Method,
 		url:     req.URL,
@@ -47,7 +47,7 @@ func muxServerOnEnter(call mux.CallContext, router *mux.Router, w http.ResponseW
 	return
 }
 
-func muxServerOnExit(call mux.CallContext) {
+func muxServerOnExit(call api.CallContext) {
 	c := call.GetKeyData("ctx")
 	if c == nil {
 		return

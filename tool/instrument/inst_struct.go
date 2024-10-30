@@ -20,7 +20,16 @@ import (
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/dave/dst"
 )
+
+func addStructField(rule *resource.InstStructRule, decl dst.Decl) {
+	util.Assert(rule.FieldName != "" && rule.FieldType != "",
+		"rule must have field and type")
+	log.Printf("Apply struct rule %v", rule)
+	shared.AddStructField(decl, rule.FieldName, rule.FieldType)
+}
 
 func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 	for file, struct2Rules := range bundle.File2StructRules {
@@ -32,13 +41,8 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		for _, decl := range astRoot.Decls {
 			for structName, rules := range struct2Rules {
 				if shared.MatchStructDecl(decl, structName) {
-					for _, ruleHash := range rules {
-						rule := resource.FindStructRuleByHash(ruleHash)
-						if rule.FieldName == "" || rule.FieldType == "" {
-							return fmt.Errorf("rule must have field and type")
-						}
-						log.Printf("Apply struct rule %v", rule)
-						shared.AddStructField(decl, rule.FieldName, rule.FieldType)
+					for _, rule := range rules {
+						addStructField(rule, decl)
 					}
 				}
 			}
@@ -49,7 +53,7 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		if err != nil {
 			return fmt.Errorf("failed to restore ast: %w", err)
 		}
-		shared.SaveDebugFile("struct_", newFile)
+		rp.saveDebugFile(newFile)
 	}
 	return nil
 }

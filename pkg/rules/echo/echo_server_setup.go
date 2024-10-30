@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
-package rule
+package echo
 
 import (
 	"strconv"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	echo "github.com/labstack/echo/v4"
 )
 
@@ -47,7 +47,7 @@ func otelTraceMiddleware() echo.MiddlewareFunc {
 	}
 }
 
-func afterNewEcho(call echo.CallContext, e *echo.Echo) {
+func afterNewEcho(call api.CallContext, e *echo.Echo) {
 	if e == nil {
 		return
 	}

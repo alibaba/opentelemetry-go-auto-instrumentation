@@ -11,15 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//go:build ignore
 
 package fasthttp
 
 import (
-	"github.com/valyala/fasthttp"
 	"net/url"
-
 	"time"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/valyala/fasthttp"
 )
 
 var fastHttpServerInstrumenter = BuildFastHttpServerOtelInstrumenter()
@@ -45,7 +45,7 @@ func newFastHttpServerDelegateHandler(handler fasthttp.RequestHandler) fasthttp.
 	}
 }
 
-func listenAndServeFastHttpOnEnter(call fasthttp.CallContext, s *fasthttp.Server, addr string) {
+func listenAndServeFastHttpOnEnter(call api.CallContext, s *fasthttp.Server, addr string) {
 	if s == nil {
 		return
 	}

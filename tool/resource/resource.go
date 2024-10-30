@@ -20,12 +20,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/api"
 )
 
 func listFiles(fs embed.FS, dir string) ([]string, error) {
@@ -75,7 +72,7 @@ func CopyPkgTo(target string) error {
 			return err
 		}
 		text := string(t)
-		_, err = util.WriteStringToFile(target, text)
+		_, err = util.WriteFile(target, text)
 		if err != nil {
 			return err
 		}
@@ -85,12 +82,15 @@ func CopyPkgTo(target string) error {
 
 func CopyOtelSetupTo(pkgName, target string) (string, error) {
 	template := pkg.ExportOtelSetupSDKTemplate()
-	snippet := strings.Replace(template, "package pkg", "package "+pkgName, 1)
+	snippet := strings.Replace(template,
+		"package pkg", "package "+pkgName, 1)
 	snippet = shared.RemoveGoBuildComment(snippet)
-	return util.WriteStringToFile(target, snippet)
+	return util.WriteFile(target, snippet)
 }
 
 func CopyAPITo(target string, pkgName string) (string, error) {
-	apiSnippet := strings.Replace(api.ExportAPITemplate(), "package api", "package "+pkgName, 1)
-	return util.WriteStringToFile(target, apiSnippet)
+	template := pkg.ExportAPISnippet()
+	apiSnippet := strings.Replace(template,
+		"package api", "package "+pkgName, 1)
+	return util.WriteFile(target, apiSnippet)
 }

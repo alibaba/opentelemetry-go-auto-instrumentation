@@ -34,9 +34,9 @@ func main() {
 		os.Exit(1)
 
 	}
-	err = tool.Run()
+	err = tool.Build()
 	if err != nil {
-		log.Printf("failed to run the tool: %v", err)
+		log.Printf("failed to run the tool: %v %v", err, os.Args)
 		os.Exit(1)
 	}
 }

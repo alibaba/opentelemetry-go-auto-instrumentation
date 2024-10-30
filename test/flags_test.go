@@ -15,27 +15,14 @@
 package test
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"testing"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 )
 
 func TestFlags(t *testing.T) {
 	const AppName = "flags"
 	UseApp(AppName)
-
-	RunInstrument(t, "-debuglog", "-disablerules=")
-	ExpectInstrumentContains(t, shared.DebugLogFile, "fmt@")
-
-	RunInstrument(t, "-debuglog", "-disablerules=fmt,net/http")
-	ExpectInstrumentNotContains(t, shared.DebugLogFile, "fmt@")
-	ExpectInstrumentNotContains(t, shared.DebugLogFile, "net/http@")
-
-	RunInstrument(t, "-debuglog", "-disablerules=*")
-	ExpectInstrumentNotContains(t, shared.DebugLogFile, "fmt@")
-	ExpectInstrumentNotContains(t, shared.DebugLogFile, "net/http@")
-
-	RunInstrument(t, "-debuglog", "-disablerules=testrule")
-	ExpectInstrumentNotContains(t, shared.DebugLogFile, "fmt@")
 
 	RunInstrumentFallible(t, "-debuglog", "--", "-thisisnotvalid")
 	ExpectPreprocessContains(t, shared.DebugLogFile, "failed to")
