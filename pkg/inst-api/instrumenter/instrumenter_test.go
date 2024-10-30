@@ -17,11 +17,12 @@ package instrumenter
 import (
 	"context"
 	"errors"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"testing"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type testRequest struct {
@@ -39,6 +40,45 @@ func (t testNameExtractor) Extract(request testRequest) string {
 }
 
 type testOperationListener struct {
+}
+
+type disableEnabler struct {
+}
+
+func (d disableEnabler) IsEnabled() bool {
+	return false
+}
+
+type mockProp struct {
+	val string
+}
+
+func (m *mockProp) Get(key string) string {
+	return m.val
+}
+
+func (m *mockProp) Set(key string, value string) {
+	m.val = value
+}
+
+func (m *mockProp) Keys() []string {
+	return []string{"test"}
+}
+
+type myTextMapProp struct {
+}
+
+func (m *myTextMapProp) Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
+	carrier.Set("test", "test")
+}
+
+func (m *myTextMapProp) Extract(ctx context.Context, carrier propagation.TextMapCarrier) context.Context {
+	t := carrier.Get("test")
+	return context.WithValue(ctx, "test", t)
+}
+
+func (m *myTextMapProp) Fields() []string {
+	return []string{"test"}
 }
 
 func (t *testOperationListener) OnBeforeStart(parentContext context.Context, startTimestamp time.Time) context.Context {
@@ -86,15 +126,6 @@ func (t testContextCustomizer) OnStart(ctx context.Context, request testRequest,
 	return context.WithValue(ctx, "test-customizer", "test-customizer")
 }
 
-type testStatusExtractor struct {
-}
-
-func (t testStatusExtractor) Extract(span trace.Span, request testRequest, response testResponse, err error) {
-	if err.Error() != "abc" {
-		panic(err)
-	}
-}
-
 func TestInstrumenter(t *testing.T) {
 	builder := Builder[testRequest, testResponse]{}
 	builder.Init().
@@ -115,4 +146,89 @@ func TestInstrumenter(t *testing.T) {
 		t.Fatal("startAttrs is not expected")
 	}
 	instrumenter.End(ctx, testRequest{}, testResponse{}, errors.New("abc"))
+}
+
+func TestStartAndEnd(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().
+		SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		AddAttributesExtractor(testAttributesExtractor{}).
+		AddOperationListeners(&testOperationListener{}).
+		AddContextCustomizers(testContextCustomizer{}).
+		SetInstVersion("test-version")
+	instrumenter := builder.BuildInstrumenter()
+	ctx := context.Background()
+	instrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	prop := mockProp{"test"}
+	dsInstrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	dsInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	upInstrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	upInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	// no panic here
+}
+
+func TestEnabler(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().
+		SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		AddAttributesExtractor(testAttributesExtractor{}).
+		AddOperationListeners(&testOperationListener{}).
+		AddContextCustomizers(testContextCustomizer{}).
+		SetInstVersion("test-version").SetInstrumentEnabler(disableEnabler{})
+	instrumenter := builder.BuildInstrumenter()
+	ctx := context.Background()
+	newCtx := instrumenter.Start(ctx, testRequest{})
+	if newCtx.Value("startTs") != nil {
+		panic("the context should be an empty one")
+	}
+}
+
+func TestPropFromUpStream(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().
+		SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		AddAttributesExtractor(testAttributesExtractor{}).
+		AddOperationListeners(&testOperationListener{}).
+		AddContextCustomizers(testContextCustomizer{}).
+		SetInstVersion("test-version")
+	prop := mockProp{"test"}
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	instrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	ctx := context.Background()
+	newCtx := instrumenter.Start(ctx, testRequest{})
+	instrumenter.End(ctx, testRequest{}, testResponse{}, nil)
+	if newCtx.Value("test") != "test" {
+		panic("test attributes in context should be test")
+	}
+}
+
+func TestPropToDownStream(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().
+		SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		AddAttributesExtractor(testAttributesExtractor{}).
+		AddOperationListeners(&testOperationListener{}).
+		AddContextCustomizers(testContextCustomizer{}).
+		SetInstVersion("test-version")
+	prop := mockProp{}
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	instrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	ctx := context.Background()
+	instrumenter.Start(ctx, testRequest{})
+	instrumenter.End(ctx, testRequest{}, testResponse{}, nil)
+	if prop.val != "test" {
+		panic("prop val should be test!")
+	}
 }

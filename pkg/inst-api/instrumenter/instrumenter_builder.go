@@ -135,44 +135,6 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 	}
 }
 
-func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenterWithProp(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
-	return &PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]{
-		base: InternalInstrumenter[REQUEST, RESPONSE]{
-			enabler:              b.Enabler,
-			spanNameExtractor:    b.SpanNameExtractor,
-			spanKindExtractor:    b.SpanKindExtractor,
-			spanStatusExtractor:  b.SpanStatusExtractor,
-			attributesExtractors: b.AttributesExtractors,
-			operationListeners:   b.OperationListeners,
-			contextCustomizers:   b.ContextCustomizers,
-			spanSuppressor:       b.SpanSuppressor,
-			tracer:               b.Tracer,
-			instVersion:          b.InstVersion,
-		},
-		carrierGetter: carrierGetter,
-		prop:          prop,
-	}
-}
-
-func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenterWithProp(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE] {
-	return &PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]{
-		base: InternalInstrumenter[REQUEST, RESPONSE]{
-			enabler:              b.Enabler,
-			spanNameExtractor:    b.SpanNameExtractor,
-			spanKindExtractor:    b.SpanKindExtractor,
-			spanStatusExtractor:  b.SpanStatusExtractor,
-			attributesExtractors: b.AttributesExtractors,
-			operationListeners:   b.OperationListeners,
-			contextCustomizers:   b.ContextCustomizers,
-			spanSuppressor:       b.SpanSuppressor,
-			tracer:               b.Tracer,
-			instVersion:          b.InstVersion,
-		},
-		carrierGetter: carrierGetter,
-		prop:          prop,
-	}
-}
-
 func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE] {
 	return &PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]{
 		base: InternalInstrumenter[REQUEST, RESPONSE]{
