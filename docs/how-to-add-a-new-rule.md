@@ -56,8 +56,8 @@ Additional fields like `OnExit` and `Order` can also be specified. Refer to [the
 Test the rule with a simple program:
 
 ```bash
-$ mkdir demo && cd demo
-$ go mod init demo
+$ mkdir setenv-demo && cd setenv-demo
+$ go mod init setenv-demo
 $ cat <<EOF > main.go
 package main
 import "os"
