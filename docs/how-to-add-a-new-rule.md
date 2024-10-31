@@ -1,18 +1,18 @@
 # How to add a new rule
 
-## 1. Create a new rule
+## 1. Create the Rule
 We demonstrate how to inject code for a new package through an example.
-Here we choose `os.Setenv()` and inject logging code at the beginning of its 
-function to record the key and value whenever user calls it.
 
-First, we create the following a `mysetenv` directory and initialize it as a Go module:
+Here's how to inject logging into the os.Setenv() function to track key and value usage.
+
+First, create and initialize a Go module in a new directory:
 
 ```bash
 $ mkdir mysetenv && cd mysetenv
 $ go mod init mysetenv
 ```
 
-Then we write the following `hook.go` file in the `mysetenv` directory:
+Next, create the hook.go file in the mysetenv directory:
 
 ```go
 package mysetenv
@@ -28,12 +28,11 @@ func onEnterSetenv(call api.CallContext, key, value string) {
 }
 ```
 
-Run `go mod tidy` to download the dependencies. 
-That's the whole story for the probe code.
+Run `go mod tidy` to download the dependencies. This sets up the hook code.
 
-## 2. Register the rule
-We create a new `rule.json` file and specify which function we want to instrument
-and which probe code to inject, etc.:
+## 2. Register the Rule
+
+Create a `rule.json` file to specify the target function and hook code:
 
 ```json
 [
@@ -46,29 +45,31 @@ and which probe code to inject, etc.:
 ]
 ```
 
-- `ImportPath`: The import path of the package that contains the function to be instrumented.
-- `Function`: The name of the function to be instrumented.
-- `OnEnter`: The name of the function to be called when the instrumented function is called.
-- `Path`: The path to the directory containing the probe code.
+- `ImportPath`: The import path of the package that contains the function
+- `Function`: The function to instrument.
+- `OnEnter`: The hook code
+- `Path`: Directory containing the hook code.
 
-There are many other fields that can be specified in the rule, such as 
-`OnExit`, `Order`, etc. You can refer to [this document](rule_def.md) for more information.
+Additional fields like `OnExit` and `Order` can also be specified. Refer to [the documentation](rule_def.md) for details.
 
-## 3. Verify the rule
-To make sure the rule is working as expected, we can write a simple demo program to test it:
+## 3. Verify the Rule
+Test the rule with a simple program:
 
 ```bash
-$ mkdir setenv && cd setenv
-$ go mod init setenv
+$ mkdir setenv-demo && cd setenv-demo
+$ go mod init setenv-demo
 $ cat <<EOF > main.go
 package main
 import "os"
-func main(){ os.Setenv("hello", "world") }
+func main() {
+    os.Setenv("hello", "world")
+}
 EOF
 $ ~/otelbuild -rule=rule.json -- main.go
 $ ./main
 Setting environment variable hello to world%
 ```
-The output shows that the rule is working as expected. The `Setting environment variable hello to world` message is printed when the `os.Setenv()` function is called, that is, the probe code is injected successfully.
 
-There are many advanced features that is not covered in this example, such as the `InstStructRule`, `InstFileRule` and APIs of `CallContext`. You can refer to the existing rules in the `pkg/rules` directory for more information.
+The output confirms successful code injection as the message appears when `os.Setenv()` is called.
+
+There are many advanced features that is not covered in this example, you can refer to the existing rules in the `pkg/rules` directory for more information.

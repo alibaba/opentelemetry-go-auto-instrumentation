@@ -1,6 +1,4 @@
-# OpenTelemetry Go Auto Instrumentation
-
-<img src="docs/logo.png" height="150" align="right" alt="logo">
+![](docs/anim-logo.svg)
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./docs)
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)
