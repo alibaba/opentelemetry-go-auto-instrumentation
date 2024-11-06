@@ -32,4 +32,4 @@ And the result will be:
 request header is  {"Otelbuild":["true"]}
 response header is  {"Content-Type":["application/x-gzip"],"Date":["Wed, 06 Nov 2024 11:35:37 GMT"],"Server":["bfe"]}
 ```
-It means that the netHttp is print http header.
+It means that the `nethttp` extension can print http headers correctly.
