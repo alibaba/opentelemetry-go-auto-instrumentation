@@ -32,3 +32,4 @@ test/golog/test_glog
 test/grpc/v1.44.0/test_grpc_basic
 test/fasthttp/v1.45.0/test_basic_http
 test/hertz/v0.9.0/test_hertz_basic
+demo/demo5/main
