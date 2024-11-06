@@ -312,7 +312,9 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		// Prepend import path to the file
 		for _, importPath := range importPaths {
 			shared.AddImportForcely(astRoot, importPath)
-			log.Printf("Add %s import to %v", importPath, file)
+			if shared.Verbose {
+				log.Printf("Add %s import to %v", importPath, file)
+			}
 		}
 		addImport = true
 
@@ -552,7 +554,9 @@ func (dp *DepProcessor) pinDepVersion() error {
 	for _, dep := range fixedDeps {
 		p := dep.dep
 		v := dep.version
-		log.Printf("Pin dependency version %v@%v", p, v)
+		if shared.Verbose {
+			log.Printf("Pin dependency version %v@%v", p, v)
+		}
 		err := fetchDep(p + "@" + v)
 		if err != nil {
 			if dep.fallible {
