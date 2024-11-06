@@ -18,14 +18,14 @@ Replace the `Path` in `config.json` with the actual absolute path of `rules` dir
 Use `otelbuild` to build the binary with `config.json`:
 ```
 cd example/extension/sqlinject
-../../../otelbuild -rule=config.json -- demo/sqlinject.go
+../../../otelbuild -rule=config.json -- demo/sql_inject.go
 ```
 Users can get the `otelbuild` according to [documentation](../../../README.md)
 
 ## Step3: Run the binary compiled by otelbuild
 ```shell
 docker run -d -p 3306:3306 -p 33060:33060 -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0.36
-./sqlinject
+./sql_inject
 ```
 And the result will be:
 ```shell
