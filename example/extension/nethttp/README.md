@@ -11,7 +11,7 @@ Replace the `Path` in `config.json` with the actual absolute path of `rules` dir
 "OnEnter":"httpClientEnterHook",
 "ReceiverType": "*Transport",
 "OnExit": "httpClientExitHook",
-"Path": "/Users/zhanghaibin/Desktop/opentelemetry-go-auto-instrumentation/example/extension/netHttp/rules"
+"Path": "/Users/zhanghaibin/Desktop/opentelemetry-go-auto-instrumentation/example/extension/nethttp/rules"
 }]
 ```
 
@@ -19,13 +19,13 @@ Replace the `Path` in `config.json` with the actual absolute path of `rules` dir
 Use `otelbuild` to build the binary with `config.json`:
 ```
 cd example/extension/netHttp
-../../../otelbuild -rule=config.json -- demo/netHttp.go
+../../../otelbuild -rule=config.json -- demo/net_http.go
 ```
 Users can get the `otelbuild` according to [documentation](../../../README.md)
 
 ## Step3: Run the binary compiled by otelbuild
 ```shell
-./demo
+./net_http
 ```
 And the result will be:
 ```shell
