@@ -19,14 +19,10 @@ type DBSpanNameExtractor[REQUEST any] struct {
 }
 
 func (d *DBSpanNameExtractor[REQUEST]) Extract(request REQUEST) string {
-	dbName := d.Getter.GetName(request)
+	system := d.Getter.GetSystem(request)
 	operation := d.Getter.GetOperation(request)
-	if operation == "" {
-		if dbName == "" {
-			return "DB Query"
-		} else {
-			return dbName
-		}
+	if system == "" || operation == "" {
+		return "DB Query"
 	}
-	return operation
+	return system + "." + operation
 }

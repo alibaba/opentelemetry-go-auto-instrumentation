@@ -18,7 +18,7 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"log"
 	"testing"
 )
@@ -35,7 +35,10 @@ type mongoAttrsGetter struct {
 }
 
 func (m mongoAttrsGetter) GetSystem(request testRequest) string {
-	return "test"
+	if request.Name != "" {
+		return request.Name
+	}
+	return ""
 }
 
 func (m mongoAttrsGetter) GetServerAddress(request testRequest) string {
@@ -47,12 +50,14 @@ func (m mongoAttrsGetter) GetStatement(request testRequest) string {
 }
 
 func (m mongoAttrsGetter) GetOperation(request testRequest) string {
-	return "test"
+	if request.Name != "" {
+		return request.Operation
+	}
+	return ""
 }
 
 func (m mongoAttrsGetter) GetParameters(request testRequest) []any {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func TestGetSpanKey(t *testing.T) {
@@ -74,23 +79,8 @@ func TestDbClientExtractorStart(t *testing.T) {
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
 	attrs, _ = dbExtractor.OnStart(attrs, parentContext, testRequest{Name: "test"})
-	if attrs[0].Key != semconv.DBNameKey || attrs[0].Value.AsString() != "test" {
-		t.Fatalf("db name should be test")
-	}
-	if attrs[1].Key != semconv.DBSystemKey || attrs[1].Value.AsString() != "test" {
-		t.Fatalf("db system should be test")
-	}
-	if attrs[2].Key != semconv.DBUserKey || attrs[2].Value.AsString() != "test" {
-		t.Fatalf("db user should be test")
-	}
-	if attrs[3].Key != semconv.DBConnectionStringKey || attrs[3].Value.AsString() != "test" {
-		t.Fatalf("db connection key should be test")
-	}
-	if attrs[4].Key != semconv.DBStatementKey || attrs[4].Value.AsString() != "test" {
-		t.Fatalf("db statement key should be test")
-	}
-	if attrs[5].Key != semconv.DBOperationKey || attrs[5].Value.AsString() != "" {
-		t.Fatalf("db operation key should be empty")
+	if len(attrs) != 0 {
+		log.Fatal("attrs should be empty")
 	}
 }
 
@@ -99,7 +89,16 @@ func TestDbClientExtractorEnd(t *testing.T) {
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
 	attrs, _ = dbExtractor.OnEnd(attrs, parentContext, testRequest{Name: "test"}, testResponse{}, nil)
-	if len(attrs) != 0 {
-		log.Fatal("attrs should be empty")
+	if attrs[0].Key != semconv.DBSystemKey || attrs[0].Value.AsString() != "test" {
+		t.Fatalf("db system should be test")
+	}
+	if attrs[1].Key != semconv.DBQueryTextKey || attrs[1].Value.AsString() != "test" {
+		t.Fatalf("db user should be test")
+	}
+	if attrs[2].Key != semconv.DBOperationNameKey || attrs[2].Value.AsString() != "" {
+		t.Fatalf("db connection key should be empty")
+	}
+	if attrs[3].Key != semconv.ServerAddressKey || attrs[3].Value.AsString() != "test" {
+		t.Fatalf("db statement key should be test")
 	}
 }
