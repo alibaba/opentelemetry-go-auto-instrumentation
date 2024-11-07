@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"strings"
 	"sync"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
