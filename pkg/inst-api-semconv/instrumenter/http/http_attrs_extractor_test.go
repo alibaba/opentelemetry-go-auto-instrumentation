@@ -217,7 +217,7 @@ func TestHttpClientExtractorStart(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = httpClientExtractor.OnStart(attrs, parentContext, testRequest{})
+	attrs, _ = httpClientExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.HTTPRequestMethodKey || attrs[0].Value.AsString() != "GET" {
 		t.Fatalf("http method should be GET")
 	}
@@ -233,7 +233,7 @@ func TestHttpClientExtractorEnd(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = httpClientExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	attrs, _ = httpClientExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.HTTPResponseStatusCodeKey || attrs[0].Value.AsInt64() != 200 {
 		t.Fatalf("status code should be 200")
 	}
@@ -277,7 +277,7 @@ func TestHttpServerExtractorStart(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = httpServerExtractor.OnStart(attrs, parentContext, testRequest{})
+	attrs, _ = httpServerExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.HTTPRequestMethodKey || attrs[0].Value.AsString() != "GET" {
 		t.Fatalf("http method should be GET")
 	}
@@ -306,7 +306,7 @@ func TestHttpServerExtractorEnd(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = httpServerExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	attrs, _ = httpServerExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.HTTPResponseStatusCodeKey || attrs[0].Value.AsInt64() != 200 {
 		t.Fatalf("status code should be 200")
 	}

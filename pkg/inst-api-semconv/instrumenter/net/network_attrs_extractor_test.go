@@ -67,7 +67,7 @@ func TestNetClientExtractorStart(t *testing.T) {
 	netExtractor := NetworkAttrsExtractor[testRequest, testResponse, netAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = netExtractor.OnStart(attrs, parentContext, testRequest{})
+	attrs, _ = netExtractor.OnStart(attrs, parentContext, testRequest{})
 	if len(attrs) != 0 {
 		log.Fatal("attrs should be empty")
 	}
@@ -77,7 +77,7 @@ func TestNetClientExtractorEnd(t *testing.T) {
 	netExtractor := NetworkAttrsExtractor[testRequest, testResponse, netAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = netExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	attrs, _ = netExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.NetworkTransportKey || attrs[0].Value.AsString() != "test" {
 		t.Fatalf("network transport key should be test")
 	}

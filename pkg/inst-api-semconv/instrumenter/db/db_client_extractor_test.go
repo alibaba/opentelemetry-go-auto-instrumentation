@@ -38,18 +38,7 @@ func (m mongoAttrsGetter) GetSystem(request testRequest) string {
 	return "test"
 }
 
-func (m mongoAttrsGetter) GetUser(request testRequest) string {
-	return "test"
-}
-
-func (m mongoAttrsGetter) GetName(request testRequest) string {
-	if request.Name != "" {
-		return request.Name
-	}
-	return ""
-}
-
-func (m mongoAttrsGetter) GetConnectionString(request testRequest) string {
+func (m mongoAttrsGetter) GetServerAddress(request testRequest) string {
 	return "test"
 }
 
@@ -58,10 +47,12 @@ func (m mongoAttrsGetter) GetStatement(request testRequest) string {
 }
 
 func (m mongoAttrsGetter) GetOperation(request testRequest) string {
-	if request.Operation != "" {
-		return request.Operation
-	}
-	return ""
+	return "test"
+}
+
+func (m mongoAttrsGetter) GetParameters(request testRequest) []any {
+	//TODO implement me
+	panic("implement me")
 }
 
 func TestGetSpanKey(t *testing.T) {
@@ -82,7 +73,7 @@ func TestDbClientExtractorStart(t *testing.T) {
 	dbExtractor := DbClientAttrsExtractor[testRequest, testResponse, mongoAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = dbExtractor.OnStart(attrs, parentContext, testRequest{Name: "test"})
+	attrs, _ = dbExtractor.OnStart(attrs, parentContext, testRequest{Name: "test"})
 	if attrs[0].Key != semconv.DBNameKey || attrs[0].Value.AsString() != "test" {
 		t.Fatalf("db name should be test")
 	}
@@ -107,7 +98,7 @@ func TestDbClientExtractorEnd(t *testing.T) {
 	dbExtractor := DbClientAttrsExtractor[testRequest, testResponse, mongoAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = dbExtractor.OnEnd(attrs, parentContext, testRequest{Name: "test"}, testResponse{}, nil)
+	attrs, _ = dbExtractor.OnEnd(attrs, parentContext, testRequest{Name: "test"}, testResponse{}, nil)
 	if len(attrs) != 0 {
 		log.Fatal("attrs should be empty")
 	}
