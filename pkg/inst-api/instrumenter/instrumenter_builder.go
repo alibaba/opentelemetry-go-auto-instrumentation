@@ -24,7 +24,7 @@ import (
 // TODO: add route updater here, now we do not support such controller layer to update route.
 
 type InstrumentEnabler interface {
-	IsEnabled() bool
+	Enable() bool
 }
 
 type defaultInstrumentEnabler struct {
@@ -34,7 +34,7 @@ func NewDefaultInstrumentEnabler() InstrumentEnabler {
 	return &defaultInstrumentEnabler{}
 }
 
-func (a *defaultInstrumentEnabler) IsEnabled() bool {
+func (a *defaultInstrumentEnabler) Enable() bool {
 	return true
 }
 
