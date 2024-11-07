@@ -25,7 +25,7 @@ import (
 
 var databaseSqlInstrumenter = BuildDatabaseSqlOtelInstrumenter()
 
-var dbSqlEnabler instrumenter.InstrumentEnabler = instrumenter.NewDefaultInstrumentEnabler()
+var dbSqlEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 func beforeOpenInstrumentation(call api.CallContext, driverName, dataSourceName string) {
 	if !dbSqlEnabler.Enable() {

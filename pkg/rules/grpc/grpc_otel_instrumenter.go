@@ -24,6 +24,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+var grpcEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 type grpcAttrsGetter struct {
 }
 

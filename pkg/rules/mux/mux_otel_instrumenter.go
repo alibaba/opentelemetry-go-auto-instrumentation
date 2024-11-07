@@ -20,8 +20,6 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 )
 
 type muxHttpServerAttrsGetter struct {
@@ -103,18 +101,14 @@ func (n muxHttpServerAttrsGetter) GetHttpRoute(request muxHttpRequest) string {
 	return request.url.Path
 }
 
-func BuildMuxHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[muxHttpRequest, muxHttpResponse] {
+func BuildMuxHttpServerOtelInstrumenter() instrumenter.Instrumenter[muxHttpRequest, muxHttpResponse] {
 	builder := instrumenter.Builder[muxHttpRequest, muxHttpResponse]{}
 	serverGetter := muxHttpServerAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter, muxHttpServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter}
-	networkExtractor := net.NetworkAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter]{Getter: serverGetter}
-	urlExtractor := net.UrlAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter]{Getter: serverGetter}
+	commonExtractor := http.HttpCommonAttrsExtractor[muxHttpRequest, muxHttpResponse, http.HttpServerAttrsGetter[muxHttpRequest, muxHttpResponse], net.NetworkAttrsGetter[muxHttpRequest, muxHttpResponse]]{HttpGetter: serverGetter, NetGetter: serverGetter}
+	networkExtractor := net.NetworkAttrsExtractor[muxHttpRequest, muxHttpResponse, net.NetworkAttrsGetter[muxHttpRequest, muxHttpResponse]]{Getter: serverGetter}
+	urlExtractor := net.UrlAttrsExtractor[muxHttpRequest, muxHttpResponse, net.UrlAttrsGetter[muxHttpRequest]]{Getter: serverGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[muxHttpRequest, muxHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[muxHttpRequest, muxHttpResponse]{Getter: serverGetter}).
-		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[muxHttpRequest]{}).
-		AddAttributesExtractor(&http.HttpServerAttrsExtractor[muxHttpRequest, muxHttpResponse, muxHttpServerAttrsGetter, muxHttpServerAttrsGetter, muxHttpServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n muxHttpRequest) propagation.TextMapCarrier {
-		if n.header == nil {
-			return nil
-		}
-		return propagation.HeaderCarrier(n.header)
-	}, otel.GetTextMapPropagator())
+		SetSpanKindExtractor(&instrumenter.AlwaysInternalExtractor[muxHttpRequest]{}).
+		AddAttributesExtractor(&http.HttpServerAttrsExtractor[muxHttpRequest, muxHttpResponse, http.HttpServerAttrsGetter[muxHttpRequest, muxHttpResponse], net.NetworkAttrsGetter[muxHttpRequest, muxHttpResponse], net.UrlAttrsGetter[muxHttpRequest]]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).
+		BuildInstrumenter()
 }

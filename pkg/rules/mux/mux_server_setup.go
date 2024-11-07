@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"net"
 	"net/http"
 	"strconv"
@@ -26,9 +27,14 @@ import (
 	mux "github.com/gorilla/mux"
 )
 
+var muxEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 var muxInstrumenter = BuildMuxHttpServerOtelInstrumenter()
 
 func muxServerOnEnter(call api.CallContext, router *mux.Router, w http.ResponseWriter, req *http.Request) {
+	if !muxEnabler.Enable() {
+		return
+	}
 	muxRequest := muxHttpRequest{
 		method:  req.Method,
 		url:     req.URL,
@@ -48,6 +54,9 @@ func muxServerOnEnter(call api.CallContext, router *mux.Router, w http.ResponseW
 }
 
 func muxServerOnExit(call api.CallContext) {
+	if !muxEnabler.Enable() {
+		return
+	}
 	c := call.GetKeyData("ctx")
 	if c == nil {
 		return

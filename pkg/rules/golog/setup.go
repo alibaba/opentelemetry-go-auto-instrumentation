@@ -15,6 +15,7 @@
 package golog
 
 import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"log"
 	"strings"
 
@@ -22,7 +23,12 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
+var glogEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 func goLogWriteOnEnter(call api.CallContext, ce *log.Logger, pc uintptr, calldepth int, appendOutput func([]byte) []byte) {
+	if !glogEnabler.Enable() {
+		return
+	}
 	traceId, spanId := trace.GetTraceAndSpanId()
 	newAppendOutput := func(bytes []byte) []byte {
 		sb := strings.Builder{}

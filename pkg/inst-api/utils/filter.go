@@ -12,9 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mongo
+package utils
 
-type mongoRequest struct {
-	CommandName string
-	Host        string
+import "net/url"
+
+type UrlFilter interface {
+	FilterUrl(url *url.URL) bool
+}
+
+type SpanNameFilter interface {
+	FilterSpanName(spanName string) bool
+}
+
+type DefaultUrlFilter struct {
+}
+
+func (d DefaultUrlFilter) FilterUrl(url *url.URL) bool {
+	return false
 }

@@ -24,6 +24,9 @@ import (
 )
 
 func nextOnEnter(call api.CallContext, c *gin.Context) {
+	if !ginEnabler.Enable() {
+		return
+	}
 	if c == nil {
 		return
 	}
@@ -51,6 +54,9 @@ func nextOnEnter(call api.CallContext, c *gin.Context) {
 }
 
 func nextOnExit(call api.CallContext) {
+	if !ginEnabler.Enable() {
+		return
+	}
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return

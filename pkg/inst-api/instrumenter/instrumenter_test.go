@@ -45,7 +45,7 @@ type testOperationListener struct {
 type disableEnabler struct {
 }
 
-func (d disableEnabler) IsEnabled() bool {
+func (d disableEnabler) Enable() bool {
 	return false
 }
 
@@ -107,16 +107,16 @@ func (t *testOperationListener) OnAfterEnd(context context.Context, endAttribute
 type testAttributesExtractor struct {
 }
 
-func (t testAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request testRequest) []attribute.KeyValue {
+func (t testAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request testRequest) ([]attribute.KeyValue, context.Context) {
 	return []attribute.KeyValue{
 		attribute.String("testAttribute", "testValue"),
-	}
+	}, parentContext
 }
 
-func (t testAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request testRequest, response testResponse, err error) []attribute.KeyValue {
+func (t testAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request testRequest, response testResponse, err error) ([]attribute.KeyValue, context.Context) {
 	return []attribute.KeyValue{
 		attribute.String("testAttribute", "testValue"),
-	}
+	}, context
 }
 
 type testContextCustomizer struct {

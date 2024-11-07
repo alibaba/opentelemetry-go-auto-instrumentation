@@ -23,8 +23,8 @@ import (
 )
 
 type AttributesExtractor[REQUEST any, RESPONSE any] interface {
-	OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue
-	OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue
+	OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context)
+	OnEnd(attributes []attribute.KeyValue, ctx context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context)
 }
 
 type SpanKindExtractor[REQUEST any] interface {

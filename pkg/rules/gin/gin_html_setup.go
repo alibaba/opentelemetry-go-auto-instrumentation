@@ -23,6 +23,9 @@ import (
 )
 
 func htmlOnEnter(call api.CallContext, c *gin.Context, code int, name string, obj any) {
+	if !ginEnabler.Enable() {
+		return
+	}
 	if c == nil {
 		return
 	}
@@ -42,6 +45,9 @@ func htmlOnEnter(call api.CallContext, c *gin.Context, code int, name string, ob
 }
 
 func htmlOnExit(call api.CallContext) {
+	if !ginEnabler.Enable() {
+		return
+	}
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return
