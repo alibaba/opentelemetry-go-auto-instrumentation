@@ -50,7 +50,7 @@ func (m mongoAttrsGetter) GetStatement(request testRequest) string {
 }
 
 func (m mongoAttrsGetter) GetOperation(request testRequest) string {
-	if request.Name != "" {
+	if request.Operation != "" {
 		return request.Operation
 	}
 	return ""
@@ -100,5 +100,25 @@ func TestDbClientExtractorEnd(t *testing.T) {
 	}
 	if attrs[3].Key != semconv.ServerAddressKey || attrs[3].Value.AsString() != "test" {
 		t.Fatalf("db statement key should be test")
+	}
+}
+
+func TestDbClientExtractorWithFilter(t *testing.T) {
+	dbExtractor := DbClientAttrsExtractor[testRequest, testResponse, mongoAttrsGetter]{}
+	dbExtractor.Base.AttributesFilter = func(attrs []attribute.KeyValue) []attribute.KeyValue {
+		return []attribute.KeyValue{{
+			Key:   "test",
+			Value: attribute.StringValue("test"),
+		}}
+	}
+	attrs := make([]attribute.KeyValue, 0)
+	parentContext := context.Background()
+	attrs, _ = dbExtractor.OnStart(attrs, parentContext, testRequest{Name: "test"})
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+	attrs, _ = dbExtractor.OnEnd(attrs, parentContext, testRequest{Name: "test"}, testResponse{}, nil)
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
 	}
 }
