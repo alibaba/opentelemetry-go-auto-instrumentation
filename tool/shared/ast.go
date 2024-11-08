@@ -267,7 +267,7 @@ func AddImport(root *dst.File, path string) {
 	addImport(root, path, false)
 }
 
-func RemoveImport(root *dst.File, path string) bool {
+func RemoveImport(root *dst.File, path string) *dst.ImportSpec {
 	for j, decl := range root.Decls {
 		if genDecl, ok := decl.(*dst.GenDecl); ok &&
 			genDecl.Tok == token.IMPORT {
@@ -281,13 +281,13 @@ func RemoveImport(root *dst.File, path string) bool {
 							root.Decls =
 								append(root.Decls[:j], root.Decls[j+1:]...)
 						}
-						return true
+						return importSpec
 					}
 				}
 			}
 		}
 	}
-	return false
+	return nil
 }
 
 func NewVarDecl(name string, paramTypes *dst.FieldList) *dst.GenDecl {

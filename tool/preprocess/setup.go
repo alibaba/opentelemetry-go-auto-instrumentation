@@ -167,28 +167,41 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 	}
 }
 
-func replaceAPIImport(root *dst.File, oldPath, newPath string) bool {
-	// Remove api import nevertheless
-	shared.RemoveImport(root, oldPath)
-
-	// Check if new import is already present, if not tben add it
-	found := false
+func renameImport(root *dst.File, oldPath, newPath string) bool {
+	// Find out if the old import and replace it with new one. Why we dont
+	// remove old import and add new one? Because we are not sure if the
+	// new import will be used, it's a compilation error if we import it
+	// but never use it.
 	for _, decl := range root.Decls {
 		if genDecl, ok := decl.(*dst.GenDecl); ok &&
 			genDecl.Tok == token.IMPORT {
 			for _, spec := range genDecl.Specs {
 				if importSpec, ok := spec.(*dst.ImportSpec); ok {
-					if importSpec.Path.Value == fmt.Sprintf("%q", newPath) &&
-						(importSpec.Name != nil &&
-							importSpec.Name.Name != shared.IdentIgnore) {
-						found = true
+					if importSpec.Path.Value == fmt.Sprintf("%q", oldPath) {
+						// In case the new import is already present, try to
+						// remove it first
+						oldSpec := shared.RemoveImport(root, newPath)
+						// Replace old with new one
+						importSpec.Path.Value = fmt.Sprintf("%q", newPath)
+						// Respect alias name of old import, if any
+						if oldSpec != nil {
+							importSpec.Name = oldSpec.Name
+
+							// Unless the alias name is "_", we should keep it
+							// For "_" alias, we should add additional normal
+							// variant for CallContext usage, i.e. keep both
+							// imports, one for existing usages, one for
+							// CallContext usage
+							if oldSpec.Name != nil &&
+								oldSpec.Name.Name == shared.IdentIgnore {
+								shared.AddImport(root, newPath)
+							}
+						}
+						return true
 					}
 				}
 			}
 		}
-	}
-	if !found {
-		shared.AddImport(root, newPath)
 	}
 	return false
 }
@@ -213,8 +226,8 @@ func (dp *DepProcessor) copyRule(path, target string,
 	// Make hook functions public
 	makeHookPublic(astRoot, bundle)
 
-	// Remove "api" import if present
-	replaceAPIImport(astRoot, apiImport, bundle.ImportPath)
+	// Rename "api" import to the correct package prefix
+	renameImport(astRoot, apiImport, bundle.ImportPath)
 
 	// Copy used rule into project
 	_, err = shared.WriteAstToFile(astRoot, target)

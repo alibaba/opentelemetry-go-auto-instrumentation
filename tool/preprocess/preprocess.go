@@ -410,7 +410,7 @@ func (dp *DepProcessor) preclean() {
 		if astRoot == nil {
 			continue
 		}
-		if shared.RemoveImport(astRoot, ruleImport) {
+		if shared.RemoveImport(astRoot, ruleImport) != nil {
 			if shared.Verbose {
 				log.Printf("Remove obsolete import %v from %v",
 					ruleImport, file)
@@ -420,7 +420,7 @@ func (dp *DepProcessor) preclean() {
 			if !dep.addImport {
 				continue
 			}
-			if shared.RemoveImport(astRoot, dep.dep) {
+			if shared.RemoveImport(astRoot, dep.dep) != nil {
 				if shared.Verbose {
 					log.Printf("Remove obsolete import %v from %v",
 						dep, file)
