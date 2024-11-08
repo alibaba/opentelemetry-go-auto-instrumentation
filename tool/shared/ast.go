@@ -68,6 +68,13 @@ func StringLit(value string) *dst.BasicLit {
 	}
 }
 
+func IsStringLit(expr dst.Expr, val string) bool {
+	lit, ok := expr.(*dst.BasicLit)
+	return ok &&
+		lit.Kind == token.STRING &&
+		lit.Value == fmt.Sprintf("%q", val)
+}
+
 func IntLit(value int) *dst.BasicLit {
 	return &dst.BasicLit{
 		Kind:  token.INT,
@@ -235,20 +242,29 @@ func AddStructField(decl dst.Decl, name string, typ string) {
 	st.Fields.List = append(st.Fields.List, fd)
 }
 
-func AddImportForcely(root *dst.File, path string) {
-	importStmt := &dst.GenDecl{
-		Tok: token.IMPORT,
-		Specs: []dst.Spec{
-			&dst.ImportSpec{
-				Name: &dst.Ident{Name: IdentIgnore},
-				Path: &dst.BasicLit{
-					Kind:  token.STRING,
-					Value: fmt.Sprintf("\"%s\"", path),
-				},
-			},
+func addImport(root *dst.File, path string, force bool) {
+	spec := &dst.ImportSpec{
+		Path: &dst.BasicLit{
+			Kind:  token.STRING,
+			Value: fmt.Sprintf("\"%s\"", path),
 		},
 	}
+	if force {
+		spec.Name = &dst.Ident{Name: IdentIgnore}
+	}
+	importStmt := &dst.GenDecl{
+		Tok:   token.IMPORT,
+		Specs: []dst.Spec{spec},
+	}
 	root.Decls = append([]dst.Decl{importStmt}, root.Decls...)
+}
+
+func AddImportForcely(root *dst.File, path string) {
+	addImport(root, path, true)
+}
+
+func AddImport(root *dst.File, path string) {
+	addImport(root, path, false)
 }
 
 func RemoveImport(root *dst.File, path string) bool {
@@ -265,26 +281,6 @@ func RemoveImport(root *dst.File, path string) bool {
 							root.Decls =
 								append(root.Decls[:j], root.Decls[j+1:]...)
 						}
-						return true
-					}
-				}
-			}
-		}
-	}
-	return false
-}
-
-func ReplaceImport(root *dst.File, oldPath, newPath string) bool {
-	for _, decl := range root.Decls {
-		if genDecl, ok := decl.(*dst.GenDecl); ok &&
-			genDecl.Tok == token.IMPORT {
-			for _, spec := range genDecl.Specs {
-				if importSpec, ok := spec.(*dst.ImportSpec); ok {
-					if importSpec.Path.Value == fmt.Sprintf("\"%s\"", oldPath) {
-						// In case the import is already present, try to remove
-						// it first
-						RemoveImport(root, newPath)
-						importSpec.Path.Value = fmt.Sprintf("\"%s\"", newPath)
 						return true
 					}
 				}
