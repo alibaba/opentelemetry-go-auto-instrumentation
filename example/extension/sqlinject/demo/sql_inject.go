@@ -33,7 +33,9 @@ func main() {
 	}
 
 	// test sql inject
-	if _, err := db.Query("SELECT * FROM userx WHERE id = '0' AND name = 'foo'"); err != nil {
+	maliciousAnd := "'foo' AND 1 = 1"
+	injectedSql := fmt.Sprintf("SELECT * FROM userx WHERE id = '0' AND name = %s", maliciousAnd)
+	if _, err := db.Query(injectedSql); err != nil {
 		fmt.Printf("exec insert error: %v", err)
 	}
 }
