@@ -55,7 +55,7 @@ const (
 	DryRunLog        = "dry_run.log"
 	StdRulesPrefix   = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
 	StdRulesPath     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
-	apiImport        = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	ApiPath          = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 // @@ Change should sync with trampoline template
@@ -312,7 +312,9 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		// Prepend import path to the file
 		for _, importPath := range importPaths {
 			shared.AddImportForcely(astRoot, importPath)
-			log.Printf("Add %s import to %v", importPath, file)
+			if shared.Verbose {
+				log.Printf("Add %s import to %v", importPath, file)
+			}
 		}
 		addImport = true
 
@@ -664,7 +666,7 @@ func (dp *DepProcessor) setupDeps() error {
 		return fmt.Errorf("failed to setup dependencies: %w", err)
 	}
 
-	err = dp.replaceOtelImports(compileCmds)
+	err = dp.replaceOtelImports()
 	if err != nil {
 		return fmt.Errorf("failed to replace otel imports: %w", err)
 	}

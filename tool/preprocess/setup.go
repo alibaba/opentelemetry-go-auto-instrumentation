@@ -227,7 +227,7 @@ func (dp *DepProcessor) copyRule(path, target string,
 	makeHookPublic(astRoot, bundle)
 
 	// Rename "api" import to the correct package prefix
-	renameImport(astRoot, apiImport, bundle.ImportPath)
+	renameImport(astRoot, ApiPath, bundle.ImportPath)
 
 	// Copy used rule into project
 	_, err = shared.WriteAstToFile(astRoot, target)
