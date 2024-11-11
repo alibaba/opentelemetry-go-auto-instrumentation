@@ -16,6 +16,7 @@ package instrumenter
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -65,4 +66,30 @@ func (s *SpanKeySuppressor) ShouldSuppress(parentContext context.Context, spanKi
 	return true
 }
 
-// TODO: semconv span suppressor
+func NewSpanKindSuppressor() *SpanKindSuppressor {
+	var m = make(map[trace.SpanKind]SpanSuppressor)
+	m[trace.SpanKindServer] = NewSpanKeySuppressor([]attribute.Key{utils.KIND_SERVER})
+	m[trace.SpanKindClient] = NewSpanKeySuppressor([]attribute.Key{utils.KIND_CLIENT})
+	m[trace.SpanKindProducer] = NewSpanKeySuppressor([]attribute.Key{utils.KIND_PRODUCER})
+	m[trace.SpanKindConsumer] = NewSpanKeySuppressor([]attribute.Key{utils.KIND_CONSUMER})
+
+	return &SpanKindSuppressor{
+		delegates: m,
+	}
+}
+
+func (s SpanKindSuppressor) StoreInContext(context context.Context, spanKind trace.SpanKind, span trace.Span) context.Context {
+	spanSuppressor, exists := s.delegates[spanKind]
+	if !exists {
+		return context
+	}
+	return spanSuppressor.StoreInContext(context, spanKind, span)
+}
+
+func (s SpanKindSuppressor) ShouldSuppress(parentContext context.Context, spanKind trace.SpanKind) bool {
+	spanSuppressor, exists := s.delegates[spanKind]
+	if !exists {
+		return false
+	}
+	return spanSuppressor.ShouldSuppress(parentContext, spanKind)
+}
