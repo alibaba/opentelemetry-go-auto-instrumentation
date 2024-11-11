@@ -26,7 +26,7 @@ func init() {
 		NewGeneralTestCase("hertz-090-basic-test-with-regex", hertz_module_name, "v0.9.0", "", "1.18", "1.22", TestBasicHertzWithRegex),
 		NewLatestDepthTestCase("hertz-090-basic-test-latestdepth", hertz_dependency_name, hertz_module_name, "v0.9.0", "", "1.18", "", TestBasicHertz),
 		NewMuzzleTestCase("hertz-090-basic-muzzle", hertz_dependency_name, hertz_module_name, "v0.9.0", "v0.9.1", "1.18", "1.22.9", []string{"test_hertz_basic.go", "basic_func.go"}),
-		NewMuzzleTestCase("hertz-090-basic-muzzle", hertz_dependency_name, hertz_module_name, "v0.9.1", "", "1.18", "", []string{"test_hertz_basic.go", "basic_func.go"}))
+		NewMuzzleTestCase("hertz-090-basic-muzzle-1", hertz_dependency_name, hertz_module_name, "v0.9.1", "", "1.18", "", []string{"test_hertz_basic.go", "basic_func.go"}))
 }
 
 func TestBasicHertz(t *testing.T, env ...string) {
