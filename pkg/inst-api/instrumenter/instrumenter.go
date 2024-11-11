@@ -25,6 +25,7 @@ import (
 )
 
 type Instrumenter[REQUEST any, RESPONSE any] interface {
+	ShouldStart(parentContext context.Context, request REQUEST) bool
 	StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time)
 	Start(parentContext context.Context, request REQUEST) context.Context
 	End(ctx context.Context, request REQUEST, response RESPONSE, err error)
@@ -53,6 +54,14 @@ type PropagatingFromUpstreamInstrumenter[REQUEST any, RESPONSE any] struct {
 	carrierGetter func(REQUEST) propagation.TextMapCarrier
 	prop          propagation.TextMapPropagator
 	base          InternalInstrumenter[REQUEST, RESPONSE]
+}
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) ShouldStart(parentContext context.Context, request REQUEST) bool {
+	spanKind := i.spanKindExtractor.Extract(request)
+	suppressed := i.spanSuppressor.ShouldSuppress(parentContext, spanKind)
+	if suppressed {
+		// todo record suppressed span
+	}
+	return !suppressed
 }
 
 func (i *InternalInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
@@ -120,6 +129,9 @@ func (i *InternalInstrumenter[REQUEST, RESPONSE]) doEnd(ctx context.Context, req
 	}
 }
 
+func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) ShouldStart(parentContext context.Context, request REQUEST) bool {
+	return p.base.ShouldStart(parentContext, request)
+}
 func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
 	newCtx := p.base.doStart(parentContext, request, startTime)
 	if p.carrierGetter != nil {
@@ -149,6 +161,9 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context
 	p.base.End(ctx, request, response, err)
 }
 
+func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) ShouldStart(parentContext context.Context, request REQUEST) bool {
+	return p.base.ShouldStart(parentContext, request)
+}
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
 	var ctx context.Context
 	if p.carrierGetter != nil {
