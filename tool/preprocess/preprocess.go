@@ -418,17 +418,6 @@ func (dp *DepProcessor) preclean() {
 					ruleImport, file)
 			}
 		}
-		for _, dep := range fixedDeps {
-			if !dep.addImport {
-				continue
-			}
-			if shared.RemoveImport(astRoot, dep.dep) != nil {
-				if shared.Verbose {
-					log.Printf("Remove obsolete import %v from %v",
-						dep, file)
-				}
-			}
-		}
 		_, err := shared.WriteAstToFile(astRoot, file)
 		if err != nil {
 			log.Printf("Failed to write ast to %v: %v", file, err)
