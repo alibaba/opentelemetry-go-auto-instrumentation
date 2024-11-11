@@ -77,6 +77,9 @@ func NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersi
 
 func NewMuzzleTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, muzzleClasses []string) *TestCase {
 	c := NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
+	if c == nil {
+		return nil
+	}
 	c.IsMuzzleCheck = true
 	c.DependencyName = dependencyName
 	c.MuzzleClasses = muzzleClasses
@@ -85,6 +88,9 @@ func NewMuzzleTestCase(testName, dependencyName, moduleName, minVersion, maxVers
 
 func NewLatestDepthTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, latestTestFunc func(t *testing.T, env ...string)) *TestCase {
 	c := NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
+	if c == nil {
+		return nil
+	}
 	c.LatestDepthFunc = latestTestFunc
 	c.DependencyName = dependencyName
 	c.IsLatestDepthCheck = true
