@@ -55,7 +55,7 @@ const (
 	DryRunLog        = "dry_run.log"
 	StdRulesPrefix   = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
 	StdRulesPath     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
-	apiImport        = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	ApiPath          = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 // @@ Change should sync with trampoline template
@@ -312,7 +312,9 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		// Prepend import path to the file
 		for _, importPath := range importPaths {
 			shared.AddImportForcely(astRoot, importPath)
-			log.Printf("Add %s import to %v", importPath, file)
+			if shared.Verbose {
+				log.Printf("Add %s import to %v", importPath, file)
+			}
 		}
 		addImport = true
 
@@ -410,21 +412,10 @@ func (dp *DepProcessor) preclean() {
 		if astRoot == nil {
 			continue
 		}
-		if shared.RemoveImport(astRoot, ruleImport) {
+		if shared.RemoveImport(astRoot, ruleImport) != nil {
 			if shared.Verbose {
 				log.Printf("Remove obsolete import %v from %v",
 					ruleImport, file)
-			}
-		}
-		for _, dep := range fixedDeps {
-			if !dep.addImport {
-				continue
-			}
-			if shared.RemoveImport(astRoot, dep.dep) {
-				if shared.Verbose {
-					log.Printf("Remove obsolete import %v from %v",
-						dep, file)
-				}
 			}
 		}
 		_, err := shared.WriteAstToFile(astRoot, file)
@@ -552,7 +543,9 @@ func (dp *DepProcessor) pinDepVersion() error {
 	for _, dep := range fixedDeps {
 		p := dep.dep
 		v := dep.version
-		log.Printf("Pin dependency version %v@%v", p, v)
+		if shared.Verbose {
+			log.Printf("Pin dependency version %v@%v", p, v)
+		}
 		err := fetchDep(p + "@" + v)
 		if err != nil {
 			if dep.fallible {
@@ -664,7 +657,7 @@ func (dp *DepProcessor) setupDeps() error {
 		return fmt.Errorf("failed to setup dependencies: %w", err)
 	}
 
-	err = dp.replaceOtelImports(compileCmds)
+	err = dp.replaceOtelImports()
 	if err != nil {
 		return fmt.Errorf("failed to replace otel imports: %w", err)
 	}
