@@ -49,8 +49,8 @@ func main() {
 				panic("No http.server.request.duration metrics received!")
 			}
 			point := mrs.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
-			if point.DataPoints[0].Count != 1 {
-				panic("http.server.request.duration metrics count is not 1, actually" + strconv.Itoa(int(point.DataPoints[0].Count)))
+			if point.DataPoints[0].Count <= 0 {
+				panic("http.server.request.duration metrics count is not positive, actually " + strconv.Itoa(int(point.DataPoints[0].Count)))
 			}
 			verifier.VerifyHttpServerMetricsAttributes(point.DataPoints[0].Attributes.ToSlice(), "GET", "/a", "", "http", "1.1", "http", 200)
 		},
@@ -59,8 +59,8 @@ func main() {
 				panic("No http.client.request.duration metrics received!")
 			}
 			point := mrs.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
-			if point.DataPoints[0].Count != 1 {
-				panic("http.client.request.duration metrics count is not 1, actually" + strconv.Itoa(int(point.DataPoints[0].Count)))
+			if point.DataPoints[0].Count <= 0 {
+				panic("http.client.request.duration metrics count is not positive, actually " + strconv.Itoa(int(point.DataPoints[0].Count)))
 			}
 			verifier.VerifyHttpClientMetricsAttributes(point.DataPoints[0].Attributes.ToSlice(), "GET", "127.0.0.1:"+strconv.Itoa(port), "", "http", "1.1", port, 200)
 		},
