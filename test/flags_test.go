@@ -33,8 +33,7 @@ func TestFlags(t *testing.T) {
 	RunInstrumentFallible(t, "-debuglog", "go", "build", "notevenaflag")
 	ExpectPreprocessContains(t, shared.DebugLogFile, "failed to")
 
-	RunInstrument(t, "-debuglog", "-verbose",
-		"go", "build",
+	RunInstrument(t, "-debuglog", "-verbose", "go", "build",
 		`-ldflags=-X main.Placeholder=replaced`)
 	_, stderr := RunApp(t, AppName)
 	ExpectContains(t, stderr, "placeholder:replaced")
