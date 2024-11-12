@@ -39,6 +39,18 @@ const (
 	TPreprocess          = "preprocess"
 )
 
+func AssertGoBuild(args []string) {
+	if len(args) < 2 {
+		util.Assert(false, "empty go build command")
+	}
+	if !strings.Contains(args[0], "go") {
+		util.Assert(false, "invalid go build command %v", args)
+	}
+	if args[1] != "build" {
+		util.Assert(false, "invalid go build command %v", args)
+	}
+}
+
 func IsCompileCommand(line string) bool {
 	check := []string{"-o", "-p", "-buildid"}
 	if util.IsWindows() {

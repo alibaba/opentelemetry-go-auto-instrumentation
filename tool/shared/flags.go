@@ -51,8 +51,8 @@ var Debug = false
 // Restore true means restore all instrumentations.
 var Restore = false
 
-// BuildArgs are the arguments to pass to the go build command.
-var BuildArgs []string
+// GoBuildCmd are the original go build command.
+var GoBuildCmd []string
 
 // Version
 var PrintVersion = false
@@ -71,11 +71,11 @@ var TheVersion = "1.0.0"
 
 var TheName = "otelbuild"
 
-func PrintTheVersion() {
+func printVersion() {
 	fmt.Printf("%s version %s\n", TheName, TheVersion)
 }
 
-func ParseOptions() {
+func parseOptions() {
 	// Parse flags from command-line arguments
 	flag.BoolVar(&InToolexec, "in-toolexec", false,
 		"Run in toolexec mode")
@@ -93,52 +93,8 @@ func ParseOptions() {
 		"Rule file in json format. Multiple rules are separated by comma")
 	flag.Parse()
 
-	// Any non-flag command-line arguments behind "--" separator will be treated
-	// as build arguments and transparently passed to the go build command.
-	BuildArgs = flag.Args()
-}
-
-func SetBuildMode() error {
-	// We can't brutely always add -mod=mod here because -mod may only be set to
-	// readonly or vendor when in workspace mode. We need to check if provided
-	// -mod is vendor or vendor directory exists, then we set -mod=mod mode.
-	// For all other cases, we just leave it as is.
-
-	// Check if -mod=vendor is set, replace it with -mod=mod
-	const buildModeVendor = "-mod=vendor"
-	const buildModePrefix = "-mod"
-	for i, arg := range BuildArgs {
-		// -mod=vendor?
-		if arg == buildModeVendor {
-			BuildArgs[i] = BuildModeMod
-			return nil
-		}
-		// -mod vendor?
-		if arg == buildModePrefix {
-			if len(BuildArgs) > i+1 {
-				arg1 := BuildArgs[i+1]
-				if arg1 == "vendor" {
-					BuildArgs[i+1] = "mod"
-					return nil
-				}
-			}
-		}
-	}
-
-	// Check if vendor directory exists, explicitly set -mod=mod
-	gomodDir, err := GetGoModDir()
-	if err != nil {
-		return fmt.Errorf("failed to get go.mod directory: %w", err)
-	}
-	vendor := filepath.Join(gomodDir, VendorDir)
-	exist, err := util.PathExists(vendor)
-	if err != nil {
-		return fmt.Errorf("failed to check vendor directory: %w", err)
-	}
-	if exist {
-		BuildArgs = append([]string{BuildModeMod}, BuildArgs...)
-	}
-	return nil
+	// Any non-flag command-line arguments will be treated as go build command
+	GoBuildCmd = flag.Args()
 }
 
 func passOptions() error {
@@ -216,7 +172,35 @@ func makeRulesAbs() error {
 	return nil
 }
 
+func checkOptions() error {
+	if InPreprocess() {
+		// Must be start with "go build", while "go" may refer to the full path
+		if len(GoBuildCmd) < 2 ||
+			!strings.Contains(GoBuildCmd[0], "go") ||
+			GoBuildCmd[1] != "build" {
+			return fmt.Errorf("usage: otelbuild go build")
+		}
+	}
+	return nil
+}
+
 func InitOptions() (err error) {
+	// Parse options from command-line arguments
+	parseOptions()
+
+	// Print version and exit early
+	if PrintVersion {
+		printVersion()
+		os.Exit(0)
+	}
+
+	// Make sure all options are in sane
+	err = checkOptions()
+	if err != nil {
+		return fmt.Errorf("failed to check options: %w", err)
+	}
+
+	// Pass options via environment variables for instrument phase
 	err = passOptions()
 	if err != nil {
 		return fmt.Errorf("failed to inherit environment variables: %w", err)
@@ -234,5 +218,5 @@ func InitOptions() (err error) {
 			return fmt.Errorf("failed to set rule file: %w", err)
 		}
 	}
-	return SetBuildMode()
+	return nil
 }

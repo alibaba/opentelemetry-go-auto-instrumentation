@@ -239,7 +239,7 @@ func (dp *DepProcessor) getImportCandidates() ([]string, error) {
 	found := false
 
 	// Find from build arguments e.g. go build test.go or go build cmd/app
-	for _, buildArg := range shared.BuildArgs {
+	for _, buildArg := range shared.GoBuildCmd[2:] {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
 
@@ -448,9 +448,15 @@ func runDryBuild() error {
 	if err != nil {
 		return err
 	}
-	// The full build command is: "go build -a -x -n {BuildArgs...}"
-	args := append([]string{"build", "-a", "-x", "-n"}, shared.BuildArgs...)
-	cmd := exec.Command("go", args...)
+	// The full build command is: "go build  {...} -a -x -n"
+	args := make([]string, len(shared.GoBuildCmd))
+	copy(args, shared.GoBuildCmd)
+	args = append(args, "-a", "-x", "-n")
+	args = util.StringDedup(args)
+	shared.AssertGoBuild(args)
+
+	// Run the dry build
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = dryRunLog
 	cmd.Stderr = dryRunLog
 	return cmd.Run()
@@ -489,6 +495,7 @@ func runBuildWithToolexec() (string, error) {
 		return "", err
 	}
 	args := []string{
+		"go",
 		"build",
 		"-toolexec=" + exe + " -in-toolexec",
 	}
@@ -505,7 +512,7 @@ func runBuildWithToolexec() (string, error) {
 	}
 
 	// Append additional build arguments provided by the user
-	args = append(args, shared.BuildArgs...)
+	args = append(args, shared.GoBuildCmd[2:]...)
 
 	if shared.Restore {
 		// Dont generate any compiled binary when using -restore
@@ -516,7 +523,9 @@ func runBuildWithToolexec() (string, error) {
 	if shared.Verbose {
 		log.Printf("Run go build with args %v in toolexec mode", args)
 	}
-	return util.RunCmdOutput(append([]string{"go"}, args...)...)
+	args = util.StringDedup(args)
+	shared.AssertGoBuild(args)
+	return util.RunCmdOutput(args...)
 }
 
 func fetchDep(path string) error {
