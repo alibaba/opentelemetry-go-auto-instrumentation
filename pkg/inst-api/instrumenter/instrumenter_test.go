@@ -232,3 +232,27 @@ func TestPropToDownStream(t *testing.T) {
 		panic("prop val should be test!")
 	}
 }
+
+func TestStartAndEndWithOptions(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().
+		SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		AddAttributesExtractor(testAttributesExtractor{}).
+		AddOperationListeners(&testOperationListener{}).
+		AddContextCustomizers(testContextCustomizer{}).
+		SetInstVersion("test-version")
+	instrumenter := builder.BuildInstrumenter()
+	ctx := context.Background()
+	instrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
+	prop := mockProp{"test"}
+	dsInstrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	dsInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	upInstrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	upInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	// no panic here
+}
