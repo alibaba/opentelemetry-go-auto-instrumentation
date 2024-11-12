@@ -1,0 +1,10 @@
+[
+  {
+    "ImportPath":"net/http",
+    "Function":"RoundTrip",
+    "OnEnter":"httpClientEnterHook",
+    "ReceiverType": "*Transport",
+    "OnExit": "httpClientExitHook",
+    "Path": "/path/to/nethttp/rules"
+  }
+]

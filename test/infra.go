@@ -23,8 +23,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -102,10 +102,13 @@ func RunInstrument(t *testing.T, args ...string) {
 	err := cmd.Run()
 	if err != nil {
 		stderr := readStderrLog(t)
+		stdout := readStdoutLog(t)
+		t.Log(stdout)
+		t.Log("\n\n\n")
+		t.Log(stderr)
 		log1 := ReadPreprocessLog(t, shared.DebugLogFile)
 		log2 := ReadInstrumentLog(t, shared.DebugLogFile)
 		text := fmt.Sprintf("failed to run instrument: %v\n", err)
-		text += fmt.Sprintf("stderr: %v\n", stderr)
 		text += fmt.Sprintf("preprocess: %v\n", log1)
 		text += fmt.Sprintf("instrument: %v\n", log2)
 		t.Fatal(text)
