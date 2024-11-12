@@ -341,3 +341,52 @@ func TestHttpServerExtractorEnd(t *testing.T) {
 		t.Fatalf("wrong network peer port")
 	}
 }
+
+func TestHttpServerExtractorWithFilter(t *testing.T) {
+	httpServerExtractor := HttpServerAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter, urlAttrsGetter]{
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+		UrlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
+	}
+	attrs := make([]attribute.KeyValue, 0)
+	parentContext := context.Background()
+	httpServerExtractor.Base.AttributesFilter = func(attrs []attribute.KeyValue) []attribute.KeyValue {
+		return []attribute.KeyValue{{
+			Key:   "test",
+			Value: attribute.StringValue("test"),
+		}}
+	}
+	attrs = make([]attribute.KeyValue, 0)
+	attrs, _ = httpServerExtractor.OnStart(attrs, parentContext, testRequest{Method: "test"})
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+	attrs, _ = httpServerExtractor.OnEnd(attrs, parentContext, testRequest{Method: "test"}, testResponse{}, nil)
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+}
+
+func TestHttpClientExtractorWithFilter(t *testing.T) {
+	httpClientExtractor := HttpClientAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+	}
+	attrs := make([]attribute.KeyValue, 0)
+	parentContext := context.Background()
+	httpClientExtractor.Base.AttributesFilter = func(attrs []attribute.KeyValue) []attribute.KeyValue {
+		return []attribute.KeyValue{{
+			Key:   "test",
+			Value: attribute.StringValue("test"),
+		}}
+	}
+	attrs = make([]attribute.KeyValue, 0)
+	attrs, _ = httpClientExtractor.OnStart(attrs, parentContext, testRequest{Method: "test"})
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+	attrs, _ = httpClientExtractor.OnEnd(attrs, parentContext, testRequest{Method: "test"}, testResponse{}, nil)
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+}

@@ -31,6 +31,18 @@ type testResponse struct {
 type netAttrsGetter struct {
 }
 
+func (n netAttrsGetter) GetUrlScheme(request testRequest) string {
+	return "test"
+}
+
+func (n netAttrsGetter) GetUrlPath(request testRequest) string {
+	return "test"
+}
+
+func (n netAttrsGetter) GetUrlQuery(request testRequest) string {
+	return "test"
+}
+
 func (n netAttrsGetter) GetNetworkType(request testRequest, response testResponse) string {
 	return "test"
 }
@@ -61,6 +73,32 @@ func (n netAttrsGetter) GetNetworkPeerInetAddress(request testRequest, response 
 
 func (n netAttrsGetter) GetNetworkPeerPort(request testRequest, response testResponse) int {
 	return 8080
+}
+
+func TestUrlAttrsExtractorStart(t *testing.T) {
+	urlExtractor := UrlAttrsExtractor[testRequest, testResponse, netAttrsGetter]{}
+	attrs := make([]attribute.KeyValue, 0)
+	parentContext := context.Background()
+	attrs, _ = urlExtractor.OnStart(attrs, parentContext, testRequest{})
+	if attrs[0].Key != semconv.URLSchemeKey || attrs[0].Value.AsString() != "test" {
+		t.Fatalf("url scheme key should be test")
+	}
+	if attrs[1].Key != semconv.URLPathKey || attrs[1].Value.AsString() != "test" {
+		t.Fatalf("url path should be test")
+	}
+	if attrs[2].Key != semconv.URLQueryKey || attrs[2].Value.AsString() != "test" {
+		t.Fatalf("url query name should be test")
+	}
+}
+
+func TestUrlAttrsExtractorEnd(t *testing.T) {
+	urlExtractor := UrlAttrsExtractor[testRequest, testResponse, netAttrsGetter]{}
+	attrs := make([]attribute.KeyValue, 0)
+	parentContext := context.Background()
+	attrs, _ = urlExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	if len(attrs) != 0 {
+		log.Fatal("attrs should be empty")
+	}
 }
 
 func TestNetClientExtractorStart(t *testing.T) {
