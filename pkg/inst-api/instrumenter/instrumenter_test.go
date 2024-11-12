@@ -249,10 +249,10 @@ func TestStartAndEndWithOptions(t *testing.T) {
 	dsInstrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
 		return &prop
 	}, &myTextMapProp{})
-	dsInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	dsInstrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
 	upInstrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
 		return &prop
 	}, &myTextMapProp{})
-	upInstrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
+	upInstrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
 	// no panic here
 }
