@@ -246,7 +246,7 @@ func addImport(root *dst.File, path string, force bool) {
 	spec := &dst.ImportSpec{
 		Path: &dst.BasicLit{
 			Kind:  token.STRING,
-			Value: fmt.Sprintf("\"%s\"", path),
+			Value: fmt.Sprintf("%q", path),
 		},
 	}
 	if force {
@@ -273,7 +273,7 @@ func RemoveImport(root *dst.File, path string) *dst.ImportSpec {
 			genDecl.Tok == token.IMPORT {
 			for i, spec := range genDecl.Specs {
 				if importSpec, ok := spec.(*dst.ImportSpec); ok {
-					if importSpec.Path.Value == fmt.Sprintf("\"%s\"", path) {
+					if importSpec.Path.Value == fmt.Sprintf("%q", path) {
 						genDecl.Specs =
 							append(genDecl.Specs[:i],
 								genDecl.Specs[i+1:]...)

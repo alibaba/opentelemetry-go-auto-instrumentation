@@ -328,7 +328,7 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 		imports[OtelGetStackImportPath] = OtelGetStackAliasPkg
 	}
 	for k, v := range imports {
-		c += fmt.Sprintf("import %s \"%s\"\n", v, k)
+		c += fmt.Sprintf("import %s %q\n", v, k)
 	}
 
 	// Assignments
