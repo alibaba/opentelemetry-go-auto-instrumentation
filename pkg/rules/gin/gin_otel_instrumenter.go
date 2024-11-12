@@ -24,6 +24,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
+var ginEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 type ginServerAttrsGetter struct {
 }
 

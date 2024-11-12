@@ -22,29 +22,24 @@ import (
 type gormAttrsGetter struct {
 }
 
-func (g gormAttrsGetter) GetSystem(request gormRequest) string {
-	return request.System
+func (g gormAttrsGetter) GetSystem(gormRequest gormRequest) string {
+	return gormRequest.System
 }
 
-func (g gormAttrsGetter) GetUser(request gormRequest) string {
-	return request.User
+func (g gormAttrsGetter) GetServerAddress(gormRequest gormRequest) string {
+	return gormRequest.Endpoint
 }
 
-func (g gormAttrsGetter) GetName(request gormRequest) string {
-	return request.DbName
-}
-
-func (g gormAttrsGetter) GetConnectionString(request gormRequest) string {
-	return request.Endpoint
-}
-
-func (g gormAttrsGetter) GetStatement(request gormRequest) string {
-	// full sql statement is recorded in database/sql
+func (g gormAttrsGetter) GetStatement(gormRequest gormRequest) string {
 	return ""
 }
 
-func (g gormAttrsGetter) GetOperation(request gormRequest) string {
-	return request.Operation
+func (g gormAttrsGetter) GetOperation(gormRequest gormRequest) string {
+	return gormRequest.Operation
+}
+
+func (g gormAttrsGetter) GetParameters(gormRequest gormRequest) []any {
+	return nil
 }
 
 func BuildGormInstrumenter() instrumenter.Instrumenter[gormRequest, interface{}] {

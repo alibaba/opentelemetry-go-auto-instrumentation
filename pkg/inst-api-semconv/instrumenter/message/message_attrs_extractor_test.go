@@ -92,7 +92,7 @@ func TestMessageClientExtractorStartWithTemporaryDestination(t *testing.T) {
 	messageExtractor := MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{operation: PUBLISH}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = messageExtractor.OnStart(attrs, parentContext, testRequest{IsTemporaryDestination: true, IsAnonymousDestination: true})
+	attrs, _ = messageExtractor.OnStart(attrs, parentContext, testRequest{IsTemporaryDestination: true, IsAnonymousDestination: true})
 	if attrs[0].Key != semconv.MessagingDestinationTemporaryKey || attrs[0].Value.AsBool() != true {
 		t.Fatalf("temporary should be true")
 	}
@@ -126,7 +126,7 @@ func TestMessageClientExtractorStartWithoutTemporaryDestination(t *testing.T) {
 	messageExtractor := MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{operation: PUBLISH}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = messageExtractor.OnStart(attrs, parentContext, testRequest{IsTemporaryDestination: false, IsAnonymousDestination: true})
+	attrs, _ = messageExtractor.OnStart(attrs, parentContext, testRequest{IsTemporaryDestination: false, IsAnonymousDestination: true})
 	if attrs[0].Key != semconv.MessagingDestinationNameKey || attrs[0].Value.AsString() != "destination" {
 		t.Fatalf("destination name should be destination")
 	}
@@ -160,7 +160,7 @@ func TestMessageClientExtractorEnd(t *testing.T) {
 	messageExtractor := MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = messageExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	attrs, _ = messageExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.MessagingMessageIDKey || attrs[0].Value.AsString() != "message-id" {
 		t.Fatalf("message id should be message-id")
 	}

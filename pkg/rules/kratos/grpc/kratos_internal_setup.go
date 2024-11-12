@@ -16,6 +16,7 @@ package grpc
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
@@ -28,6 +29,8 @@ import (
 
 const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES = "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES"
 
+var kratosEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 
 func KratosNewGRPCServiceOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
@@ -38,7 +41,6 @@ func KratosNewGRPCServiceOnEnter(call api.CallContext, opts ...grpc.ServerOption
 	call.SetParam(0, opts)
 }
 
-// AddMiddleware adds service middleware option.
 func AddHTTPMiddleware(m middleware.Middleware) http.ServerOption {
 	return func(o *http.Server) {
 		o.Use("*", m)

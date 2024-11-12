@@ -45,7 +45,7 @@ type testOperationListener struct {
 type disableEnabler struct {
 }
 
-func (d disableEnabler) IsEnabled() bool {
+func (d disableEnabler) Enable() bool {
 	return false
 }
 
@@ -107,16 +107,16 @@ func (t *testOperationListener) OnAfterEnd(context context.Context, endAttribute
 type testAttributesExtractor struct {
 }
 
-func (t testAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request testRequest) []attribute.KeyValue {
+func (t testAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request testRequest) ([]attribute.KeyValue, context.Context) {
 	return []attribute.KeyValue{
 		attribute.String("testAttribute", "testValue"),
-	}
+	}, parentContext
 }
 
-func (t testAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request testRequest, response testResponse, err error) []attribute.KeyValue {
+func (t testAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request testRequest, response testResponse, err error) ([]attribute.KeyValue, context.Context) {
 	return []attribute.KeyValue{
 		attribute.String("testAttribute", "testValue"),
-	}
+	}, context
 }
 
 type testContextCustomizer struct {
@@ -231,4 +231,28 @@ func TestPropToDownStream(t *testing.T) {
 	if prop.val != "test" {
 		panic("prop val should be test!")
 	}
+}
+
+func TestStartAndEndWithOptions(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().
+		SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		AddAttributesExtractor(testAttributesExtractor{}).
+		AddOperationListeners(&testOperationListener{}).
+		AddContextCustomizers(testContextCustomizer{}).
+		SetInstVersion("test-version")
+	instrumenter := builder.BuildInstrumenter()
+	ctx := context.Background()
+	instrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
+	prop := mockProp{"test"}
+	dsInstrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	dsInstrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
+	upInstrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	upInstrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
+	// no panic here
 }

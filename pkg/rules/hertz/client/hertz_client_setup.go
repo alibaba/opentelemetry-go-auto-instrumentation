@@ -16,11 +16,14 @@ package client
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/cloudwego/hertz/pkg/app/client"
 	"github.com/cloudwego/hertz/pkg/protocol"
 )
+
+var hertzClientEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 var hertzClientInstrumenter = BuildHertzClientInstrumenter()
 
@@ -38,6 +41,9 @@ func otelClientMiddleware(next client.Endpoint) client.Endpoint {
 }
 
 func afterHertzClientBuild(call api.CallContext, c *client.Client, err error) {
+	if !hertzClientEnabler.Enable() {
+		return
+	}
 	if err != nil {
 		return
 	}

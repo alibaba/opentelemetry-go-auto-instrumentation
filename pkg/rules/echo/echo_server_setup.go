@@ -15,11 +15,14 @@
 package echo
 
 import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	echo "github.com/labstack/echo/v4"
 )
+
+var echoEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 func otelTraceMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -48,6 +51,9 @@ func otelTraceMiddleware() echo.MiddlewareFunc {
 }
 
 func afterNewEcho(call api.CallContext, e *echo.Echo) {
+	if !echoEnabler.Enable() {
+		return
+	}
 	if e == nil {
 		return
 	}

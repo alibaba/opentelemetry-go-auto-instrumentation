@@ -83,14 +83,18 @@ func filterMetricByName(data metricdata.ResourceMetrics, name string) (metricdat
 	if len(data.ScopeMetrics) == 0 {
 		return data, errors.New(fmt.Sprintf("No metrics named %s", name))
 	}
-	for i, s := range data.ScopeMetrics {
+	index := 0
+	for _, s := range data.ScopeMetrics {
 		scms := make([]metricdata.Metrics, 0)
 		for j, sm := range s.Metrics {
 			if sm.Name == name {
 				scms = append(scms, s.Metrics[j])
 			}
 		}
-		data.ScopeMetrics[i].Metrics = scms
+		if len(scms) > 0 {
+			data.ScopeMetrics[index].Metrics = scms
+			index++
+		}
 	}
 	return data, nil
 }
