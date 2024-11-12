@@ -39,7 +39,7 @@ func main() {
 	}
 	fmt.Println(val)
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "set", "redis", "localhost", "set a b ex 5: ", "set")
-		verifier.VerifyDbAttributes(stubs[1][0], "get", "redis", "localhost", "get a: ", "get")
+		verifier.VerifyDbAttributes(stubs[0][0], "set", "redis", "localhost", "set a b ex 5", "set")
+		verifier.VerifyDbAttributes(stubs[1][0], "get", "redis", "localhost", "get a", "get")
 	}, 2)
 }
