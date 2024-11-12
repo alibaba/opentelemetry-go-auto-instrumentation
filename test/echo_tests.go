@@ -32,18 +32,18 @@ func init() {
 
 func TestBasicEcho(t *testing.T, env ...string) {
 	UseApp("echo/v4.0.0")
-	RunInstrument(t, "-debuglog", "--", "test_echo_basic.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_echo_basic.go")
 	RunApp(t, "test_echo_basic", env...)
 }
 
 func TestEchoPattern(t *testing.T, env ...string) {
 	UseApp("echo/v4.0.0")
-	RunInstrument(t, "-debuglog", "--", "test_echo_pattern.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_echo_pattern.go")
 	RunApp(t, "test_echo_pattern", env...)
 }
 
 func TestEchoMiddleware(t *testing.T, env ...string) {
 	UseApp("echo/v4.10.0")
-	RunInstrument(t, "-debuglog", "--", "test_echo_middleware.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_echo_middleware.go")
 	RunApp(t, "test_echo_middleware", env...)
 }

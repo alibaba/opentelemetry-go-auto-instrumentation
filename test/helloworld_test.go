@@ -62,11 +62,11 @@ func TestBuildHelloworldWithVendor1(t *testing.T) {
 func TestBuildHelloworldWithVendor2(t *testing.T) {
 	UseApp(HelloworldAppName)
 	util.RunCmd("go", "mod", "vendor")
-	RunInstrument(t, "-debuglog", "--", "-mod=vendor")
+	RunInstrument(t, "-debuglog", "go", "build", "-mod=vendor")
 }
 
 func TestBuildHelloworldWithVendor3(t *testing.T) {
 	UseApp(HelloworldAppName)
 	util.RunCmd("go", "mod", "vendor")
-	RunInstrument(t, "-debuglog", "--", "-mod", "vendor")
+	RunInstrument(t, "-debuglog", "go", "build", "-mod", "vendor")
 }

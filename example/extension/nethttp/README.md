@@ -19,7 +19,7 @@ Replace the `Path` in `config.json` with the actual absolute path of `rules` dir
 Use `otelbuild` to build the binary with `config.json`:
 ```
 cd example/extension/netHttp
-../../../otelbuild -rule=config.json -- demo/net_http.go
+../../../otelbuild -rule=config.json go build demo/net_http.go
 ```
 Users can get the `otelbuild` according to [documentation](../../../README.md)
 

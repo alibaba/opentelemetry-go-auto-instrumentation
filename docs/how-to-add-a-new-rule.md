@@ -65,7 +65,7 @@ func main() {
     os.Setenv("hello", "world")
 }
 EOF
-$ ~/otelbuild -rule=rule.json -- main.go
+$ ~/otelbuild -rule=rule.json go build main.go
 $ ./main
 Setting environment variable hello to world%
 ```

@@ -42,7 +42,7 @@ func TestCrudMongo(t *testing.T, env ...string) {
 	// defer clearMongoContainer(mongoC)
 	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
-	RunInstrument(t, "-debuglog", "--", "test_crud_mongo.go", "dsn.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_crud_mongo.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
 	RunApp(t, "test_crud_mongo", env...)
 }
@@ -52,7 +52,7 @@ func TestCursor(t *testing.T, env ...string) {
 	// defer clearMongoContainer(mongoC)
 	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
-	RunInstrument(t, "-debuglog", "--", "test_cursor.go", "dsn.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_cursor.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
 	RunApp(t, "test_cursor", env...)
 }
@@ -62,7 +62,7 @@ func TestBatch(t *testing.T, env ...string) {
 	// defer clearMongoContainer(mongoC)
 	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
-	RunInstrument(t, "-debuglog", "--", "test_batch.go", "dsn.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_batch.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
 	RunApp(t, "test_batch", env...)
 }

@@ -14,6 +14,13 @@
 
 package main
 
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+import _ "go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+import _ "go.opentelemetry.io/otel"
+
 import (
 	"log"
 	"os"

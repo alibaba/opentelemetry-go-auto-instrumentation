@@ -7,7 +7,7 @@
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, the instrumentation is done at compile
-time. Simply replacing `go build` with `otelbuild` to get started :rocket:
+time. Simply adding `otelbuild` prefix to `go build` to get started :rocket:
 
 # Installation
 
@@ -34,27 +34,20 @@ $ make build
 
 # Getting Started
 
-Replace `go build` with the following command to build your project:
+Add `otelbuild` prefix to `go build` to build your project:
 
 ```bash
-# go build
-$ ./otelbuild
+$ otelbuild go build
+$ otelbuild go build -o app cmd/app
+$ otelbuild go build -gcflags="-m" cmd/app
 ```
-
-The arguments for `go build` should be placed after the `--` delimiter:
-
-```bash
-# go build -gcflags="-m" cmd/app
-$ ./otelbuild -- -gcflags="-m" cmd/app
-```
-
-The arguments for the tool itself should be placed before the `--` delimiter:
+The arguments for the tool itself should be placed before `go build`:
 
 ```bash
-$ ./otelbuild -help                             # print help doc
-$ ./otelbuild -debug                            # enable debug mode
-$ ./otelbuild -verbose -- -gcflags="-m" cmd/app # print verbose log
-$ ./otelbuild -rule=custom.json                 # use custom rule
+$ otelbuild -help                      # print help doc
+$ otelbuild -debug go build            # enable debug mode
+$ otelbuild -verbose go build          # print verbose log
+$ otelbuild -rule=custom.json go build # use custom rule
 ```
 
 You can also explore [**these examples**](./example/) to get hands-on experience.

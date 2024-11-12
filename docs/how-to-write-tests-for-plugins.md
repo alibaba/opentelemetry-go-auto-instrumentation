@@ -73,7 +73,7 @@ func TestExecutingCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
 	defer clearRedisContainer(redisC)
 	UseApp("redis/v9.0.5")
-	RunInstrument(t, "-debuglog", "--", "test_executing_commands.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_executing_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_executing_commands", env...)
 }
@@ -104,7 +104,7 @@ func TestExecutingUnsupporetedCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
 	defer clearRedisContainer(redisC)
 	UseApp("redis/v9.0.5")
-	RunInstrument(t, "-debuglog", "--", "test_executing_unsupported_commands.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_executing_unsupported_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_executing_unsupported_commands", env...)
 }

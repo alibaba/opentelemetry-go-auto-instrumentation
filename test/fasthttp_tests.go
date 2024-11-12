@@ -29,12 +29,12 @@ func init() {
 
 func TestBasicFastHttp(t *testing.T, env ...string) {
 	UseApp("fasthttp/v1.45.0")
-	RunInstrument(t, "-debuglog", "--", "test_basic_http.go", "server.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_basic_http.go", "server.go")
 	RunApp(t, "test_basic_http", env...)
 }
 
 func TestBasicFastHttps(t *testing.T, env ...string) {
 	UseApp("fasthttp/v1.45.0")
-	RunInstrument(t, "-debuglog", "--", "test_basic_https.go", "server.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_basic_https.go", "server.go")
 	RunApp(t, "test_basic_https", env...)
 }

@@ -24,6 +24,6 @@ func init() {
 
 func TestBasicGin(t *testing.T, env ...string) {
 	UseApp("gin")
-	RunInstrument(t, "-debuglog", "--", "gin.go")
+	RunInstrument(t, "-debuglog", "go", "build", "gin.go")
 	RunApp(t, "gin", env...)
 }

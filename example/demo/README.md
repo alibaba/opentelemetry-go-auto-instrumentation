@@ -35,7 +35,7 @@ Change directory to `example/demo` and execute the following command:
 
 ```shell
 cd example/demo
-../../otelbuild
+../../otelbuild go build
 ```
 
 And there will be a `demo` binary in the `example/demo` directory.

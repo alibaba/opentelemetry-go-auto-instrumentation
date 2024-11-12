@@ -91,6 +91,17 @@ func parseOptions() {
 		"Print version")
 	flag.StringVar(&RuleJsonFiles, "rule", "",
 		"Rule file in json format. Multiple rules are separated by comma")
+
+	flag.Usage = func() {
+		fmt.Printf("Usage:    %s [flags] go build\n", TheName)
+		fmt.Printf("Examples:\n")
+		fmt.Printf("          %s go build\n", TheName)
+		fmt.Printf("          %s go build main.go\n", TheName)
+		fmt.Printf("          %s go build -o main main.go\n", TheName)
+		fmt.Printf("          %s -verbose go build -o main main.go\n", TheName)
+		fmt.Printf("Flags:\n")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	// Any non-flag command-line arguments will be treated as go build command
@@ -172,33 +183,35 @@ func makeRulesAbs() error {
 	return nil
 }
 
-func checkOptions() error {
+func checkOptions() {
 	if InPreprocess() {
+		// Must have go build command
+		if len(GoBuildCmd) == 0 {
+			flag.Usage()
+			os.Exit(1)
+		}
 		// Must be start with "go build", while "go" may refer to the full path
 		if len(GoBuildCmd) < 2 ||
 			!strings.Contains(GoBuildCmd[0], "go") ||
 			GoBuildCmd[1] != "build" {
-			return fmt.Errorf("usage: otelbuild go build")
+			flag.Usage()
+			os.Exit(1)
 		}
 	}
-	return nil
 }
 
 func InitOptions() (err error) {
 	// Parse options from command-line arguments
 	parseOptions()
 
-	// Print version and exit early
+	// Print version or usage and exit early
 	if PrintVersion {
 		printVersion()
 		os.Exit(0)
 	}
 
 	// Make sure all options are in sane
-	err = checkOptions()
-	if err != nil {
-		return fmt.Errorf("failed to check options: %w", err)
-	}
+	checkOptions()
 
 	// Pass options via environment variables for instrument phase
 	err = passOptions()
