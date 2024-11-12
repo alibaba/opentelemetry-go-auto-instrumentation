@@ -448,10 +448,9 @@ func runDryBuild() error {
 	if err != nil {
 		return err
 	}
-	// The full build command is: "go build  {...} -a -x -n"
-	args := make([]string, len(shared.GoBuildCmd))
-	copy(args, shared.GoBuildCmd)
-	args = append(args, "-a", "-x", "-n")
+	// The full build command is: "go build -a -x -n  {...}"
+	args := []string{"go", "build", "-a", "-x", "-n"}
+	args = append(args, shared.GoBuildCmd[2:]...)
 	args = util.StringDedup(args)
 	shared.AssertGoBuild(args)
 
