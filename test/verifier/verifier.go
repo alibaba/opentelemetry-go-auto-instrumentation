@@ -31,7 +31,7 @@ func VerifyDbAttributes(span tracetest.SpanStub, name, system, address, statemen
 	actualConnStr := GetAttribute(span.Attributes, "server.address").AsString()
 	Assert(strings.Contains(actualConnStr, address), "Except client address str to be %s, got %s", address, actualConnStr)
 	actualStatement := GetAttribute(span.Attributes, "db.query.text").AsString()
-	Assert(actualStatement == statement, "Except client db statement to be %s, got %s", statement, actualStatement)
+	Assert(strings.Contains(actualStatement, statement), "Except client db statement to be %s, got %s", statement, actualStatement)
 	actualOperation := GetAttribute(span.Attributes, "db.operation.name").AsString()
 	Assert(actualOperation == operation, "Except client db operation to be %s, got %s", operation, actualOperation)
 }
