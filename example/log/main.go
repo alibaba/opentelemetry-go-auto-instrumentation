@@ -15,9 +15,10 @@
 package main
 
 import (
+	"net/http"
+
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 func main() {
@@ -35,7 +36,7 @@ func main() {
 
 	http.HandleFunc("/logwithtrace", func(w http.ResponseWriter, r *http.Request) {
 		logger := zap.NewExample()
-		// GetTraceAndSpanId will be added while using otelbuild, users must use otelbuild to build the module
+		// GetTraceAndSpanId will be added while using otel, users must use otel to build the module
 		traceId, spanId := trace.GetTraceAndSpanId()
 		logger.Info("this is info message with fileds",
 			zap.String("traceId", traceId),

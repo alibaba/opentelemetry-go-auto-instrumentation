@@ -28,7 +28,7 @@ func init() {
 
 func TestGoLog(t *testing.T, env ...string) {
 	UseApp("golog")
-	RunInstrument(t, "-debuglog", "--", "test_glog.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_glog.go")
 	_, stderr := RunApp(t, "test_glog", env...)
 	reader := strings.NewReader(stderr)
 	scanner := bufio.NewScanner(reader)

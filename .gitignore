@@ -7,6 +7,8 @@
 otel-go-auto-instrumentation
 otelbuild
 otelbuild-*
+otel
+otel-*
 *.log
 .otel-build
 

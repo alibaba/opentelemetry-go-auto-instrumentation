@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	ExecName = "otelbuild"
+	ExecName = "otel"
 )
 
 func RunCmd(args []string) *exec.Cmd {
