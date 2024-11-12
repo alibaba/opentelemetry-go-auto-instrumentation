@@ -16,6 +16,7 @@ package preprocess
 
 import (
 	"fmt"
+	"go/token"
 	"log"
 	"os"
 	"path/filepath"
@@ -101,23 +102,24 @@ func (dp *DepProcessor) copyRules(target string) (err error) {
 		}
 	}
 
-	// for path, bundle := range uniqueResources {
-	// 	dir := res2Dir[path]
-	// 	ruleDir := filepath.Join(target, dir)
-	// 	err = os.MkdirAll(ruleDir, 0777)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to create directory %v: %w", ruleDir, err)
-	// 	}
-	// 	ruleFile := filepath.Join(ruleDir, filepath.Base(path))
-	// 	err = dp.copyRule(path, ruleFile, bundle)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to copy rule %v: %w", path, err)
-	// 	}
-	// }
 	return nil
 }
 
-func renameCallContext(astRoot *dst.File, pkgName string) {
+func renameCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
+	pkgName := bundle.PackageName
+	// Find out if the target import path is aliased to another name
+	// if so, we need to rename api.CallContext to the alias name
+	// instead of the package name
+	for _, spec := range astRoot.Imports {
+		// Same import path and alias name is not null?
+		// One exception is the alias name is "_", we should ignore it
+		if shared.IsStringLit(spec.Path, bundle.ImportPath) &&
+			spec.Name != nil &&
+			spec.Name.Name != shared.IdentIgnore {
+			pkgName = spec.Name.Name
+			break
+		}
+	}
 	for _, decl := range astRoot.Decls {
 		if f, ok := decl.(*dst.FuncDecl); ok {
 			params := f.Type.Params.List
@@ -165,6 +167,45 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 	}
 }
 
+func renameImport(root *dst.File, oldPath, newPath string) bool {
+	// Find out if the old import and replace it with new one. Why we dont
+	// remove old import and add new one? Because we are not sure if the
+	// new import will be used, it's a compilation error if we import it
+	// but never use it.
+	for _, decl := range root.Decls {
+		if genDecl, ok := decl.(*dst.GenDecl); ok &&
+			genDecl.Tok == token.IMPORT {
+			for _, spec := range genDecl.Specs {
+				if importSpec, ok := spec.(*dst.ImportSpec); ok {
+					if importSpec.Path.Value == fmt.Sprintf("%q", oldPath) {
+						// In case the new import is already present, try to
+						// remove it first
+						oldSpec := shared.RemoveImport(root, newPath)
+						// Replace old with new one
+						importSpec.Path.Value = fmt.Sprintf("%q", newPath)
+						// Respect alias name of old import, if any
+						if oldSpec != nil {
+							importSpec.Name = oldSpec.Name
+
+							// Unless the alias name is "_", we should keep it
+							// For "_" alias, we should add additional normal
+							// variant for CallContext usage, i.e. keep both
+							// imports, one for existing usages, one for
+							// CallContext usage
+							if oldSpec.Name != nil &&
+								oldSpec.Name.Name == shared.IdentIgnore {
+								shared.AddImport(root, newPath)
+							}
+						}
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
 func (dp *DepProcessor) copyRule(path, target string,
 	bundle *resource.RuleBundle) error {
 	text, err := util.ReadFile(path)
@@ -180,13 +221,13 @@ func (dp *DepProcessor) copyRule(path, target string,
 	astRoot.Name.Name = filepath.Base(filepath.Dir(target))
 
 	// Rename api.CallContext to correct package name if present
-	renameCallContext(astRoot, bundle.PackageName)
+	renameCallContext(astRoot, bundle)
 
 	// Make hook functions public
 	makeHookPublic(astRoot, bundle)
 
-	// Remove "api" import if present
-	shared.ReplaceImport(astRoot, apiImport, bundle.ImportPath)
+	// Rename "api" import to the correct package prefix
+	renameImport(astRoot, ApiPath, bundle.ImportPath)
 
 	// Copy used rule into project
 	_, err = shared.WriteAstToFile(astRoot, target)
@@ -287,7 +328,7 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 		imports[OtelGetStackImportPath] = OtelGetStackAliasPkg
 	}
 	for k, v := range imports {
-		c += fmt.Sprintf("import %s \"%s\"\n", v, k)
+		c += fmt.Sprintf("import %s %q\n", v, k)
 	}
 
 	// Assignments
