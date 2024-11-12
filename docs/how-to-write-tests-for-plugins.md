@@ -14,8 +14,7 @@ version of the plugin. If you want to add tests for redis, you should do the fol
 ### 1. Add lowest-version dependency for your rule
 
 For example, if you add a rule that support redis from `v9.0.5` to the latest version, you should verify the lowest
-redis
-version, which is `v9.0.5` first. You may create a subdirectory named `v9.0.5` and add the following `go.mod`:
+redis version, which is `v9.0.5` first. You may create a subdirectory named `v9.0.5` and add the following `go.mod`:
 
 ```
 module redis/v9.0.5
@@ -24,9 +23,11 @@ go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+
 require (
 	// import this dependency to use verifier
-	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.0-00010101000000-000000000000
+    github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/redis/go-redis/v9 v9.0.5
 	go.opentelemetry.io/otel v1.30.0
 	go.opentelemetry.io/otel/sdk v1.30.0
@@ -42,7 +43,7 @@ possible.
 ### 3. Write verification code
 
 Some telemetry data(like span) will be produced if the business code you've written is matched to the rule. For example,
-there should be two spans in `test_executing_commands.go`, one represents for the `set` redis operation and the other
+there should be two spans produced by `test_executing_commands.go`, one represents for the `set` redis operation and the other
 represents for the `get` redis operation. You should use the `verifier` to verify the correctness:
 
 ```go
@@ -57,9 +58,37 @@ verifier.WaitAndAssertTraces(func (stubs []tracetest.SpanStubs) {
 The `WaitAndAssertTraces` of the verifier accept a callback function, which provides all the traces that are produced.
 You should verify the attribute, the parent context and all other key information of every span in all the traces.
 
-### 4. Register your tests
+If you want to verify the metrics data, you can also use the `verifier` like the following code:
+```go
+	verifier.WaitAndAssertMetrics(map[string]func(metricdata.ResourceMetrics) {
+		"http.server.request.duration": func(mrs metricdata.ResourceMetrics) {
+		if len(mrs.ScopeMetrics) <= 0 {
+			panic("No http.server.request.duration metrics received!")
+		}
+		point := mrs.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
+		if point.DataPoints[0].Count != 1 {
+			panic("http.server.request.duration metrics count is not 1")
+		}
+		verifier.VerifyHttpServerMetricsAttributes(point.DataPoints[0].Attributes.ToSlice(), "GET", "/a", "", "http", "1.1", "http", 200)
+		},
+		"http.client.request.duration": func(mrs metricdata.ResourceMetrics) {
+		if len(mrs.ScopeMetrics) <= 0 {
+			panic("No http.client.request.duration metrics received!")
+		}
+		point := mrs.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
+		if point.DataPoints[0].Count != 1 {
+			panic("http.client.request.duration metrics count is not 1")
+		}
+		verifier.VerifyHttpClientMetricsAttributes(point.DataPoints[0].Attributes.ToSlice(), "GET", "127.0.0.1:"+strconv.Itoa(port), "", "http", "1.1", port, 200)
+       },
+	})
+```
+Users need to use `WaitAndAssertMetrics` method in verifier to verify the correctness of the metrics data. `WaitAndAssertMetrics` receives a map,
+the key of the map is the name of the metric, the value is the validation function for this metrics data. Users can write their own validation logic in the callback function.
 
-Finally, you should register the test. You should write a `_tests.go` file in `test` directory to do the registration:
+### 4. Register tests
+
+Finally, you should register the tests. You should write a `_tests.go` file in `test` directory to do the registration:
 
 ```go
 const redis_dependency_name = "github.com/redis/go-redis/v9"
@@ -80,7 +109,7 @@ func TestExecutingCommands(t *testing.T, env ...string) {
 
 ```
 
-In `init` function, you need to wrap your test case with `NewGeneralTestCase`, `NewGeneralTestCase` receives the
+In the `init` function, you need to wrap your test case with `NewGeneralTestCase`, which receives the
 following arguments:
 
 testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, testFunc func(t *testing.T, env
@@ -96,11 +125,11 @@ testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string,
 
 You should build the test case with the `opentelemetry-go-auto-instrumentation` to make your test case able to produce
 telemetry data. Firstly you should call `UseApp` method to change directory to the directory of your test cases, and
-then call `RunInstrument` to do hybrid compilation. Finally use the `RunApp` to run the instrumented test-case binary to
+then call `RunInstrument` to do hybrid compilation. Finally, use the `RunApp` to run the instrumented test-case binary to
 verify the telemetry data.
 
 ```go
-func TestExecutingUnsupporetedCommands(t *testing.T, env ...string) {
+func TestExecutingUnsupportedCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
 	defer clearRedisContainer(redisC)
 	UseApp("redis/v9.0.5")
@@ -132,6 +161,5 @@ the latest version of the library, as fetched from Maven, as part of a nightly b
 not work with the agent, we find out through this build and can address it by the next release of the agent.
 
 Users can add a muzzle check case by calling `NewLatestDepthTestCase`, the arguments taken by `NewLatestDepthTestCase`
-are almost
-the same as `NewGeneralTestCase`. You need to additionally specify the dependency name of the plugin and the list of
+are almost the same as `NewGeneralTestCase`. You need to additionally specify the dependency name of the plugin and the list of
 classes that need to do the latest-depth check.
