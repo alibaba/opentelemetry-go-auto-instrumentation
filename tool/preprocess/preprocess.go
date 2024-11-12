@@ -543,7 +543,9 @@ func (dp *DepProcessor) pinDepVersion() error {
 	for _, dep := range fixedDeps {
 		p := dep.dep
 		v := dep.version
-		log.Printf("Pin dependency version %v@%v", p, v)
+		if shared.Verbose {
+			log.Printf("Pin dependency version %v@%v", p, v)
+		}
 		err := fetchDep(p + "@" + v)
 		if err != nil {
 			if dep.fallible {
