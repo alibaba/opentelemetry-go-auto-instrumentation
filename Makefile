@@ -76,3 +76,8 @@ clean:
 
 test:
 	go test -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test
+
+install: build
+	@echo "Running install process..."
+	cp $(OUTPUT_BASE) /usr/local/bin/
+	@echo "Installed at /usr/local/bin/$(OUTPUT_BASE)"

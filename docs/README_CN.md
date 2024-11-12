@@ -1,6 +1,6 @@
 ![](anim-logo.svg)
 
-[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./docs)
+[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md)
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./README_CN.md)
 [![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)
 
