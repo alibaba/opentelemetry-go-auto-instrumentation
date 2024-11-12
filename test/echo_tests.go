@@ -24,8 +24,8 @@ func init() {
 		NewGeneralTestCase("echo-basic-test", echo_module_name, "v4.0.0", "", "1.18", "", TestBasicEcho),
 		NewGeneralTestCase("echo-middleware-test", echo_module_name, "v4.0.0", "", "1.18", "", TestEchoMiddleware),
 		NewGeneralTestCase("echo-pattern-test", echo_module_name, "v4.0.0", "", "1.18", "", TestEchoPattern),
-		NewMuzzleTestCase("echo-muzzle-test", echo_dependency_name, echo_module_name, "v4.0.0", "v4.9.1", "1.18", "", []string{"test_echo_basic.go"}),
-		NewMuzzleTestCase("echo-muzzle-test", echo_dependency_name, echo_module_name, "v4.10.0", "", "1.18", "", []string{"test_echo_middleware.go"}),
+		NewMuzzleTestCase("echo-muzzle-test", echo_dependency_name, echo_module_name, "v4.0.0", "v4.9.1", "1.18", "", []string{"go", "build", "test_echo_basic.go"}),
+		NewMuzzleTestCase("echo-muzzle-test", echo_dependency_name, echo_module_name, "v4.10.0", "", "1.18", "", []string{"go", "build", "test_echo_middleware.go"}),
 		NewLatestDepthTestCase("echo-latestdepth-test", echo_dependency_name, echo_module_name, "v4.10.0", "", "1.18", "", TestBasicEcho),
 	)
 }

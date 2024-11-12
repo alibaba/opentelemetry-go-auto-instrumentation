@@ -34,7 +34,7 @@ func init() {
 		NewGeneralTestCase("redis-9.0.5-ring-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisRing),
 		NewGeneralTestCase("redis-9.0.5-transactions-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisTransactions),
 		NewGeneralTestCase("redis-9.0.5-universal-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisUniversal),
-		NewMuzzleTestCase("redis-9.0.5-muzzle", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", []string{"test_executing_commands.go"}),
+		NewMuzzleTestCase("redis-9.0.5-muzzle", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", []string{"go", "build", "test_executing_commands.go"}),
 		NewLatestDepthTestCase("redis-9.0.5-executing-commands-latestDepth", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands))
 }
 
