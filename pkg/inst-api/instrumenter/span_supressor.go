@@ -78,7 +78,7 @@ func NewSpanKindSuppressor() *SpanKindSuppressor {
 	}
 }
 
-func (s SpanKindSuppressor) StoreInContext(context context.Context, spanKind trace.SpanKind, span trace.Span) context.Context {
+func (s *SpanKindSuppressor) StoreInContext(context context.Context, spanKind trace.SpanKind, span trace.Span) context.Context {
 	spanSuppressor, exists := s.delegates[spanKind]
 	if !exists {
 		return context
@@ -86,7 +86,7 @@ func (s SpanKindSuppressor) StoreInContext(context context.Context, spanKind tra
 	return spanSuppressor.StoreInContext(context, spanKind, span)
 }
 
-func (s SpanKindSuppressor) ShouldSuppress(parentContext context.Context, spanKind trace.SpanKind) bool {
+func (s *SpanKindSuppressor) ShouldSuppress(parentContext context.Context, spanKind trace.SpanKind) bool {
 	spanSuppressor, exists := s.delegates[spanKind]
 	if !exists {
 		return false
