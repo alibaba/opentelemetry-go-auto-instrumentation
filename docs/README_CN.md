@@ -7,7 +7,7 @@
 该项目为希望利用 OpenTelemetry 的 Golang 应用程序提供了一个自动解决方案。
 利用 OpenTelemetry 实现有效可观察性的 Golang 应用程序提供自动解决方案。目标应用程序无需更改代码
 在编译时完成。
-时完成。只需在 `go build` 中添加 `otelbuild` 前缀即可开始 :rocket：
+时完成。只需在 `go build` 中添加 `otel` 前缀即可开始 :rocket：
 
 # 安装
 
@@ -16,7 +16,7 @@
 ```bash
 $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
 ```
-默认情况下，它将安装在 `/usr/local/bin/otelbuild`中。
+默认情况下，它将安装在 `/usr/local/bin/otel`中。
 
 ### 预编译二进制文件
 
@@ -34,20 +34,20 @@ $ make build
 
 ### 开始
 
-在 `go build` 中添加 `otelbuild` 前缀，以构建项目：
+在 `go build` 中添加 `otel` 前缀，以构建项目：
 
 ```bash
-$ otelbuild go build
-$ otelbuild go build -o app cmd/app
-$ otelbuild go build -gcflags="-m" cmd/app
+$ otel go build
+$ otel go build -o app cmd/app
+$ otel go build -gcflags="-m" cmd/app
 ```
 工具本身的参数应放在 `go build` 之前：
 
 ```bash
-$ otelbuild -help # 打印帮助文档
-$ otelbuild -debug go build # 启用调试模式
-$ otelbuild -verbose go build # 打印详细日志
-$ otelbuild -rule=custom.json go build # 使用自定义规则
+$ otel -help # 打印帮助文档
+$ otel -debug go build # 启用调试模式
+$ otel -verbose go build # 打印详细日志
+$ otel -rule=custom.json go build # 使用自定义规则
 ```
 
 您还可以探索 [**这些示例**](./example/) 以获得实践经验。

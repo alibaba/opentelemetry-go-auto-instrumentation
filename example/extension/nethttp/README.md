@@ -15,21 +15,21 @@ Replace the `Path` in `config.json` with the actual absolute path of `rules` dir
 }]
 ```
 
-## Step2: Compile the target binary with otelbuild
-Use `otelbuild` to build the binary with `config.json`:
+## Step2: Compile the target binary with otel
+Use `otel` to build the binary with `config.json`:
 ```
 cd example/extension/netHttp
-../../../otelbuild -rule=config.json go build demo/net_http.go
+../../../otel -rule=config.json go build demo/net_http.go
 ```
-Users can get the `otelbuild` according to [documentation](../../../README.md)
+Users can get the `otel` according to [documentation](../../../README.md)
 
-## Step3: Run the binary compiled by otelbuild
+## Step3: Run the binary compiled by otel
 ```shell
 ./net_http
 ```
 And the result will be:
 ```shell
-request header is  {"Otelbuild":["true"]}
+request header is  {"otel":["true"]}
 response header is  {"Content-Type":["application/x-gzip"],"Date":["Wed, 06 Nov 2024 11:35:37 GMT"],"Server":["bfe"]}
 ```
 It means that the `nethttp` extension can print http headers correctly.

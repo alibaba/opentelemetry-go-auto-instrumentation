@@ -91,7 +91,7 @@ var fixedDeps = []struct {
 	// otel contrib
 	{"go.opentelemetry.io/contrib/instrumentation/runtime",
 		"v0.56.0", false, false},
-	// otelbuild itself
+	// otel itself
 	// {"github.com/alibaba/opentelemetry-go-auto-instrumentation",
 	// "v0.3.0", false, true},
 }
@@ -544,7 +544,7 @@ func fetchDep(path string) error {
 // should be listed and pinned here, because go mod tidy will fetch the latest
 // version even if we have pinned some of them.
 // Users will import github.com/alibaba/opentelemetry-go-auto-instrumentation
-// dependency while using otelbuild to use the inst-api and inst-semconv package
+// dependency while using otel to use the inst-api and inst-semconv package
 // We also need to pin its version to let the users use the fixed version
 func (dp *DepProcessor) pinDepVersion() error {
 	// otel related sdk dependencies

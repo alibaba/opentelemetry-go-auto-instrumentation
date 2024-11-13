@@ -43,7 +43,7 @@ import (
 // your service name: OTEL_SERVICE_NAME
 // your otlp endpoint: OTEL_EXPORTER_OTLP_ENDPOINT OTEL_EXPORTER_OTLP_TRACES_ENDPOINT OTEL_EXPORTER_OTLP_METRICS_ENDPOINT OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
 // your otlp header: OTEL_EXPORTER_OTLP_HEADERS
-const exec_name = "otelbuild"
+const exec_name = "otel"
 const report_protocol = "OTEL_EXPORTER_OTLP_PROTOCOL"
 const trace_report_protocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 
@@ -52,7 +52,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	// skip when the executable is otelbuild itself
+	// skip when the executable is otel itself
 	if strings.HasSuffix(path, exec_name) {
 		return
 	}

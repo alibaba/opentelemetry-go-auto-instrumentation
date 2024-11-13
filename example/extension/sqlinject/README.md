@@ -14,15 +14,15 @@ Replace the `Path` in `config.json` with the actual absolute path of `rules` dir
 }]
 ```
 
-## Step2: Compile the target binary with otelbuild
-Use `otelbuild` to build the binary with `config.json`:
+## Step2: Compile the target binary with otel
+Use `otel` to build the binary with `config.json`:
 ```
 cd example/extension/sqlinject
-../../../otelbuild -rule=config.json go build demo/sql_inject.go
+../../../otel -rule=config.json go build demo/sql_inject.go
 ```
-Users can get the `otelbuild` according to [documentation](../../../README.md)
+Users can get the `otel` according to [documentation](../../../README.md)
 
-## Step3: Run the binary compiled by otelbuild
+## Step3: Run the binary compiled by otel
 ```shell
 docker run -d -p 3306:3306 -p 33060:33060 -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0.36
 ./sql_inject
