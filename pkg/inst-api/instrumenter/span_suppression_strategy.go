@@ -24,7 +24,9 @@ import (
 var noneSuppressor *NoopSpanSuppressor
 var bySpanKeySuppressor *SpanKeySuppressor
 var spanKindSuppressor *SpanKindSuppressor
-var once sync.Once
+var semConvOnce sync.Once
+var spanKindOnce sync.Once
+var noneOnce sync.Once
 
 type SpanSuppressorStrategy interface {
 	create(spanKeys []attribute.Key) SpanSuppressor
@@ -33,7 +35,7 @@ type SpanSuppressorStrategy interface {
 type SemConvStrategy struct{}
 
 func (t *SemConvStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
-	once.Do(func() {
+	semConvOnce.Do(func() {
 		bySpanKeySuppressor = NewSpanKeySuppressor(spanKeys)
 	})
 	return bySpanKeySuppressor
@@ -42,7 +44,7 @@ func (t *SemConvStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
 type NoneStrategy struct{}
 
 func (n *NoneStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
-	once.Do(func() {
+	noneOnce.Do(func() {
 		noneSuppressor = NewNoopSpanSuppressor()
 	})
 	return noneSuppressor
@@ -51,7 +53,7 @@ func (n *NoneStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
 type SpanKindStrategy struct{}
 
 func (s *SpanKindStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
-	once.Do(func() {
+	spanKindOnce.Do(func() {
 		spanKindSuppressor = NewSpanKindSuppressor()
 	})
 	return spanKindSuppressor
