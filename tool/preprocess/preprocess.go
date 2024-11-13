@@ -149,7 +149,7 @@ func (dp *DepProcessor) postProcess() {
 	_ = os.RemoveAll(OtelRules)
 
 	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(OtelPkgDepsDir)
+	_ = os.RemoveAll(OtelPkgDep)
 
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
@@ -427,8 +427,8 @@ func (dp *DepProcessor) preclean() {
 	if exist, _ := util.PathExists(OtelRules); exist {
 		_ = os.RemoveAll(OtelRules)
 	}
-	if exist, _ := util.PathExists(OtelPkgDepsDir); exist {
-		_ = os.RemoveAll(OtelPkgDepsDir)
+	if exist, _ := util.PathExists(OtelPkgDep); exist {
+		_ = os.RemoveAll(OtelPkgDep)
 	}
 }
 
