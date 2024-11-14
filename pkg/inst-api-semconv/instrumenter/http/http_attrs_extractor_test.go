@@ -19,6 +19,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/trace"
 	"testing"
 )
 
@@ -290,10 +291,7 @@ func TestHttpServerExtractorStart(t *testing.T) {
 	if attrs[3].Key != semconv.URLQueryKey || attrs[3].Value.AsString() != "url-query" {
 		t.Fatalf("urlquery should be url-query")
 	}
-	if attrs[4].Key != semconv.HTTPRouteKey || attrs[4].Value.AsString() != "http-route" {
-		t.Fatalf("httproute should be http-route")
-	}
-	if attrs[5].Key != semconv.UserAgentOriginalKey || attrs[5].Value.AsString() != "request-header" {
+	if attrs[4].Key != semconv.UserAgentOriginalKey || attrs[4].Value.AsString() != "request-header" {
 		t.Fatalf("user agent original should be request-header")
 	}
 }
@@ -305,8 +303,9 @@ func TestHttpServerExtractorEnd(t *testing.T) {
 		UrlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
 	}
 	attrs := make([]attribute.KeyValue, 0)
-	parentContext := context.Background()
-	attrs, _ = httpServerExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	ctx := context.Background()
+	ctx = trace.ContextWithSpan(ctx, &testReadOnlySpan{})
+	attrs, _ = httpServerExtractor.OnEnd(attrs, ctx, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.HTTPResponseStatusCodeKey || attrs[0].Value.AsInt64() != 200 {
 		t.Fatalf("status code should be 200")
 	}
@@ -339,6 +338,9 @@ func TestHttpServerExtractorEnd(t *testing.T) {
 	}
 	if attrs[10].Key != semconv.NetworkPeerPortKey || attrs[10].Value.AsInt64() != 8080 {
 		t.Fatalf("wrong network peer port")
+	}
+	if attrs[11].Key != semconv.HTTPRouteKey || attrs[11].Value.AsString() != "http-route" {
+		t.Fatalf("httproute should be http-route")
 	}
 }
 

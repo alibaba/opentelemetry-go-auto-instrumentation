@@ -15,23 +15,7 @@
 package gin
 
 import (
-	"net/http"
-	"net/url"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 )
 
-type ginRequest struct {
-	method     string
-	url        url.URL
-	host       string
-	isTls      bool
-	header     http.Header
-	version    string
-	handleName string
-}
-
-type ginResponse struct {
-	statusCode int
-	header     http.Header
-}
-
-var netGinServerInstrument = BuildGinServerOtelInstrumenter()
+var ginEnabler = instrumenter.NewDefaultInstrumentEnabler()

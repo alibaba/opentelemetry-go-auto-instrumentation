@@ -26,6 +26,7 @@ type traceContext struct {
 	sw   *spanWrapper
 	n    int
 	Data map[string]interface{}
+	lcs  trace.Span
 }
 
 type spanWrapper struct {
@@ -44,6 +45,10 @@ func (tc *traceContext) add(span trace.Span) bool {
 		}
 	}
 	wrapper := &spanWrapper{span, tc.sw}
+	// local root span
+	if tc.n == 0 {
+		tc.lcs = span
+	}
 	tc.sw = wrapper
 	tc.n++
 	return true
@@ -54,6 +59,14 @@ func (tc *traceContext) tail() trace.Span {
 		return nil
 	} else {
 		return tc.sw.span
+	}
+}
+
+func (tc *traceContext) localRootSpan() trace.Span {
+	if tc.n == 0 {
+		return nil
+	} else {
+		return tc.lcs
 	}
 }
 
@@ -90,11 +103,11 @@ func (tc *traceContext) TakeSnapShot() interface{} {
 		dataCopy[key] = value
 	}
 	if tc.n == 0 {
-		return &traceContext{nil, 0, dataCopy}
+		return &traceContext{nil, 0, dataCopy, nil}
 	}
 	last := tc.tail()
 	sw := &spanWrapper{last, nil}
-	return &traceContext{sw, 1, dataCopy}
+	return &traceContext{sw, 1, dataCopy, nil}
 }
 
 func GetGLocalData(key string) interface{} {
@@ -115,7 +128,7 @@ func SetGLocalData(key string, value interface{}) {
 func getOrInitTraceContext() *traceContext {
 	tc := GetTraceContextFromGLS()
 	if tc == nil {
-		newTc := &traceContext{nil, 0, nil}
+		newTc := &traceContext{nil, 0, nil, nil}
 		setTraceContext(newTc)
 		return newTc
 	} else {
@@ -158,4 +171,12 @@ func SpanFromGLS() trace.Span {
 		return nil
 	}
 	return gls.(*traceContext).tail()
+}
+
+func LocalRootSpanFromGLS() trace.Span {
+	gls := GetTraceContextFromGLS()
+	if gls == nil {
+		return nil
+	}
+	return gls.(*traceContext).lcs
 }

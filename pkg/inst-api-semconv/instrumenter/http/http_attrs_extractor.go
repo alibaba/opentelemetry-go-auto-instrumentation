@@ -18,7 +18,10 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"go.opentelemetry.io/otel/attribute"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/trace"
+	"strings"
 )
 
 // TODO: http.route
@@ -105,9 +108,7 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	} else {
 		firstUserAgent = ""
 	}
-	attributes = append(attributes, attribute.KeyValue{Key: semconv.HTTPRouteKey,
-		Value: attribute.StringValue(h.Base.HttpGetter.GetHttpRoute(request)),
-	}, attribute.KeyValue{
+	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.UserAgentOriginalKey,
 		Value: attribute.StringValue(firstUserAgent),
 	})
@@ -121,6 +122,18 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	attributes, context = h.Base.OnEnd(attributes, context, request, response, err)
 	attributes, context = h.UrlExtractor.OnEnd(attributes, context, request, response, err)
 	attributes, context = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
+	span := trace.SpanFromContext(context)
+	localRootSpan, ok := span.(sdktrace.ReadOnlySpan)
+	if ok {
+		route := h.Base.HttpGetter.GetHttpRoute(request)
+		if !strings.Contains(localRootSpan.Name(), route) {
+			route = localRootSpan.Name()
+		}
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.HTTPRouteKey,
+			Value: attribute.StringValue(route),
+		})
+	}
 	if h.Base.AttributesFilter != nil {
 		attributes = h.Base.AttributesFilter(attributes)
 	}

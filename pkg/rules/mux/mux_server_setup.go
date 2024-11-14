@@ -15,13 +15,9 @@
 package mux
 
 import (
-	"bufio"
-	"context"
-	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
-	"net"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"net/http"
-	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	mux "github.com/gorilla/mux"
@@ -29,75 +25,36 @@ import (
 
 var muxEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
-var muxInstrumenter = BuildMuxHttpServerOtelInstrumenter()
-
-func muxServerOnEnter(call api.CallContext, router *mux.Router, w http.ResponseWriter, req *http.Request) {
+func muxRoute130OnEnter(call api.CallContext, req *http.Request, route interface{}) {
 	if !muxEnabler.Enable() {
 		return
 	}
-	muxRequest := muxHttpRequest{
-		method:  req.Method,
-		url:     req.URL,
-		header:  req.Header,
-		version: strconv.Itoa(req.ProtoMajor) + "." + strconv.Itoa(req.ProtoMinor),
-		host:    req.Host,
-		isTls:   req.TLS != nil,
-	}
-	ctx := muxInstrumenter.Start(req.Context(), muxRequest)
-	x := call.GetParam(1).(http.ResponseWriter)
-	x1 := &muxWriterWrapper{ResponseWriter: x, statusCode: http.StatusOK}
-	call.SetParam(1, x1)
-	call.SetParam(2, req.WithContext(ctx))
-	call.SetKeyData("ctx", ctx)
-	call.SetKeyData("request", muxRequest)
-	return
-}
-
-func muxServerOnExit(call api.CallContext) {
-	if !muxEnabler.Enable() {
-		return
-	}
-	c := call.GetKeyData("ctx")
-	if c == nil {
-		return
-	}
-	ctx, ok := c.(context.Context)
-	if !ok {
-		return
-	}
-	m := call.GetKeyData("request")
-	if m == nil {
-		return
-	}
-	muxRequest, ok := m.(muxHttpRequest)
-	if !ok {
-		return
-	}
-	if p, ok := call.GetParam(1).(http.ResponseWriter); ok {
-		if w1, ok := p.(*muxWriterWrapper); ok {
-			muxInstrumenter.End(ctx, muxRequest, muxHttpResponse{
-				statusCode: w1.statusCode,
-			}, nil)
+	if req != nil {
+		lcs := trace.LocalRootSpanFromGLS()
+		if lcs != nil && route != nil {
+			r, ok := route.(*mux.Route)
+			if ok {
+				tmpl, err := r.GetPathTemplate()
+				if err == nil && req.URL != nil && tmpl != req.URL.Path {
+					lcs.SetName(tmpl)
+				}
+			}
 		}
 	}
-	return
 }
 
-type muxWriterWrapper struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-func (w *muxWriterWrapper) WriteHeader(statusCode int) {
-	// cache the status code
-	w.statusCode = statusCode
-
-	w.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (w *muxWriterWrapper) Hijack() (rwc net.Conn, buf *bufio.ReadWriter, err error) {
-	if h, ok := w.ResponseWriter.(http.Hijacker); ok {
-		return h.Hijack()
+// since mux v1.7.4
+func muxRoute174OnEnter(call api.CallContext, req *http.Request, route *mux.Route) {
+	if !muxEnabler.Enable() {
+		return
 	}
-	return nil, nil, fmt.Errorf("responseWriter does not implement http.Hijacker")
+	if req != nil {
+		lcs := trace.LocalRootSpanFromGLS()
+		if lcs != nil && route != nil {
+			tmpl, err := route.GetPathTemplate()
+			if err == nil && req.URL != nil && tmpl != req.URL.Path {
+				lcs.SetName(tmpl)
+			}
+		}
+	}
 }

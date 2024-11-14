@@ -16,6 +16,7 @@ package http
 
 import (
 	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 	"testing"
 )
@@ -27,6 +28,14 @@ type testSpan struct {
 
 func (ts testSpan) SetStatus(status codes.Code, desc string) {
 	*ts.status = status
+}
+
+type testReadOnlySpan struct {
+	sdktrace.ReadWriteSpan
+}
+
+func (t *testReadOnlySpan) Name() string {
+	return "http-route"
 }
 
 type customizedNetHttpAttrsGetter struct {
