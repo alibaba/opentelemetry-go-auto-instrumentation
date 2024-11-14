@@ -28,6 +28,7 @@ func htmlOnEnter(call api.CallContext, c *gin.Context, code int, name string, ob
 	if c == nil {
 		return
 	}
+	println("-------------------------gin----------------------")
 	lcs := trace.LocalRootSpanFromGLS()
 	if lcs != nil && c.FullPath() != "" {
 		lcs.SetName(c.FullPath())
