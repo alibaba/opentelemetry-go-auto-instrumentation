@@ -199,7 +199,7 @@ func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {
 	// Check if rule json file has a "+" prefix, which means to replace the
 	// default rules, i.e. whether to keep the default rules.
 	if strings.HasPrefix(file, "+") {
-		bc.disableDefaultRules = false
+		bc.disableDefaultRules = true
 		file = file[1:]
 	}
 	exist, err := util.PathExists(file)
