@@ -124,9 +124,13 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	span := trace.SpanFromContext(context)
 	recordingSpan, ok := span.(sdktrace.ReadOnlySpan)
 	if ok {
+		route := h.Base.HttpGetter.GetHttpRoute(request)
+		if len(route) > len(recordingSpan.Name()) {
+			route = recordingSpan.Name()
+		}
 		attributes = append(attributes, attribute.KeyValue{
 			Key:   semconv.HTTPRouteKey,
-			Value: attribute.StringValue(recordingSpan.Name()),
+			Value: attribute.StringValue(route),
 		})
 	}
 	if h.Base.AttributesFilter != nil {
