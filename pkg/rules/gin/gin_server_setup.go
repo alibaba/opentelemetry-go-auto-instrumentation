@@ -28,9 +28,8 @@ func nextOnEnter(call api.CallContext, c *gin.Context) {
 	if c == nil {
 		return
 	}
-	println("-------------------------gin----------------------")
 	lcs := trace.LocalRootSpanFromGLS()
-	if lcs != nil && c.FullPath() != "" {
+	if lcs != nil && c.FullPath() != "" && c.Request != nil && c.Request.URL != nil && (c.FullPath() != c.Request.URL.Path) {
 		lcs.SetName(c.FullPath())
 	}
 }

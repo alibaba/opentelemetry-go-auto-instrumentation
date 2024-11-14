@@ -21,6 +21,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
+	"strings"
 )
 
 // TODO: http.route
@@ -124,10 +125,8 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	span := trace.SpanFromContext(context)
 	localRootSpan, ok := span.(sdktrace.ReadOnlySpan)
 	if ok {
-		// http.route should be the span name of the local root span
-		// only if it is a better route
 		route := h.Base.HttpGetter.GetHttpRoute(request)
-		if len(route) > len(localRootSpan.Name()) {
+		if !strings.Contains(localRootSpan.Name(), route) {
 			route = localRootSpan.Name()
 		}
 		attributes = append(attributes, attribute.KeyValue{

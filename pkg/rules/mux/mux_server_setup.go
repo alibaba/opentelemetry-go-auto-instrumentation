@@ -35,7 +35,7 @@ func muxRoute130OnEnter(call api.CallContext, req *http.Request, route interface
 			r, ok := route.(*mux.Route)
 			if ok {
 				tmpl, err := r.GetPathTemplate()
-				if err == nil {
+				if err == nil && req.URL != nil && tmpl != req.URL.Path {
 					lcs.SetName(tmpl)
 				}
 			}
@@ -52,7 +52,7 @@ func muxRoute174OnEnter(call api.CallContext, req *http.Request, route *mux.Rout
 		lcs := trace.LocalRootSpanFromGLS()
 		if lcs != nil && route != nil {
 			tmpl, err := route.GetPathTemplate()
-			if err == nil {
+			if err == nil && req.URL != nil && tmpl != req.URL.Path {
 				lcs.SetName(tmpl)
 			}
 		}
