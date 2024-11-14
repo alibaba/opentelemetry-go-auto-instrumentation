@@ -69,3 +69,16 @@ func TestBuildProject5(t *testing.T) {
 	ExpectPreprocessContains(t, shared.DebugLogFile, "fmt")
 	ExpectPreprocessContains(t, shared.DebugLogFile, "database/sql")
 }
+
+func TestBuildProject6(t *testing.T) {
+	const AppName = "build"
+	UseApp(AppName)
+
+	RunInstrument(t, "-debuglog", "-rule=+../../pkg/data/test_fmt.json",
+		"-verbose", "--", "m1")
+	// both test_fmt.json and default.json rules should be available
+	// because we always append new -rule to the default.json by default
+	// (unless we use -rule=+... syntax) to explicitly disable default rules.
+	ExpectPreprocessContains(t, shared.DebugLogFile, "fmt")
+	ExpectPreprocessNotContains(t, shared.DebugLogFile, "database/sql")
+}
