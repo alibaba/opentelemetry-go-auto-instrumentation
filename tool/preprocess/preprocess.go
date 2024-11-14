@@ -141,7 +141,7 @@ func (dp *DepProcessor) postProcess() {
 	// }
 
 	// Using -debug? Leave all changes for debugging
-	if shared.Debug {
+	if shared.GetBuildConfig().Debug {
 		return
 	}
 
@@ -173,7 +173,7 @@ func (dp *DepProcessor) backupFile(origin string) error {
 		}
 		dp.backups[origin] = backup
 		log.Printf("Backup %v\n", origin)
-	} else if shared.Verbose {
+	} else if shared.GetBuildConfig().Verbose {
 		log.Printf("Backup %v already exists\n", origin)
 	}
 	return nil
@@ -239,7 +239,7 @@ func (dp *DepProcessor) getImportCandidates() ([]string, error) {
 	found := false
 
 	// Find from build arguments e.g. go build test.go or go build cmd/app
-	for _, buildArg := range shared.BuildArgs {
+	for _, buildArg := range shared.GetBuildConfig().BuildArgs {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
 
@@ -312,7 +312,7 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		// Prepend import path to the file
 		for _, importPath := range importPaths {
 			shared.AddImportForcely(astRoot, importPath)
-			if shared.Verbose {
+			if shared.GetBuildConfig().Verbose {
 				log.Printf("Add %s import to %v", importPath, file)
 			}
 		}
@@ -368,7 +368,7 @@ func (dp *DepProcessor) findLocalImportPath() error {
 		return fmt.Errorf("failed to get module name: %w", err)
 	}
 	dp.localImportPath = strings.Replace(workingDir, projectDir, moduleName, 1)
-	if shared.Verbose {
+	if shared.GetBuildConfig().Verbose {
 		log.Printf("Find local import path: %v", dp.localImportPath)
 	}
 	return nil
@@ -413,7 +413,7 @@ func (dp *DepProcessor) preclean() {
 			continue
 		}
 		if shared.RemoveImport(astRoot, ruleImport) != nil {
-			if shared.Verbose {
+			if shared.GetBuildConfig().Verbose {
 				log.Printf("Remove obsolete import %v from %v",
 					ruleImport, file)
 			}
@@ -449,7 +449,8 @@ func runDryBuild() error {
 		return err
 	}
 	// The full build command is: "go build -a -x -n {BuildArgs...}"
-	args := append([]string{"build", "-a", "-x", "-n"}, shared.BuildArgs...)
+	args := append([]string{"build", "-a", "-x", "-n"},
+		shared.GetBuildConfig().BuildArgs...)
 	cmd := exec.Command("go", args...)
 	cmd.Stdout = dryRunLog
 	cmd.Stderr = dryRunLog
@@ -499,21 +500,21 @@ func runBuildWithToolexec() (string, error) {
 	// Force rebuilding
 	args = append(args, "-a")
 
-	if shared.Debug {
+	if shared.GetBuildConfig().Debug {
 		// Disable compiler optimizations for debugging mode
 		args = append(args, "-gcflags=all=-N -l")
 	}
 
 	// Append additional build arguments provided by the user
-	args = append(args, shared.BuildArgs...)
+	args = append(args, shared.GetBuildConfig().BuildArgs...)
 
-	if shared.Restore {
+	if shared.GetBuildConfig().Restore {
 		// Dont generate any compiled binary when using -restore
 		args = append(args, "-o")
 		args = append(args, nullDevice())
 	}
 
-	if shared.Verbose {
+	if shared.GetBuildConfig().Verbose {
 		log.Printf("Run go build with args %v in toolexec mode", args)
 	}
 	return util.RunCmdOutput(append([]string{"go"}, args...)...)
@@ -543,7 +544,7 @@ func (dp *DepProcessor) pinDepVersion() error {
 	for _, dep := range fixedDeps {
 		p := dep.dep
 		v := dep.version
-		if shared.Verbose {
+		if shared.GetBuildConfig().Verbose {
 			log.Printf("Pin dependency version %v@%v", p, v)
 		}
 		err := fetchDep(p + "@" + v)

@@ -217,7 +217,7 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	}
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
-	if shared.Verbose {
+	if shared.GetBuildConfig().Verbose {
 		log.Printf("RunCmd: %v (%v)\n",
 			rp.compileArgs, time.Since(start))
 	} else {
@@ -231,7 +231,7 @@ func Instrument() error {
 	args := os.Args[2:]
 	// Is compile command?
 	if shared.IsCompileCommand(strings.Join(args, " ")) {
-		if shared.Verbose {
+		if shared.GetBuildConfig().Verbose {
 			log.Printf("RunCmd: %v\n", args)
 		}
 		bundles, err := resource.LoadRuleBundles()

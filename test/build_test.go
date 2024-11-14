@@ -14,7 +14,11 @@
 
 package test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+)
 
 func TestBuildProject(t *testing.T) {
 	const AppName = "build"
@@ -48,4 +52,19 @@ func TestBuildProject4(t *testing.T) {
 	RunInstrument(t, "-rule=../../pkg/data/default.json", "--", "m1")
 	RunInstrumentFallible(t, "-rule=../../pkg/data/default", "--", "m1")
 	RunInstrument(t, "-rule=../../pkg/data/default.json,../../pkg/data/test_fmt.json", "--", "m1")
+	RunInstrument(t, "-rule=../../pkg/data/default.json,+../../pkg/data/test_fmt.json", "--", "m1")
+	RunInstrument(t, "-rule=+../../pkg/data/default.json,+../../pkg/data/test_fmt.json", "--", "m1")
+}
+
+func TestBuildProject5(t *testing.T) {
+	const AppName = "build"
+	UseApp(AppName)
+
+	RunInstrument(t, "-debuglog", "-rule=../../pkg/data/test_fmt.json",
+		"-verbose", "--", "m1")
+	// both test_fmt.json and default.json rules should be available
+	// because we always append new -rule to the default.json by default
+	// (unless we use -rule=+... syntax).
+	ExpectPreprocessContains(t, shared.DebugLogFile, "fmt@@Printf")
+	ExpectPreprocessContains(t, shared.DebugLogFile, "fmt@@Printf")
 }
