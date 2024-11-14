@@ -122,11 +122,13 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	attributes, context = h.UrlExtractor.OnEnd(attributes, context, request, response, err)
 	attributes, context = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
 	span := trace.SpanFromContext(context)
-	recordingSpan, ok := span.(sdktrace.ReadOnlySpan)
+	localRootSpan, ok := span.(sdktrace.ReadOnlySpan)
 	if ok {
+		// http.route should be the span name of the local root span
+		// only if it is a better route
 		route := h.Base.HttpGetter.GetHttpRoute(request)
-		if len(route) > len(recordingSpan.Name()) {
-			route = recordingSpan.Name()
+		if len(route) > len(localRootSpan.Name()) {
+			route = localRootSpan.Name()
 		}
 		attributes = append(attributes, attribute.KeyValue{
 			Key:   semconv.HTTPRouteKey,

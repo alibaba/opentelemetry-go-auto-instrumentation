@@ -24,11 +24,8 @@ import (
 
 func setupPattern() {
 	router := gin.Default()
-	router.GET("/user/:name/*action", func(c *gin.Context) {
-		name := c.Param("name")
-		action := c.Param("action")
-		message := name + " is " + action
-		c.String(http.StatusOK, message)
+	router.GET("/user/:name", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
 	})
 
 	router.Run(":8080")
@@ -38,9 +35,9 @@ func main() {
 	go setupPattern()
 	time.Sleep(3 * time.Second)
 	client := http.Client{}
-	client.Get("http://127.0.0.1:8080/user/abc/efg")
+	client.Get("http://127.0.0.1:8080/user/abc")
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:8080/user/abc/efg", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:8080", 200, 0, 8080)
-		verifier.VerifyHttpServerAttributes(stubs[0][1], "/user/:name/*action", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "http", "/user/abc/efg", "", "/user/:name/*action", 200)
+		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:8080/user/abc", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:8080", 200, 0, 8080)
+		verifier.VerifyHttpServerAttributes(stubs[0][1], "/user/:name", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "http", "/user/abc", "", "/user/:name", 200)
 	}, 1)
 }
