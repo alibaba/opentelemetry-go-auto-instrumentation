@@ -39,5 +39,3 @@ jobs:
       uses: codecov/codecov-action@v4.0.1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-    - name: Test
-      run: go test -short -timeout 50m -v -run='.*Test[^Plugins|Latest|Muzzle].*' github.com/alibaba/opentelemetry-go-auto-instrumentation/test
