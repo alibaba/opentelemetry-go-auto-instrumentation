@@ -266,7 +266,6 @@
         "Function": "Next",
         "ReceiverType": "*Context",
         "OnEnter": "nextOnEnter",
-        "OnExit": "nextOnExit",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gin"
     },
     {
@@ -275,7 +274,6 @@
         "Function": "HTML",
         "ReceiverType": "*Context",
         "OnEnter": "htmlOnEnter",
-        "OnExit": "htmlOnExit",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gin"
     },
     {
@@ -364,12 +362,17 @@
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mongo"
     },
     {
-        "Version": "[1.3.0,1.8.2)",
+        "Version": "[1.3.0,1.7.4)",
         "ImportPath": "github.com/gorilla/mux",
-        "Function": "ServeHTTP",
-        "ReceiverType": "*Router",
-        "OnEnter": "muxServerOnEnter",
-        "OnExit": "muxServerOnExit",
+        "Function": "setCurrentRoute",
+        "OnEnter": "muxRoute130OnEnter",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mux"
+    },
+    {
+        "Version": "[1.7.4,1.8.2)",
+        "ImportPath": "github.com/gorilla/mux",
+        "Function": "requestWithRoute",
+        "OnEnter": "muxRoute174OnEnter",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mux"
     },
     {

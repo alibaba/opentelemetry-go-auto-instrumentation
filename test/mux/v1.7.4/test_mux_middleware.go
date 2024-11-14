@@ -19,7 +19,6 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"go.opentelemetry.io/otel/trace"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -59,8 +58,5 @@ func main() {
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:8080/test", "http", "1.1", "tcp", "ipv4", "", "127.0.0.1:8080", 200, 0, 8080)
 		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /test", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8080", "Go-http-client/1.1", "http", "/test", "", "/test", 200)
-		if stubs[0][2].SpanKind != trace.SpanKindInternal {
-			panic("mux should be internal")
-		}
 	}, 1)
 }
