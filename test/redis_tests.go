@@ -34,6 +34,11 @@ func init() {
 		NewGeneralTestCase("redis-9.0.5-ring-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisRing),
 		NewGeneralTestCase("redis-9.0.5-transactions-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisTransactions),
 		NewGeneralTestCase("redis-9.0.5-universal-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisUniversal),
+		NewGeneralTestCase("redis-8.11.0-executing-unsupported-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestV8ExecutingUnsupporetedCommands),
+		NewGeneralTestCase("redis-8.11.0-redis-conn-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestV8RedisConn),
+		NewGeneralTestCase("redis-8.11.0-ring-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestV8RedisRing),
+		NewGeneralTestCase("redis-8.11.0-transactions-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestV8RedisTransactions),
+		NewGeneralTestCase("redis-8.11.0-universal-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestV8RedisUniversal),
 		NewMuzzleTestCase("redis-9.0.5-muzzle", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", []string{"test_executing_commands.go"}),
 		NewLatestDepthTestCase("redis-9.0.5-executing-commands-latestDepth", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands))
 }
@@ -89,6 +94,66 @@ func TestRedisTransactions(t *testing.T, env ...string) {
 }
 
 func TestRedisUniversal(t *testing.T, env ...string) {
+	redisC, redisPort := initRedisContainer()
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_universal_client.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_universal_client", env...)
+}
+
+func TestV8ExecutingCommands(t *testing.T, env ...string) {
+	redisC, redisPort := initRedisContainer()
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_executing_commands.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_executing_commands", env...)
+}
+
+func TestV8ExecutingUnsupporetedCommands(t *testing.T, env ...string) {
+	redisC, redisPort := initRedisContainer()
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_executing_unsupported_commands.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_executing_unsupported_commands", env...)
+}
+
+func TestV8RedisConn(t *testing.T, env ...string) {
+	redisC, redisPort := initRedisContainer()
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_redis_conn.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_redis_conn", env...)
+}
+
+func TestV8RedisRing(t *testing.T, env ...string) {
+	redisC, redisPort := initRedisContainer()
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_redis_ring.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_redis_ring", env...)
+}
+
+func TestV8RedisTransactions(t *testing.T, env ...string) {
+	redisC, redisPort := initRedisContainer()
+	// defer clearRedisContainer(redisC)
+	defer testcontainers.CleanupContainer(t, redisC)
+	UseApp("redis/v9.0.5")
+	RunInstrument(t, "-debuglog", "--", "test_redis_transactions.go")
+	env = append(env, "REDIS_PORT="+redisPort.Port())
+	RunApp(t, "test_redis_transactions", env...)
+}
+
+func TestV8RedisUniversal(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
 	// defer clearRedisContainer(redisC)
 	defer testcontainers.CleanupContainer(t, redisC)
