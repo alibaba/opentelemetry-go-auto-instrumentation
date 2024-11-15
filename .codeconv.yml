@@ -3,3 +3,5 @@ ignore:
   - "**/otel_setup.go"
 comment:                  # this is a top-level key
   layout: " diff, flags, files"
+  # Only post if coverage drops
+  require_changes: "coverage_drop"
