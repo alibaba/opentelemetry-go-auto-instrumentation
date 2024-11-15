@@ -78,7 +78,7 @@ func (dp *DepProcessor) copyRules(target string) (err error) {
 
 					for _, file := range files {
 						if !shared.IsGoFile(file) || shared.IsGoTestFile(file) {
-							if shared.Verbose {
+							if shared.GetConf().Verbose {
 								log.Printf("Ignore file %v\n", file)
 							}
 							continue
@@ -234,7 +234,7 @@ func (dp *DepProcessor) copyRule(path, target string,
 	if err != nil {
 		return fmt.Errorf("failed to write ast to %v: %w", target, err)
 	}
-	if shared.Verbose {
+	if shared.GetConf().Verbose {
 		log.Printf("Copy dependency %v to %v", path, target)
 	}
 	return nil
