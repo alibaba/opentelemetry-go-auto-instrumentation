@@ -78,15 +78,48 @@ var TheName = "otelbuild"
 
 var conf *BuildConfig
 
-func printVersion() {
+func checkConfig() {
 	util.Assert(conf != nil, "build config is not initialized")
 
+	// Print version and exit as needed
 	if conf.PrintVersion {
 		fmt.Printf("%s version %s\n", TheName, TheVersion)
 		os.Exit(0)
 	}
-}
 
+	// Check if the go build command is set correctly. Note that we only check
+	// this in preprocess phase, because in instrument phase, our tool is invoked
+	// from -toolexec flag, and the go build command is not passed as command-line
+	if InPreprocess() {
+		if len(conf.GoBuildCmd) < 2 ||
+			!strings.Contains(conf.GoBuildCmd[0], "go") ||
+			conf.GoBuildCmd[1] != "build" {
+			// set the flag.Usage() to print the usage of the tool
+			flag.Usage = func() {
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"Usage:\n")
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s [flags] go build command\n", TheName)
+				fmt.Println()
+
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"Examples:\n")
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s go build\n", TheName)
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s go build main.go\n", TheName)
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s -verbose go build -o main main.go\n", TheName)
+				fmt.Println()
+
+				fmt.Printf("Flags:\n")
+				flag.PrintDefaults()
+			}
+			flag.Usage()
+			os.Exit(1)
+		}
+	}
+}
 func GetConf() *BuildConfig {
 	util.Assert(conf != nil, "build config is not initialized")
 	return conf
@@ -328,8 +361,8 @@ func InitConfig() (err error) {
 		return fmt.Errorf("failed to init temp dir: %w", err)
 	}
 
-	// Print version and exit early
-	printVersion()
+	// Check build config early
+	checkConfig()
 
 	err = conf.parseRuleFiles()
 	if err != nil {
