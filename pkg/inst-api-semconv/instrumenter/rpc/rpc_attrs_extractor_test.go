@@ -59,7 +59,7 @@ func TestRpcClientExtractorStart(t *testing.T) {
 	rpcExtractor := ClientRpcAttrsExtractor[testRequest, testResponse, rpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = rpcExtractor.OnStart(attrs, parentContext, testRequest{})
+	attrs, _ = rpcExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.RPCSystemKey || attrs[0].Value.AsString() != "system" {
 		t.Fatalf("rpc system should be system")
 	}
@@ -75,7 +75,7 @@ func TestRpcClientExtractorEnd(t *testing.T) {
 	rpcExtractor := ClientRpcAttrsExtractor[testRequest, testResponse, rpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if len(attrs) != 0 {
 		log.Fatal("attrs should be empty")
 	}
@@ -85,7 +85,7 @@ func TestRpcServerExtractorStart(t *testing.T) {
 	rpcExtractor := ServerRpcAttrsExtractor[testRequest, testResponse, rpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = rpcExtractor.OnStart(attrs, parentContext, testRequest{})
+	attrs, _ = rpcExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.RPCSystemKey || attrs[0].Value.AsString() != "system" {
 		t.Fatalf("rpc system should be system")
 	}
@@ -101,7 +101,7 @@ func TestRpcServerExtractorEnd(t *testing.T) {
 	rpcExtractor := ServerRpcAttrsExtractor[testRequest, testResponse, rpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if len(attrs) != 0 {
 		log.Fatal("attrs should be empty")
 	}

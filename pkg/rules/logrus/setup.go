@@ -16,11 +16,17 @@ package logrus
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
+var logrusEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 func logNewOnExit(call api.CallContext) {
+	if !logrusEnabler.Enable() {
+		return
+	}
 	std := logrus.StandardLogger()
 	std.AddHook(&logHook{})
 	return

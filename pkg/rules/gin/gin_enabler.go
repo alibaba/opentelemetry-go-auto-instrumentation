@@ -12,23 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mux
+package gin
 
 import (
-	"net/http"
-	"net/url"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 )
 
-type muxHttpRequest struct {
-	method  string
-	url     *url.URL
-	host    string
-	isTls   bool
-	header  http.Header
-	version string
-}
-
-type muxHttpResponse struct {
-	statusCode int
-	header     http.Header
-}
+var ginEnabler = instrumenter.NewDefaultInstrumentEnabler()

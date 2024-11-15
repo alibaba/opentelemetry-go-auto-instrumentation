@@ -117,7 +117,8 @@ func RunInstrument(t *testing.T, args ...string) {
 
 func UseTestRules(name string) string {
 	path := filepath.Join(filepath.Dir(pwd), "pkg", "data", name)
-	return "-rule=" + path
+	// Only for test, so we disable default rule file and use the specified one.
+	return "-rule=+" + path
 }
 
 var pwd string

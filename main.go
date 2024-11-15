@@ -23,7 +23,7 @@ import (
 )
 
 func main() {
-	err := shared.InitOptions()
+	err := shared.InitConfig()
 	if err != nil {
 		log.Printf("failed to init options: %v", err)
 		os.Exit(1)

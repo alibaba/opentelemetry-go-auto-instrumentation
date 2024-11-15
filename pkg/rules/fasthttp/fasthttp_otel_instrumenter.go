@@ -26,6 +26,8 @@ import (
 
 var emptyFastHttpResponse = fastHttpResponse{}
 
+var fastHttpEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 type fastHttpClientAttrsGetter struct {
 }
 

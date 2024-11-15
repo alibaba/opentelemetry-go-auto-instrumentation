@@ -23,22 +23,16 @@ import (
 )
 
 // VerifyDbAttributes TODO: make attribute name to semconv attribute
-func VerifyDbAttributes(span tracetest.SpanStub, name, dbName, system, user, connString, statement, operation string) {
+func VerifyDbAttributes(span tracetest.SpanStub, name, system, address, statement, operation string) {
 	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
 	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
-	actualDbName := GetAttribute(span.Attributes, "db.name").AsString()
-	Assert(actualDbName == dbName, "Except client db name to be %s, got %s", dbName, actualDbName)
 	actualSystem := GetAttribute(span.Attributes, "db.system").AsString()
 	Assert(actualSystem == system, "Except client db system to be %s, got %s", system, actualSystem)
-	actualUser := GetAttribute(span.Attributes, "db.user").AsString()
-	if actualUser != "" {
-		Assert(actualUser == user, "Except client db user to be %s, got %s", user, actualUser)
-	}
-	actualConnStr := GetAttribute(span.Attributes, "db.connection_string").AsString()
-	Assert(strings.Contains(actualConnStr, connString), "Except client db conn str to be %s, got %s", connString, actualConnStr)
-	actualStatement := GetAttribute(span.Attributes, "db.statement").AsString()
-	Assert(actualStatement == statement, "Except client db statement to be %s, got %s", statement, actualStatement)
-	actualOperation := GetAttribute(span.Attributes, "db.operation").AsString()
+	actualConnStr := GetAttribute(span.Attributes, "server.address").AsString()
+	Assert(strings.Contains(actualConnStr, address), "Except client address str to be %s, got %s", address, actualConnStr)
+	actualStatement := GetAttribute(span.Attributes, "db.query.text").AsString()
+	Assert(strings.Contains(actualStatement, statement), "Except client db statement to be %s, got %s", statement, actualStatement)
+	actualOperation := GetAttribute(span.Attributes, "db.operation.name").AsString()
 	Assert(actualOperation == operation, "Except client db operation to be %s, got %s", operation, actualOperation)
 }
 

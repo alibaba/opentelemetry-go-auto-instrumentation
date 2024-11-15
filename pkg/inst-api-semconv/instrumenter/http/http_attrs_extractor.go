@@ -18,25 +18,29 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"go.opentelemetry.io/otel/attribute"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/trace"
+	"strings"
 )
 
 // TODO: http.route
 
 type HttpCommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpCommonAttrsGetter[REQUEST, RESPONSE], GETTER2 net.NetworkAttrsGetter[REQUEST, RESPONSE]] struct {
-	HttpGetter GETTER1
-	NetGetter  GETTER2
+	HttpGetter       GETTER1
+	NetGetter        GETTER2
+	AttributesFilter func(attrs []attribute.KeyValue) []attribute.KeyValue
 }
 
-func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
+func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.HTTPRequestMethodKey,
 		Value: attribute.StringValue(h.HttpGetter.GetRequestMethod(request)),
 	})
-	return attributes
+	return attributes, parentContext
 }
 
-func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER, GETTER2]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
+func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER, GETTER2]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
 	statusCode := h.HttpGetter.GetHttpResponseStatusCode(request, response, err)
 	protocolName := h.NetGetter.GetNetworkProtocolName(request, response)
 	protocolVersion := h.NetGetter.GetNetworkProtocolVersion(request, response)
@@ -50,7 +54,7 @@ func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER, GETTER2]) OnEnd(att
 		Key:   semconv.NetworkProtocolVersionKey,
 		Value: attribute.StringValue(protocolVersion),
 	})
-	return attributes
+	return attributes, context
 }
 
 type HttpClientAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpClientAttrsGetter[REQUEST, RESPONSE], GETTER2 net.NetworkAttrsGetter[REQUEST, RESPONSE]] struct {
@@ -58,9 +62,9 @@ type HttpClientAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpClientAttrs
 	NetworkExtractor net.NetworkAttrsExtractor[REQUEST, RESPONSE, GETTER2]
 }
 
-func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
-	attributes = h.Base.OnStart(attributes, parentContext, request)
-	attributes = h.NetworkExtractor.OnStart(attributes, parentContext, request)
+func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
+	attributes, parentContext = h.Base.OnStart(attributes, parentContext, request)
+	attributes, parentContext = h.NetworkExtractor.OnStart(attributes, parentContext, request)
 	fullUrl := h.Base.HttpGetter.GetUrlFull(request)
 	// TODO: add resend count
 	attributes = append(attributes, attribute.KeyValue{
@@ -73,13 +77,19 @@ func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(
 		Key:   semconv.ServerPortKey,
 		Value: attribute.IntValue(h.Base.HttpGetter.GetServerPort(request)),
 	})
-	return attributes
+	if h.Base.AttributesFilter != nil {
+		attributes = h.Base.AttributesFilter(attributes)
+	}
+	return attributes, parentContext
 }
 
-func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
-	attributes = h.Base.OnEnd(attributes, context, request, response, err)
-	attributes = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
-	return attributes
+func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
+	attributes, context = h.Base.OnEnd(attributes, context, request, response, err)
+	attributes, context = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
+	if h.Base.AttributesFilter != nil {
+		attributes = h.Base.AttributesFilter(attributes)
+	}
+	return attributes, context
 }
 
 type HttpServerAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpServerAttrsGetter[REQUEST, RESPONSE], GETTER2 net.NetworkAttrsGetter[REQUEST, RESPONSE], GETTER3 net.UrlAttrsGetter[REQUEST]] struct {
@@ -88,9 +98,9 @@ type HttpServerAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpServerAttrs
 	UrlExtractor     net.UrlAttrsExtractor[REQUEST, RESPONSE, GETTER3]
 }
 
-func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
-	attributes = h.Base.OnStart(attributes, parentContext, request)
-	attributes = h.UrlExtractor.OnStart(attributes, parentContext, request)
+func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
+	attributes, parentContext = h.Base.OnStart(attributes, parentContext, request)
+	attributes, parentContext = h.UrlExtractor.OnStart(attributes, parentContext, request)
 	userAgent := h.Base.HttpGetter.GetHttpRequestHeader(request, "User-Agent")
 	var firstUserAgent string
 	if len(userAgent) > 0 {
@@ -98,18 +108,34 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	} else {
 		firstUserAgent = ""
 	}
-	attributes = append(attributes, attribute.KeyValue{Key: semconv.HTTPRouteKey,
-		Value: attribute.StringValue(h.Base.HttpGetter.GetHttpRoute(request)),
-	}, attribute.KeyValue{
+	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.UserAgentOriginalKey,
 		Value: attribute.StringValue(firstUserAgent),
 	})
-	return attributes
+	if h.Base.AttributesFilter != nil {
+		attributes = h.Base.AttributesFilter(attributes)
+	}
+	return attributes, parentContext
 }
 
-func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
-	attributes = h.Base.OnEnd(attributes, context, request, response, err)
-	attributes = h.UrlExtractor.OnEnd(attributes, context, request, response, err)
-	attributes = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
-	return attributes
+func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
+	attributes, context = h.Base.OnEnd(attributes, context, request, response, err)
+	attributes, context = h.UrlExtractor.OnEnd(attributes, context, request, response, err)
+	attributes, context = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
+	span := trace.SpanFromContext(context)
+	localRootSpan, ok := span.(sdktrace.ReadOnlySpan)
+	if ok {
+		route := h.Base.HttpGetter.GetHttpRoute(request)
+		if !strings.Contains(localRootSpan.Name(), route) {
+			route = localRootSpan.Name()
+		}
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.HTTPRouteKey,
+			Value: attribute.StringValue(route),
+		})
+	}
+	if h.Base.AttributesFilter != nil {
+		attributes = h.Base.AttributesFilter(attributes)
+	}
+	return attributes, context
 }

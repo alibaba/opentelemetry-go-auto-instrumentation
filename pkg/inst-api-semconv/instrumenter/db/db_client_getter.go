@@ -16,15 +16,14 @@ package db
 
 type DbClientCommonAttrsGetter[REQUEST any] interface {
 	GetSystem(REQUEST) string
-	GetUser(REQUEST) string
-	GetName(REQUEST) string
-	GetConnectionString(REQUEST) string
+	GetServerAddress(REQUEST) string
 }
 
 type DbClientAttrsGetter[REQUEST any] interface {
 	DbClientCommonAttrsGetter[REQUEST]
 	GetStatement(REQUEST) string
 	GetOperation(REQUEST) string
+	GetParameters(REQUEST) []any
 }
 
 type SqlClientAttributesGetter[REQUEST any] interface {

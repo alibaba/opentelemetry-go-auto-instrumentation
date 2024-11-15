@@ -23,6 +23,9 @@ import (
 )
 
 func grpcClientOnEnter(call api.CallContext, ctx context.Context, target string, opts ...grpc.DialOption) {
+	if !grpcEnabler.Enable() {
+		return
+	}
 	h := grpc.WithStatsHandler(NewClientHandler())
 	var opt []grpc.DialOption
 	opt = append(opt, h)
@@ -31,6 +34,9 @@ func grpcClientOnEnter(call api.CallContext, ctx context.Context, target string,
 }
 
 func grpcClientOnExit(call api.CallContext, cc *grpc.ClientConn, err error) {
+	if !grpcEnabler.Enable() {
+		return
+	}
 	return
 }
 

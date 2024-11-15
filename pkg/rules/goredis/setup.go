@@ -16,40 +16,64 @@ package goredis
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"go.opentelemetry.io/otel/trace"
 	"net"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	redis "github.com/redis/go-redis/v9"
 )
 
 var goRedisInstrumenter = BuildGoRedisOtelInstrumenter()
 
+var rv9Enabler = instrumenter.NewDefaultInstrumentEnabler()
+
+var redisV9StartOptions = []trace.SpanStartOption{}
+
 func afterNewRedisClient(call api.CallContext, client *redis.Client) {
+	if !rv9Enabler.Enable() {
+		return
+	}
 	client.AddHook(newOtRedisHook(client.Options().Addr))
 }
 
 func afterNewFailOverRedisClient(call api.CallContext, client *redis.Client) {
+	if !rv9Enabler.Enable() {
+		return
+	}
 	client.AddHook(newOtRedisHook(client.Options().Addr))
 }
 
 func afterNewClusterClient(call api.CallContext, client *redis.ClusterClient) {
+	if !rv9Enabler.Enable() {
+		return
+	}
 	client.OnNewNode(func(rdb *redis.Client) {
 		rdb.AddHook(newOtRedisHook(rdb.Options().Addr))
 	})
 }
 
 func afterNewRingClient(call api.CallContext, client *redis.Ring) {
+	if !rv9Enabler.Enable() {
+		return
+	}
 	client.OnNewNode(func(rdb *redis.Client) {
 		rdb.AddHook(newOtRedisHook(rdb.Options().Addr))
 	})
 }
 
 func afterNewSentinelClient(call api.CallContext, client *redis.SentinelClient) {
+	if !rv9Enabler.Enable() {
+		return
+	}
 	client.AddHook(newOtRedisHook(client.String()))
 }
 
 func afterClientConn(call api.CallContext, client *redis.Conn) {
+	if !rv9Enabler.Enable() {
+		return
+	}
 	client.AddHook(newOtRedisHook(client.String()))
 }
 

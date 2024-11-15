@@ -25,6 +25,9 @@ import (
 var fastHttpClientInstrumenter = BuildFastHttpClientOtelInstrumenter()
 
 func clientFastHttpOnEnter(call api.CallContext, c *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) {
+	if !fastHttpEnabler.Enable() {
+		return
+	}
 	scheme := req.URI().Scheme()
 	isTLS := false
 	if string(scheme) == "https" {
@@ -49,6 +52,9 @@ func clientFastHttpOnEnter(call api.CallContext, c *fasthttp.HostClient, req *fa
 }
 
 func clientFastHttpOnExit(call api.CallContext, err error) {
+	if !fastHttpEnabler.Enable() {
+		return
+	}
 	data := call.GetData().(map[string]interface{})
 	ctx := data["ctx"].(context.Context)
 	request := data["request"].(fastHttpRequest)

@@ -29,36 +29,36 @@ var emptyHttpResponse = netHttpResponse{}
 type netHttpClientAttrsGetter struct {
 }
 
-func (n netHttpClientAttrsGetter) GetRequestMethod(request netHttpRequest) string {
+func (n netHttpClientAttrsGetter) GetRequestMethod(request *netHttpRequest) string {
 	return request.method
 }
 
-func (n netHttpClientAttrsGetter) GetHttpRequestHeader(request netHttpRequest, name string) []string {
+func (n netHttpClientAttrsGetter) GetHttpRequestHeader(request *netHttpRequest, name string) []string {
 	return request.header.Values(name)
 }
 
-func (n netHttpClientAttrsGetter) GetHttpResponseStatusCode(request netHttpRequest, response netHttpResponse, err error) int {
+func (n netHttpClientAttrsGetter) GetHttpResponseStatusCode(request *netHttpRequest, response *netHttpResponse, err error) int {
 	return response.statusCode
 }
 
-func (n netHttpClientAttrsGetter) GetHttpResponseHeader(request netHttpRequest, response netHttpResponse, name string) []string {
+func (n netHttpClientAttrsGetter) GetHttpResponseHeader(request *netHttpRequest, response *netHttpResponse, name string) []string {
 	return response.header.Values(name)
 }
 
-func (n netHttpClientAttrsGetter) GetErrorType(request netHttpRequest, response netHttpResponse, err error) string {
+func (n netHttpClientAttrsGetter) GetErrorType(request *netHttpRequest, response *netHttpResponse, err error) string {
 	// TODO return status code as error type
 	return ""
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkType(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpClientAttrsGetter) GetNetworkType(request *netHttpRequest, response *netHttpResponse) string {
 	return "ipv4"
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkTransport(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpClientAttrsGetter) GetNetworkTransport(request *netHttpRequest, response *netHttpResponse) string {
 	return "tcp"
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkProtocolName(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpClientAttrsGetter) GetNetworkProtocolName(request *netHttpRequest, response *netHttpResponse) string {
 	if request.isTls == false {
 		return "http"
 	} else {
@@ -66,23 +66,26 @@ func (n netHttpClientAttrsGetter) GetNetworkProtocolName(request netHttpRequest,
 	}
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkProtocolVersion(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpClientAttrsGetter) GetNetworkProtocolVersion(request *netHttpRequest, response *netHttpResponse) string {
 	return request.version
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkLocalInetAddress(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpClientAttrsGetter) GetNetworkLocalInetAddress(request *netHttpRequest, response *netHttpResponse) string {
 	return ""
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkLocalPort(request netHttpRequest, response netHttpResponse) int {
+func (n netHttpClientAttrsGetter) GetNetworkLocalPort(request *netHttpRequest, response *netHttpResponse) int {
 	return 0
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkPeerInetAddress(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpClientAttrsGetter) GetNetworkPeerInetAddress(request *netHttpRequest, response *netHttpResponse) string {
 	return request.host
 }
 
-func (n netHttpClientAttrsGetter) GetNetworkPeerPort(request netHttpRequest, response netHttpResponse) int {
+func (n netHttpClientAttrsGetter) GetNetworkPeerPort(request *netHttpRequest, response *netHttpResponse) int {
+	if request.url == nil {
+		return 0
+	}
 	port, err := strconv.Atoi(request.url.Port())
 	if err != nil {
 		return 0
@@ -90,15 +93,18 @@ func (n netHttpClientAttrsGetter) GetNetworkPeerPort(request netHttpRequest, res
 	return port
 }
 
-func (n netHttpClientAttrsGetter) GetUrlFull(request netHttpRequest) string {
+func (n netHttpClientAttrsGetter) GetUrlFull(request *netHttpRequest) string {
 	return request.url.String()
 }
 
-func (n netHttpClientAttrsGetter) GetServerAddress(request netHttpRequest) string {
+func (n netHttpClientAttrsGetter) GetServerAddress(request *netHttpRequest) string {
 	return request.host
 }
 
-func (n netHttpClientAttrsGetter) GetServerPort(request netHttpRequest) int {
+func (n netHttpClientAttrsGetter) GetServerPort(request *netHttpRequest) int {
+	if request.url == nil {
+		return 0
+	}
 	port, err := strconv.Atoi(request.url.Port())
 	if err != nil {
 		return 0
@@ -109,51 +115,51 @@ func (n netHttpClientAttrsGetter) GetServerPort(request netHttpRequest) int {
 type netHttpServerAttrsGetter struct {
 }
 
-func (n netHttpServerAttrsGetter) GetRequestMethod(request netHttpRequest) string {
+func (n netHttpServerAttrsGetter) GetRequestMethod(request *netHttpRequest) string {
 	return request.method
 }
 
-func (n netHttpServerAttrsGetter) GetHttpRequestHeader(request netHttpRequest, name string) []string {
+func (n netHttpServerAttrsGetter) GetHttpRequestHeader(request *netHttpRequest, name string) []string {
 	return request.header.Values(name)
 }
 
-func (n netHttpServerAttrsGetter) GetHttpResponseStatusCode(request netHttpRequest, response netHttpResponse, err error) int {
+func (n netHttpServerAttrsGetter) GetHttpResponseStatusCode(request *netHttpRequest, response *netHttpResponse, err error) int {
 	return response.statusCode
 }
 
-func (n netHttpServerAttrsGetter) GetHttpResponseHeader(request netHttpRequest, response netHttpResponse, name string) []string {
+func (n netHttpServerAttrsGetter) GetHttpResponseHeader(request *netHttpRequest, response *netHttpResponse, name string) []string {
 	return response.header.Values(name)
 }
 
-func (n netHttpServerAttrsGetter) GetErrorType(request netHttpRequest, response netHttpResponse, err error) string {
+func (n netHttpServerAttrsGetter) GetErrorType(request *netHttpRequest, response *netHttpResponse, err error) string {
 	// TODO return status code as error type
 	return ""
 }
 
-func (n netHttpServerAttrsGetter) GetUrlScheme(request netHttpRequest) string {
+func (n netHttpServerAttrsGetter) GetUrlScheme(request *netHttpRequest) string {
 	if request.url.Scheme != "" {
 		return request.url.Scheme
 	}
-	return n.GetNetworkProtocolName(request, emptyHttpResponse)
+	return n.GetNetworkProtocolName(request, &emptyHttpResponse)
 }
 
-func (n netHttpServerAttrsGetter) GetUrlPath(request netHttpRequest) string {
+func (n netHttpServerAttrsGetter) GetUrlPath(request *netHttpRequest) string {
 	return request.url.Path
 }
 
-func (n netHttpServerAttrsGetter) GetUrlQuery(request netHttpRequest) string {
+func (n netHttpServerAttrsGetter) GetUrlQuery(request *netHttpRequest) string {
 	return request.url.RawQuery
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkType(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpServerAttrsGetter) GetNetworkType(request *netHttpRequest, response *netHttpResponse) string {
 	return "ipv4"
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkTransport(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpServerAttrsGetter) GetNetworkTransport(request *netHttpRequest, response *netHttpResponse) string {
 	return "tcp"
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkProtocolName(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpServerAttrsGetter) GetNetworkProtocolName(request *netHttpRequest, response *netHttpResponse) string {
 	if request.isTls == false {
 		return "http"
 	} else {
@@ -161,23 +167,23 @@ func (n netHttpServerAttrsGetter) GetNetworkProtocolName(request netHttpRequest,
 	}
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkProtocolVersion(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpServerAttrsGetter) GetNetworkProtocolVersion(request *netHttpRequest, response *netHttpResponse) string {
 	return request.version
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkLocalInetAddress(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpServerAttrsGetter) GetNetworkLocalInetAddress(request *netHttpRequest, response *netHttpResponse) string {
 	return ""
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkLocalPort(request netHttpRequest, response netHttpResponse) int {
+func (n netHttpServerAttrsGetter) GetNetworkLocalPort(request *netHttpRequest, response *netHttpResponse) int {
 	return 0
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkPeerInetAddress(request netHttpRequest, response netHttpResponse) string {
+func (n netHttpServerAttrsGetter) GetNetworkPeerInetAddress(request *netHttpRequest, response *netHttpResponse) string {
 	return request.host
 }
 
-func (n netHttpServerAttrsGetter) GetNetworkPeerPort(request netHttpRequest, response netHttpResponse) int {
+func (n netHttpServerAttrsGetter) GetNetworkPeerPort(request *netHttpRequest, response *netHttpResponse) int {
 	port, err := strconv.Atoi(request.url.Port())
 	if err != nil {
 		return 0
@@ -185,19 +191,19 @@ func (n netHttpServerAttrsGetter) GetNetworkPeerPort(request netHttpRequest, res
 	return port
 }
 
-func (n netHttpServerAttrsGetter) GetHttpRoute(request netHttpRequest) string {
+func (n netHttpServerAttrsGetter) GetHttpRoute(request *netHttpRequest) string {
 	return request.url.Path
 }
 
-func BuildNetHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstreamInstrumenter[netHttpRequest, netHttpResponse] {
-	builder := &instrumenter.Builder[netHttpRequest, netHttpResponse]{}
+func BuildNetHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstreamInstrumenter[*netHttpRequest, *netHttpResponse] {
+	builder := &instrumenter.Builder[*netHttpRequest, *netHttpResponse]{}
 	clientGetter := netHttpClientAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[netHttpRequest, netHttpResponse, netHttpClientAttrsGetter, netHttpClientAttrsGetter]{HttpGetter: clientGetter, NetGetter: clientGetter}
-	networkExtractor := net.NetworkAttrsExtractor[netHttpRequest, netHttpResponse, netHttpClientAttrsGetter]{Getter: clientGetter}
-	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[netHttpRequest, netHttpResponse]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[netHttpRequest, netHttpResponse]{Getter: clientGetter}).
-		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[netHttpRequest]{}).
-		AddOperationListeners(http.HttpClientMetrics()).
-		AddAttributesExtractor(&http.HttpClientAttrsExtractor[netHttpRequest, netHttpResponse, netHttpClientAttrsGetter, netHttpClientAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).BuildPropagatingToDownstreamInstrumenter(func(n netHttpRequest) propagation.TextMapCarrier {
+	commonExtractor := http.HttpCommonAttrsExtractor[*netHttpRequest, *netHttpResponse, http.HttpClientAttrsGetter[*netHttpRequest, *netHttpResponse], net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse]]{HttpGetter: clientGetter, NetGetter: clientGetter}
+	networkExtractor := net.NetworkAttrsExtractor[*netHttpRequest, *netHttpResponse, net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse]]{Getter: clientGetter}
+	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[*netHttpRequest, *netHttpResponse]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[*netHttpRequest, *netHttpResponse]{Getter: clientGetter}).
+		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*netHttpRequest]{}).
+		AddOperationListeners(http.HttpClientMetrics(), http.HttpClientMetrics()).
+		AddAttributesExtractor(&http.HttpClientAttrsExtractor[*netHttpRequest, *netHttpResponse, http.HttpClientAttrsGetter[*netHttpRequest, *netHttpResponse], net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse]]{Base: commonExtractor, NetworkExtractor: networkExtractor}).BuildPropagatingToDownstreamInstrumenter(func(n *netHttpRequest) propagation.TextMapCarrier {
 		if n.header == nil {
 			return nil
 		}
@@ -205,16 +211,16 @@ func BuildNetHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstreamI
 	}, otel.GetTextMapPropagator())
 }
 
-func BuildNetHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[netHttpRequest, netHttpResponse] {
-	builder := &instrumenter.Builder[netHttpRequest, netHttpResponse]{}
+func BuildNetHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[*netHttpRequest, *netHttpResponse] {
+	builder := &instrumenter.Builder[*netHttpRequest, *netHttpResponse]{}
 	serverGetter := netHttpServerAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[netHttpRequest, netHttpResponse, netHttpServerAttrsGetter, netHttpServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter}
-	networkExtractor := net.NetworkAttrsExtractor[netHttpRequest, netHttpResponse, netHttpServerAttrsGetter]{Getter: serverGetter}
-	urlExtractor := net.UrlAttrsExtractor[netHttpRequest, netHttpResponse, netHttpServerAttrsGetter]{Getter: serverGetter}
-	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[netHttpRequest, netHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[netHttpRequest, netHttpResponse]{Getter: serverGetter}).
-		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[netHttpRequest]{}).
+	commonExtractor := http.HttpCommonAttrsExtractor[*netHttpRequest, *netHttpResponse, http.HttpServerAttrsGetter[*netHttpRequest, *netHttpResponse], net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse]]{HttpGetter: serverGetter, NetGetter: serverGetter}
+	networkExtractor := net.NetworkAttrsExtractor[*netHttpRequest, *netHttpResponse, net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse]]{Getter: serverGetter}
+	urlExtractor := net.UrlAttrsExtractor[*netHttpRequest, *netHttpResponse, net.UrlAttrsGetter[*netHttpRequest]]{Getter: serverGetter}
+	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*netHttpRequest, *netHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*netHttpRequest, *netHttpResponse]{Getter: serverGetter}).
+		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[*netHttpRequest]{}).
 		AddOperationListeners(http.HttpServerMetrics()).
-		AddAttributesExtractor(&http.HttpServerAttrsExtractor[netHttpRequest, netHttpResponse, netHttpServerAttrsGetter, netHttpServerAttrsGetter, netHttpServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n netHttpRequest) propagation.TextMapCarrier {
+		AddAttributesExtractor(&http.HttpServerAttrsExtractor[*netHttpRequest, *netHttpResponse, http.HttpServerAttrsGetter[*netHttpRequest, *netHttpResponse], net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse], net.UrlAttrsGetter[*netHttpRequest]]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n *netHttpRequest) propagation.TextMapCarrier {
 		if n.header == nil {
 			return nil
 		}

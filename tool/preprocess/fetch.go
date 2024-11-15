@@ -98,7 +98,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 		if err != nil {
 			return fmt.Errorf("failed to write file: %w", err)
 		}
-		if shared.Verbose {
+		if shared.GetConf().Verbose {
 			log.Printf("Copy embed file %v to %v", p, target)
 		}
 		return nil

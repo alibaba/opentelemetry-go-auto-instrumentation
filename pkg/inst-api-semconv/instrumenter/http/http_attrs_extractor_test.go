@@ -19,6 +19,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/trace"
 	"testing"
 )
 
@@ -217,7 +218,7 @@ func TestHttpClientExtractorStart(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = httpClientExtractor.OnStart(attrs, parentContext, testRequest{})
+	attrs, _ = httpClientExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.HTTPRequestMethodKey || attrs[0].Value.AsString() != "GET" {
 		t.Fatalf("http method should be GET")
 	}
@@ -233,7 +234,7 @@ func TestHttpClientExtractorEnd(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = httpClientExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	attrs, _ = httpClientExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.HTTPResponseStatusCodeKey || attrs[0].Value.AsInt64() != 200 {
 		t.Fatalf("status code should be 200")
 	}
@@ -277,7 +278,7 @@ func TestHttpServerExtractorStart(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	attrs = httpServerExtractor.OnStart(attrs, parentContext, testRequest{})
+	attrs, _ = httpServerExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.HTTPRequestMethodKey || attrs[0].Value.AsString() != "GET" {
 		t.Fatalf("http method should be GET")
 	}
@@ -290,10 +291,7 @@ func TestHttpServerExtractorStart(t *testing.T) {
 	if attrs[3].Key != semconv.URLQueryKey || attrs[3].Value.AsString() != "url-query" {
 		t.Fatalf("urlquery should be url-query")
 	}
-	if attrs[4].Key != semconv.HTTPRouteKey || attrs[4].Value.AsString() != "http-route" {
-		t.Fatalf("httproute should be http-route")
-	}
-	if attrs[5].Key != semconv.UserAgentOriginalKey || attrs[5].Value.AsString() != "request-header" {
+	if attrs[4].Key != semconv.UserAgentOriginalKey || attrs[4].Value.AsString() != "request-header" {
 		t.Fatalf("user agent original should be request-header")
 	}
 }
@@ -305,8 +303,9 @@ func TestHttpServerExtractorEnd(t *testing.T) {
 		UrlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
 	}
 	attrs := make([]attribute.KeyValue, 0)
-	parentContext := context.Background()
-	attrs = httpServerExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
+	ctx := context.Background()
+	ctx = trace.ContextWithSpan(ctx, &testReadOnlySpan{})
+	attrs, _ = httpServerExtractor.OnEnd(attrs, ctx, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.HTTPResponseStatusCodeKey || attrs[0].Value.AsInt64() != 200 {
 		t.Fatalf("status code should be 200")
 	}
@@ -339,5 +338,57 @@ func TestHttpServerExtractorEnd(t *testing.T) {
 	}
 	if attrs[10].Key != semconv.NetworkPeerPortKey || attrs[10].Value.AsInt64() != 8080 {
 		t.Fatalf("wrong network peer port")
+	}
+	if attrs[11].Key != semconv.HTTPRouteKey || attrs[11].Value.AsString() != "http-route" {
+		t.Fatalf("httproute should be http-route")
+	}
+}
+
+func TestHttpServerExtractorWithFilter(t *testing.T) {
+	httpServerExtractor := HttpServerAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter, urlAttrsGetter]{
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+		UrlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
+	}
+	attrs := make([]attribute.KeyValue, 0)
+	parentContext := context.Background()
+	httpServerExtractor.Base.AttributesFilter = func(attrs []attribute.KeyValue) []attribute.KeyValue {
+		return []attribute.KeyValue{{
+			Key:   "test",
+			Value: attribute.StringValue("test"),
+		}}
+	}
+	attrs = make([]attribute.KeyValue, 0)
+	attrs, _ = httpServerExtractor.OnStart(attrs, parentContext, testRequest{Method: "test"})
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+	attrs, _ = httpServerExtractor.OnEnd(attrs, parentContext, testRequest{Method: "test"}, testResponse{}, nil)
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+}
+
+func TestHttpClientExtractorWithFilter(t *testing.T) {
+	httpClientExtractor := HttpClientAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpClientAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+	}
+	attrs := make([]attribute.KeyValue, 0)
+	parentContext := context.Background()
+	httpClientExtractor.Base.AttributesFilter = func(attrs []attribute.KeyValue) []attribute.KeyValue {
+		return []attribute.KeyValue{{
+			Key:   "test",
+			Value: attribute.StringValue("test"),
+		}}
+	}
+	attrs = make([]attribute.KeyValue, 0)
+	attrs, _ = httpClientExtractor.OnStart(attrs, parentContext, testRequest{Method: "test"})
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
+	}
+	attrs, _ = httpClientExtractor.OnEnd(attrs, parentContext, testRequest{Method: "test"}, testResponse{}, nil)
+	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
+		panic("attribute should be test")
 	}
 }

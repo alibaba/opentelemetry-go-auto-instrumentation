@@ -12,26 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gin
+package utils
 
-import (
-	"net/http"
-	"net/url"
-)
+import "net/url"
 
-type ginRequest struct {
-	method     string
-	url        url.URL
-	host       string
-	isTls      bool
-	header     http.Header
-	version    string
-	handleName string
+type UrlFilter interface {
+	FilterUrl(url *url.URL) bool
 }
 
-type ginResponse struct {
-	statusCode int
-	header     http.Header
+type SpanNameFilter interface {
+	FilterSpanName(spanName string) bool
 }
 
-var netGinServerInstrument = BuildGinServerOtelInstrumenter()
+type DefaultUrlFilter struct {
+}
+
+func (d DefaultUrlFilter) FilterUrl(url *url.URL) bool {
+	return false
+}
