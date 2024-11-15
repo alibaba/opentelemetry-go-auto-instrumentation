@@ -61,8 +61,8 @@ type BuildConfig struct {
 	// Restore true means restore all instrumentations.
 	Restore bool
 
-	// BuildArgs are the arguments to pass to the go build command.
-	BuildArgs []string
+	// GoBuildCmd is equivalent to go build command
+	GoBuildCmd []string
 
 	// PrintVersion true means print version.
 	PrintVersion bool
@@ -105,18 +105,18 @@ func (bc *BuildConfig) setBuildMode() error {
 	// Check if -mod=vendor is set, replace it with -mod=mod
 	const buildModeVendor = "-mod=vendor"
 	const buildModePrefix = "-mod"
-	for i, arg := range bc.BuildArgs {
+	for i, arg := range bc.GoBuildCmd {
 		// -mod=vendor?
 		if arg == buildModeVendor {
-			bc.BuildArgs[i] = BuildModeMod
+			bc.GoBuildCmd[i] = BuildModeMod
 			return nil
 		}
 		// -mod vendor?
 		if arg == buildModePrefix {
-			if len(bc.BuildArgs) > i+1 {
-				arg1 := bc.BuildArgs[i+1]
+			if len(bc.GoBuildCmd) > i+1 {
+				arg1 := bc.GoBuildCmd[i+1]
 				if arg1 == "vendor" {
-					bc.BuildArgs[i+1] = "mod"
+					bc.GoBuildCmd[i+1] = "mod"
 					return nil
 				}
 			}
@@ -134,7 +134,7 @@ func (bc *BuildConfig) setBuildMode() error {
 		return fmt.Errorf("failed to check vendor directory: %w", err)
 	}
 	if exist {
-		bc.BuildArgs = append([]string{BuildModeMod}, bc.BuildArgs...)
+		bc.GoBuildCmd = append([]string{BuildModeMod}, bc.GoBuildCmd...)
 	}
 	return nil
 }
@@ -232,7 +232,7 @@ func loadBuildConfig() (*BuildConfig, error) {
 
 		// Any non-flag command-line arguments behind "--" separator will be treated
 		// as build arguments and transparently passed to the go build command.
-		bc.BuildArgs = flag.Args()
+		bc.GoBuildCmd = flag.Args()
 
 		// At this point, the build config is fully initialized and ready to use.
 		return bc, nil

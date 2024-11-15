@@ -38,7 +38,7 @@ endif
 
 # General build options
 MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
-TOOL_REL_NAME := otelbuild
+TOOL_REL_NAME := otel
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
 
@@ -46,7 +46,7 @@ XVERSION := -X=$(MOD_NAME)/tool/shared.TheVersion=$(VERSION)
 XNAME := -X=$(MOD_NAME)/tool/shared.TheName=$(TOOL_REL_NAME)
 STRIP_DEBUG := -s -w
 LDFLAGS := $(XVERSION) $(XNAME) $(STRIP_DEBUG)
-BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags="$(LDFLAGS)" -o $(3)
+BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -ldflags="$(LDFLAGS)" -o $(3)
 
 OUTPUT_BASE = $(TOOL_REL_NAME)
 OUTPUT_DARWIN_AMD64 = $(OUTPUT_BASE)-darwin-amd64
@@ -90,3 +90,8 @@ clean:
 
 test:
 	go test -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test
+
+install: build
+	@echo "Running install process..."
+	cp $(OUTPUT_BASE) /usr/local/bin/
+	@echo "Installed at /usr/local/bin/$(OUTPUT_BASE)"

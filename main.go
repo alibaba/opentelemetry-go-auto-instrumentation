@@ -27,7 +27,6 @@ func main() {
 	if err != nil {
 		log.Printf("failed to init options: %v", err)
 		os.Exit(1)
-
 	}
 	err = tool.Build()
 	if err != nil {

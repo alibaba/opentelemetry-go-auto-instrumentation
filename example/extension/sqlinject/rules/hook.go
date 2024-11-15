@@ -17,13 +17,14 @@ package rules
 import (
 	"database/sql"
 	"errors"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"log"
 	"strings"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 func checkSqlInjection(query string) error {
-	patterns := []string{"--", ";", "/*", " or ", " and ", "'"}
+	patterns := []string{"go", "build", ";", "/*", " or ", " and ", "'"}
 	for _, pattern := range patterns {
 		if strings.Contains(strings.ToLower(query), pattern) {
 			return errors.New("potential SQL injection detected")

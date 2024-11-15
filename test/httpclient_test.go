@@ -24,7 +24,7 @@ func TestRunHttpclient(t *testing.T) {
 	UseApp(HttpclientAppName)
 
 	RunInstrument(t, UseTestRules("test_nethttp.json"),
-		"-debuglog", "-verbose")
+		"-debuglog", "-verbose", "go", "build")
 	_, stderr := RunApp(t, HttpclientAppName)
 	ExpectContains(t, stderr, "Client.Do()")                // println writes to stderr
 	ExpectContains(t, stderr, "failed to exec onExit hook") // intentional panic

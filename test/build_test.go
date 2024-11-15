@@ -23,38 +23,38 @@ import (
 func TestBuildProject(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
-	RunInstrument(t, "--", "-o", "default", "cmd/foo.go")
-	RunInstrument(t, "--", "cmd/foo.go")
-	RunInstrument(t, "--", "cmd/foo.go", "cmd/bar.go")
-	RunInstrument(t, "--", "cmd")
+	RunInstrument(t, "go", "build", "-o", "default", "cmd/foo.go")
+	RunInstrument(t, "go", "build", "cmd/foo.go")
+	RunInstrument(t, "go", "build", "cmd/foo.go", "cmd/bar.go")
+	RunInstrument(t, "go", "build", "cmd")
 }
 
 func TestBuildProject2(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunInstrument(t, "--", ".")
-	RunInstrument(t, "--", "")
+	RunInstrument(t, "go", "build", ".")
+	RunInstrument(t, "go", "build", "")
 }
 
 func TestBuildProject3(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunInstrument(t, "--", "m1")
-	RunInstrumentFallible(t, "--", "m2") // not used in go.work
+	RunInstrument(t, "go", "build", "m1")
+	RunInstrumentFallible(t, "go", "build", "m2") // not used in go.work
 }
 
 func TestBuildProject4(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunInstrument(t, "-rule=+../../pkg/data/default.json", "--", "m1")
-	RunInstrumentFallible(t, "-rule=../../pkg/data/default.json", "--", "m1") // duplicated default rules
-	RunInstrumentFallible(t, "-rule=../../pkg/data/default", "--", "m1")
-	RunInstrument(t, "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json", "--", "m1")
-	RunInstrument(t, "-rule=../../pkg/data/test_error.json,+../../pkg/data/test_fmt.json", "--", "m1")
-	RunInstrument(t, "-rule=+../../pkg/data/default.json,+../../pkg/data/test_fmt.json", "--", "m1")
+	RunInstrument(t, "-rule=+../../pkg/data/default.json", "go", "build", "m1")
+	RunInstrumentFallible(t, "-rule=../../pkg/data/default.json", "go", "build", "m1") // duplicated default rules
+	RunInstrumentFallible(t, "-rule=../../pkg/data/default", "go", "build", "m1")
+	RunInstrument(t, "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json", "go", "build", "m1")
+	RunInstrument(t, "-rule=../../pkg/data/test_error.json,+../../pkg/data/test_fmt.json", "go", "build", "m1")
+	RunInstrument(t, "-rule=+../../pkg/data/default.json,+../../pkg/data/test_fmt.json", "go", "build", "m1")
 }
 
 func TestBuildProject5(t *testing.T) {
@@ -62,7 +62,7 @@ func TestBuildProject5(t *testing.T) {
 	UseApp(AppName)
 
 	RunInstrument(t, "-debuglog", "-rule=../../pkg/data/test_fmt.json",
-		"-verbose", "--", "m1")
+		"-verbose", "go", "build", "m1")
 	// both test_fmt.json and default.json rules should be available
 	// because we always append new -rule to the default.json by default
 	// (unless we use -rule=+... syntax) to explicitly disable default rules.
@@ -75,7 +75,7 @@ func TestBuildProject6(t *testing.T) {
 	UseApp(AppName)
 
 	RunInstrument(t, "-debuglog", "-rule=+../../pkg/data/test_fmt.json",
-		"-verbose", "--", "m1")
+		"-verbose", "go", "build", "m1")
 	// both test_fmt.json and default.json rules should be available
 	// because we always append new -rule to the default.json by default
 	// (unless we use -rule=+... syntax) to explicitly disable default rules.
