@@ -65,7 +65,7 @@ func IsCompileCommand(line string) bool {
 }
 
 func GetTempBuildDir() string {
-	if GetBuildConfig().InToolexec {
+	if GetConf().InToolexec {
 		return filepath.Join(TempBuildDir, TInstrument)
 	} else {
 		return filepath.Join(TempBuildDir, TPreprocess)
@@ -192,19 +192,19 @@ func MakePublic(name string) string {
 }
 
 func InPreprocess() bool {
-	return !GetBuildConfig().InToolexec
+	return !GetConf().InToolexec
 }
 
 func InInstrument() bool {
-	return GetBuildConfig().InToolexec
+	return GetConf().InToolexec
 }
 
 func GuaranteeInPreprocess() {
-	util.Assert(!GetBuildConfig().InToolexec, "not in preprocess stage")
+	util.Assert(!GetConf().InToolexec, "not in preprocess stage")
 }
 
 func GuaranteeInInstrument() {
-	util.Assert(GetBuildConfig().InToolexec, "not in instrument stage")
+	util.Assert(GetConf().InToolexec, "not in instrument stage")
 }
 
 // splitVersionRange splits the version range into two parts, start and end.

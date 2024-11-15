@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -69,87 +70,30 @@ type BuildConfig struct {
 	disableDefaultRules bool
 }
 
-var buildConf *BuildConfig
-
 // This is the version of the tool, which will be printed when the -version flag
 // is passed. This value is specified by the build system.
 var TheVersion = "1.0.0"
 
 var TheName = "otelbuild"
 
-func PrintTheVersion() {
-	fmt.Printf("%s version %s\n", TheName, TheVersion)
+var conf *BuildConfig
+
+func printVersion() {
+	util.Assert(conf != nil, "build config is not initialized")
+
+	if conf.PrintVersion {
+		fmt.Printf("%s version %s\n", TheName, TheVersion)
+		os.Exit(0)
+	}
 }
 
-func GetBuildConfig() *BuildConfig {
-	util.Assert(buildConf != nil, "build config is not initialized")
-	return buildConf
+func GetConf() *BuildConfig {
+	util.Assert(conf != nil, "build config is not initialized")
+	return conf
 }
 
 func (bc *BuildConfig) IsDisableDefaultRules() bool {
 	return bc.disableDefaultRules
-}
-
-func storeBuildConfig() error {
-	util.Assert(buildConf != nil, "build config is not initialized")
-	util.Assert(InPreprocess(), "sanity check")
-
-	file := GetPreprocessLogPath(BuildConfFile)
-	bs, err := json.Marshal(buildConf)
-	if err != nil {
-		return fmt.Errorf("failed to marshal build config: %w", err)
-	}
-	_, err = util.WriteFile(file, string(bs))
-	if err != nil {
-		return fmt.Errorf("failed to write build config: %w", err)
-	}
-	return nil
-}
-
-func loadBuildConfig() (*BuildConfig, error) {
-	util.Assert(buildConf == nil, "build config is already initialized")
-
-	// Early initilaization for phase identification
-	bc := &BuildConfig{}
-	flag.BoolVar(&bc.InToolexec, "in-toolexec", false,
-		"Run in toolexec mode")
-
-	// In Preprocess phase, we parse build config from command-line arguments.
-	if !bc.InToolexec {
-		flag.BoolVar(&bc.DebugLog, "debuglog", false,
-			"Print debug log to file")
-		flag.BoolVar(&bc.Verbose, "verbose", false,
-			"Print verbose log")
-		flag.BoolVar(&bc.Debug, "debug", false,
-			"Enable debug mode, leave temporary files for debugging")
-		flag.BoolVar(&bc.Restore, "restore", false,
-			"Restore all instrumentations")
-		flag.BoolVar(&bc.PrintVersion, "version", false,
-			"Print version")
-		flag.StringVar(&bc.RuleJsonFiles, "rule", "",
-			"Rule file in json format. Multiple rules are separated by comma")
-		flag.Parse()
-
-		// Any non-flag command-line arguments behind "--" separator will be treated
-		// as build arguments and transparently passed to the go build command.
-		bc.BuildArgs = flag.Args()
-
-		// At this point, the build config is fully initialized and ready to use.
-		return bc, nil
-	} else {
-		// In Instrument phase, we should not parse the flags, instead we load
-		// the config from json file.
-		file := GetPreprocessLogPath(BuildConfFile)
-		data, err := util.ReadFile(file)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read build config: %w", err)
-		}
-		err = json.Unmarshal([]byte(data), bc)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal build config: %w", err)
-		}
-		return bc, nil
-	}
 }
 
 func (bc *BuildConfig) setBuildMode() error {
@@ -246,6 +190,68 @@ func (bc *BuildConfig) parseRuleFiles() error {
 	return nil
 }
 
+func storeBuildConfig() error {
+	util.Assert(conf != nil, "build config is not initialized")
+	util.Assert(InPreprocess(), "sanity check")
+
+	file := GetPreprocessLogPath(BuildConfFile)
+	bs, err := json.Marshal(conf)
+	if err != nil {
+		return fmt.Errorf("failed to marshal build config: %w", err)
+	}
+	_, err = util.WriteFile(file, string(bs))
+	if err != nil {
+		return fmt.Errorf("failed to write build config: %w", err)
+	}
+	return nil
+}
+
+func loadBuildConfig() (*BuildConfig, error) {
+	util.Assert(conf == nil, "build config is already initialized")
+
+	// Early initilaization for phase identification
+	bc := &BuildConfig{}
+	flag.BoolVar(&bc.InToolexec, "in-toolexec", false,
+		"Run in toolexec mode")
+
+	// In Preprocess phase, we parse build config from command-line arguments.
+	if !bc.InToolexec {
+		flag.BoolVar(&bc.DebugLog, "debuglog", false,
+			"Print debug log to file")
+		flag.BoolVar(&bc.Verbose, "verbose", false,
+			"Print verbose log")
+		flag.BoolVar(&bc.Debug, "debug", false,
+			"Enable debug mode, leave temporary files for debugging")
+		flag.BoolVar(&bc.Restore, "restore", false,
+			"Restore all instrumentations")
+		flag.BoolVar(&bc.PrintVersion, "version", false,
+			"Print version")
+		flag.StringVar(&bc.RuleJsonFiles, "rule", "",
+			"Rule file in json format. Multiple rules are separated by comma")
+		flag.Parse()
+
+		// Any non-flag command-line arguments behind "--" separator will be treated
+		// as build arguments and transparently passed to the go build command.
+		bc.BuildArgs = flag.Args()
+
+		// At this point, the build config is fully initialized and ready to use.
+		return bc, nil
+	} else {
+		// In Instrument phase, we should not parse the flags, instead we load
+		// the config from json file.
+		file := GetPreprocessLogPath(BuildConfFile)
+		data, err := util.ReadFile(file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read build config: %w", err)
+		}
+		err = json.Unmarshal([]byte(data), bc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal build config: %w", err)
+		}
+		return bc, nil
+	}
+}
+
 func initLogs(names ...string) error {
 	for _, name := range names {
 		path := filepath.Join(TempBuildDir, name)
@@ -253,7 +259,7 @@ func initLogs(names ...string) error {
 		if err != nil {
 			return err
 		}
-		if GetBuildConfig().DebugLog {
+		if GetConf().DebugLog {
 			logPath := filepath.Join(path, DebugLogFile)
 			_, err = os.Create(logPath)
 			if err != nil {
@@ -262,6 +268,22 @@ func initLogs(names ...string) error {
 		}
 	}
 	return nil
+}
+
+func setupLogs() {
+	if InInstrument() {
+		log.SetPrefix("[" + TInstrument + "] ")
+	} else {
+		log.SetPrefix("[" + TPreprocess + "] ")
+	}
+	if GetConf().DebugLog {
+		// Redirect log to debug log if required
+		debugLogPath := GetLogPath(DebugLogFile)
+		debugLog, _ := os.OpenFile(debugLogPath, os.O_WRONLY|os.O_APPEND, 0777)
+		if debugLog != nil {
+			log.SetOutput(debugLog)
+		}
+	}
 }
 
 func initTempDir() error {
@@ -288,12 +310,14 @@ func initTempDir() error {
 		}
 
 	}
+
+	setupLogs()
 	return nil
 }
 
 func InitConfig() (err error) {
 	// Load build config from either command-line arguments or json file
-	buildConf, err = loadBuildConfig()
+	conf, err = loadBuildConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load build config: %w", err)
 	}
@@ -305,17 +329,14 @@ func InitConfig() (err error) {
 	}
 
 	// Print version and exit early
-	if buildConf.PrintVersion {
-		PrintTheVersion()
-		os.Exit(0)
-	}
+	printVersion()
 
-	err = buildConf.parseRuleFiles()
+	err = conf.parseRuleFiles()
 	if err != nil {
 		return fmt.Errorf("failed to parse rule files: %w", err)
 	}
 
-	err = buildConf.setBuildMode()
+	err = conf.setBuildMode()
 	if err != nil {
 		return fmt.Errorf("failed to set build mode: %w", err)
 	}

@@ -54,7 +54,7 @@ func (dp *DepProcessor) replaceOtelImports() error {
 			if err != nil {
 				return fmt.Errorf("failed to read file content: %w", err)
 			}
-			if shared.GetBuildConfig().Verbose {
+			if shared.GetConf().Verbose {
 				log.Printf("Replace import path of %s to %s", file, moduleName)
 			}
 

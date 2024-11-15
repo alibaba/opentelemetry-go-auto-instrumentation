@@ -15,33 +15,13 @@
 package tool
 
 import (
-	"log"
-	"os"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/instrument"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/preprocess"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 )
 
-func setupLogs() {
-	if shared.InInstrument() {
-		log.SetPrefix("[" + shared.TInstrument + "] ")
-	} else {
-		log.SetPrefix("[" + shared.TPreprocess + "] ")
-	}
-	if shared.GetBuildConfig().DebugLog {
-		// Redirect log to debug log if required
-		debugLogPath := shared.GetLogPath(shared.DebugLogFile)
-		debugLog, _ := os.OpenFile(debugLogPath, os.O_WRONLY|os.O_APPEND, 0777)
-		if debugLog != nil {
-			log.SetOutput(debugLog)
-		}
-	}
-}
-
 func Build() (err error) {
 	// Where our story begins
-	setupLogs()
 	if shared.InPreprocess() {
 		return preprocess.Preprocess()
 	} else {

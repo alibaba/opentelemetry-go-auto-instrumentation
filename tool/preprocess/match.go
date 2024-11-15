@@ -37,7 +37,7 @@ func newRuleMatcher() *ruleMatcher {
 	for _, rule := range findAvailableRules() {
 		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
 	}
-	if shared.GetBuildConfig().Verbose {
+	if shared.GetConf().Verbose {
 		log.Printf("Available rules: %v", rules)
 	}
 	return &ruleMatcher{availableRules: rules}
@@ -101,26 +101,26 @@ func findAvailableRules() []resource.InstRule {
 	// Disable all instrumentation rules and rebuild the whole project to restore
 	// all instrumentation actions, this also reverts the modification on Golang
 	// runtime package.
-	if shared.GetBuildConfig().Restore {
+	if shared.GetConf().Restore {
 		return nil
 	}
 
 	// If rule file is not set, we will use the default rules
-	if shared.GetBuildConfig().RuleJsonFiles == "" {
+	if shared.GetConf().RuleJsonFiles == "" {
 		return loadDefaultRules()
 	}
 
 	rules := make([]resource.InstRule, 0)
 
 	// Load default rules unless explicitly disabled
-	if !shared.GetBuildConfig().IsDisableDefaultRules() {
+	if !shared.GetConf().IsDisableDefaultRules() {
 		defaultRules := loadDefaultRules()
 		rules = append(rules, defaultRules...)
 	}
 
 	// Load multiple rule files if provided
-	if strings.Contains(shared.GetBuildConfig().RuleJsonFiles, ",") {
-		ruleFiles := strings.Split(shared.GetBuildConfig().RuleJsonFiles, ",")
+	if strings.Contains(shared.GetConf().RuleJsonFiles, ",") {
+		ruleFiles := strings.Split(shared.GetConf().RuleJsonFiles, ",")
 		for _, ruleFile := range ruleFiles {
 			r, err := loadRuleFile(ruleFile)
 			if err != nil {
@@ -133,7 +133,7 @@ func findAvailableRules() []resource.InstRule {
 	}
 
 	// Load the one rule file if provided
-	rs, err := loadRuleFile(shared.GetBuildConfig().RuleJsonFiles)
+	rs, err := loadRuleFile(shared.GetConf().RuleJsonFiles)
 	if err != nil {
 		log.Printf("Failed to load rules: %v", err)
 		return nil
@@ -263,7 +263,7 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 	cmdArgs := shared.SplitCmds(cmd)
 	importPath := readImportPath(cmdArgs)
 	util.Assert(importPath != "", "sanity check")
-	if shared.GetBuildConfig().Verbose {
+	if shared.GetConf().Verbose {
 		log.Printf("Matching %v with %v\n", importPath, cmdArgs)
 	}
 	bundle := matcher.match(importPath, cmdArgs)
