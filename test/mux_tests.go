@@ -24,8 +24,9 @@ func init() {
 		NewGeneralTestCase("mux-basic-test", mux_module_name, "v1.3.0", "", "1.18", "", TestBasicMux),
 		NewGeneralTestCase("mux-middleware-test", mux_module_name, "v1.3.0", "", "1.18", "", TestMuxMiddleware),
 		NewGeneralTestCase("mux-pattern-test", mux_module_name, "v1.3.0", "", "1.18", "", TestMuxPattern),
+		NewGeneralTestCase("mux-prefix-test", mux_module_name, "v1.7.4", "", "1.18", "", TestMuxPrefix),
 		NewMuzzleTestCase("mux-muzzle-test", mux_dependency_name, mux_module_name, "v1.3.0", "v1.6.2", "1.18", "", []string{"test_mux_basic.go"}),
-		NewMuzzleTestCase("mux-muzzle-test", mux_dependency_name, mux_module_name, "v1.7.0", "", "1.18", "", []string{"test_mux_middleware.go"}),
+		NewMuzzleTestCase("mux-muzzle-test", mux_dependency_name, mux_module_name, "v1.7.4", "", "1.18", "", []string{"test_mux_middleware.go"}),
 		NewLatestDepthTestCase("mux-latestdepth-test", mux_dependency_name, mux_module_name, "v1.3.0", "", "1.18", "", TestBasicMux),
 	)
 }
@@ -37,7 +38,7 @@ func TestBasicMux(t *testing.T, env ...string) {
 }
 
 func TestMuxMiddleware(t *testing.T, env ...string) {
-	UseApp("mux/v1.7.0")
+	UseApp("mux/v1.7.4")
 	RunInstrument(t, "-debuglog", "--", "test_mux_middleware.go")
 	RunApp(t, "test_mux_middleware", env...)
 }
@@ -46,4 +47,9 @@ func TestMuxPattern(t *testing.T, env ...string) {
 	UseApp("mux/v1.3.0")
 	RunInstrument(t, "-debuglog", "--", "test_mux_pattern.go")
 	RunApp(t, "test_mux_pattern", env...)
+}
+func TestMuxPrefix(t *testing.T, env ...string) {
+	UseApp("mux/v1.7.4")
+	RunInstrument(t, "-debuglog", "--", "test_mux_prefix.go")
+	RunApp(t, "test_mux_prefix", env...)
 }

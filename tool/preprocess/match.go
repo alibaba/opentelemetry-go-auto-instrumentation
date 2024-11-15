@@ -37,7 +37,7 @@ func newRuleMatcher() *ruleMatcher {
 	for _, rule := range findAvailableRules() {
 		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
 	}
-	if shared.Verbose {
+	if shared.GetConf().Verbose {
 		log.Printf("Available rules: %v", rules)
 	}
 	return &ruleMatcher{availableRules: rules}
@@ -87,29 +87,40 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 	return rules, nil
 }
 
+func loadDefaultRules() []resource.InstRule {
+	rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
+	if err != nil {
+		log.Printf("Failed to load default rules: %v", err)
+		return nil
+	}
+	return rules
+}
+
 func findAvailableRules() []resource.InstRule {
 	shared.GuaranteeInPreprocess()
 	// Disable all instrumentation rules and rebuild the whole project to restore
 	// all instrumentation actions, this also reverts the modification on Golang
 	// runtime package.
-	if shared.Restore {
+	if shared.GetConf().Restore {
 		return nil
 	}
 
 	// If rule file is not set, we will use the default rules
-	if shared.RuleJsonFiles == "" {
-		rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
-		if err != nil {
-			log.Printf("Failed to load default rules: %v", err)
-			return nil
-		}
-		return rules
+	if shared.GetConf().RuleJsonFiles == "" {
+		return loadDefaultRules()
 	}
 
-	// If set, check if there are multiple rule files
-	if strings.Contains(shared.RuleJsonFiles, ",") {
-		ruleFiles := strings.Split(shared.RuleJsonFiles, ",")
-		rules := make([]resource.InstRule, 0)
+	rules := make([]resource.InstRule, 0)
+
+	// Load default rules unless explicitly disabled
+	if !shared.GetConf().IsDisableDefaultRules() {
+		defaultRules := loadDefaultRules()
+		rules = append(rules, defaultRules...)
+	}
+
+	// Load multiple rule files if provided
+	if strings.Contains(shared.GetConf().RuleJsonFiles, ",") {
+		ruleFiles := strings.Split(shared.GetConf().RuleJsonFiles, ",")
 		for _, ruleFile := range ruleFiles {
 			r, err := loadRuleFile(ruleFile)
 			if err != nil {
@@ -121,12 +132,13 @@ func findAvailableRules() []resource.InstRule {
 		return rules
 	}
 
-	// Load the rule file provided by the user
-	rules, err := loadRuleFile(shared.RuleJsonFiles)
+	// Load the one rule file if provided
+	rs, err := loadRuleFile(shared.GetConf().RuleJsonFiles)
 	if err != nil {
 		log.Printf("Failed to load rules: %v", err)
 		return nil
 	}
+	rules = append(rules, rs...)
 	return rules
 }
 
@@ -251,7 +263,7 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 	cmdArgs := shared.SplitCmds(cmd)
 	importPath := readImportPath(cmdArgs)
 	util.Assert(importPath != "", "sanity check")
-	if shared.Verbose {
+	if shared.GetConf().Verbose {
 		log.Printf("Matching %v with %v\n", importPath, cmdArgs)
 	}
 	bundle := matcher.match(importPath, cmdArgs)

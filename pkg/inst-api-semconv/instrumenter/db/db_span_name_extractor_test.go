@@ -21,9 +21,9 @@ func TestDbNameExtractor(t *testing.T) {
 		Getter: mongoAttrsGetter{},
 	}
 	if dbSpanNameExtractor.Extract(testRequest{}) != "DB Query" {
-		t.Fatalf("Should have returned DB_QUERY")
+		t.Fatalf("Should have returned DB Query")
 	}
-	if dbSpanNameExtractor.Extract(testRequest{Name: "test"}) != "test" {
+	if dbSpanNameExtractor.Extract(testRequest{Name: "test", Operation: "test"}) != "test" {
 		t.Fatalf("Should have returned test")
 	}
 	if dbSpanNameExtractor.Extract(testRequest{Operation: "op_test"}) != "op_test" {

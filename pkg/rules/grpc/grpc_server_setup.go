@@ -26,6 +26,9 @@ import (
 var grpcServerInstrument = BuildGrpcServerInstrumenter()
 
 func grpcServerOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
+	if !grpcEnabler.Enable() {
+		return
+	}
 	h := grpc.StatsHandler(NewServerHandler())
 	var opt []grpc.ServerOption
 	opt = append(opt, h)
@@ -34,6 +37,9 @@ func grpcServerOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
 }
 
 func grpcServerOnExit(call api.CallContext, s *grpc.Server) {
+	if !grpcEnabler.Enable() {
+		return
+	}
 	return
 }
 

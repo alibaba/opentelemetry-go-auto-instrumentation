@@ -12,26 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package echo
+package gin
 
 import (
-	"net/http"
-	"net/url"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 )
 
-type echoRequest struct {
-	method  string
-	path    string
-	url     url.URL
-	host    string
-	isTls   bool
-	header  http.Header
-	version string
-}
-
-type echoResponse struct {
-	statusCode int
-	header     http.Header
-}
-
-var netEchoServerInstrument = BuildEchoServerOtelInstrumenter()
+var ginEnabler = instrumenter.NewDefaultInstrumentEnabler()

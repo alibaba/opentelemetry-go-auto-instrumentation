@@ -46,6 +46,9 @@ func newFastHttpServerDelegateHandler(handler fasthttp.RequestHandler) fasthttp.
 }
 
 func listenAndServeFastHttpOnEnter(call api.CallContext, s *fasthttp.Server, addr string) {
+	if !fastHttpEnabler.Enable() {
+		return
+	}
 	if s == nil {
 		return
 	}

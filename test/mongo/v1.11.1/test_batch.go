@@ -46,6 +46,6 @@ func main() {
 	_, err = coll.BulkWrite(context.TODO(), models, opts)
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "update", "sample_restaurants", "mongodb", "", "127.0.0.1", "update", "update")
+		verifier.VerifyDbAttributes(stubs[0][0], "update", "mongodb", "127.0.0.1", "update", "update")
 	}, 1)
 }

@@ -31,3 +31,6 @@ const KIND_SERVER = attribute.Key("opentelemetry-traces-span-key-kind-server")
 const KIND_CLIENT = attribute.Key("opentelemetry-traces-span-key-kind-client")
 const KIND_CONSUMER = attribute.Key("opentelemetry-traces-span-key-kind-consumer")
 const KIND_PRODUCER = attribute.Key("opentelemetry-traces-span-key-kind-producer")
+
+const OTEL_CONTEXT_KEY = attribute.Key("opentelemetry-http-server-route-key")
+

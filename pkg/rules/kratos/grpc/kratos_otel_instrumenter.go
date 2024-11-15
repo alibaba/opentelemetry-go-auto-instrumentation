@@ -31,7 +31,7 @@ const kratos_service_endpoint = "kratos.service.endpoint"
 type kratosExperimentalAttributeExtractor struct {
 }
 
-func (k kratosExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kratosRequest) []attribute.KeyValue {
+func (k kratosExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kratosRequest) ([]attribute.KeyValue, context.Context) {
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   kratos_protocol_type,
 		Value: attribute.StringValue(request.protocolType),
@@ -56,11 +56,11 @@ func (k kratosExperimentalAttributeExtractor) OnStart(attributes []attribute.Key
 			})
 		}
 	}
-	return attributes
+	return attributes, parentContext
 }
 
-func (k kratosExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request kratosRequest, response any, err error) []attribute.KeyValue {
-	return attributes
+func (k kratosExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request kratosRequest, response any, err error) ([]attribute.KeyValue, context.Context) {
+	return attributes, context
 }
 
 type kratosExperimentalSpanNameExtractor struct {

@@ -12,23 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mux
+package error2
 
 import (
-	"net/http"
-	"net/url"
+	erralias "errors"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
-type muxHttpRequest struct {
-	method  string
-	url     *url.URL
-	host    string
-	isTls   bool
-	header  http.Header
-	version string
-}
-
-type muxHttpResponse struct {
-	statusCode int
-	header     http.Header
+func onEnterErrorsNewAlias(call api.CallContext, text string) {
+	// Check if alias name confuses compilation
+	_ = erralias.ErrUnsupported
 }

@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
@@ -28,9 +27,6 @@ import (
 
 func RequestInfo() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		path := context.FullPath()
-		method := context.Request.Method
-		fmt.Println("请求路径为:", path, "请求方法:", method)
 		context.Next()
 	}
 }

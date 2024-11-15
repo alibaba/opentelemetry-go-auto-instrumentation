@@ -44,7 +44,7 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribut
 	panic("Operation" + m.operation + "not supported")
 }
 
-func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
+func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
 	messageAttrSystem := m.getter.GetSystem(request)
 	isTemporaryDestination := m.getter.IsTemporaryDestination(request)
 	if isTemporaryDestination {
@@ -90,10 +90,10 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []
 		Key:   semconv.MessagingSystemKey,
 		Value: attribute.StringValue(messageAttrSystem),
 	})
-	return attributes
+	return attributes, parentContext
 }
 
-func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
+func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.MessagingMessageIDKey,
 		Value: attribute.StringValue(m.getter.GetMessageId(request, response)),
@@ -102,5 +102,5 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []at
 		Value: attribute.Int64Value(m.getter.GetBatchMessageCount(request, response)),
 	})
 	// TODO: add custom captured headers attributes
-	return attributes
+	return attributes, context
 }

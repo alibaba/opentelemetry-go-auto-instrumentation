@@ -120,7 +120,7 @@ func (rp *RuleProcessor) removeOnExitTrampolineCall(tjump *TJump) error {
 			// Replace defer statement with an decorated empty statement to make
 			// trampoline-jump-if inlining work
 			elseBlock.List[i] = newDecoratedEmptyStmt()
-			if shared.Verbose {
+			if shared.GetConf().Verbose {
 				log.Printf("Optimize tjump branch in %s",
 					tjump.target.Name.Name)
 			}
@@ -184,7 +184,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	tjump.ifStmt.Init = nil
 	tjump.ifStmt.Cond = shared.BoolFalse()
 	tjump.ifStmt.Body = shared.Block(newDecoratedEmptyStmt())
-	if shared.Verbose {
+	if shared.GetConf().Verbose {
 		log.Printf("Optimize tjump branch in %s", tjump.target.Name.Name)
 	}
 	// Remove generated onEnter trampoline function
@@ -220,7 +220,7 @@ func flattenTJump(tjump *TJump, removedOnExit bool) {
 		skipCallIdent := initStmt.Lhs[1].(*dst.Ident)
 		shared.MakeUnusedIdent(skipCallIdent)
 	}
-	if shared.Verbose {
+	if shared.GetConf().Verbose {
 		log.Printf("Optimize skipCall in %s", tjump.target.Name.Name)
 	}
 }

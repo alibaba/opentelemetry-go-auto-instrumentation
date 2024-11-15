@@ -33,7 +33,7 @@ func replaceImport(importPath string, code string) string {
 	return code
 }
 
-func (dp *DepProcessor) replaceOtelImports(compileCmds []string) error {
+func (dp *DepProcessor) replaceOtelImports() error {
 	moduleName, err := dp.getImportPathOf(OtelPkgDepsDir)
 	if err != nil {
 		return fmt.Errorf("failed to get import path of otel_pkg: %w", err)
@@ -42,7 +42,7 @@ func (dp *DepProcessor) replaceOtelImports(compileCmds []string) error {
 	for _, dep := range []string{OtelRules, OtelPkgDepsDir} {
 		files, err := util.ListFiles(dep)
 		if err != nil {
-			return fmt.Errorf("failed to list files during replacement: %w", err)
+			return fmt.Errorf("failed to list files: %w", err)
 		}
 		for _, file := range files {
 			// Skip non-go files as no imports within them
@@ -54,7 +54,7 @@ func (dp *DepProcessor) replaceOtelImports(compileCmds []string) error {
 			if err != nil {
 				return fmt.Errorf("failed to read file content: %w", err)
 			}
-			if shared.Verbose {
+			if shared.GetConf().Verbose {
 				log.Printf("Replace import path of %s to %s", file, moduleName)
 			}
 

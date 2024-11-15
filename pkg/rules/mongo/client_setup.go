@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"strings"
 	"sync"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
@@ -27,7 +29,12 @@ import (
 
 var mongoInstrumenter = BuildMongoOtelInstrumenter()
 
+var mongoEnabler instrumenter.InstrumentEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
+	if !mongoEnabler.Enable() {
+		return
+	}
 	syncMap := sync.Map{}
 	for _, opt := range opts {
 		hosts := opt.Hosts
@@ -36,15 +43,21 @@ func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
 			continue
 		}
 		configuredMonitor := opt.Monitor
+		var host string
 		opt.Monitor = &event.CommandMonitor{
 			Started: func(ctx context.Context, startedEvent *event.CommandStartedEvent) {
 				if configuredMonitor != nil {
 					configuredMonitor.Started(ctx, startedEvent)
 				}
+				host = hosts[0]
+				if hostLength > 1 {
+					if infoSplit := strings.Index(startedEvent.ConnectionID, "["); infoSplit > 0 && strings.HasSuffix(startedEvent.ConnectionID, "]") {
+						host = startedEvent.ConnectionID[0:infoSplit]
+					}
+				}
 				mongoRequest := mongoRequest{
-					CommandName:  startedEvent.CommandName,
-					ConnectionID: startedEvent.ConnectionID,
-					DatabaseName: startedEvent.DatabaseName,
+					CommandName: startedEvent.CommandName,
+					Host:        host,
 				}
 				newCtx := mongoInstrumenter.Start(ctx, mongoRequest)
 				syncMap.Store(fmt.Sprintf("%d", startedEvent.RequestID), newCtx)
@@ -57,8 +70,8 @@ func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
 					newContext, ok := newCtx.(context.Context)
 					if ok {
 						mongoInstrumenter.End(newContext, mongoRequest{
-							CommandName:  succeededEvent.CommandName,
-							ConnectionID: succeededEvent.ConnectionID,
+							CommandName: succeededEvent.CommandName,
+							Host:        host,
 						}, nil, nil)
 					}
 				}
@@ -71,8 +84,8 @@ func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
 					newContext, ok := newCtx.(context.Context)
 					if ok {
 						mongoInstrumenter.End(newContext, mongoRequest{
-							CommandName:  failedEvent.CommandName,
-							ConnectionID: failedEvent.ConnectionID,
+							CommandName: failedEvent.CommandName,
+							Host:        host,
 						}, nil, errors.New(failedEvent.Failure))
 					}
 				}

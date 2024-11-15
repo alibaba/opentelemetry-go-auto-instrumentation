@@ -15,39 +15,34 @@
 package echo
 
 import (
-	"strconv"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	echo "github.com/labstack/echo/v4"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
+
+var echoEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 func otelTraceMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			request := echoRequest{
-				method:  c.Request().Method,
-				path:    c.Path(),
-				url:     *c.Request().URL,
-				header:  c.Request().Header,
-				version: strconv.Itoa(c.Request().ProtoMajor) + "." + strconv.Itoa(c.Request().ProtoMinor),
-				host:    c.Request().Host,
-				isTls:   c.Request().TLS != nil,
-			}
-			ctx := netEchoServerInstrument.Start(c.Request().Context(), request)
 			if err = next(c); err != nil {
 				c.Error(err)
 			}
-
-			netEchoServerInstrument.End(ctx, request, echoResponse{
-				statusCode: c.Response().Status,
-				header:     c.Response().Header(),
-			}, err)
+			lcs := trace.LocalRootSpanFromGLS()
+			if lcs != nil && c.Path() != "" && c.Request() != nil && c.Request().URL != nil && (c.Request().URL.Path != c.Path()) {
+				lcs.SetName(c.Path())
+			}
 			return
 		}
 	}
 }
 
 func afterNewEcho(call api.CallContext, e *echo.Echo) {
+	if !echoEnabler.Enable() {
+		return
+	}
 	if e == nil {
 		return
 	}
