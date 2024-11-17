@@ -24,6 +24,7 @@ import (
 )
 
 const redisv9_dependency_name = "github.com/redis/go-redis/v9"
+const redisv8_dependency_name = "github.com/go-redis/redis/v8"
 const redis_module_name = "redis"
 
 func init() {
@@ -39,6 +40,7 @@ func init() {
 		NewGeneralTestCase("redis-8.11.0-ring-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisRing),
 		NewGeneralTestCase("redis-8.11.0-transactions-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisTransactions),
 		NewGeneralTestCase("redis-8.11.0-universal-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisUniversal),
+		NewMuzzleTestCase("redis-8.11.0-muzzle", redisv8_dependency_name, redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", []string{"test_executing_commands.go"}),
 		NewMuzzleTestCase("redis-9.0.5-muzzle", redisv9_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", []string{"test_executing_commands.go"}),
 		NewLatestDepthTestCase("redis-9.0.5-executing-commands-latestDepth", redisv9_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands))
 }
