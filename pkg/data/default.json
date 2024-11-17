@@ -335,6 +335,13 @@
     {
         "Version": "[8.11.0,8.11.6)",
         "ImportPath": "github.com/go-redis/redis/v8",
+        "Function": "newConn",
+        "OnExit": "afterNewConnRedisV8Client",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"
+    },
+    {
+        "Version": "[8.11.0,8.11.6)",
+        "ImportPath": "github.com/go-redis/redis/v8",
         "Function": "NewClusterClient",
         "OnExit": "afterNewClusterV8Client",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"

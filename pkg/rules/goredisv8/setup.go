@@ -31,6 +31,13 @@ func afterNewFailOverRedisV8Client(call api.CallContext, client *redis.Client) {
 	client.AddHook(newOtRedisV8Hook(client.Options().Addr))
 }
 
+func afterNewConnRedisV8Client(call api.CallContext, conn *redis.Conn) {
+	if !rv8Enabler.Enable() {
+		return
+	}
+	conn.AddHook(newOtRedisV8Hook(conn.String()))
+}
+
 func afterNewClusterV8Client(call api.CallContext, client *redis.ClusterClient) {
 	if !rv8Enabler.Enable() {
 		return

@@ -45,6 +45,6 @@ func main() {
 	// The value is available only after Exec is called.
 	fmt.Println(incr.Val())
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "pipeline", "redis", "localhost", "pipeline incr/expire/", "pipeline")
+		verifier.VerifyDbAttributes(stubs[0][0], "pipeline", "redis", "localhost", "pipeline: pipeline", "pipeline")
 	}, 1)
 }

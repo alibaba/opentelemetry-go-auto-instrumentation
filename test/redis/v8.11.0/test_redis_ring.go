@@ -35,7 +35,6 @@ func main() {
 		Addrs: map[string]string{
 			"shard1": "localhost:" + os.Getenv("REDIS_PORT"),
 		},
-		Password: "Hello1234",
 	})
 	_, err := rdb.HSet(ctx, "a", MyHash{
 		Key1: "1",
