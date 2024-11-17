@@ -35,11 +35,11 @@ type node struct {
 func WaitAndAssertTraces(traceVerifiers func([]tracetest.SpanStubs), numTraces int) {
 	traces := waitForTraces(numTraces)
 	for i, trace := range traces {
-		log.Printf("trace:%d\n", i)
+		log.Printf("[test debugging] trace:%d\n", i)
 		for _, span := range trace {
-			log.Printf(span.Name)
+			log.Printf("[test debugging] " + span.Name)
 			for _, attr := range span.Attributes {
-				log.Printf("%v %v\n", attr.Key, attr.Value)
+				log.Printf("[test debugging] %v %v\n", attr.Key, attr.Value)
 			}
 		}
 	}
@@ -48,7 +48,7 @@ func WaitAndAssertTraces(traceVerifiers func([]tracetest.SpanStubs), numTraces i
 
 func WaitAndAssertMetrics(metricVerifiers map[string]func(metricdata.ResourceMetrics)) {
 	mrs, err := waitForMetrics()
-	log.Printf("%v\n", mrs)
+	log.Printf("[test debugging] %v\n", mrs)
 	if err != nil {
 		log.Fatalf("Failed to wait for metric: %v", err)
 	}
