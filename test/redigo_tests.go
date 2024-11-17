@@ -27,10 +27,10 @@ const redigo_dependency_name = "github.com/gomodule/redigo"
 const redigo_module_name = "redigo"
 
 func init() {
-	TestCases = append(TestCases, NewGeneralTestCase("redigo-9.0.5-executing-commands-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoExecutingCommands),
-		NewGeneralTestCase("redigo-9.0.5-do-commands-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoDoCommands),
-		NewGeneralTestCase("redigo-9.0.5-unsupported-commands-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoUnsupportedCommands),
-		NewGeneralTestCase("redigo-9.0.5-transaction-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoTransactions),
+	TestCases = append(TestCases, NewGeneralTestCase("redigo-1.9.0-executing-commands-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoExecutingCommands),
+		NewGeneralTestCase("redigo-1.9.0-do-commands-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoDoCommands),
+		NewGeneralTestCase("redigo-1.9.0-unsupported-commands-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoUnsupportedCommands),
+		NewGeneralTestCase("redigo-1.9.0-transaction-test", redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoTransactions),
 		NewMuzzleTestCase("redigo-muzzle-test", redigo_dependency_name, redigo_module_name, "v1.9.0", "", "1.18", "", []string{"test_do_commands.go"}),
 		NewLatestDepthTestCase("redigo-latest-depth-test", redigo_dependency_name, redigo_module_name, "v1.9.0", "", "1.18", "", TestRedigoDoCommands),
 	)

@@ -21,6 +21,7 @@ func main() {
 	_, err = c.Receive() // reply from GET
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-
+		verifier.VerifyDbAttributes(stubs[0][0], "SET", "redis", "localhost", "SET foo bar", "SET")
+		verifier.VerifyDbAttributes(stubs[1][0], "SET", "redis", "localhost", "GET foo", "GET")
 	}, 2)
 }

@@ -44,7 +44,7 @@ func (m redigoAttrsGetter) GetServerAddress(request *redigoRequest) string {
 
 func (m redigoAttrsGetter) GetStatement(request *redigoRequest) string {
 	builder := strings.Builder{}
-	builder.WriteString(request.cmd)
+	builder.WriteString(request.cmd + " ")
 	for _, arg := range request.args {
 		builder.WriteString(fmt.Sprintf("%v ", arg))
 	}
