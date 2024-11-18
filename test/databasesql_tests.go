@@ -143,7 +143,6 @@ func TestTransaction(t *testing.T, env ...string) {
 
 func TestPreparedStatement(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
 	RunInstrument(t, "-debuglog", "--", "test_prepared_statement.go")
