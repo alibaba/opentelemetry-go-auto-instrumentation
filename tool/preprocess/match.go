@@ -172,7 +172,8 @@ func (rm *ruleMatcher) match(importPath string,
 			// Check if the version is supported
 			matched, err := shared.MatchVersion(version, rule.GetVersion())
 			if err != nil {
-				log.Printf("Failed to match version %v", err)
+				log.Printf("Failed to match version %v between %v and %v",
+					err, file, rule)
 				continue
 			}
 			if !matched {
@@ -183,7 +184,7 @@ func (rm *ruleMatcher) match(importPath string,
 			if _, ok := rule.(*resource.InstFileRule); ok {
 				ast, err := shared.ParseAstFromFileOnlyPackage(file)
 				if ast == nil || err != nil {
-					log.Printf("Failed to parse %s %v", file, err)
+					log.Printf("Failed to parse %s: %v", file, err)
 					continue
 				}
 				log.Printf("Match file rule %s", rule)
