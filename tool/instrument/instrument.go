@@ -21,7 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
@@ -208,7 +207,6 @@ func guaranteeVersion(bundle *resource.RuleBundle, candidates []string) error {
 }
 
 func compileRemix(bundle *resource.RuleBundle, args []string) error {
-	start := time.Now()
 	guaranteeVersion(bundle, args)
 	rp := newRuleProcessor(args, bundle.PackageName)
 	err := rp.applyRules(bundle)
@@ -217,13 +215,8 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	}
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
-	if shared.GetConf().Verbose {
-		log.Printf("RunCmd: %v (%v)\n",
-			rp.compileArgs, time.Since(start))
-	} else {
-		log.Printf("RunCmd: %v (%v)\n",
-			bundle.ImportPath, time.Since(start))
-	}
+	log.Printf("RunCmd: %v (%v)\n",
+		bundle.ImportPath, rp.compileArgs)
 	return err
 }
 
@@ -242,9 +235,8 @@ func Instrument() error {
 			util.Assert(bundle.IsValid(), "sanity check")
 			// Is compiling the target package?
 			if matchImportPath(bundle.ImportPath, args) {
-				err = compileRemix(bundle, args)
-
-				return err
+				log.Printf("Apply bundle %v\n", bundle)
+				return compileRemix(bundle, args)
 			}
 		}
 	}
