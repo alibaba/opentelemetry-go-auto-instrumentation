@@ -15,6 +15,7 @@
 package test
 
 import (
+	"github.com/testcontainers/testcontainers-go"
 	"testing"
 )
 
@@ -29,7 +30,7 @@ func init() {
 
 func TestGormCrud1231(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer clearDbSqlContainer(mysqlC)
+	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("gorm/v1.23.1")
 	RunInstrument(t, "-debuglog", "--", "test_gorm_crud.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -38,7 +39,7 @@ func TestGormCrud1231(t *testing.T, env ...string) {
 
 func TestGormCrud1220(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer clearDbSqlContainer(mysqlC)
+	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("gorm/v1.22.0")
 	RunInstrument(t, "-debuglog", "--", "test_gorm_crud.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())

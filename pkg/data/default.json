@@ -319,6 +319,41 @@
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredis"
     },
     {
+        "Version": "[8.11.0,8.11.6)",
+        "ImportPath": "github.com/go-redis/redis/v8",
+        "Function": "NewClient",
+        "OnExit": "afterNewRedisV8Client",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"
+    },
+    {
+        "Version": "[8.11.0,8.11.6)",
+        "ImportPath": "github.com/go-redis/redis/v8",
+        "Function": "NewFailoverClient",
+        "OnExit": "afterNewFailOverRedisV8Client",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"
+    },
+    {
+        "Version": "[8.11.0,8.11.6)",
+        "ImportPath": "github.com/go-redis/redis/v8",
+        "Function": "newConn",
+        "OnExit": "afterNewConnRedisV8Client",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"
+    },
+    {
+        "Version": "[8.11.0,8.11.6)",
+        "ImportPath": "github.com/go-redis/redis/v8",
+        "Function": "NewClusterClient",
+        "OnExit": "afterNewClusterV8Client",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"
+    },
+    {
+        "Version": "[8.11.0,8.11.6)",
+        "ImportPath": "github.com/go-redis/redis/v8",
+        "Function": "NewRing",
+        "OnExit": "afterNewRingV8Client",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"
+    },
+    {
         "Version": "[1.9.0,1.9.3)",
         "ImportPath": "github.com/gomodule/redigo/redis",
         "Function": "DialContext",

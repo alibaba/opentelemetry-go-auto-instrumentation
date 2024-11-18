@@ -15,37 +15,31 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"time"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
-	"github.com/valyala/fasthttp"
+	"github.com/go-redis/redis/v8"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"os"
 )
 
 func main() {
-	go func() {
-		fasthttp.ListenAndServe(":8080", hello)
-	}()
-	time.Sleep(5 * time.Second)
-	client := &fasthttp.Client{}
-	reqURL := "http://localhost:8080"
-	req := fasthttp.AcquireRequest()
-	resp := fasthttp.AcquireResponse()
-	defer func() {
-		fasthttp.ReleaseRequest(req)
-		fasthttp.ReleaseResponse(resp)
-	}()
-	req.SetRequestURI(reqURL)
-	req.Header.SetMethod(fasthttp.MethodGet)
-	err := client.Do(req, resp)
+	ctx := context.Background()
+	rdb := redis.NewRing(&redis.RingOptions{
+		Addrs: map[string]string{
+			"shard1": "localhost:" + os.Getenv("REDIS_PORT"),
+		},
+	})
+	_, err := rdb.HSet(ctx, "a", map[string]string{
+		"a": "b",
+	}).Result()
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		panic(err)
 	}
-
+	val := rdb.HVals(ctx, "a").Val()
+	fmt.Printf("%v\n", val)
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://localhost:8080/", "http", "", "tcp", "ipv4", "", "localhost:8080", 200, 0, 8080)
-		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /", "GET", "http", "tcp", "ipv4", "", "localhost:8080", "fasthttp", "http", "/", "", "/", 200)
-	}, 1)
+		verifier.VerifyDbAttributes(stubs[0][0], "hset", "redis", "shard1", "hset a a b", "hset")
+		verifier.VerifyDbAttributes(stubs[1][0], "hvals", "redis", "shard1", "hvals a", "hvals")
+	}, 3)
 }

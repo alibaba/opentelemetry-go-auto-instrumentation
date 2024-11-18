@@ -7,6 +7,7 @@
 | fasthttp     | https://github.com/valyala/fasthttp        | v1.45.0               | v1.57.0               |
 | gin          | https://github.com/gin-gonic/gin           | v1.7.0                | v1.10.0               |
 | go-redis     | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |
+| go-redis v8  | https://github.com/redis/go-redis          | v8.11.0                | v8.11.5              |
 | gorm         | https://github.com/go-gorm/gorm            | v1.22.0               | v1.25.9               |
 | grpc         | https://google.golang.org/grpc             | v1.44.0               | v1.67.0               |
 | hertz        | https://github.com/cloudwego/hertz         | v0.8.0                | v0.9.2                |
