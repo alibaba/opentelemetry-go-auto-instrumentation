@@ -14,6 +14,7 @@
 package resource
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -45,9 +46,12 @@ type InstRule interface {
 }
 
 type InstBaseRule struct {
-	Path       string // Local path of the rule
-	Version    string // Version of the rule, e.g. "[1.9.1,1.9.2)" or ""
-	ImportPath string // Import path of the rule, e.g. "github.com/gin-gonic/gin"
+	// Local path of the rule
+	Path string `json:"Path,omitempty"`
+	// Version of the rule, e.g. "[1.9.1,1.9.2)" or ""
+	Version string `json:"Version,omitempty"`
+	// Import path of the rule, e.g. "github.com/gin-gonic/gin"
+	ImportPath string `json:"ImportPath,omitempty"`
 }
 
 func (rule *InstBaseRule) GetVersion() string {
@@ -69,27 +73,38 @@ func (rule *InstBaseRule) SetPath(path string) {
 // InstFuncRule finds specific function call and instrument by adding new code
 type InstFuncRule struct {
 	InstBaseRule
-	Function     string // Function name, e.g. "New"
-	ReceiverType string // Receiver type name, e.g. "*gin.Engine"
-	Order        int    // Order of the rule, higher is executed first
-	UseRaw       bool   // UseRaw indicates whether to insert raw code string
-	OnEnter      string // OnEnter callback, called before original function
-	OnExit       string // OnExit callback, called after original function
+	// Function name, e.g. "New"
+	Function string `json:"Function,omitempty"`
+	// Receiver type name, e.g. "*gin.Engine"
+	ReceiverType string `json:"ReceiverType,omitempty"`
+	// Order of the rule, higher is executed first
+	Order int `json:"Order,omitempty"`
+	// UseRaw indicates whether to insert raw code string
+	UseRaw bool `json:"UseRaw,omitempty"`
+	// OnEnter callback, called before original function
+	OnEnter string `json:"OnEnter,omitempty"`
+	// OnExit callback, called after original function
+	OnExit string `json:"OnExit,omitempty"`
 }
 
 // InstStructRule finds specific struct type and instrument by adding new field
 type InstStructRule struct {
 	InstBaseRule
-	StructType string // Struct type name, e.g. "Engine"
-	FieldName  string // New field name, e.g. "Logger"
-	FieldType  string // New field type, e.g. "zap.Logger"
+	// Struct type name, e.g. "Engine"
+	StructType string `json:"StructType,omitempty"`
+	// New field name, e.g. "Logger"
+	FieldName string `json:"FieldName,omitempty"`
+	// New field type, e.g. "zap.Logger"
+	FieldType string `json:"FieldType,omitempty"`
 }
 
 // InstFileRule adds user file into compilation unit and do further compilation
 type InstFileRule struct {
 	InstBaseRule
-	FileName string // File name, e.g. "engine.go"
-	Replace  bool   // Replace indicates whether to replace the original file
+	// File name, e.g. "engine.go"
+	FileName string `json:"FileName,omitempty"`
+	// Replace indicates whether to replace the original file
+	Replace bool `json:"Replace,omitempty"`
 }
 
 func (rule *InstFuncRule) WithVersion(version string) *InstFuncRule {
@@ -118,28 +133,16 @@ func (rule *InstFileRule) WithVersion(version string) *InstFileRule {
 
 // String returns string representation of the rule
 func (rule *InstFuncRule) String() string {
-	if rule.ReceiverType == "" {
-		return fmt.Sprintf("%s@%s@%s {%s %s}",
-			rule.ImportPath, rule.Version,
-			rule.Function,
-			rule.OnEnter, rule.OnExit)
-	}
-	return fmt.Sprintf("%s@%s@(%s).%s {%s %s}",
-		rule.ImportPath, rule.Version,
-		rule.ReceiverType, rule.Function,
-		rule.OnEnter, rule.OnExit)
+	bs, _ := json.Marshal(rule)
+	return string(bs)
 }
-
 func (rule *InstStructRule) String() string {
-	return fmt.Sprintf("%s@%s {%s}",
-		rule.ImportPath, rule.Version,
-		rule.StructType)
+	bs, _ := json.Marshal(rule)
+	return string(bs)
 }
-
 func (rule *InstFileRule) String() string {
-	return fmt.Sprintf("%s@%s {%s}",
-		rule.ImportPath, rule.Version,
-		rule.FileName)
+	bs, _ := json.Marshal(rule)
+	return string(bs)
 }
 
 // Verify checks the rule is valid
