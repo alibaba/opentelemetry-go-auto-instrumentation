@@ -52,13 +52,23 @@ func ShouldNotReachHereT(msg string) {
 	panic("should not reach here: " + msg)
 }
 
+var recordedRand = make(map[string]bool)
+
+// RandomString generates a globally unique random string of length n
 func RandomString(n int) string {
-	var letters = []rune("0123456789")
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+	for {
+		var letters = []rune("0123456789")
+		b := make([]rune, n)
+		for i := range b {
+			b[i] = letters[rand.Intn(len(letters))]
+		}
+		s := string(b)
+		// Random suffix collision? Reroll until we get a unique one
+		if _, ok := recordedRand[s]; !ok {
+			recordedRand[s] = true
+			return s
+		}
 	}
-	return string(b)
 }
 
 func RunCmd(args ...string) error {

@@ -34,6 +34,9 @@ func TestLogrus(t *testing.T, env ...string) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
+		if strings.Contains(line, "[test debugging]") {
+			continue
+		}
 		ExpectContains(t, line, "trace_id")
 		ExpectContains(t, line, "span_id")
 	}

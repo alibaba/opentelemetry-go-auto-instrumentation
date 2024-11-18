@@ -15,37 +15,36 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"time"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
-	"github.com/valyala/fasthttp"
+	"github.com/go-redis/redis/v8"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+
+	"os"
+	"time"
 )
 
 func main() {
-	go func() {
-		fasthttp.ListenAndServe(":8080", hello)
-	}()
-	time.Sleep(5 * time.Second)
-	client := &fasthttp.Client{}
-	reqURL := "http://localhost:8080"
-	req := fasthttp.AcquireRequest()
-	resp := fasthttp.AcquireResponse()
-	defer func() {
-		fasthttp.ReleaseRequest(req)
-		fasthttp.ReleaseResponse(resp)
-	}()
-	req.SetRequestURI(reqURL)
-	req.Header.SetMethod(fasthttp.MethodGet)
-	err := client.Do(req, resp)
+	ctx := context.Background()
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:" + os.Getenv("REDIS_PORT"),
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	pipe := rdb.Pipeline()
+
+	incr := pipe.Incr(ctx, "pipeline_counter")
+	pipe.Expire(ctx, "pipeline_counter", time.Hour)
+
+	_, err := pipe.Exec(ctx)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		panic(err)
 	}
 
+	// The value is available only after Exec is called.
+	fmt.Println(incr.Val())
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://localhost:8080/", "http", "", "tcp", "ipv4", "", "localhost:8080", 200, 0, 8080)
-		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /", "GET", "http", "tcp", "ipv4", "", "localhost:8080", "fasthttp", "http", "/", "", "/", 200)
+		verifier.VerifyDbAttributes(stubs[0][0], "pipeline", "redis", "localhost", "pipeline: pipeline", "pipeline")
 	}, 1)
 }
