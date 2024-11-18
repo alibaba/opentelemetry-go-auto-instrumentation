@@ -86,6 +86,7 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | mongodb      | https://github.com/mongodb/mongo-go-driver | v1.11.1               | v1.15.2               |
 | mux          | https://github.com/gorilla/mux             | v1.3.0                | v1.8.1                |
 | net/http     | https://pkg.go.dev/net/http                | -                     | -                     |
+| redigo       | https://github.com/gomodule/redigo         | v1.9.0                | v1.9.2                |
 | slog         | https://pkg.go.dev/log/slog                | -                     | -                     |
 | zap          | https://github.com/uber-go/zap             | v1.20.0               | v1.27.0               |
 

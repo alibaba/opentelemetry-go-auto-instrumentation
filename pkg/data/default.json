@@ -353,6 +353,13 @@
         "OnExit": "afterNewRingV8Client",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8"
     },
+        "Version": "[1.9.0,1.9.3)",
+        "ImportPath": "github.com/gomodule/redigo/redis",
+        "Function": "DialContext",
+        "OnEnter": "onBeforeDialContext",
+        "OnExit": "onExitDialContext",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/redigo"
+    },
     {
         "ImportPath": "gorm.io/driver/mysql",
         "StructType": "Dialector",
