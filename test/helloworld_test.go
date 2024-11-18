@@ -18,8 +18,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 const HelloworldAppName = "helloworld"
@@ -53,20 +51,21 @@ func TestRunHelloworld(t *testing.T) {
 	}
 }
 
-func TestBuildHelloworldWithVendor1(t *testing.T) {
-	UseApp(HelloworldAppName)
-	util.RunCmd("go", "mod", "vendor")
-	RunInstrument(t, "-debuglog")
-}
+// FIXME: Support vendor mode
+// func TestBuildHelloworldWithVendor1(t *testing.T) {
+// 	UseApp(HelloworldAppName)
+// 	util.RunCmd("go", "mod", "vendor")
+// 	RunInstrument(t, "-debuglog")
+// }
 
-func TestBuildHelloworldWithVendor2(t *testing.T) {
-	UseApp(HelloworldAppName)
-	util.RunCmd("go", "mod", "vendor")
-	RunInstrument(t, "-debuglog", "--", "-mod=vendor")
-}
+// func TestBuildHelloworldWithVendor2(t *testing.T) {
+// 	UseApp(HelloworldAppName)
+// 	util.RunCmd("go", "mod", "vendor")
+// 	RunInstrument(t, "-debuglog", "--", "-mod=vendor")
+// }
 
-func TestBuildHelloworldWithVendor3(t *testing.T) {
-	UseApp(HelloworldAppName)
-	util.RunCmd("go", "mod", "vendor")
-	RunInstrument(t, "-debuglog", "--", "-mod", "vendor")
-}
+// func TestBuildHelloworldWithVendor3(t *testing.T) {
+// 	UseApp(HelloworldAppName)
+// 	util.RunCmd("go", "mod", "vendor")
+// 	RunInstrument(t, "-debuglog", "--", "-mod", "vendor")
+// }

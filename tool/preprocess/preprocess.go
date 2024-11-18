@@ -559,7 +559,8 @@ func (dp *DepProcessor) pinDepVersion() error {
 	return nil
 }
 
-func checkModularized() error {
+func precheck() error {
+	// Check if the project is modularized
 	go11module := os.Getenv("GO111MODULE")
 	if go11module == "off" {
 		return fmt.Errorf("GO111MODULE is set to off")
@@ -570,6 +571,15 @@ func checkModularized() error {
 	}
 	if err != nil {
 		return fmt.Errorf("failed to check go.mod: %w", err)
+	}
+	// Check if the project is build with vendor mode
+	projRoot, err := shared.GetGoModDir()
+	if err != nil {
+		return fmt.Errorf("failed to get project root: %w", err)
+	}
+	vendor := filepath.Join(projRoot, shared.VendorDir)
+	if exist, _ := util.PathExists(vendor); exist {
+		return fmt.Errorf("vendor mode is not supported")
 	}
 	return nil
 }
@@ -674,7 +684,7 @@ func (dp *DepProcessor) setupDeps() error {
 
 func Preprocess() error {
 	// Make sure the project is modularized otherwise we cannot proceed
-	err := checkModularized()
+	err := precheck()
 	if err != nil {
 		return fmt.Errorf("not modularized project: %w", err)
 	}
