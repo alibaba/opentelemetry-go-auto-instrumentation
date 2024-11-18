@@ -35,7 +35,7 @@ func init() {
 		NewGeneralTestCase("redis-9.0.5-transactions-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisTransactions),
 		NewGeneralTestCase("redis-9.0.5-universal-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisUniversal),
 		NewMuzzleTestCase("redis-9.0.5-muzzle", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", []string{"go", "build", "test_executing_commands.go"}),
-		NewLatestDepthTestCase("redis-9.0.5-executing-commands-latestDepth", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands))
+		NewLatestDepthTestCase("redis-9.0.5-executing-commands-latestDepth", redis_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands)),
 		NewGeneralTestCase("redis-8.11.0-executing-commands-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8ExecutingCommands),
 		NewGeneralTestCase("redis-8.11.0-executing-unsupported-commands-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8ExecutingUnsupporetedCommands),
 		NewGeneralTestCase("redis-8.11.0-redis-conn-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisConn),
@@ -44,7 +44,7 @@ func init() {
 		NewGeneralTestCase("redis-8.11.0-universal-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisUniversal),
 		NewMuzzleTestCase("redis-8.11.0-muzzle", redisv8_dependency_name, redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", []string{"go", "build", "test_executing_commands.go"}),
 		NewMuzzleTestCase("redis-9.0.5-muzzle", redisv9_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", []string{"go", "build", "test_executing_commands.go"}),
-		NewLatestDepthTestCase("redis-9.0.5-executing-commands-latestDepth", redisv9_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands))
+		NewLatestDepthTestCase("redis-9.0.5-executing-commands-latestDepth", redisv9_dependency_name, redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands)),
 }
 
 func TestExecutingCommands(t *testing.T, env ...string) {
