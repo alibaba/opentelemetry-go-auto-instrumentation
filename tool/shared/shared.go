@@ -150,6 +150,12 @@ func GetGoModDir() (string, error) {
 	return projectDir, nil
 }
 
+// GetProjRootDir returns the root directory of the project. It's an alias of
+// GetGoModDir in the current implementation.
+func GetProjRootDir() (string, error) {
+	return GetGoModDir()
+}
+
 // IsModPath checks if the provided module path is valid.
 func IsModPath(path string) bool {
 	if strings.Contains(path, "@") {
