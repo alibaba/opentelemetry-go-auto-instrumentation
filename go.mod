@@ -4,6 +4,8 @@ go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
 
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../opentelemetry-go-auto-instrumentation
+
 require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/cloudwego/hertz v0.9.3
