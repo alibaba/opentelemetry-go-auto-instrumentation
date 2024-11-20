@@ -251,3 +251,17 @@ func PhaseTimer(name string) func() {
 		log.Printf("%s took %f s", name, time.Since(start).Seconds())
 	}
 }
+
+// StringDedup removes duplicate strings in a slice and returns a new slice
+// in original order.
+func StringDedup(s []string) []string {
+	m := make(map[string]struct{})
+	var r []string
+	for _, v := range s {
+		if _, ok := m[v]; !ok {
+			m[v] = struct{}{}
+			r = append(r, v)
+		}
+	}
+	return r
+}

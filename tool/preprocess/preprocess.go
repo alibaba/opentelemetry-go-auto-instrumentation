@@ -91,7 +91,7 @@ var fixedDeps = []struct {
 	// otel contrib
 	{"go.opentelemetry.io/contrib/instrumentation/runtime",
 		"v0.56.0", false, false},
-	// otelbuild itself
+	// otel itself
 	// {"github.com/alibaba/opentelemetry-go-auto-instrumentation",
 	// "v0.3.0", false, true},
 }
@@ -149,7 +149,7 @@ func (dp *DepProcessor) postProcess() {
 	_ = os.RemoveAll(OtelRules)
 
 	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(OtelPkgDepsDir)
+	_ = os.RemoveAll(OtelPkgDep)
 
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
@@ -239,7 +239,7 @@ func (dp *DepProcessor) getImportCandidates() ([]string, error) {
 	found := false
 
 	// Find from build arguments e.g. go build test.go or go build cmd/app
-	for _, buildArg := range shared.GetConf().BuildArgs {
+	for _, buildArg := range shared.GetConf().GoBuildCmd {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
 
@@ -427,8 +427,8 @@ func (dp *DepProcessor) preclean() {
 	if exist, _ := util.PathExists(OtelRules); exist {
 		_ = os.RemoveAll(OtelRules)
 	}
-	if exist, _ := util.PathExists(OtelPkgDepsDir); exist {
-		_ = os.RemoveAll(OtelPkgDepsDir)
+	if exist, _ := util.PathExists(OtelPkgDep); exist {
+		_ = os.RemoveAll(OtelPkgDep)
 	}
 }
 
@@ -448,10 +448,14 @@ func runDryBuild() error {
 	if err != nil {
 		return err
 	}
-	// The full build command is: "go build -a -x -n {BuildArgs...}"
-	args := append([]string{"build", "-a", "-x", "-n"},
-		shared.GetConf().BuildArgs...)
-	cmd := exec.Command("go", args...)
+	// The full build command is: "go build -a -x -n  {...}"
+	args := []string{"go", "build", "-a", "-x", "-n"}
+	args = append(args, shared.GetConf().GoBuildCmd[2:]...)
+	args = util.StringDedup(args)
+	shared.AssertGoBuild(args)
+
+	// Run the dry build
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = dryRunLog
 	cmd.Stderr = dryRunLog
 	return cmd.Run()
@@ -490,6 +494,7 @@ func runBuildWithToolexec() (string, error) {
 		return "", err
 	}
 	args := []string{
+		"go",
 		"build",
 		"-toolexec=" + exe + " -in-toolexec",
 	}
@@ -506,7 +511,7 @@ func runBuildWithToolexec() (string, error) {
 	}
 
 	// Append additional build arguments provided by the user
-	args = append(args, shared.GetConf().BuildArgs...)
+	args = append(args, shared.GetConf().GoBuildCmd[2:]...)
 
 	if shared.GetConf().Restore {
 		// Dont generate any compiled binary when using -restore
@@ -517,7 +522,9 @@ func runBuildWithToolexec() (string, error) {
 	if shared.GetConf().Verbose {
 		log.Printf("Run go build with args %v in toolexec mode", args)
 	}
-	return util.RunCmdOutput(append([]string{"go"}, args...)...)
+	args = util.StringDedup(args)
+	shared.AssertGoBuild(args)
+	return util.RunCmdOutput(args...)
 }
 
 func fetchDep(path string) error {
@@ -537,7 +544,7 @@ func fetchDep(path string) error {
 // should be listed and pinned here, because go mod tidy will fetch the latest
 // version even if we have pinned some of them.
 // Users will import github.com/alibaba/opentelemetry-go-auto-instrumentation
-// dependency while using otelbuild to use the inst-api and inst-semconv package
+// dependency while using otel to use the inst-api and inst-semconv package
 // We also need to pin its version to let the users use the fixed version
 func (dp *DepProcessor) pinDepVersion() error {
 	// otel related sdk dependencies

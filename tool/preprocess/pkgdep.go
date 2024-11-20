@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	PkgDep         = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
-	OtelPkgDepsDir = "otel_pkgdep"
+	PkgDep     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	OtelPkgDep = "otel_pkgdep"
 )
 
 func replaceImport(importPath string, code string) string {
@@ -34,12 +34,12 @@ func replaceImport(importPath string, code string) string {
 }
 
 func (dp *DepProcessor) replaceOtelImports() error {
-	moduleName, err := dp.getImportPathOf(OtelPkgDepsDir)
+	moduleName, err := dp.getImportPathOf(OtelPkgDep)
 	if err != nil {
 		return fmt.Errorf("failed to get import path of otel_pkg: %w", err)
 	}
 
-	for _, dep := range []string{OtelRules, OtelPkgDepsDir} {
+	for _, dep := range []string{OtelRules, OtelPkgDep} {
 		files, err := util.ListFiles(dep)
 		if err != nil {
 			return fmt.Errorf("failed to list files: %w", err)
@@ -69,7 +69,7 @@ func (dp *DepProcessor) replaceOtelImports() error {
 }
 
 func (dp *DepProcessor) copyPkgDep() error {
-	err := resource.CopyPkgTo(OtelPkgDepsDir)
+	err := resource.CopyPkgTo(OtelPkgDep)
 	if err != nil {
 		return fmt.Errorf("failed to copy pkg deps: %w", err)
 	}
