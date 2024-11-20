@@ -18,7 +18,7 @@ import "testing"
 
 func init() {
 	TestCases = append(TestCases,
-		NewGeneralTestCase("otel-span-from-context-test", "nethttp", "", "", "1.18", "", TestSpanFromContext),
+		NewGeneralTestCase("otel-span-from-context-test", "otel", "", "", "1.18", "", TestSpanFromContext),
 	)
 }
 
