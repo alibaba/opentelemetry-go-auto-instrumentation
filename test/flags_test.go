@@ -24,18 +24,21 @@ func TestFlags(t *testing.T) {
 	const AppName = "flags"
 	UseApp(AppName)
 
-	RunInstrumentFallible(t, "-debuglog", "--", "-thisisnotvalid")
+	RunInstrumentFallible(t, "-debuglog", "go", "build", "-thisisnotvalid")
 	ExpectPreprocessContains(t, shared.DebugLogFile, "failed to")
 
 	RunInstrument(t, "-version")
 	ExpectStdoutContains(t, "version")
 
-	RunInstrumentFallible(t, "-debuglog", "--", "notevenaflag")
+	RunInstrumentFallible(t, "-debuglog", "go", "build", "notevenaflag")
 	ExpectPreprocessContains(t, shared.DebugLogFile, "failed to")
 
-	RunInstrument(t, "-debuglog", "-verbose",
-		"--",
+	RunInstrument(t, "-debuglog", "-verbose", "go", "build",
 		`-ldflags=-X main.Placeholder=replaced`)
 	_, stderr := RunApp(t, AppName)
 	ExpectContains(t, stderr, "placeholder:replaced")
+
+	RunInstrumentFallible(t, "-debuglog", "go")
+	RunInstrumentFallible(t)
+	RunInstrumentFallible(t, "")
 }

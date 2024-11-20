@@ -27,7 +27,7 @@ const WorldAppName = "world"
 func TestCompileTheWorld(t *testing.T) {
 	UseApp(WorldAppName)
 
-	RunInstrument(t, "-debuglog")
+	RunInstrument(t, "-debuglog", "go", "build")
 	RunApp(t, WorldAppName)
 	text := ReadPreprocessLog(t, shared.DebugLogFile)
 

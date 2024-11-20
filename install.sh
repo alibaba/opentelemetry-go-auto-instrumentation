@@ -27,8 +27,8 @@ detect() {
 }
 
 download() {
-    DOWNLOAD_URL="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases/latest/download/otelbuild-${CURRENT_OS}-${CURRENT_ARCH}"
-    EXECUTABLE="otelbuild"
+    DOWNLOAD_URL="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases/latest/download/otel-${CURRENT_OS}-${CURRENT_ARCH}"
+    EXECUTABLE="otel"
 
     echo "Downloading from $DOWNLOAD_URL"
     # curl and show progress

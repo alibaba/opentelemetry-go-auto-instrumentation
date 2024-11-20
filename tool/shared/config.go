@@ -61,8 +61,8 @@ type BuildConfig struct {
 	// Restore true means restore all instrumentations.
 	Restore bool
 
-	// BuildArgs are the arguments to pass to the go build command.
-	BuildArgs []string
+	// GoBuildCmd is equivalent to go build command
+	GoBuildCmd []string
 
 	// PrintVersion true means print version.
 	PrintVersion bool
@@ -78,15 +78,48 @@ var TheName = "otelbuild"
 
 var conf *BuildConfig
 
-func printVersion() {
+func checkConfig() {
 	util.Assert(conf != nil, "build config is not initialized")
 
+	// Print version and exit as needed
 	if conf.PrintVersion {
 		fmt.Printf("%s version %s\n", TheName, TheVersion)
 		os.Exit(0)
 	}
-}
 
+	// Check if the go build command is set correctly. Note that we only check
+	// this in preprocess phase, because in instrument phase, our tool is invoked
+	// from -toolexec flag, and the go build command is not passed as command-line
+	if InPreprocess() {
+		if len(conf.GoBuildCmd) < 2 ||
+			!strings.Contains(conf.GoBuildCmd[0], "go") ||
+			conf.GoBuildCmd[1] != "build" {
+			// set the flag.Usage() to print the usage of the tool
+			flag.Usage = func() {
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"Usage:\n")
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s [flags] go build command\n", TheName)
+				fmt.Println()
+
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"Examples:\n")
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s go build\n", TheName)
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s go build main.go\n", TheName)
+				fmt.Fprintf(flag.CommandLine.Output(),
+					"  %s -verbose go build -o main main.go\n", TheName)
+				fmt.Println()
+
+				fmt.Printf("Flags:\n")
+				flag.PrintDefaults()
+			}
+			flag.Usage()
+			os.Exit(1)
+		}
+	}
+}
 func GetConf() *BuildConfig {
 	util.Assert(conf != nil, "build config is not initialized")
 	return conf
@@ -105,18 +138,18 @@ func (bc *BuildConfig) setBuildMode() error {
 	// Check if -mod=vendor is set, replace it with -mod=mod
 	const buildModeVendor = "-mod=vendor"
 	const buildModePrefix = "-mod"
-	for i, arg := range bc.BuildArgs {
+	for i, arg := range bc.GoBuildCmd {
 		// -mod=vendor?
 		if arg == buildModeVendor {
-			bc.BuildArgs[i] = BuildModeMod
+			bc.GoBuildCmd[i] = BuildModeMod
 			return nil
 		}
 		// -mod vendor?
 		if arg == buildModePrefix {
-			if len(bc.BuildArgs) > i+1 {
-				arg1 := bc.BuildArgs[i+1]
+			if len(bc.GoBuildCmd) > i+1 {
+				arg1 := bc.GoBuildCmd[i+1]
 				if arg1 == "vendor" {
-					bc.BuildArgs[i+1] = "mod"
+					bc.GoBuildCmd[i+1] = "mod"
 					return nil
 				}
 			}
@@ -134,7 +167,7 @@ func (bc *BuildConfig) setBuildMode() error {
 		return fmt.Errorf("failed to check vendor directory: %w", err)
 	}
 	if exist {
-		bc.BuildArgs = append([]string{BuildModeMod}, bc.BuildArgs...)
+		bc.GoBuildCmd = append([]string{BuildModeMod}, bc.GoBuildCmd...)
 	}
 	return nil
 }
@@ -230,9 +263,9 @@ func loadBuildConfig() (*BuildConfig, error) {
 			"Rule file in json format. Multiple rules are separated by comma")
 		flag.Parse()
 
-		// Any non-flag command-line arguments behind "--" separator will be treated
-		// as build arguments and transparently passed to the go build command.
-		bc.BuildArgs = flag.Args()
+		// Any non-flag command-line arguments will be treated as build
+		// arguments and transparently passed to the go build command.
+		bc.GoBuildCmd = flag.Args()
 
 		// At this point, the build config is fully initialized and ready to use.
 		return bc, nil
@@ -328,8 +361,8 @@ func InitConfig() (err error) {
 		return fmt.Errorf("failed to init temp dir: %w", err)
 	}
 
-	// Print version and exit early
-	printVersion()
+	// Check build config early
+	checkConfig()
 
 	err = conf.parseRuleFiles()
 	if err != nil {
