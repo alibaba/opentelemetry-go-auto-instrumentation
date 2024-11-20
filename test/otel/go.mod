@@ -1,6 +1,6 @@
 module otel
 
-go 1.22.7
+go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../opentelemetry-go-auto-instrumentation/test/verifier
 
