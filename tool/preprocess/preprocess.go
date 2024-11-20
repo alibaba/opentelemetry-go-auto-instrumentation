@@ -78,6 +78,8 @@ var fixedDeps = []struct {
 	// otel sdk
 	{"go.opentelemetry.io/otel",
 		"v1.31.0", true, false},
+	{"go.opentelemetry.io/otel/sdk/trace",
+		"v1.31.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
 		"v1.31.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
