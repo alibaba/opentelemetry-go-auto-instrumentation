@@ -16,6 +16,9 @@ package http
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.opentelemetry.io/otel/attribute"
@@ -81,5 +84,9 @@ func BuildKratosInternalInstrumenter() instrumenter.Instrumenter[kratosRequest, 
 	return builder.Init().SetSpanNameExtractor(&kratosExperimentalSpanNameExtractor{}).
 		SetSpanKindExtractor(&instrumenter.AlwaysInternalExtractor[kratosRequest]{}).
 		AddAttributesExtractor(&kratosExperimentalAttributeExtractor{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.KRATOS_HTTP_INTERNAL_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		BuildInstrumenter()
 }

@@ -15,6 +15,9 @@
 package http
 
 import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
@@ -203,6 +206,10 @@ func BuildNetHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstreamI
 	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[*netHttpRequest, *netHttpResponse]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[*netHttpRequest, *netHttpResponse]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*netHttpRequest]{}).
 		AddOperationListeners(http.HttpClientMetrics(), http.HttpClientMetrics()).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.NET_HTTP_CLIENT_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		AddAttributesExtractor(&http.HttpClientAttrsExtractor[*netHttpRequest, *netHttpResponse, http.HttpClientAttrsGetter[*netHttpRequest, *netHttpResponse], net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse]]{Base: commonExtractor, NetworkExtractor: networkExtractor}).BuildPropagatingToDownstreamInstrumenter(func(n *netHttpRequest) propagation.TextMapCarrier {
 		if n.header == nil {
 			return nil
@@ -220,6 +227,10 @@ func BuildNetHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamI
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*netHttpRequest, *netHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*netHttpRequest, *netHttpResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[*netHttpRequest]{}).
 		AddOperationListeners(http.HttpServerMetrics()).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.NET_HTTP_SERVER_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		AddAttributesExtractor(&http.HttpServerAttrsExtractor[*netHttpRequest, *netHttpResponse, http.HttpServerAttrsGetter[*netHttpRequest, *netHttpResponse], net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse], net.UrlAttrsGetter[*netHttpRequest]]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n *netHttpRequest) propagation.TextMapCarrier {
 		if n.header == nil {
 			return nil
