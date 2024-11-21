@@ -17,6 +17,9 @@ package databasesql
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 )
 
 type databaseSqlAttrsGetter struct {
@@ -55,5 +58,8 @@ func BuildDatabaseSqlOtelInstrumenter() instrumenter.Instrumenter[databaseSqlReq
 	getter := databaseSqlAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[databaseSqlRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[databaseSqlRequest]{}).
 		AddAttributesExtractor(&db.DbClientAttrsExtractor[databaseSqlRequest, any, db.DbClientAttrsGetter[databaseSqlRequest]]{Base: db.DbClientCommonAttrsExtractor[databaseSqlRequest, any, db.DbClientAttrsGetter[databaseSqlRequest]]{Getter: getter}}).
-		BuildInstrumenter()
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.DATABASE_SQL_SCOPE_NAME,
+			Version: version.Tag,
+		}).BuildInstrumenter()
 }

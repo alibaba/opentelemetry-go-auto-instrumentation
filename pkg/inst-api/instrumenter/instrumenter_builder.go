@@ -18,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -47,8 +48,8 @@ type Builder[REQUEST any, RESPONSE any] struct {
 	OperationListeners   []OperationListener
 	ContextCustomizers   []ContextCustomizer[REQUEST]
 	SpanSuppressor       SpanSuppressor
-	Tracer               trace.Tracer
 	InstVersion          string
+	Scope                instrumentation.Scope
 }
 
 func (b *Builder[REQUEST, RESPONSE]) Init() *Builder[REQUEST, RESPONSE] {
@@ -57,17 +58,16 @@ func (b *Builder[REQUEST, RESPONSE]) Init() *Builder[REQUEST, RESPONSE] {
 	b.ContextCustomizers = make([]ContextCustomizer[REQUEST], 0)
 	b.SpanSuppressor = b.buildSpanSuppressor()
 	b.SpanStatusExtractor = &defaultSpanStatusExtractor[REQUEST, RESPONSE]{}
-	b.Tracer = otel.GetTracerProvider().Tracer("")
+	return b
+}
+
+func (b *Builder[REQUEST, RESPONSE]) SetInstrumentationScope(scope instrumentation.Scope) *Builder[REQUEST, RESPONSE] {
+	b.Scope = scope
 	return b
 }
 
 func (b *Builder[REQUEST, RESPONSE]) SetInstrumentEnabler(enabler InstrumentEnabler) *Builder[REQUEST, RESPONSE] {
 	b.Enabler = enabler
-	return b
-}
-
-func (b *Builder[REQUEST, RESPONSE]) SetInstVersion(instVersion string) *Builder[REQUEST, RESPONSE] {
-	b.InstVersion = instVersion
 	return b
 }
 
@@ -102,6 +102,10 @@ func (b *Builder[REQUEST, RESPONSE]) AddContextCustomizers(contextCustomizers ..
 }
 
 func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *InternalInstrumenter[REQUEST, RESPONSE] {
+	tracer := otel.GetTracerProvider().
+		Tracer(b.Scope.Name,
+			trace.WithInstrumentationVersion(b.Scope.Version),
+			trace.WithSchemaURL(b.Scope.SchemaURL))
 	return &InternalInstrumenter[REQUEST, RESPONSE]{
 		enabler:              b.Enabler,
 		spanNameExtractor:    b.SpanNameExtractor,
@@ -111,12 +115,16 @@ func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *InternalInstrumenter[R
 		operationListeners:   b.OperationListeners,
 		contextCustomizers:   b.ContextCustomizers,
 		spanSuppressor:       b.SpanSuppressor,
-		tracer:               b.Tracer,
+		tracer:               tracer,
 		instVersion:          b.InstVersion,
 	}
 }
 
 func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
+	tracer := otel.GetTracerProvider().
+		Tracer(b.Scope.Name,
+			trace.WithInstrumentationVersion(b.Scope.Version),
+			trace.WithSchemaURL(b.Scope.SchemaURL))
 	return &PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]{
 		base: InternalInstrumenter[REQUEST, RESPONSE]{
 			enabler:              b.Enabler,
@@ -127,7 +135,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 			operationListeners:   b.OperationListeners,
 			contextCustomizers:   b.ContextCustomizers,
 			spanSuppressor:       b.SpanSuppressor,
-			tracer:               b.Tracer,
+			tracer:               tracer,
 			instVersion:          b.InstVersion,
 		},
 		carrierGetter: carrierGetter,
@@ -136,6 +144,10 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 }
 
 func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE] {
+	tracer := otel.GetTracerProvider().
+		Tracer(b.Scope.Name,
+			trace.WithInstrumentationVersion(b.Scope.Version),
+			trace.WithSchemaURL(b.Scope.SchemaURL))
 	return &PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]{
 		base: InternalInstrumenter[REQUEST, RESPONSE]{
 			enabler:              b.Enabler,
@@ -146,7 +158,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(ca
 			operationListeners:   b.OperationListeners,
 			contextCustomizers:   b.ContextCustomizers,
 			spanSuppressor:       b.SpanSuppressor,
-			tracer:               b.Tracer,
+			tracer:               tracer,
 			instVersion:          b.InstVersion,
 		},
 		carrierGetter: carrierGetter,

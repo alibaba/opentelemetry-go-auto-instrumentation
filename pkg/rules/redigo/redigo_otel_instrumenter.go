@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"strings"
 	"time"
 )
@@ -63,6 +66,10 @@ func BuildRedigoInstrumenter() instrumenter.Instrumenter[*redigoRequest, interfa
 	builder := instrumenter.Builder[*redigoRequest, any]{}
 	getter := redigoAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[*redigoRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*redigoRequest]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.REDIGO_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		AddAttributesExtractor(&db.DbClientAttrsExtractor[*redigoRequest, any, db.DbClientAttrsGetter[*redigoRequest]]{Base: db.DbClientCommonAttrsExtractor[*redigoRequest, any, db.DbClientAttrsGetter[*redigoRequest]]{Getter: getter}}).
 		BuildInstrumenter()
 }
