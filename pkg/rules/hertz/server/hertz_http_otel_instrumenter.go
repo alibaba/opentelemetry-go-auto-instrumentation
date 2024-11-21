@@ -16,7 +16,7 @@ package server
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"net/url"
 	"strconv"

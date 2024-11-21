@@ -19,7 +19,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	redis "github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"strconv"

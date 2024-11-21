@@ -18,7 +18,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/version"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/trace"
 )
