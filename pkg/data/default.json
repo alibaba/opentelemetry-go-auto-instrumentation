@@ -1,6 +1,17 @@
 [
   {
     "ImportPath": "runtime",
+    "FileName": "reorder_init.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/runtime"
+  },
+  {
+    "ImportPath": "runtime",
+    "Function":"doInit",
+    "OnEnter": "reorderInitTasks(ts)",
+    "UseRaw": true
+  },
+  {
+    "ImportPath": "runtime",
     "StructType": "g",
     "FieldName": "otel_trace_context",
     "FieldType": "interface{}"
