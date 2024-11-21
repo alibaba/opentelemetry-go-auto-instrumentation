@@ -441,6 +441,12 @@
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
     },
     {
+        "ImportPath": "go.opentelemetry.io/otel/trace",
+        "Function": "SpanFromContext",
+        "OnExit": "spanFromContextOnExit",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-context"
+    },
+    {
         "ImportPath": "go.opentelemetry.io/otel",
         "FileName": "trace-context/trace.go",
         "Replace": true,
