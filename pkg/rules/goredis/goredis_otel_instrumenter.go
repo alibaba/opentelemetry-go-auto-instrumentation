@@ -18,7 +18,10 @@ import (
 	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	redis "github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -72,6 +75,10 @@ func BuildGoRedisOtelInstrumenter() instrumenter.Instrumenter[goRedisRequest, an
 	getter := goRedisAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[goRedisRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[goRedisRequest]{}).
 		AddAttributesExtractor(&db.DbClientAttrsExtractor[goRedisRequest, any, db.DbClientAttrsGetter[goRedisRequest]]{Base: db.DbClientCommonAttrsExtractor[goRedisRequest, any, db.DbClientAttrsGetter[goRedisRequest]]{Getter: getter}}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.GO_REDIS_V9_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		BuildInstrumenter()
 }
 

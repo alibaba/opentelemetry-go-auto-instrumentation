@@ -4,6 +4,8 @@ go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
 
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../opentelemetry-go-auto-instrumentation
+
 require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/cloudwego/hertz v0.9.3
@@ -11,7 +13,9 @@ require (
 	github.com/docker/go-connections v0.5.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/kratos/v2 v2.8.0
+	github.com/go-redis/redis/v8 v8.11.0
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/gomodule/redigo v1.9.0
 	github.com/gorilla/mux v1.8.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/redis/go-redis/v9 v9.6.1

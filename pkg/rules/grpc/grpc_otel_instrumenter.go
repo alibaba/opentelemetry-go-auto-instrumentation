@@ -16,6 +16,9 @@ package grpc
 
 import (
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
@@ -72,6 +75,10 @@ func BuildGrpcClientInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcRe
 	return builder.Init().SetSpanStatusExtractor(&grpcStatusCodeExtractor[grpcRequest, grpcResponse]{}).SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[grpcRequest]{}).
 		AddAttributesExtractor(&rpc.ClientRpcAttrsExtractor[grpcRequest, grpcResponse, grpcAttrsGetter]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.GRPC_CLIENT_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		BuildInstrumenter()
 }
 
@@ -81,5 +88,9 @@ func BuildGrpcServerInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcRe
 	return builder.Init().SetSpanStatusExtractor(&grpcStatusCodeExtractor[grpcRequest, grpcResponse]{}).SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[grpcRequest]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[grpcRequest]{}).
 		AddAttributesExtractor(&rpc.ServerRpcAttrsExtractor[grpcRequest, grpcResponse, grpcAttrsGetter]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.GRPC_SERVER_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		BuildInstrumenter()
 }

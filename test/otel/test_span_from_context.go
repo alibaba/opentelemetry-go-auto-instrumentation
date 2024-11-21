@@ -15,23 +15,29 @@
 package main
 
 import (
-	"log"
-	"os"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"context"
+	"fmt"
+	"go.opentelemetry.io/otel/trace"
+	"net/http"
+	"time"
 )
 
 func main() {
-	err := shared.InitConfig()
-	if err != nil {
-		log.Printf("failed to init options: %v", err)
-		os.Exit(1)
-
-	}
-	err = tool.Build()
-	if err != nil {
-		log.Printf("failed to run the tool: %v %v", err, os.Args)
-		os.Exit(1)
-	}
+	go func() {
+		http.HandleFunc("/otel", func(writer http.ResponseWriter, request *http.Request) {
+			span := trace.SpanFromContext(context.Background())
+			if !span.IsRecording() {
+				panic("span should be recordedc")
+			}
+			if !span.SpanContext().IsValid() {
+				panic("span should be valid")
+			}
+			fmt.Printf("%v\n", span)
+			writer.Write([]byte("hello otel"))
+		})
+		http.ListenAndServe(":8989", nil)
+	}()
+	time.Sleep(3 * time.Second)
+	client := http.Client{}
+	client.Get("http://127.0.0.1:8989/otel")
 }

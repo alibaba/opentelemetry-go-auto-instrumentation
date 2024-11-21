@@ -46,6 +46,11 @@ func NewRuleBundle(importPath string) *RuleBundle {
 	}
 }
 
+func (rb *RuleBundle) String() string {
+	bs, _ := json.Marshal(rb)
+	return string(bs)
+}
+
 func (rb *RuleBundle) IsValid() bool {
 	return rb != nil &&
 		(len(rb.FileRules) > 0 ||

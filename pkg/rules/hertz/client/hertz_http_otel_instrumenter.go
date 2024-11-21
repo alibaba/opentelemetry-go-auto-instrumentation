@@ -15,6 +15,9 @@
 package client
 
 import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"net/url"
 	"strconv"
 
@@ -112,93 +115,6 @@ func (h hertzHttpClientAttrsGetter) GetServerPort(request *protocol.Request) int
 	return getPeerPort(request)
 }
 
-type hertzHttpServerAttrsGetter struct {
-}
-
-func (n hertzHttpServerAttrsGetter) GetRequestMethod(request *protocol.Request) string {
-	return string(request.Method())
-}
-
-func (n hertzHttpServerAttrsGetter) GetHttpRequestHeader(request *protocol.Request, name string) []string {
-	keys := make([]string, 0)
-	request.Header.VisitAll(func(key, value []byte) {
-		keys = append(keys, string(key))
-	})
-	return keys
-}
-
-func (n hertzHttpServerAttrsGetter) GetHttpResponseStatusCode(request *protocol.Request, response *protocol.Response, err error) int {
-	return response.StatusCode()
-}
-
-func (n hertzHttpServerAttrsGetter) GetHttpResponseHeader(request *protocol.Request, response *protocol.Response, name string) []string {
-	keys := make([]string, 0)
-	response.Header.VisitAll(func(key, value []byte) {
-		keys = append(keys, string(key))
-	})
-	return keys
-}
-
-func (n hertzHttpServerAttrsGetter) GetErrorType(request *protocol.Request, response *protocol.Response, err error) string {
-	return ""
-}
-
-func (n hertzHttpServerAttrsGetter) GetUrlScheme(request *protocol.Request) string {
-	scheme := string(request.Scheme())
-	if scheme != "" {
-		return scheme
-	}
-	return "http"
-}
-
-func (n hertzHttpServerAttrsGetter) GetUrlPath(request *protocol.Request) string {
-	return string(request.Path())
-}
-
-func (n hertzHttpServerAttrsGetter) GetUrlQuery(request *protocol.Request) string {
-	return string(request.QueryString())
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkType(request *protocol.Request, response *protocol.Response) string {
-	return "ipv4"
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkTransport(request *protocol.Request, response *protocol.Response) string {
-	return "tcp"
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkProtocolName(request *protocol.Request, response *protocol.Response) string {
-	scheme := string(request.Scheme())
-	if scheme != "" {
-		return scheme
-	}
-	return "http"
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkProtocolVersion(request *protocol.Request, response *protocol.Response) string {
-	return ""
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkLocalInetAddress(request *protocol.Request, response *protocol.Response) string {
-	return ""
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkLocalPort(request *protocol.Request, response *protocol.Response) int {
-	return 0
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkPeerInetAddress(request *protocol.Request, response *protocol.Response) string {
-	return string(request.Host())
-}
-
-func (n hertzHttpServerAttrsGetter) GetNetworkPeerPort(request *protocol.Request, response *protocol.Response) int {
-	return getPeerPort(request)
-}
-
-func (n hertzHttpServerAttrsGetter) GetHttpRoute(request *protocol.Request) string {
-	return string(request.Path())
-}
-
 func getPeerPort(request *protocol.Request) int {
 	u, err := url.Parse(GetRequest(request).URI().String())
 	if err != nil {
@@ -238,20 +154,11 @@ func BuildHertzClientInstrumenter() *instrumenter.PropagatingToDownstreamInstrum
 	networkExtractor := net.NetworkAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpClientAttrsGetter]{Getter: clientGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[*protocol.Request, *protocol.Response]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*protocol.Request]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.HERTZ_HTTP_CLIENT_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		AddAttributesExtractor(&http.HttpClientAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpClientAttrsGetter, hertzHttpClientAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).BuildPropagatingToDownstreamInstrumenter(func(n *protocol.Request) propagation.TextMapCarrier {
-		return hertzTextMapCarrier{n}
-	}, otel.GetTextMapPropagator())
-}
-
-func BuildHertzServerInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[*protocol.Request, *protocol.Response] {
-	builder := instrumenter.Builder[*protocol.Request, *protocol.Response]{}
-	serverGetter := hertzHttpServerAttrsGetter{}
-	commonExtractor := http.HttpCommonAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter, hertzHttpServerAttrsGetter]{HttpGetter: serverGetter, NetGetter: serverGetter}
-	networkExtractor := net.NetworkAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter]{Getter: serverGetter}
-	urlExtractor := net.UrlAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter]{Getter: serverGetter}
-	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*protocol.Request, *protocol.Response]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: serverGetter}).
-		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[*protocol.Request]{}).
-		AddAttributesExtractor(&http.HttpServerAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter, hertzHttpServerAttrsGetter, hertzHttpServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n *protocol.Request) propagation.TextMapCarrier {
 		return hertzTextMapCarrier{n}
 	}, otel.GetTextMapPropagator())
 }

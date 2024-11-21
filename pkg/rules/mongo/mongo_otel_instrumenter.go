@@ -17,6 +17,9 @@ package mongo
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -61,6 +64,10 @@ func BuildMongoOtelInstrumenter() instrumenter.Instrumenter[mongoRequest, interf
 	builder := instrumenter.Builder[mongoRequest, interface{}]{}
 	return builder.Init().SetSpanNameExtractor(&mongoSpanNameExtractor{}).
 		SetSpanKindExtractor(&mongoSpanKindExtractor{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.MONGO_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		AddAttributesExtractor(&db.DbClientAttrsExtractor[mongoRequest, any, db.DbClientAttrsGetter[mongoRequest]]{Base: db.DbClientCommonAttrsExtractor[mongoRequest, any, db.DbClientAttrsGetter[mongoRequest]]{Getter: mongoAttrsGetter{}}}).
 		BuildInstrumenter()
 }

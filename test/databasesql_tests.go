@@ -16,7 +16,6 @@ package test
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -45,120 +44,108 @@ func init() {
 
 func TestMySql5xAccessDatabase(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init5xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_access_database.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_access_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_access_database", env...)
 }
 
 func TestMySql5xFetchingDatabase(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init5xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_fetching_database.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_fetching_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_fetching_database", env...)
 }
 
 func TestMySql5xModifyData(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init5xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_modify_data.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_modify_data.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_modify_data", env...)
 }
 
 func TestMySql5xSingleRowQuery(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init5xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_single_row_query.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_single_row_query.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_single_row_query", env...)
 }
 
 func TestMySql5xTransaction(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init5xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_transaction.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_transaction.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_transaction", env...)
 }
 
 func TestMySql5xPreparedStatement(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init5xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_prepared_statement.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_prepared_statement.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_prepared_statement", env...)
 }
 
 func TestMySql8xAccessDatabase(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_access_database.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_access_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_access_database", env...)
 }
 
 func TestMySql8xFetchingDatabase(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_fetching_database.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_fetching_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_fetching_database", env...)
 }
 
 func TestMySql8xModifyData(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_modify_data.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_modify_data.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_modify_data", env...)
 }
 
 func TestSingleRowQuery(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_single_row_query.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_single_row_query.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_single_row_query", env...)
 }
 
 func TestTransaction(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_transaction.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_transaction.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_transaction", env...)
 }
 
 func TestPreparedStatement(t *testing.T, env ...string) {
 	mysqlC, mysqlPort := init8xMySqlContainer()
-	// defer clearDbSqlContainer(mysqlC)
 	defer testcontainers.CleanupContainer(t, mysqlC)
 	UseApp("databasesql/mysql")
-	RunInstrument(t, "-debuglog", "--", "test_prepared_statement.go")
+	RunInstrument(t, "-debuglog", "go", "build", "test_prepared_statement.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
 	RunApp(t, "test_prepared_statement", env...)
 }
@@ -194,10 +181,4 @@ func init8xMySqlContainer() (testcontainers.Container, nat.Port) {
 		panic(err)
 	}
 	return mysqlContainer, port
-}
-
-func clearDbSqlContainer(mysqlC testcontainers.Container) {
-	if err := mysqlC.Terminate(context.Background()); err != nil {
-		log.Fatal(err)
-	}
 }

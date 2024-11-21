@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tool
+package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/instrument"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/preprocess"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
@@ -26,5 +29,18 @@ func Build() (err error) {
 		return preprocess.Preprocess()
 	} else {
 		return instrument.Instrument()
+	}
+}
+
+func main() {
+	err := shared.InitConfig()
+	if err != nil {
+		log.Printf("failed to init options: %v", err)
+		os.Exit(1)
+	}
+	err = Build()
+	if err != nil {
+		log.Printf("failed to run the tool: %v %v", err, os.Args)
+		os.Exit(1)
 	}
 }
