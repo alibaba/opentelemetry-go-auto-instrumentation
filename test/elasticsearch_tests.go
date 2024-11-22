@@ -50,7 +50,7 @@ func initElasticSearchContainer() (testcontainers.Container, nat.Port) {
 		panic(err)
 	}
 	time.Sleep(5 * time.Second)
-	port, err := elasticsearchContainer.MappedPort(context.Background(), "6379")
+	port, err := elasticsearchContainer.MappedPort(context.Background(), "9200")
 	if err != nil {
 		panic(err)
 	}
