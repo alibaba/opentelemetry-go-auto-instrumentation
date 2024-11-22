@@ -8,7 +8,7 @@ replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../
 
 require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
-	github.com/elastic/go-elasticsearch/v8 v8.0.0
+	github.com/elastic/go-elasticsearch/v8 v8.4.0
 	go.opentelemetry.io/otel/sdk v1.31.0
 )
 

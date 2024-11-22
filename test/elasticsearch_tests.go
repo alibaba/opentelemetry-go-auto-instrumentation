@@ -42,7 +42,7 @@ func init() {
 func TestESCrud(t *testing.T, env ...string) {
 	esC, esPort := initElasticSearchContainer()
 	defer testcontainers.CleanupContainer(t, esC)
-	UseApp("elasticsearch/v8.0.0")
+	UseApp("elasticsearch/v8.4.0")
 	RunInstrument(t, "-debuglog", "go", "build", "test_es_crud.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
 	RunApp(t, "test_es_crud", env...)
