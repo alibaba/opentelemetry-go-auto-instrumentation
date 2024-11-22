@@ -274,10 +274,29 @@ func MatchVersion(version string, ruleVersion string) (bool, error) {
 
 	// Compare the version with the rule version, the rule version is in the
 	// format [start, end), where start is inclusive and end is exclusive
+	// and start or end can be omitted, which means the range is open-ended.
 	ruleVersionStart, ruleVersionEnd := splitVersionRange(ruleVersion)
-	if semver.Compare(version, ruleVersionStart) >= 0 &&
-		semver.Compare(version, ruleVersionEnd) < 0 {
-		return true, nil
+	switch {
+	case ruleVersionStart != "v" && ruleVersionEnd != "v":
+		// Full version range
+		if semver.Compare(version, ruleVersionStart) >= 0 &&
+			semver.Compare(version, ruleVersionEnd) < 0 {
+			return true, nil
+		}
+	case ruleVersionStart == "v":
+		// Only end is specified
+		util.Assert(ruleVersionEnd != "v", "sanity check")
+		if semver.Compare(version, ruleVersionEnd) < 0 {
+			return true, nil
+		}
+	case ruleVersionEnd == "v":
+		// Only start is specified
+		util.Assert(ruleVersionStart != "v", "sanity check")
+		if semver.Compare(version, ruleVersionStart) >= 0 {
+			return true, nil
+		}
+	default:
+		return false, fmt.Errorf("invalid version range %v", ruleVersion)
 	}
 	return false, nil
 }

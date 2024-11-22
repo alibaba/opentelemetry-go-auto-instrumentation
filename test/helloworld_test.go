@@ -42,6 +42,8 @@ func TestRunHelloworld(t *testing.T) {
 	ExpectContains(t, stderr, "30258") //0x7632
 	ExpectContains(t, stderr, "GOOD")
 	ExpectNotContains(t, stderr, "BAD")
+	ExpectContains(t, stderr, "GCMG")
+	ExpectContains(t, stderr, "BYD")
 
 	text := ReadInstrumentLog(t, filepath.Join("fmt", "print.go"))
 	re := regexp.MustCompile(".*OtelOnEnterTrampoline.*OtelOnExitTrampoline.*")
