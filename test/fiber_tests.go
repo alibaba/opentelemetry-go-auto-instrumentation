@@ -16,25 +16,25 @@ package test
 
 import "testing"
 
-const fiberV2_dependency_name = "github.com/gofiber/fiber/v2"
-const fiberV2_module_name = "fiberV2"
+const fiberv2_dependency_name = "github.com/gofiber/fiber/v2"
+const fiberv2_module_name = "fiberv2"
 
 func init() {
 	TestCases = append(TestCases,
-		NewGeneralTestCase("basic-fiberV2-test", fiberV2_module_name, "", "", "1.18", "", TestBasicFiberV2),
-		NewGeneralTestCase("basic-fiberV2s-test", fiberV2_module_name, "", "", "1.18", "", TestBasicFiberV2Https),
-		NewLatestDepthTestCase("fiberV2-latestdepth", fiberV2_dependency_name, fiberV2_module_name, "v2.43.0", "", "1.18", "", TestBasicFiberV2),
-		NewMuzzleTestCase("fiberV2-muzzle", fiberV2_dependency_name, fiberV2_module_name, "v2.43.0", "", "1.18", "", []string{"go", "build", "fiber_http.go"}))
+		NewGeneralTestCase("basic-fiberv2-test", fiberv2_module_name, "", "", "1.18", "", TestBasicFiberv2),
+		NewGeneralTestCase("basic-fiberv2s-test", fiberv2_module_name, "", "", "1.18", "", TestBasicFiberv2Https),
+		NewLatestDepthTestCase("fiberv2-latestdepth", fiberv2_dependency_name, fiberv2_module_name, "v2.43.0", "", "1.18", "", TestBasicFiberv2),
+		NewMuzzleTestCase("fiberv2-muzzle", fiberv2_dependency_name, fiberv2_module_name, "v2.43.0", "", "1.18", "", []string{"go", "build", "fiber_http.go"}))
 }
 
-func TestBasicFiberV2(t *testing.T, env ...string) {
-	UseApp("fiberV2/v2.52.5")
+func TestBasicFiberv2(t *testing.T, env ...string) {
+	UseApp("fiberv2/v2.52.5")
 	RunInstrument(t, "-debuglog", "go", "build", "fiber_http.go")
 	RunApp(t, "fiber_http", env...)
 }
 
-func TestBasicFiberV2Https(t *testing.T, env ...string) {
-	UseApp("fiberV2/v2.52.5")
+func TestBasicFiberv2Https(t *testing.T, env ...string) {
+	UseApp("fiberv2/v2.52.5")
 	RunInstrument(t, "-debuglog", "go", "build", "fiber_https.go")
 	RunApp(t, "fiber_https", env...)
 }

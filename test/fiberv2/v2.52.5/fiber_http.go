@@ -13,33 +13,26 @@ import (
 )
 
 func requestServer() {
-	// 创建fasthttp.Client实例
 	client := &fasthttp.Client{}
 
-	// 准备要请求的URL
 	reqURL := "http://localhost:3000/fiber"
 
-	// 声明请求和响应
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	defer func() {
-		// 释放资源
 		fasthttp.ReleaseRequest(req)
 		fasthttp.ReleaseResponse(resp)
 	}()
 
-	// 设置请求的URL和方法
 	req.SetRequestURI(reqURL)
 	req.Header.SetMethod(fasthttp.MethodGet)
 
-	// 发起请求
 	err := client.Do(req, resp)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
-	// 打印出响应的主体
 	fmt.Printf("Response body is:\n%s", resp.Body())
 }
 

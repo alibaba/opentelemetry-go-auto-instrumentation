@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fiberV2
+package fiberv2
 
 import (
 	"context"
@@ -22,23 +22,23 @@ import (
 	"net/url"
 )
 
-var fiberV2ServerInstrumenter = BuildFiberV2ServerOtelInstrumenter()
+var fiberv2ServerInstrumenter = BuildFiberV2ServerOtelInstrumenter()
 
-func fiberHttpOnEnterV2(call api.CallContext, app *fiber.App, ctx *fasthttp.RequestCtx) {
-	if !fiberV2Enabler.Enable() {
+func fiberHttpOnEnterv2(call api.CallContext, app *fiber.App, ctx *fasthttp.RequestCtx) {
+	if !fiberv2Enabler.Enable() {
 		return
 	}
 	u, err := url.Parse(ctx.URI().String())
 	if err != nil {
 		return
 	}
-	request := &fiberV2Request{
+	request := &fiberv2Request{
 		method: string(ctx.Method()),
 		url:    u,
 		isTls:  ctx.IsTLS(),
 		header: &ctx.Request.Header,
 	}
-	ctxSpan := fiberV2ServerInstrumenter.Start(ctx, request)
+	ctxSpan := fiberv2ServerInstrumenter.Start(ctx, request)
 	data := make(map[string]interface{}, 2)
 	data["ctx"] = ctx
 	data["ctxSpan"] = ctxSpan
@@ -47,18 +47,18 @@ func fiberHttpOnEnterV2(call api.CallContext, app *fiber.App, ctx *fasthttp.Requ
 	return
 }
 
-func fiberHttpOnExitV2(call api.CallContext) {
+func fiberHttpOnExitv2(call api.CallContext) {
 	if call.GetData() == nil {
 		return
 	}
 	data := call.GetData().(map[string]interface{})
 	ctx := data["ctx"].(*fasthttp.RequestCtx)
 	ctxSpan := data["ctxSpan"].(context.Context)
-	request, ok := data["request"].(*fiberV2Request)
+	request, ok := data["request"].(*fiberv2Request)
 	if !ok {
 		return
 	}
-	fiberV2ServerInstrumenter.End(ctxSpan, request, &fiberV2Response{
+	fiberv2ServerInstrumenter.End(ctxSpan, request, &fiberv2Response{
 		statusCode: ctx.Response.StatusCode(),
 		header:     &ctx.Response.Header,
 	}, nil)

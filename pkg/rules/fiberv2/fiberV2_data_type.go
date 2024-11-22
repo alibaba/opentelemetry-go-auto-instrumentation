@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fiberV2
+package fiberv2
 
 import (
 	"net/url"
@@ -20,7 +20,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type fiberV2Request struct {
+type fiberv2Request struct {
 	method string
 	url    *url.URL
 	isTls  bool
@@ -28,7 +28,7 @@ type fiberV2Request struct {
 	header *fasthttp.RequestHeader
 }
 
-type fiberV2Response struct {
+type fiberv2Response struct {
 	statusCode int
 	header     *fasthttp.ResponseHeader
 }
