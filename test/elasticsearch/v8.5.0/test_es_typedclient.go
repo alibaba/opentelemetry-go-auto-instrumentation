@@ -15,24 +15,26 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/update"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"os"
-	"strings"
 )
 
 var (
-	client *elasticsearch.Client
+	client *elasticsearch.TypedClient
 	url    = "http://127.0.0.1:" + os.Getenv("OTEL_ES_PORT")
 )
 
 func main() {
 	var err error
-	client, err = elasticsearch.NewClient(elasticsearch.Config{
+	client, err = elasticsearch.NewTypedClient(elasticsearch.Config{
 		Addresses: []string{url},
 		Password:  "123456",
 		Username:  "elastic",
@@ -40,8 +42,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	ctx := context.Background()
 	// creating an index
-	_, err = client.Indices.Create("my_index")
+	_, err = client.Indices.Create("my_index").Do(ctx)
 	if err != nil {
 		log.Printf("failed to create index %v\n", err)
 	}
@@ -51,37 +54,38 @@ func main() {
 	}{
 		"go-elasticsearch",
 	}
-	data, _ := json.Marshal(document)
-	_, err = client.Index("my_index", bytes.NewReader(data))
+	_, err = client.Index("my_index").
+		Id("1").
+		Request(document).
+		Do(ctx)
 	if err != nil {
 		log.Printf("failed to index document %v\n", err)
 	}
 	// getting documents
-	_, err = client.Get("my_index", "id")
+	_, err = client.Get("my_index", "id").Do(ctx)
 	if err != nil {
 		log.Printf("failed to get documents %v\n", err)
 	}
 	// searching documents
-	query := `{ "query": { "match_all": {} } }`
-	_, err = client.Search(
-		client.Search.WithIndex("my_index"),
-		client.Search.WithBody(strings.NewReader(query)),
-	)
+	_, err = client.Search().Index("my_index").Request(&search.Request{Query: &types.Query{MatchAll: &types.MatchAllQuery{}}}).Do(ctx)
 	if err != nil {
 		log.Printf("failed to search documents %v\n", err)
 	}
 	// updating documents
-	_, err = client.Update("my_index", "id", strings.NewReader(`{doc: { language: "Go" }}`))
+	_, err = client.Update("my_index", "id").
+		Request(&update.Request{
+			Doc: json.RawMessage(`{ language: "Go" }`),
+		}).Do(ctx)
 	if err != nil {
 		log.Printf("failed to update document %v\n", err)
 	}
 	// deleting documents
-	_, err = client.Delete("my_index", "id")
+	_, err = client.Delete("my_index", "id").Do(ctx)
 	if err != nil {
 		log.Printf("failed to delete document %v\n", err)
 	}
 	// deleting an index
-	_, err = client.Indices.Delete([]string{"my_index"})
+	_, err = client.Indices.Delete("my_index").Do(ctx)
 	if err != nil {
 		log.Printf("failed to delete index %v\n", err)
 	}

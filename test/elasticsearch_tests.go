@@ -31,12 +31,10 @@ const defaultTCPPort = "9300"
 
 func init() {
 	TestCases = append(TestCases,
-		NewGeneralTestCase("es-crud-test", es_v8_module_name, "v8.0.0", "v8.3.0", "1.18", "", TestESCrud),
-		NewLatestDepthTestCase("es-crud-latestdepth-test", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.3.0", "1.18", "", TestESCrud),
-		NewMuzzleTestCase("es-muzzle", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.3.0", "1.18", "", []string{"go", "build", "test_es_crud.go"}),
-		NewGeneralTestCase("es-840-crud-test", es_v8_module_name, "v8.4.0", "", "1.18", "", TestESCrud),
-		NewLatestDepthTestCase("es-840-crud-latestdepth-test", es_v8_dependency_name, es_v8_module_name, "v8.4.0", "", "1.18", "", TestESCrud),
-		NewMuzzleTestCase("es-840-muzzle", es_v8_dependency_name, es_v8_module_name, "v8.4.0", "", "1.18", "", []string{"go", "build", "test_es_crud.go"}),
+		NewGeneralTestCase("es-crud-test", es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", TestESCrud),
+		NewGeneralTestCase("es-typed-client-test", es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", TestESTypedClient),
+		NewLatestDepthTestCase("es-crud-latestdepth-test", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", TestESCrud),
+		NewMuzzleTestCase("es-muzzle", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", []string{"go", "build", "test_es_crud.go"}),
 	)
 }
 
@@ -47,6 +45,15 @@ func TestESCrud(t *testing.T, env ...string) {
 	RunInstrument(t, "-debuglog", "go", "build", "test_es_crud.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
 	RunApp(t, "test_es_crud", env...)
+}
+
+func TestESTypedClient(t *testing.T, env ...string) {
+	esC, esPort := initElasticSearchContainer()
+	defer testcontainers.CleanupContainer(t, esC)
+	UseApp("elasticsearch/v8.5.0")
+	RunInstrument(t, "-debuglog", "go", "build", "test_es_typedclient.go")
+	env = append(env, "OTEL_ES_PORT="+esPort.Port())
+	RunApp(t, "test_es_typedclient", env...)
 }
 
 func initElasticSearchContainer() (testcontainers.Container, nat.Port) {

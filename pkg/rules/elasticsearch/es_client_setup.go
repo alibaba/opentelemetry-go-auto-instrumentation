@@ -21,6 +21,7 @@ import (
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -28,12 +29,18 @@ var esInstrumenter = BuildElasticSearchInstrumenter()
 
 var esEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
-func beforeElasticSearchPerform(call api.CallContext, client *elasticsearch.Client, request *http.Request) {
+func beforeElasticSearchPerform(call api.CallContext, client interface{}, request *http.Request) {
 	if !esEnabler.Enable() {
 		return
 	}
 	var addresses []string
-	for _, u := range client.Transport.(*elastictransport.Client).URLs() {
+	var urls []*url.URL
+	if client800, ok := client.(*elasticsearch.Client); ok {
+		urls = client800.Transport.(*elastictransport.Client).URLs()
+	} else if client840, ok := client.(*elasticsearch.BaseClient); ok {
+		urls = client840.Transport.(*elastictransport.Client).URLs()
+	}
+	for _, u := range urls {
 		addresses = append(addresses, u.String())
 	}
 	op, params := getEsOpAndParams(request)
