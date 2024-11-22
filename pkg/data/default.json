@@ -544,14 +544,22 @@
         "Version": "[2.6.3,2.8.3)",
         "ImportPath": "github.com/go-kratos/kratos/v2/transport/http",
         "Function": "NewServer",
-        "OnEnter": "KratosNewHTTPServiceOnEnter",
+        "OnEnter": "kratosNewHTTPServiceOnEnter",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kratos/http"
     },
     {
         "Version": "[2.6.3,2.8.3)",
         "ImportPath": "github.com/go-kratos/kratos/v2/transport/grpc",
         "Function": "NewServer",
-        "OnEnter": "KratosNewGRPCServiceOnEnter",
+        "OnEnter": "kratosNewGRPCServiceOnEnter",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kratos/grpc"
+    },
+    {
+        "Version": "[8.0.0,8.15.1)",
+        "ImportPath": "github.com/elastic/go-elasticsearch/v8",
+        "Function": "Perform",
+        "OnEnter": "beforeElasticSearchPerform",
+        "OnExit": "afterElasticSearchPerform",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/elasticsearch"
     }
 ]

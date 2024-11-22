@@ -11,6 +11,7 @@ require (
 	github.com/cloudwego/hertz v0.9.3
 	github.com/dave/dst v0.27.3
 	github.com/docker/go-connections v0.5.0
+	github.com/elastic/go-elasticsearch/v8 v8.0.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/kratos/v2 v2.8.0
 	github.com/go-redis/redis/v8 v8.11.0
@@ -65,6 +66,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker v27.1.1+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/elastic/elastic-transport-go/v8 v8.0.0-alpha // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect

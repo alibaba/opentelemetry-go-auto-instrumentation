@@ -30,7 +30,7 @@ const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES = "OTEL_INSTRUMEN
 
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 
-func KratosNewHTTPServiceOnEnter(call api.CallContext, opts ...http.ServerOption) {
+func kratosNewHTTPServiceOnEnter(call api.CallContext, opts ...http.ServerOption) {
 	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES) != "true" {
 		return
 	}
