@@ -44,16 +44,16 @@ func beforeElasticSearchPerform(call api.CallContext, client *elasticsearch.Clie
 		params:  params,
 	}
 	newCtx := esInstrumenter.Start(request.Context(), er)
-	call.SetParam(0, newCtx)
-	call.SetParam(1, er)
+	call.SetKeyData("ctx", newCtx)
+	call.SetKeyData("request", er)
 }
 
 func afterElasticSearchPerform(call api.CallContext, response *http.Response, err error) {
 	if !esEnabler.Enable() {
 		return
 	}
-	newCtx := call.GetParam(0).(context.Context)
-	er := call.GetParam(1).(*esRequest)
+	newCtx := call.GetKeyData("ctx").(context.Context)
+	er := call.GetKeyData("request").(*esRequest)
 	esInstrumenter.End(newCtx, er, response, err)
 }
 
