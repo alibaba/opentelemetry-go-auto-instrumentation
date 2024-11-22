@@ -63,7 +63,7 @@ func initElasticSearchContainer() (testcontainers.Container, nat.Port) {
 func runElasticSearchContainer(ctx context.Context) (testcontainers.Container, error) {
 	req := testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "docker.elastic.co/elasticsearch/elasticsearch:8.9.0",
+			Image: "docker.elastic.co/elasticsearch/elasticsearch:7.17.25",
 			Env: map[string]string{
 				"discovery.type": "single-node",
 				"cluster.routing.allocation.disk.threshold_enabled": "false",
