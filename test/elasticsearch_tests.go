@@ -31,10 +31,10 @@ const defaultTCPPort = "9300"
 
 func init() {
 	TestCases = append(TestCases,
-		NewGeneralTestCase("es-crud-test", es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", TestESCrud),
-		NewGeneralTestCase("es-typed-client-test", es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", TestESTypedClient),
-		NewLatestDepthTestCase("es-crud-latestdepth-test", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", TestESCrud),
-		NewMuzzleTestCase("es-muzzle", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.15.1", "1.18", "", []string{"go", "build", "test_es_crud.go"}),
+		NewGeneralTestCase("es-crud-test", es_v8_module_name, "v8.0.0", "v8.15.0", "1.18", "", TestESCrud),
+		NewGeneralTestCase("es-typed-client-test", es_v8_module_name, "v8.0.0", "v8.15.0", "1.18", "", TestESTypedClient),
+		NewLatestDepthTestCase("es-crud-latestdepth-test", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.15.0", "1.18", "", TestESCrud),
+		NewMuzzleTestCase("es-muzzle", es_v8_dependency_name, es_v8_module_name, "v8.0.0", "v8.15.0", "1.18", "", []string{"go", "build", "test_es_crud.go"}),
 	)
 }
 
