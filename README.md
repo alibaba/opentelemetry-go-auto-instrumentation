@@ -41,13 +41,12 @@ $ otel go build
 $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
 ```
-The arguments for the tool itself should be placed before `go build`:
-
+The configuration for the tool can be set by the following command:
 ```bash
-$ otel -help                      # print help doc
-$ otel -debug go build            # enable debug mode
-$ otel -verbose go build          # print verbose log
-$ otel -rule=custom.json go build # use custom rule
+$ otel set -verbose                          # print verbose logs
+$ otel set -debug                            # enable debug mode
+$ otel set -rule=custom.json                 # use custom rules
+$ otel set -debug -verbose -rule=custom.json # set multiple configs
 ```
 
 You can also explore [**these examples**](./example/) to get hands-on experience.

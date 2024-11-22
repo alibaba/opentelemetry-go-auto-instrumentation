@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
@@ -89,7 +90,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 		if err != nil {
 			return err
 		}
-		target := shared.GetPreprocessLogPath(filepath.Join(OtelRuleCache, p))
+		target := shared.GePPreprocessLogPath(filepath.Join(OtelRuleCache, p))
 		err = os.MkdirAll(filepath.Dir(target), 0777)
 		if err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
@@ -98,7 +99,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 		if err != nil {
 			return fmt.Errorf("failed to write file: %w", err)
 		}
-		if shared.GetConf().Verbose {
+		if config.GetConf().Verbose {
 			log.Printf("Copy embed file %v to %v", p, target)
 		}
 		return nil
@@ -110,7 +111,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 	}
 	// Now all rule files are copied to the local file system, we can return
 	// the path to corresponding local file system
-	dir := shared.GetPreprocessLogPath(filepath.Join(OtelRuleCache, path))
+	dir := shared.GePPreprocessLogPath(filepath.Join(OtelRuleCache, path))
 	return dir, nil
 }
 

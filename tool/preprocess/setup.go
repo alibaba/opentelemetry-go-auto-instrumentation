@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -78,7 +79,7 @@ func (dp *DepProcessor) copyRules(target string) (err error) {
 
 					for _, file := range files {
 						if !shared.IsGoFile(file) || shared.IsGoTestFile(file) {
-							if shared.GetConf().Verbose {
+							if config.GetConf().Verbose {
 								log.Printf("Ignore file %v\n", file)
 							}
 							continue
@@ -234,7 +235,7 @@ func (dp *DepProcessor) copyRule(path, target string,
 	if err != nil {
 		return fmt.Errorf("failed to write ast to %v: %w", target, err)
 	}
-	if shared.GetConf().Verbose {
+	if config.GetConf().Verbose {
 		log.Printf("Copy dependency %v to %v", path, target)
 	}
 	return nil

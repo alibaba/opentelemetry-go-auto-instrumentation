@@ -25,12 +25,12 @@ func init() {
 
 func TestGinHTML(t *testing.T, env ...string) {
 	UseApp("gin")
-	RunInstrument(t, "-debuglog", "go", "build", "test_gin_html.go")
+	RunGoBuild(t, "go", "build", "test_gin_html.go")
 	RunApp(t, "test_gin_html", env...)
 }
 
 func TestGinPattern(t *testing.T, env ...string) {
 	UseApp("gin")
-	RunInstrument(t, "-debuglog", "go", "build", "test_gin_pattern.go")
+	RunGoBuild(t, "go", "build", "test_gin_pattern.go")
 	RunApp(t, "test_gin_pattern", env...)
 }

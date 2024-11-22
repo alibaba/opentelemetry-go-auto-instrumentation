@@ -23,7 +23,8 @@ const ErrorsAppName = "errorstest"
 
 func TestRunErrors(t *testing.T) {
 	UseApp(ErrorsAppName)
-	RunInstrument(t, UseTestRules("test_error.json"), "-debuglog", "go", "build")
+	RunSet(t, UseTestRules("test_error.json"))
+	RunGoBuild(t, "go", "build")
 	stdout, stderr := RunApp(t, ErrorsAppName)
 	ExpectContains(t, stdout, "wow")
 	ExpectContains(t, stdout, "old:wow")

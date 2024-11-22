@@ -33,23 +33,23 @@ func init() {
 
 func TestBasicMux(t *testing.T, env ...string) {
 	UseApp("mux/v1.3.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_mux_basic.go")
+	RunGoBuild(t, "go", "build", "test_mux_basic.go")
 	RunApp(t, "test_mux_basic", env...)
 }
 
 func TestMuxMiddleware(t *testing.T, env ...string) {
 	UseApp("mux/v1.7.4")
-	RunInstrument(t, "-debuglog", "go", "build", "test_mux_middleware.go")
+	RunGoBuild(t, "go", "build", "test_mux_middleware.go")
 	RunApp(t, "test_mux_middleware", env...)
 }
 
 func TestMuxPattern(t *testing.T, env ...string) {
 	UseApp("mux/v1.3.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_mux_pattern.go")
+	RunGoBuild(t, "go", "build", "test_mux_pattern.go")
 	RunApp(t, "test_mux_pattern", env...)
 }
 func TestMuxPrefix(t *testing.T, env ...string) {
 	UseApp("mux/v1.7.4")
-	RunInstrument(t, "-debuglog", "go", "build", "test_mux_prefix.go")
+	RunGoBuild(t, "go", "build", "test_mux_prefix.go")
 	RunApp(t, "test_mux_prefix", env...)
 }
