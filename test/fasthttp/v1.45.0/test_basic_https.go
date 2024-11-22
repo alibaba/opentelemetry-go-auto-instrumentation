@@ -15,7 +15,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"time"
 
@@ -29,11 +28,7 @@ func main() {
 		fasthttp.ListenAndServeTLS(":8080", "server.crt", "server.key", hello)
 	}()
 	time.Sleep(5 * time.Second)
-	client := &fasthttp.Client{
-		TLSConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
+	client := &fasthttp.Client{}
 	reqURL := "https://localhost:8080"
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
