@@ -94,8 +94,7 @@ func main() {
 		verifier.VerifyDbAttributes(stubs[1][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index/_doc", "_doc")
 		verifier.VerifyDbAttributes(stubs[2][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index/_doc/id", "_doc")
 		verifier.VerifyDbAttributes(stubs[3][0], "_search", "elasticsearch", "127.0.0.1", "/my_index/_search", "_search")
-		verifier.VerifyDbAttributes(stubs[4][0], "_update", "elasticsearch", "127.0.0.1", "/my_index/_update/id", "_update")
-		verifier.VerifyDbAttributes(stubs[5][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index/_doc/id", "_doc")
-		verifier.VerifyDbAttributes(stubs[6][0], "delete", "elasticsearch", "127.0.0.1", "/my_index", "delete")
+		verifier.VerifyDbAttributes(stubs[4][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index/_doc/id", "_doc")
+		verifier.VerifyDbAttributes(stubs[5][0], "delete", "elasticsearch", "127.0.0.1", "/my_index", "delete")
 	}, 1)
 }
