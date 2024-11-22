@@ -11,8 +11,8 @@ require (
 	github.com/cloudwego/hertz v0.9.3
 	github.com/dave/dst v0.27.3
 	github.com/docker/go-connections v0.5.0
-	github.com/elastic/elastic-transport-go/v8 v8.0.0-alpha
-	github.com/elastic/go-elasticsearch/v8 v8.0.0
+	github.com/elastic/elastic-transport-go/v8 v8.1.0
+	github.com/elastic/go-elasticsearch/v8 v8.4.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/kratos/v2 v2.8.0
 	github.com/go-redis/redis/v8 v8.11.0
