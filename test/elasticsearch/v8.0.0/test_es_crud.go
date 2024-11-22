@@ -86,13 +86,12 @@ func main() {
 		log.Printf("failed to delete index %v\n", err)
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		for i, _ := range stubs {
-			span := stubs[i][0]
-			println(span.Name)
-			for _, attr := range span.Attributes {
-				log.Printf("%v %v", attr.Key, attr.Value)
-			}
-			println()
-		}
+		verifier.VerifyDbAttributes(stubs[0][0], "put", "elasticsearch", "127.0.0.1", "/my_index", "put")
+		verifier.VerifyDbAttributes(stubs[1][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index/_doc", "_doc")
+		verifier.VerifyDbAttributes(stubs[2][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index/_doc/id", "_doc")
+		verifier.VerifyDbAttributes(stubs[3][0], "_search", "elasticsearch", "127.0.0.1", "/my_index/_search", "_search")
+		verifier.VerifyDbAttributes(stubs[4][0], "_update", "elasticsearch", "127.0.0.1", "/my_index/_update/id", "_update")
+		verifier.VerifyDbAttributes(stubs[5][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index/_doc/id", "_doc")
+		verifier.VerifyDbAttributes(stubs[6][0], "_doc", "elasticsearch", "127.0.0.1", "/my_index", "delete")
 	}, 1)
 }

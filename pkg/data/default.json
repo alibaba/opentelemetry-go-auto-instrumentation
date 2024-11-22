@@ -558,6 +558,7 @@
         "Version": "[8.0.0,8.15.1)",
         "ImportPath": "github.com/elastic/go-elasticsearch/v8",
         "Function": "Perform",
+        "ReceiverType": "*Client",
         "OnEnter": "beforeElasticSearchPerform",
         "OnExit": "afterElasticSearchPerform",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/elasticsearch"

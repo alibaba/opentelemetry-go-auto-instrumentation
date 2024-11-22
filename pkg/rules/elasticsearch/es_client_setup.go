@@ -63,16 +63,16 @@ func getEsOpAndParams(req *http.Request) (string, []any) {
 	}
 	path := req.URL.Path
 	paths := strings.Split(path, "/")
-	if len(paths) == 0 {
+	if len(paths) <= 1 {
 		return "UNKNOWN", nil
 	}
-	if len(paths) == 1 {
-		return "create", nil
+	if len(paths) == 2 {
+		return strings.ToLower(req.Method), nil
 	}
 	params := make([]any, len(paths)-2)
 	// path[0] should be the index name
 	for i := 2; i < len(paths); i++ {
 		params[i-2] = paths[i]
 	}
-	return paths[1], params
+	return paths[2], params
 }
