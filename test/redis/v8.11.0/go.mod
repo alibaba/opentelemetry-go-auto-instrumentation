@@ -1,4 +1,4 @@
-module redis/v9.0.5
+module redis/v8.11.0
 
 go 1.22
 
