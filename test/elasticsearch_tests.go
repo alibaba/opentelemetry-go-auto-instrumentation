@@ -16,15 +16,18 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/elasticsearch"
 	"testing"
 	"time"
 )
 
 const es_v8_dependency_name = "github.com/elastic/go-elasticsearch/v8"
 const es_v8_module_name = "elasticsearch"
+
+const defaultHTTPPort = "9200"
+const defaultTCPPort = "9300"
 
 func init() {
 	TestCases = append(TestCases,
@@ -45,7 +48,7 @@ func TestESCrud(t *testing.T, env ...string) {
 
 func initElasticSearchContainer() (testcontainers.Container, nat.Port) {
 	ctx := context.Background()
-	elasticsearchContainer, err := elasticsearch.Run(ctx, "docker.elastic.co/elasticsearch/elasticsearch:8.9.0")
+	elasticsearchContainer, err := runElasticSearchContainer(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -55,4 +58,27 @@ func initElasticSearchContainer() (testcontainers.Container, nat.Port) {
 		panic(err)
 	}
 	return elasticsearchContainer, port
+}
+
+func runElasticSearchContainer(ctx context.Context) (testcontainers.Container, error) {
+	req := testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "docker.elastic.co/elasticsearch/elasticsearch:8.9.0",
+			Env: map[string]string{
+				"discovery.type": "single-node",
+				"cluster.routing.allocation.disk.threshold_enabled": "false",
+			},
+			ExposedPorts: []string{
+				defaultHTTPPort + "/tcp",
+				defaultTCPPort + "/tcp",
+			},
+		},
+		Started: true,
+	}
+	container, err := testcontainers.GenericContainer(ctx, req)
+	if err != nil {
+		return container, fmt.Errorf("generic container: %w", err)
+	}
+
+	return container, nil
 }

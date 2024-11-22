@@ -11,7 +11,7 @@ require (
 	github.com/cloudwego/hertz v0.9.3
 	github.com/dave/dst v0.27.3
 	github.com/docker/go-connections v0.5.0
-	github.com/elastic/go-elasticsearch/v8 v8.12.1
+	github.com/elastic/go-elasticsearch/v8 v8.0.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/kratos/v2 v2.8.0
 	github.com/go-redis/redis/v8 v8.11.0
@@ -22,7 +22,6 @@ require (
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/testcontainers/testcontainers-go v0.34.0
-	github.com/testcontainers/testcontainers-go/modules/elasticsearch v0.34.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.34.0
 	github.com/valyala/fasthttp v1.56.0
 	go.mongodb.org/mongo-driver v1.17.1
