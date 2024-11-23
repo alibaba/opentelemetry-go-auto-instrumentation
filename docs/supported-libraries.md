@@ -4,6 +4,7 @@
 |--------------| ------------------------------------------ | --------------------- |-----------------------|
 | database/sql | https://pkg.go.dev/database/sql            | -                     | -                     |
 | echo         | https://github.com/labstack/echo           | v4.0.0                | v4.12.0               |
+| elasticsearch| https://github.com/elastic/go-elasticsearch| v8.4.0                | v8.15.0               |
 | fasthttp     | https://github.com/valyala/fasthttp        | v1.45.0               | v1.57.0               |
 | gin          | https://github.com/gin-gonic/gin           | v1.7.0                | v1.10.0               |
 | go-redis     | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |

@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package version
+package elasticsearch
 
-// Tag specifies the current release tag. It needs to be manually updated.
-const Tag = "v0.3.0"
+import "net/http"
+
+type esRequest struct {
+	request *http.Request
+	address string
+	op      string
+	params  []any
+}

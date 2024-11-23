@@ -42,7 +42,7 @@ func (m mongoAttrsGetter) GetOperation(request mongoRequest) string {
 	return request.CommandName
 }
 
-func (d mongoAttrsGetter) GetParameters(request mongoRequest) []any {
+func (m mongoAttrsGetter) GetParameters(request mongoRequest) []any {
 	return nil
 }
 
