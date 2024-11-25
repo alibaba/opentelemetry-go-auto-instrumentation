@@ -47,7 +47,7 @@ func clientOnEnter(call api.CallContext, t *http.Transport, req *http.Request) {
 	return
 }
 
-func clientOnExit(call http.CallContext, res *http.Response, err error) {
+func clientOnExit(call api.CallContext, res *http.Response, err error) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return
