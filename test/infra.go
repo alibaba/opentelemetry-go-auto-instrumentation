@@ -103,7 +103,7 @@ func RunSet(t *testing.T, args ...string) {
 func RunGoBuild(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
 	RunSet(t, "-debuglog")
-	path := filepath.Join(filepath.Dir(pwd), ExecName)
+	path := filepath.Join(filepath.Dir(pwd), getExecName())
 	cmd := runCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err != nil {
