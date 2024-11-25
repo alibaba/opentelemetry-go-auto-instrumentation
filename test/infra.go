@@ -130,8 +130,7 @@ func RunGoBuildFallible(t *testing.T, args ...string) {
 
 func UseTestRules(name string) string {
 	path := filepath.Join(filepath.Dir(pwd), "pkg", "data", name)
-	// Only for test, so we disable default rule file and use the specified one.
-	return "-rule=+" + path
+	return "-rule=" + path
 }
 
 var pwd string
@@ -211,7 +210,7 @@ func ExpecPreprocessContains(t *testing.T, log string, rule string) {
 	ExpectContains(t, content, rule)
 }
 
-func ExpecPPreprocessNotContains(t *testing.T, log string, rule string) {
+func ExpecPreprocessNotContains(t *testing.T, log string, rule string) {
 	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)

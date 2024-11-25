@@ -114,7 +114,7 @@ func findAvailableRules() []resource.InstRule {
 	rules := make([]resource.InstRule, 0)
 
 	// Load default rules unless explicitly disabled
-	if !config.GetConf().IsDisableDefaultRules() {
+	if !config.GetConf().IsDisableDefault() {
 		defaultRules := loadDefaultRules()
 		rules = append(rules, defaultRules...)
 	}

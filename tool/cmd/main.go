@@ -40,7 +40,7 @@ Example:
 	{} go build
 	{} go build main.go
 	{} version
-	{} set -rule=rule.json -verbose
+	{} set -verbose -rule=custom.json
 
 Command:
 	version    print the version

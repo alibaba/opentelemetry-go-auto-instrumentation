@@ -32,10 +32,8 @@ type BuildConfig struct {
 	// tool where to find the instrument rules. Multiple rules are separated by
 	// comma. e.g. -rule=rule1.json,rule2.json. By default, new rules are appended
 	// to default rules, i.e. -rule=rule1.json,rule2.json is exactly equivalent to
-	// -rule=default.json,rule1.json,rule2.json. But if you do want to replace the
-	// default rules, you can add a "+" prefix to the rule file name, e.g.
-	// -rule=+rule1.json,rule2.json. In this case, the default rules will be replaced
-	// by rule1.json, and then rule2.json will be appended to the rules.
+	// -rule=default.json,rule1.json,rule2.json. But if you do want to disable
+	// default rules, you can configure -disabledefault flag in advance.
 	RuleJsonFiles string
 
 	// DebugLog true means debug log is enabled.
@@ -50,7 +48,8 @@ type BuildConfig struct {
 	// Restore true means restore all instrumentations.
 	Restore bool
 
-	disableDefaultRules bool
+	// DisableDefault true means disable default rules.
+	DisableDefault bool
 }
 
 // This is the version of the tool, which will be printed when the -version flag
@@ -75,17 +74,11 @@ func GetConf() *BuildConfig {
 	return conf
 }
 
-func (bc *BuildConfig) IsDisableDefaultRules() bool {
-	return bc.disableDefaultRules
+func (bc *BuildConfig) IsDisableDefault() bool {
+	return bc.DisableDefault
 }
 
 func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {
-	// Check if rule json file has a "+" prefix, which means to replace the
-	// default rules, i.e. whether to keep the default rules.
-	if strings.HasPrefix(file, "+") {
-		bc.disableDefaultRules = true
-		file = file[1:]
-	}
 	exist, err := util.PathExists(file)
 	if err != nil {
 		return "", fmt.Errorf("failed to check rule file: %w", err)
@@ -215,7 +208,9 @@ func Configure() error {
 	flag.BoolVar(&bc.Restore, "restore", bc.Restore,
 		"Restore all instrumentations")
 	flag.StringVar(&bc.RuleJsonFiles, "rule", bc.RuleJsonFiles,
-		"Rule file in json format. Multiple rules are separated by comma")
+		"Use custom.json rules. Multiple rules are separated by comma.")
+	flag.BoolVar(&bc.DisableDefault, "disabledefault", bc.DisableDefault,
+		"Disable default rules")
 	flag.CommandLine.Parse(os.Args[2:])
 
 	fmt.Printf("Configured in %s",

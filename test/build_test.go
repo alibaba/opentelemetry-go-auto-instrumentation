@@ -49,17 +49,17 @@ func TestBuildProject4(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-rule=+../../pkg/data/default.json")
+	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/default.json")
 	RunGoBuild(t, "go", "build", "m1")
-	RunSet(t, "-rule=../../pkg/data/default.json")
+	RunSet(t, "-disabledefault=false", "-rule=../../pkg/data/default.json")
 	RunGoBuildFallible(t, "go", "build", "m1") // duplicated default rules
 	RunSet(t, "-rule=../../pkg/data/default")
 	RunGoBuildFallible(t, "go", "build", "m1")
 	RunSet(t, "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
-	RunSet(t, "-rule=../../pkg/data/test_error.json,+../../pkg/data/test_fmt.json")
+	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
-	RunSet(t, "-rule=+../../pkg/data/default.json,+../../pkg/data/test_fmt.json")
+	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/default.json,../../pkg/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 }
 
@@ -67,11 +67,10 @@ func TestBuildProject5(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-verbose", "-rule=../../pkg/data/test_fmt.json")
+	RunSet(t, "-disabledefault=false", "-verbose", "-rule=../../pkg/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 	// both test_fmt.json and default.json rules should be available
 	// because we always append new -rule to the default.json by default
-	// (unless we use -rule=+... syntax) to explicitly disable default rules.
 	ExpecPreprocessContains(t, shared.DebugLogFile, "fmt")
 	ExpecPreprocessContains(t, shared.DebugLogFile, "database/sql")
 }
@@ -80,9 +79,9 @@ func TestBuildProject6(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-rule=+../../pkg/data/test_fmt.json", "-verbose")
+	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/test_fmt.json", "-verbose")
 	RunGoBuild(t, "go", "build", "m1")
-	// only test_fmt.json rule should be available
+	// only test_fmt.json should be available because -disabledefault is set
 	ExpecPreprocessContains(t, shared.DebugLogFile, "fmt")
-	ExpecPPreprocessNotContains(t, shared.DebugLogFile, "database/sql")
+	ExpecPreprocessNotContains(t, shared.DebugLogFile, "database/sql")
 }
