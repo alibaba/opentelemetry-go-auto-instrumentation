@@ -90,7 +90,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 		if err != nil {
 			return err
 		}
-		target := shared.GePreprocessLogPath(filepath.Join(OtelRuleCache, p))
+		target := shared.GetPreprocessLogPath(filepath.Join(OtelRuleCache, p))
 		err = os.MkdirAll(filepath.Dir(target), 0777)
 		if err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
@@ -111,7 +111,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 	}
 	// Now all rule files are copied to the local file system, we can return
 	// the path to corresponding local file system
-	dir := shared.GePreprocessLogPath(filepath.Join(OtelRuleCache, path))
+	dir := shared.GetPreprocessLogPath(filepath.Join(OtelRuleCache, path))
 	return dir, nil
 }
 

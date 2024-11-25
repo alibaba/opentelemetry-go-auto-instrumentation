@@ -141,7 +141,7 @@ func FindRuleFiles(rule InstRule) ([]string, error) {
 
 func StoreRuleBundles(bundles []*RuleBundle) error {
 	shared.GuaranteeInPreprocess()
-	ruleFile := shared.GePreprocessLogPath(RuleBundleJsonFile)
+	ruleFile := shared.GetPreprocessLogPath(RuleBundleJsonFile)
 	bs, err := json.Marshal(bundles)
 	if err != nil {
 		return fmt.Errorf("failed to marshal bundles: %w", err)
@@ -156,7 +156,7 @@ func StoreRuleBundles(bundles []*RuleBundle) error {
 func LoadRuleBundles() ([]*RuleBundle, error) {
 	shared.GuaranteeInInstrument()
 
-	ruleFile := shared.GePreprocessLogPath(RuleBundleJsonFile)
+	ruleFile := shared.GetPreprocessLogPath(RuleBundleJsonFile)
 	data, err := util.ReadFile(ruleFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read used rules: %w", err)
