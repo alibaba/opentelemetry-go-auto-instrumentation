@@ -20,6 +20,15 @@ ifeq ($(CURRENT_ARCH), x86_64)
    CURRENT_ARCH := amd64
 endif
 
+# Check if current os contains "MINGW" or "MSYS" to determine if it is Windows
+ifeq ($(findstring MINGW,$(CURRENT_OS)),MINGW)
+   CURRENT_OS := windows
+endif
+
+ifeq ($(findstring MSYS,$(CURRENT_OS)),MSYS)
+   CURRENT_OS := windows
+endif
+
 # Get the current Git commit ID
 CHECK_GIT_DIRECTORY := $(if $(wildcard .git),true,false)
 ifeq ($(CHECK_GIT_DIRECTORY),true)
