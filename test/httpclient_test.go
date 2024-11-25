@@ -35,7 +35,4 @@ func TestRunHttpclient(t *testing.T) {
 	ExpectContains(t, stderr, "debug.Stack()") // during recover()
 	ExpectContains(t, stderr, "4008208820")
 	ExpectContains(t, stderr, "Prince of Qin Smashing the Battle line")
-
-	//ExpectPreprocessContains(t, "debug.log", "go.opentelemetry.io/otel@v1.31.0")
-	//ExpectInstrumentContains(t, "debug.log", "go.opentelemetry.io/otel@v1.31.0")
 }
