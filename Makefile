@@ -21,11 +21,11 @@ ifeq ($(CURRENT_ARCH), x86_64)
 endif
 
 # Check if current os contains "MINGW" or "MSYS" to determine if it is Windows
-ifeq ($(findstring mingw,$(CURRENT_OS)),MINGW)
+ifeq ($(findstring mingw,$(CURRENT_OS)),mingw)
    CURRENT_OS := windows
 endif
 
-ifeq ($(findstring msys,$(CURRENT_OS)),MSYS)
+ifeq ($(findstring msys,$(CURRENT_OS)),msys)
    CURRENT_OS := windows
 endif
 
