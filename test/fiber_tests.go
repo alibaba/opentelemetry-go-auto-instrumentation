@@ -29,12 +29,12 @@ func init() {
 
 func TestBasicFiberv2(t *testing.T, env ...string) {
 	UseApp("fiberv2/v2.43.0")
-	RunGoBuild(t, "-debuglog", "go", "build", "fiber_http.go")
+	RunGoBuild(t, "go", "build", "fiber_http.go")
 	RunApp(t, "fiber_http", env...)
 }
 
 func TestBasicFiberv2Https(t *testing.T, env ...string) {
 	UseApp("fiberv2/v2.43.0")
-	RunGoBuild(t, "-debuglog", "go", "build", "fiber_https.go")
+	RunGoBuild(t, "go", "build", "fiber_https.go")
 	RunApp(t, "fiber_https", env...)
 }
