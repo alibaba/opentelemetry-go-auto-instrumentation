@@ -117,7 +117,8 @@ func newDepProcessor() *DepProcessor {
 		rule2Dir:         map[*resource.InstFuncRule]string{},
 		ruleCache:        pkg.ExportRuleCache(),
 	}
-	// Prepare the go build command
+	// There is a tricky, all arguments after the tool itself are saved for
+	// later use, which means the subcommand "go build" are also  included
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	shared.AssertGoBuild(dp.goBuildCmd)
@@ -501,7 +502,7 @@ func runBuildWithToolexec(goBuildCmd []string) (string, error) {
 	args := []string{
 		"go",
 		"build",
-		// Special identifier to tell the tool this is toolexec mode
+		// Add remix subcommand to tell the tool this is toolexec mode
 		"-toolexec=" + exe + " " + CompileRemix,
 	}
 
