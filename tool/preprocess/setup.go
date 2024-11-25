@@ -43,7 +43,7 @@ func initRuleDir() (err error) {
 	return nil
 }
 
-func (dp *DepProcessor) copyRules(target string) (err error) {
+func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 	if len(dp.bundles) == 0 {
 		return nil
 	}
@@ -85,7 +85,7 @@ func (dp *DepProcessor) copyRules(target string) (err error) {
 							continue
 						}
 
-						ruleDir := filepath.Join(target, dir)
+						ruleDir := filepath.Join(pkgName, dir)
 						err = os.MkdirAll(ruleDir, 0777)
 						if err != nil {
 							return fmt.Errorf("failed to create dir %v: %w",
@@ -241,7 +241,7 @@ func (dp *DepProcessor) copyRule(path, target string,
 	return nil
 }
 
-func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
+func (dp *DepProcessor) initRules(pkgName string) (err error) {
 	c := fmt.Sprintf("package %s\n", pkgName)
 	imports := make(map[string]string)
 
@@ -272,7 +272,10 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 						aliasPkg = imports[bundle.ImportPath]
 					}
 					if rule.OnEnter != "" {
-						rd := filepath.Join(OtelRules, dp.rule2Dir[rule])
+						// @@Dont use filepath.Join here, because this is import
+						// path presented in Go source code, which should always
+						// use forward slash
+						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
 							return fmt.Errorf("failed to get import path: %w",
@@ -289,7 +292,7 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 						)
 					}
 					if rule.OnExit != "" {
-						rd := filepath.Join(OtelRules, dp.rule2Dir[rule])
+						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
 							return fmt.Errorf("failed to get import path: %w",
@@ -339,7 +342,8 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 	}
 	c += "}\n"
 
-	_, err = util.WriteFile(target, c)
+	initTarget := filepath.Join(OtelRules, OtelSetupInst)
+	_, err = util.WriteFile(initTarget, c)
 	if err != nil {
 		return err
 	}
@@ -358,8 +362,9 @@ func (dp *DepProcessor) addRuleImport() error {
 	return nil
 }
 
-func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
-	_, err := resource.CopyOtelSetupTo(pkgName, target)
+func (dp *DepProcessor) setupOtelSDK(pkgName string) error {
+	setupTarget := filepath.Join(OtelRules, OtelSetupSDK)
+	_, err := resource.CopyOtelSetupTo(pkgName, setupTarget)
 	if err != nil {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
@@ -376,11 +381,11 @@ func (dp *DepProcessor) setupRules() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to setup rules: %w", err)
 	}
-	err = dp.initRules(OtelRules, filepath.Join(OtelRules, OtelSetupInst))
+	err = dp.initRules(OtelRules)
 	if err != nil {
 		return fmt.Errorf("failed to setup initiator: %w", err)
 	}
-	err = dp.setupOtelSDK(OtelRules, filepath.Join(OtelRules, OtelSetupSDK))
+	err = dp.setupOtelSDK(OtelRules)
 	if err != nil {
 		return fmt.Errorf("failed to setup otel sdk: %w", err)
 	}

@@ -118,7 +118,7 @@ func GetInstrumentLogPath(name string) string {
 	return filepath.Join(TempBuildDir, PInstrument, name)
 }
 
-func GePreprocessLogPath(name string) string {
+func GetPreprocessLogPath(name string) string {
 	return filepath.Join(TempBuildDir, PPreprocess, name)
 }
 

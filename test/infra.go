@@ -19,20 +19,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
-const (
-	ExecName = "otel"
-)
+func getExecName() string {
+	execName := "otel"
+	if runtime.GOOS == "windows" {
+		return execName + ".exe"
+	}
+	return execName
+}
 
 func runCmd(args []string) *exec.Cmd {
 	path := args[0]
@@ -78,8 +82,8 @@ func readStderrLog(t *testing.T) string {
 
 func RunVersion(t *testing.T) {
 	util.Assert(pwd != "", "pwd is empty")
-	path := filepath.Join(filepath.Dir(pwd), ExecName)
-	cmd := runCmd(append([]string{path, "version"}))
+	path := filepath.Join(filepath.Dir(pwd), getExecName())
+	cmd := runCmd([]string{path, "version"})
 	err := cmd.Run()
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +92,7 @@ func RunVersion(t *testing.T) {
 
 func RunSet(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
-	path := filepath.Join(filepath.Dir(pwd), ExecName)
+	path := filepath.Join(filepath.Dir(pwd), getExecName())
 	cmd := runCmd(append([]string{path, "set"}, args...))
 	err := cmd.Run()
 	if err != nil {
@@ -99,7 +103,7 @@ func RunSet(t *testing.T, args ...string) {
 func RunGoBuild(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
 	RunSet(t, "-debuglog")
-	path := filepath.Join(filepath.Dir(pwd), ExecName)
+	path := filepath.Join(filepath.Dir(pwd), getExecName())
 	cmd := runCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err != nil {
@@ -120,7 +124,7 @@ func RunGoBuild(t *testing.T, args ...string) {
 func RunGoBuildFallible(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
 	RunSet(t, "-debuglog")
-	path := filepath.Join(filepath.Dir(pwd), ExecName)
+	path := filepath.Join(filepath.Dir(pwd), getExecName())
 	cmd := runCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err == nil {
@@ -204,13 +208,13 @@ func ExpectInstrumentNotContains(t *testing.T, log string, rule string) {
 	ExpectNotContains(t, content, rule)
 }
 
-func ExpecPreprocessContains(t *testing.T, log string, rule string) {
+func ExpectPreprocessContains(t *testing.T, log string, rule string) {
 	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
-func ExpecPreprocessNotContains(t *testing.T, log string, rule string) {
+func ExpectPreprocessNotContains(t *testing.T, log string, rule string) {
 	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
