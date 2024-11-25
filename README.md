@@ -26,10 +26,11 @@ page.
 
 ### Build From Source
 
-Checkout the source code and build the tool by running the following command:
+Checkout source code and build the tool by running one of following commands:
 
 ```bash
-$ make install
+$ make         # build only
+$ make install # build and install
 ```
 
 # Getting Started
