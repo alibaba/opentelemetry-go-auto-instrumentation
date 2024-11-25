@@ -25,11 +25,12 @@ const HelloworldAppName = "helloworld"
 func TestRunHelloworld(t *testing.T) {
 	UseApp(HelloworldAppName)
 
-	RunInstrument(t, "-debuglog", "go", "build") // no test rules, build as usual
+	RunGoBuild(t, "go", "build") // no test rules, build as usual
 	stdout, _ := RunApp(t, HelloworldAppName)
 	ExpectContains(t, stdout, "helloworld")
 
-	RunInstrument(t, UseTestRules("test_fmt.json"), "-debuglog", "go", "build")
+	RunSet(t, UseTestRules("test_fmt.json"))
+	RunGoBuild(t, "go", "build")
 	stdout, stderr := RunApp(t, HelloworldAppName)
 	ExpectContains(t, stdout, "olleH")
 	ExpectContains(t, stderr, "Entering hook1") // println writes to stderr
@@ -57,17 +58,17 @@ func TestRunHelloworld(t *testing.T) {
 // func TestBuildHelloworldWithVendor1(t *testing.T) {
 // 	UseApp(HelloworldAppName)
 // 	util.RunCmd("go", "mod", "vendor")
-// 	RunInstrument(t, "-debuglog", "go", "build")
+// 	RunGoBuild(t, "-debuglog", "go", "build")
 // }
 
 // func TestBuildHelloworldWithVendor2(t *testing.T) {
 // 	UseApp(HelloworldAppName)
 // 	util.RunCmd("go", "mod", "vendor")
-// 	RunInstrument(t, "-debuglog", "go", "build", "-mod=vendor")
+// 	RunGoBuild(t, "-debuglog", "go", "build", "-mod=vendor")
 // }
 
 // func TestBuildHelloworldWithVendor3(t *testing.T) {
 // 	UseApp(HelloworldAppName)
 // 	util.RunCmd("go", "mod", "vendor")
-// 	RunInstrument(t, "-debuglog", "go", "build", "-mod", "vendor")
+// 	RunGoBuild(t, "-debuglog", "go", "build", "-mod", "vendor")
 // }

@@ -28,7 +28,7 @@ func init() {
 
 func TestZap(t *testing.T, env ...string) {
 	UseApp("zap")
-	RunInstrument(t, "-debuglog", "go", "build", "test_zap.go", "http_server.go")
+	RunGoBuild(t, "go", "build", "test_zap.go", "http_server.go")
 	_, stderr := RunApp(t, "test_zap", env...)
 	reader := strings.NewReader(stderr)
 	scanner := bufio.NewScanner(reader)

@@ -26,28 +26,32 @@ page.
 
 ### Build From Source
 
-Checkout the source code and build the tool by running the following command:
+Checkout source code and build the tool by running one of following commands:
 
 ```bash
-$ make install
+$ make         # build only
+$ make install # build and install
 ```
 
 # Getting Started
 
-Add `otel` prefix to `go build` to build your project:
+The configuration for the tool can be set by the following command:
+
+```bash
+$ otel set -verbose                          # print verbose logs
+$ otel set -debug                            # enable debug mode
+$ otel set -debug -verbose -rule=custom.json # set multiple configs
+$ otel set -disabledefault -rule=custom.json # disable default rules, use custom rules only
+$ otel set -rule=custom.json                 # use default and custom rules
+$ otel set -rule=a.json,b.json               # use default, a and b rules
+```
+
+Once all set up, add `otel` prefix to `go build` to build your project:
 
 ```bash
 $ otel go build
 $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
-```
-The arguments for the tool itself should be placed before `go build`:
-
-```bash
-$ otel -help                      # print help doc
-$ otel -debug go build            # enable debug mode
-$ otel -verbose go build          # print verbose log
-$ otel -rule=custom.json go build # use custom rule
 ```
 
 You can also explore [**these examples**](./example/) to get hands-on experience.

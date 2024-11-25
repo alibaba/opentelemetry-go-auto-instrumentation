@@ -41,12 +41,10 @@ MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
 TOOL_REL_NAME := otel
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
-
-XVERSION := -X=$(MOD_NAME)/tool/shared.TheVersion=$(VERSION)
-XNAME := -X=$(MOD_NAME)/tool/shared.TheName=$(TOOL_REL_NAME)
+XVERSION := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION)
 STRIP_DEBUG := -s -w
-LDFLAGS := $(XVERSION) $(XNAME) $(STRIP_DEBUG)
-BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -ldflags="$(LDFLAGS)" -o $(3) ./tool/
+LDFLAGS := $(XVERSION) $(STRIP_DEBUG)
+BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -ldflags="$(LDFLAGS)" -o $(3) ./tool/cmd
 
 OUTPUT_BASE = $(TOOL_REL_NAME)
 OUTPUT_DARWIN_AMD64 = $(OUTPUT_BASE)-darwin-amd64
@@ -55,14 +53,14 @@ OUTPUT_WINDOWS_AMD64 = $(OUTPUT_BASE)-windows-amd64.exe
 OUTPUT_DARWIN_ARM64 = $(OUTPUT_BASE)-darwin-arm64
 OUTPUT_LINUX_ARM64 = $(OUTPUT_BASE)-linux-arm64
 
-.PHONY: all test clean
-
-all: clean darwin_amd64 linux_amd64 windows_amd64 darwin_arm64 linux_arm64
-
 .PHONY: build
 build:
 	go mod tidy
 	$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BASE))
+
+.PHONY: all test clean
+
+all: clean darwin_amd64 linux_amd64 windows_amd64 darwin_arm64 linux_arm64
 
 darwin_amd64:
 	go mod tidy

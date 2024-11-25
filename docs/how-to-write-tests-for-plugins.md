@@ -102,7 +102,7 @@ func TestExecutingCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
 	defer clearRedisContainer(redisC)
 	UseApp("redis/v9.0.5")
-	RunInstrument(t, "-debuglog", "go", "build", "test_executing_commands.go")
+	RunGoBuild(t, "go", "build", "test_executing_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_executing_commands", env...)
 }
@@ -125,7 +125,7 @@ testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string,
 
 You should build the test case with the `opentelemetry-go-auto-instrumentation` to make your test case able to produce
 telemetry data. Firstly you should call `UseApp` method to change directory to the directory of your test cases, and
-then call `RunInstrument` to do hybrid compilation. Finally, use the `RunApp` to run the instrumented test-case binary to
+then call `RunGoBuild` to do hybrid compilation. Finally, use the `RunApp` to run the instrumented test-case binary to
 verify the telemetry data.
 
 ```go
@@ -133,7 +133,7 @@ func TestExecutingUnsupportedCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedisContainer()
 	defer clearRedisContainer(redisC)
 	UseApp("redis/v9.0.5")
-	RunInstrument(t, "-debuglog", "go", "build", "test_executing_unsupported_commands.go")
+	RunGoBuild(t, "go", "build", "test_executing_unsupported_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_executing_unsupported_commands", env...)
 }

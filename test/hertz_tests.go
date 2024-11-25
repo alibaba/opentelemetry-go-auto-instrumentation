@@ -31,24 +31,24 @@ func init() {
 
 func TestBasicHertz(t *testing.T, env ...string) {
 	UseApp("hertz/v0.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_hertz_basic.go", "basic_func.go")
+	RunGoBuild(t, "go", "build", "test_hertz_basic.go", "basic_func.go")
 	RunApp(t, "test_hertz_basic", env...)
 }
 
 func TestBasicHertzWithHook(t *testing.T, env ...string) {
 	UseApp("hertz/v0.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_hertz_with_hook.go", "basic_func.go")
+	RunGoBuild(t, "go", "build", "test_hertz_with_hook.go", "basic_func.go")
 	RunApp(t, "test_hertz_with_hook", env...)
 }
 
 func TestBasicHertzWithException(t *testing.T, env ...string) {
 	UseApp("hertz/v0.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_hertz_with_exception.go", "basic_func.go")
+	RunGoBuild(t, "go", "build", "test_hertz_with_exception.go", "basic_func.go")
 	RunApp(t, "test_hertz_with_exception", env...)
 }
 
 func TestBasicHertzWithRegex(t *testing.T, env ...string) {
 	UseApp("hertz/v0.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_hertz_with_regex.go", "basic_func.go")
+	RunGoBuild(t, "go", "build", "test_hertz_with_regex.go", "basic_func.go")
 	RunApp(t, "test_hertz_with_regex", env...)
 }

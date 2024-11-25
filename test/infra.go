@@ -34,7 +34,7 @@ const (
 	ExecName = "otel"
 )
 
-func RunCmd(args []string) *exec.Cmd {
+func runCmd(args []string) *exec.Cmd {
 	path := args[0]
 	args = args[1:]
 	cmd := exec.Command(path, args...)
@@ -51,7 +51,7 @@ func RunCmd(args []string) *exec.Cmd {
 }
 
 func ReadInstrumentLog(t *testing.T, fileName string) string {
-	path := filepath.Join(shared.TempBuildDir, shared.TInstrument, fileName)
+	path := filepath.Join(shared.TempBuildDir, shared.PInstrument, fileName)
 	content, err := util.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -60,7 +60,7 @@ func ReadInstrumentLog(t *testing.T, fileName string) string {
 }
 
 func ReadPreprocessLog(t *testing.T, fileName string) string {
-	path := filepath.Join(shared.TempBuildDir, shared.TPreprocess, fileName)
+	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, fileName)
 	content, err := util.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -76,29 +76,31 @@ func readStderrLog(t *testing.T) string {
 	return readLog(t, "stderr.log")
 }
 
-func RunGoBuild(t *testing.T, args ...string) {
+func RunVersion(t *testing.T) {
 	util.Assert(pwd != "", "pwd is empty")
-	cmd := RunCmd(append([]string{"go", "build"}, args...))
+	path := filepath.Join(filepath.Dir(pwd), ExecName)
+	cmd := runCmd(append([]string{path, "version"}))
 	err := cmd.Run()
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func RunInstrumentFallible(t *testing.T, args ...string) {
+func RunSet(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
 	path := filepath.Join(filepath.Dir(pwd), ExecName)
-	cmd := RunCmd(append([]string{path}, args...))
+	cmd := runCmd(append([]string{path, "set"}, args...))
 	err := cmd.Run()
-	if err == nil {
-		t.Fatal("expected failure")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
-func RunInstrument(t *testing.T, args ...string) {
+func RunGoBuild(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
+	RunSet(t, "-debuglog")
 	path := filepath.Join(filepath.Dir(pwd), ExecName)
-	cmd := RunCmd(append([]string{path}, args...))
+	cmd := runCmd(append([]string{path}, args...))
 	err := cmd.Run()
 	if err != nil {
 		stderr := readStderrLog(t)
@@ -115,10 +117,20 @@ func RunInstrument(t *testing.T, args ...string) {
 	}
 }
 
+func RunGoBuildFallible(t *testing.T, args ...string) {
+	util.Assert(pwd != "", "pwd is empty")
+	RunSet(t, "-debuglog")
+	path := filepath.Join(filepath.Dir(pwd), ExecName)
+	cmd := runCmd(append([]string{path}, args...))
+	err := cmd.Run()
+	if err == nil {
+		t.Fatal("expected failure")
+	}
+}
+
 func UseTestRules(name string) string {
 	path := filepath.Join(filepath.Dir(pwd), "pkg", "data", name)
-	// Only for test, so we disable default rule file and use the specified one.
-	return "-rule=+" + path
+	return "-rule=" + path
 }
 
 var pwd string
@@ -139,7 +151,7 @@ func UseApp(appName string) {
 }
 
 func RunApp(t *testing.T, appName string, env ...string) (string, string) {
-	cmd := RunCmd([]string{"./" + appName})
+	cmd := runCmd([]string{"./" + appName})
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, env...)
 	cmd.Env = append(cmd.Env, verifier.IS_IN_TEST+"=true")
@@ -181,25 +193,25 @@ func ExpectStderrContains(t *testing.T, expect string) {
 }
 
 func ExpectInstrumentContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TInstrument, log)
+	path := filepath.Join(shared.TempBuildDir, shared.PInstrument, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
 func ExpectInstrumentNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TInstrument, log)
+	path := filepath.Join(shared.TempBuildDir, shared.PInstrument, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
 }
 
-func ExpectPreprocessContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TPreprocess, log)
+func ExpecPreprocessContains(t *testing.T, log string, rule string) {
+	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
-func ExpectPreprocessNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, shared.TPreprocess, log)
+func ExpecPreprocessNotContains(t *testing.T, log string, rule string) {
+	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
 }
@@ -253,9 +265,9 @@ func ExpectContainsNothing(t *testing.T, actualItems []string) {
 func TBuildAppNoop(t *testing.T, appName string, muzzleClasses ...string) {
 	UseApp(appName)
 	if muzzleClasses == nil || len(muzzleClasses) == 0 {
-		RunInstrument(t)
+		RunGoBuild(t)
 	} else {
-		RunInstrument(t, muzzleClasses...)
+		RunGoBuild(t, muzzleClasses...)
 	}
 }
 

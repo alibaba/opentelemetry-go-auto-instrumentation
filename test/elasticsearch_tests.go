@@ -17,10 +17,11 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go"
 	"testing"
 	"time"
+
+	"github.com/docker/go-connections/nat"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const es_v8_dependency_name = "github.com/elastic/go-elasticsearch/v8"
@@ -43,7 +44,7 @@ func TestESCrud(t *testing.T, env ...string) {
 	esC, esPort := initElasticSearchContainer()
 	defer testcontainers.CleanupContainer(t, esC)
 	UseApp("elasticsearch/v8.4.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_es_crud.go")
+	RunGoBuild(t, "go", "build", "test_es_crud.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
 	RunApp(t, "test_es_crud", env...)
 }
@@ -52,7 +53,7 @@ func TestESTypedClient(t *testing.T, env ...string) {
 	esC, esPort := initElasticSearchContainer()
 	defer testcontainers.CleanupContainer(t, esC)
 	UseApp("elasticsearch/v8.5.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_es_typedclient.go")
+	RunGoBuild(t, "go", "build", "test_es_typedclient.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
 	RunApp(t, "test_es_typedclient", env...)
 }

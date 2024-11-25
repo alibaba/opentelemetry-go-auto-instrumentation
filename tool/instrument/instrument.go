@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -221,10 +222,11 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 }
 
 func Instrument() error {
+	// Remove the tool itself from the command line arguments
 	args := os.Args[2:]
 	// Is compile command?
 	if shared.IsCompileCommand(strings.Join(args, " ")) {
-		if shared.GetConf().Verbose {
+		if config.GetConf().Verbose {
 			log.Printf("RunCmd: %v\n", args)
 		}
 		bundles, err := resource.LoadRuleBundles()
