@@ -25,13 +25,13 @@ func TestFlags(t *testing.T) {
 	UseApp(AppName)
 
 	RunGoBuildFallible(t, "go", "build", "-thisisnotvalid")
-	ExpecPreprocessContains(t, shared.DebugLogFile, "failed to")
+	ExpectPreprocessContains(t, shared.DebugLogFile, "failed to")
 
 	RunVersion(t)
 	ExpectStdoutContains(t, "version")
 
 	RunGoBuildFallible(t, "go", "build", "notevenaflag")
-	ExpecPreprocessContains(t, shared.DebugLogFile, "failed to")
+	ExpectPreprocessContains(t, shared.DebugLogFile, "failed to")
 
 	RunSet(t, "-verbose")
 	RunGoBuild(t, "go", "build", `-ldflags=-X main.Placeholder=replaced`)

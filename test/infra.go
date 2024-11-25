@@ -204,13 +204,13 @@ func ExpectInstrumentNotContains(t *testing.T, log string, rule string) {
 	ExpectNotContains(t, content, rule)
 }
 
-func ExpecPreprocessContains(t *testing.T, log string, rule string) {
+func ExpectPreprocessContains(t *testing.T, log string, rule string) {
 	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
-func ExpecPreprocessNotContains(t *testing.T, log string, rule string) {
+func ExpectPreprocessNotContains(t *testing.T, log string, rule string) {
 	path := filepath.Join(shared.TempBuildDir, shared.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
