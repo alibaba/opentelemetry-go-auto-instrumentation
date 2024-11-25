@@ -170,7 +170,7 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) StartAndEndWith
 }
 
 func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST, options ...trace.SpanStartOption) context.Context {
-	newCtx := p.base.Start(parentContext, request)
+	newCtx := p.base.Start(parentContext, request, options...)
 	if p.carrierGetter != nil {
 		if p.prop != nil {
 			p.prop.Inject(newCtx, p.carrierGetter(request))
@@ -183,7 +183,7 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentCon
 }
 
 func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error, options ...trace.SpanEndOption) {
-	p.base.End(ctx, request, response, err)
+	p.base.End(ctx, request, response, err, options...)
 }
 
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
@@ -226,12 +226,12 @@ func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) Start(parentCon
 		} else {
 			extracted = otel.GetTextMapPropagator().Extract(parentContext, p.carrierGetter(request))
 		}
-		return p.base.Start(extracted, request)
+		return p.base.Start(extracted, request, options...)
 	} else {
 		return parentContext
 	}
 }
 
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error, options ...trace.SpanEndOption) {
-	p.base.End(ctx, request, response, err)
+	p.base.End(ctx, request, response, err, options...)
 }
