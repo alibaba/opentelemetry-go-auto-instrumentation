@@ -44,20 +44,22 @@ import (
 // for preparing these dependencies in advance.
 
 const (
-	OtelSetupInst    = "otel_setup_inst.go"
-	OtelSetupSDK     = "otel_setup_sdk.go"
-	OtelRules        = "otel_rules"
-	OtelUser         = "otel_user"
-	OtelRuleCache    = "rule_cache"
-	OtelBackups      = "backups"
-	OtelBackupSuffix = ".bk"
-	FuncMain         = "main"
-	FuncInit         = "init"
-	DryRunLog        = "dry_run.log"
-	CompileRemix     = "remix"
-	StdRulesPrefix   = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
-	StdRulesPath     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
-	ApiPath          = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	OtelSetupInst      = "otel_setup_inst.go"
+	OtelSetupSDK       = "otel_setup_sdk.go"
+	OtelRules          = "otel_rules"
+	OtelUser           = "otel_user"
+	OtelRuleCache      = "rule_cache"
+	OtelBackups        = "backups"
+	OtelBackupSuffix   = ".bk"
+	FuncMain           = "main"
+	FuncInit           = "init"
+	DryRunLog          = "dry_run.log"
+	CompileRemix       = "remix"
+	ReorderLocalPrefix = "<REORDER>"
+	ReorderInitFile    = "reorder_init.go"
+	StdRulesPrefix     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
+	StdRulesPath       = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
+	ApiPath            = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 // @@ Change should sync with trampoline template

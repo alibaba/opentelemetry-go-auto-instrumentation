@@ -100,5 +100,11 @@
         "Function": "NilArg",
         "OnEnter": "onEnterNilArg",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error16"
+    },
+    {
+        "ImportPath": "errorstest/dep",
+        "Function": "BadDep",
+        "OnExit": "onExitBadDep",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error17"
     }
 ]

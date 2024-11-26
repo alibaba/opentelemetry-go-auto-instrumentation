@@ -336,7 +336,7 @@ func (dp *DepProcessor) initRules(pkgName string) (err error) {
 	}
 
 	// Assignments
-	c += "func init() {\n"
+	c += " func init() { \n"
 	for _, assign := range assigns {
 		c += assign
 	}
@@ -358,6 +358,64 @@ func (dp *DepProcessor) addRuleImport() error {
 	err = dp.addExplicitImport(ruleImportPath)
 	if err != nil {
 		return fmt.Errorf("failed to add rule import: %w", err)
+	}
+	return nil
+}
+
+// Very hacky code here. We need to rewrite the localPrefix within the source
+// to the real project module name. This is necessary because the localPrefix
+// is used to identify whether the init task belongs to local project or not.
+// Now that we are trying to reorder these tasks to the end of the init task
+// list, we must know which one is the target we want to reorder. During the
+// runtime, we are unable to know the real module name of the project, so we
+// must done this during the compilation.
+func (dp *DepProcessor) rewriteRules() error {
+	// Rewrite localPrefix within the source to real project module name
+	for _, bundle := range dp.bundles {
+		if len(bundle.FileRules) == 0 {
+			continue
+		}
+		for _, rule := range bundle.FileRules {
+			if !strings.HasSuffix(rule.FileName, ReorderInitFile) {
+				continue
+			}
+			astRoot, err := shared.ParseAstFromFile(rule.FileName)
+			if err != nil {
+				return fmt.Errorf("failed to parse ast from source: %w", err)
+			}
+			found := false
+			dst.Inspect(astRoot, func(n dst.Node) bool {
+				if basicLit, ok := n.(*dst.BasicLit); ok {
+					if basicLit.Kind == token.STRING {
+						quoted := fmt.Sprintf("%q", ReorderLocalPrefix)
+						if basicLit.Value == quoted {
+							gomod, err := shared.GetGoModPath()
+							if err != nil {
+								return false
+							}
+							moduleName, err := getModuleName(gomod)
+							if err != nil {
+								return false
+							}
+							found = true
+							basicLit.Value = fmt.Sprintf("%q", moduleName)
+							return false
+						}
+					}
+				}
+				return true
+			})
+			if !found {
+				return fmt.Errorf("failed to find rewrite local prefix in %v",
+					rule.FileName)
+			} else {
+				_, err = shared.WriteAstToFile(astRoot, rule.FileName)
+				if err != nil {
+					return fmt.Errorf("failed to write ast to %v: %w",
+						rule.FileName, err)
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -384,6 +442,10 @@ func (dp *DepProcessor) setupRules() (err error) {
 	err = dp.initRules(OtelRules)
 	if err != nil {
 		return fmt.Errorf("failed to setup initiator: %w", err)
+	}
+	err = dp.rewriteRules()
+	if err != nil {
+		return fmt.Errorf("failed to rewrite rules: %w", err)
 	}
 	err = dp.setupOtelSDK(OtelRules)
 	if err != nil {

@@ -12,19 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package error17
 
 import (
-	"fmt"
-	"time"
-
-	_ "go.opentelemetry.io/otel"
-	"golang.org/x/time/rate"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
-func main() {
-	n, _ := fmt.Printf("helloworld%s", "ingodwetrust")
-	println(n)
-
-	println(rate.Every(time.Duration(1) * time.Second))
+func onExitBadDep(call api.CallContext, _ string) {
+	call.SetReturnVal(0, "gooddep")
+	call.SetSkipCall(true)
 }
