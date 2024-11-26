@@ -17,7 +17,6 @@ package preprocess
 import (
 	"fmt"
 	"go/token"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,8 +53,6 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 		return nil
 	}
 	// Find out which resource files we should add to project
-	// uniqueResources := make(map[string]*resource.RuleBundle)
-	// res2Dir := make(map[string]string)
 	for _, bundle := range dp.bundles {
 		for _, funcRules := range bundle.File2FuncRules {
 			// Copy resource file into project as otel_rule_\d.go
@@ -85,9 +82,6 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 
 					for _, file := range files {
 						if !shared.IsGoFile(file) || shared.IsGoTestFile(file) {
-							if config.GetConf().Verbose {
-								log.Printf("Ignore file %v\n", file)
-							}
 							continue
 						}
 
@@ -172,7 +166,7 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 			for _, param := range params {
 				if sele, ok := param.Type.(*dst.SelectorExpr); ok {
 					if _, ok := sele.X.(*dst.Ident); ok {
-						if sele.Sel.Name == "CallContext" {
+						if sele.Sel.Name == ApiCallContext {
 							f.Name.Name = strings.Title(f.Name.Name)
 							break
 						}
@@ -209,7 +203,7 @@ func (dp *DepProcessor) copyRule(path, target string,
 		return fmt.Errorf("failed to write ast to %v: %w", target, err)
 	}
 	if config.GetConf().Verbose {
-		log.Printf("Copy dependency %v to %v", path, target)
+		util.Log("Copy dependency %v to %v", path, target)
 	}
 	return nil
 }

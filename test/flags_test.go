@@ -44,7 +44,7 @@ func TestFlags(t *testing.T) {
 	RunGoBuild(t, "")
 }
 
-func TestFlagConfigOverwriteNo(t *testing.T) {
+func TestFlagEnvOverwrite(t *testing.T) {
 	UseApp(AppName)
 
 	RunSet(t, "-verbose=false")

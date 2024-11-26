@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -100,7 +99,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 			return fmt.Errorf("failed to write file: %w", err)
 		}
 		if config.GetConf().Verbose {
-			log.Printf("Copy embed file %v to %v", p, target)
+			util.Log("Copy embed file %v to %v", p, target)
 		}
 		return nil
 	}
@@ -122,7 +121,7 @@ func (dp *DepProcessor) fetchFrom(path string) (string, error) {
 		return "", fmt.Errorf("failed to check path: %w", err)
 	}
 	if exist {
-		log.Printf("Fetch %s from local file system", path)
+		util.Log("Fetch %s from local file system", path)
 		return path, nil
 	}
 	// Path to network
@@ -135,7 +134,7 @@ func (dp *DepProcessor) fetchFrom(path string) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("failed to fetch embed: %w", err)
 			}
-			log.Printf("Fetch %s from embed cache", path)
+			util.Log("Fetch %s from embed cache", path)
 			return dir, nil
 		}
 
@@ -145,7 +144,7 @@ func (dp *DepProcessor) fetchFrom(path string) (string, error) {
 			return "", fmt.Errorf("failed to download module: %w", err)
 		}
 		// Get path to the local module cache
-		log.Printf("Fetch %s from network %s", path, dir)
+		util.Log("Fetch %s from network %s", path, dir)
 		return dir, nil
 	}
 
@@ -155,7 +154,7 @@ func (dp *DepProcessor) fetchFrom(path string) (string, error) {
 
 // fetchRules fetches the rules via the network
 func (dp *DepProcessor) fetchRules() error {
-	shared.GuaranteeInPreprocess()
+	util.GuaranteeInPreprocess()
 	defer util.PhaseTimer("Fetch")()
 	// Different rules may share the same path, we dont want to fetch the same
 	// path multiple times, so we use a map to record the resolved paths

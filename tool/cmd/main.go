@@ -16,7 +16,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,18 +48,17 @@ Command:
 `
 
 func printUsage() {
-	usage = strings.ReplaceAll(usage, "{}", config.GetToolName())
+	usage = strings.ReplaceAll(usage, "{}", util.GetToolName())
 	fmt.Print(usage)
 }
 
-func initLogs(names ...string) error {
-	for _, name := range names {
-		path := shared.GetTempBuildDirWith(name)
-		logPath := filepath.Join(path, shared.DebugLogFile)
-		_, err := os.Create(logPath)
-		if err != nil {
-			return fmt.Errorf("failed to create log file: %w", err)
-		}
+func initLog() error {
+	name := util.PPreprocess
+	path := shared.GetTempBuildDirWith(name)
+	logPath := filepath.Join(path, shared.DebugLogFile)
+	_, err := os.Create(logPath)
+	if err != nil {
+		return fmt.Errorf("failed to create log file: %w", err)
 	}
 	return nil
 }
@@ -68,7 +66,7 @@ func initLogs(names ...string) error {
 func initTempDir() error {
 	// All temp directories are prepared before, instrument phase should not
 	// create any new directories.
-	if shared.GetRunPhase() == shared.PInstrument {
+	if util.GetRunPhase() == util.PInstrument {
 		return nil
 	}
 
@@ -83,14 +81,14 @@ func initTempDir() error {
 	// we always recreate the preprocess and instrument directories, but only
 	// create the configure directory if it does not exist. This is because
 	// the configure directory can be used across multiple runs.
-	exist, _ := util.PathExists(shared.GetTempBuildDirWith(shared.PConfigure))
+	exist, _ := util.PathExists(shared.GetTempBuildDirWith(util.PConfigure))
 	if !exist {
-		err := os.MkdirAll(shared.GetTempBuildDirWith(shared.PConfigure), 0777)
+		err := os.MkdirAll(shared.GetTempBuildDirWith(util.PConfigure), 0777)
 		if err != nil {
 			return fmt.Errorf("failed to make log directory: %w", err)
 		}
 	}
-	for _, subdir := range []string{shared.PPreprocess, shared.PInstrument} {
+	for _, subdir := range []string{util.PPreprocess, util.PInstrument} {
 		exist, _ = util.PathExists(shared.GetTempBuildDirWith(subdir))
 		if exist {
 			err := os.RemoveAll(shared.GetTempBuildDirWith(subdir))
@@ -114,18 +112,16 @@ func initEnv() error {
 	switch {
 	case os.Args[1] == SubcommandSet:
 		// otel set?
-		shared.SetRunPhase(shared.PConfigure)
+		util.SetRunPhase(util.PConfigure)
 	case strings.HasSuffix(os.Args[1], SubcommandGo):
 		// otel go build?
-		shared.SetRunPhase(shared.PPreprocess)
+		util.SetRunPhase(util.PPreprocess)
 	case os.Args[1] == SubcommandRemix:
 		// otel remix?
-		shared.SetRunPhase(shared.PInstrument)
+		util.SetRunPhase(util.PInstrument)
 	default:
 		// do nothing
 	}
-
-	log.SetPrefix("[" + shared.GetRunPhase().String() + "] ")
 
 	// Create temp build directory
 	err := initTempDir()
@@ -134,15 +130,15 @@ func initEnv() error {
 	}
 
 	// Create log files under temp build directory
-	if shared.InPreprocess() {
-		err := initLogs(shared.PPreprocess, shared.PInstrument)
+	if util.InPreprocess() {
+		err := initLog()
 		if err != nil {
 			return fmt.Errorf("failed to init logs: %w", err)
 		}
 	}
 
 	// Prepare shared configuration
-	if shared.InPreprocess() || shared.InInstrument() {
+	if util.InPreprocess() || util.InInstrument() {
 		err = config.InitConfig()
 		if err != nil {
 			return fmt.Errorf("failed to init config: %w", err)
@@ -159,7 +155,7 @@ func main() {
 
 	err := initEnv()
 	if err != nil {
-		log.Printf("failed to init env: %v", err)
+		util.LogFatal("failed to init env: %v", err)
 		os.Exit(1)
 	}
 
@@ -177,7 +173,7 @@ func main() {
 		printUsage()
 	}
 	if err != nil {
-		log.Printf("failed to run command %s: %v", subcmd, err)
+		util.LogFatal("failed to run command %s: %v", subcmd, err)
 		os.Exit(1)
 	}
 }

@@ -16,7 +16,6 @@ package instrument
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -371,7 +370,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 							return fmt.Errorf("failed to rewrite: %w for %v",
 								err, rule)
 						}
-						log.Printf("Apply func rule %s\n", rule)
+						util.Log("Apply func rule %s", rule)
 					}
 					break
 				}

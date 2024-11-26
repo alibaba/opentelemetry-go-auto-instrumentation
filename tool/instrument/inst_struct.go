@@ -16,7 +16,6 @@ package instrument
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
@@ -27,7 +26,7 @@ import (
 func addStructField(rule *resource.InstStructRule, decl dst.Decl) {
 	util.Assert(rule.FieldName != "" && rule.FieldType != "",
 		"rule must have field and type")
-	log.Printf("Apply struct rule %v", rule)
+	util.Log("Apply struct rule %v", rule)
 	shared.AddStructField(decl, rule.FieldName, rule.FieldType)
 }
 

@@ -42,29 +42,6 @@ const (
 	BuildConfFile        = "build_conf.json"
 )
 
-type RunPhase string
-
-const (
-	PInvalid    = "invalid"
-	PPreprocess = "preprocess"
-	PInstrument = "instrument"
-	PConfigure  = "configure"
-)
-
-var rp RunPhase = "bad"
-
-func SetRunPhase(phase RunPhase) {
-	rp = phase
-}
-
-func GetRunPhase() RunPhase {
-	return rp
-}
-
-func (rp RunPhase) String() string {
-	return string(rp)
-}
-
 func AssertGoBuild(args []string) {
 	if len(args) < 2 {
 		util.Assert(false, "empty go build command")
@@ -103,7 +80,7 @@ func IsCompileCommand(line string) bool {
 }
 
 func GetTempBuildDir() string {
-	return filepath.Join(TempBuildDir, rp.String())
+	return filepath.Join(TempBuildDir, util.GetRunPhase().String())
 }
 
 func GetTempBuildDirWith(name string) string {
@@ -115,15 +92,15 @@ func GetLogPath(name string) string {
 }
 
 func GetInstrumentLogPath(name string) string {
-	return filepath.Join(TempBuildDir, PInstrument, name)
+	return filepath.Join(TempBuildDir, util.PInstrument, name)
 }
 
 func GetPreprocessLogPath(name string) string {
-	return filepath.Join(TempBuildDir, PPreprocess, name)
+	return filepath.Join(TempBuildDir, util.PPreprocess, name)
 }
 
 func GetConfigureLogPath(name string) string {
-	return filepath.Join(TempBuildDir, PConfigure, name)
+	return filepath.Join(TempBuildDir, util.PConfigure, name)
 }
 
 func GetVarNameOfFunc(fn string) string {
@@ -163,7 +140,7 @@ func GetGoModPath() (string, error) {
 	cmd := exec.Command("go", "env", "GOMOD")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to get go.mod directory: %w\n%v",
+		return "", fmt.Errorf("failed to check go.mod existence: %w\n%v",
 			err, string(out))
 	}
 	path := strings.TrimSpace(string(out))
@@ -237,30 +214,6 @@ func HashStruct(st interface{}) (uint64, error) {
 
 func MakePublic(name string) string {
 	return strings.Title(name)
-}
-
-func InPreprocess() bool {
-	return rp == PPreprocess
-}
-
-func InInstrument() bool {
-	return rp == PInstrument
-}
-
-func InConfigure() bool {
-	return rp == PConfigure
-}
-
-func GuaranteeInPreprocess() {
-	util.Assert(rp == PPreprocess, "not in preprocess stage")
-}
-
-func GuaranteeInInstrument() {
-	util.Assert(rp == PInstrument, "not in instrument stage")
-}
-
-func GuaranteeInConfigure() {
-	util.Assert(rp == PConfigure, "not in configure stage")
 }
 
 // splitVersionRange splits the version range into two parts, start and end.
