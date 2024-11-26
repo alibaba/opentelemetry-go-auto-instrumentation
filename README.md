@@ -103,3 +103,9 @@ our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fU
 to engage with us.
 
 <img src="docs/dingtalk.png" height="200">
+
+## Who is using opentelemetry-go-auto-instrumentation
+
+These are only part of the companies using this project, for reference only. If you are using this project, please [add your company here](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) to tell us your scenario to make this project better.
+
+![Alibaba Group](https://docs.alibabagroup.com/assets2/images/en/global/logo_header.png)
