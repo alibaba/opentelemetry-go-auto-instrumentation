@@ -64,9 +64,12 @@ endif
 
 #-------------------------------------------------------------------------------
 # Build targets
-.PHONY: build
-build:
+.PHONY: tidy
+tidy:
 	go mod tidy
+
+.PHONY: build
+build: tidy
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE))
 ifeq ($(CURRENT_OS),windows)
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE).exe)
@@ -77,24 +80,19 @@ endif
 
 all: clean darwin_amd64 linux_amd64 windows_amd64 darwin_arm64 linux_arm64
 
-darwin_amd64:
-	go mod tidy
+darwin_amd64: tidy
 	$(call BUILD_CMD,darwin,amd64,$(OUTPUT_DARWIN_AMD64))
 
-linux_amd64:
-	go mod tidy
+linux_amd64: tidy
 	$(call BUILD_CMD,linux,amd64,$(OUTPUT_LINUX_AMD64))
 
-windows_amd64:
-	go mod tidy
+windows_amd64: tidy
 	$(call BUILD_CMD,windows,amd64,$(OUTPUT_WINDOWS_AMD64))
 
-darwin_arm64:
-	go mod tidy
+darwin_arm64: tidy
 	$(call BUILD_CMD,darwin,arm64,$(OUTPUT_DARWIN_ARM64))
 
-linux_arm64:
-	go mod tidy
+linux_arm64: tidy
 	$(call BUILD_CMD,linux,arm64,$(OUTPUT_LINUX_ARM64))
 
 clean:
