@@ -111,6 +111,18 @@ And request to the server:
 curl localhost:9000/http-service
 ```
 
+### 7. check trace data
+
+if run on loacal machine:
+
+access Jaeger UI: http://localhost:16686
+
+if run on k8s, run the command to get access endpoint of Jaeger UI:
+
+```shell
+kubectl get svc opentelemetry-demo-jaeger-collector
+```
+
 Wait a little while, you can see the corresponding trace data！All the spans are aggregated in one trace.
 ![jaeger.png](jaeger.png)
 
