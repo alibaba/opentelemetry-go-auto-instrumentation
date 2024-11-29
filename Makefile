@@ -64,10 +64,6 @@ endif
 
 #-------------------------------------------------------------------------------
 # Build targets
-.PHONY: tidy
-tidy:
-	go mod tidy
-
 .PHONY: build
 build: tidy
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE))
@@ -94,6 +90,10 @@ darwin_arm64: tidy
 
 linux_arm64: tidy
 	$(call BUILD_CMD,linux,arm64,$(OUTPUT_LINUX_ARM64))
+
+.PHONY: tidy
+tidy:
+	go mod tidy
 
 clean:
 	rm -f $(OUTPUT_DARWIN_AMD64) $(OUTPUT_LINUX_AMD64) $(OUTPUT_WINDOWS_AMD64) $(OUTPUT_DARWIN_ARM64) $(OUTPUT_LINUX_ARM64) $(OUTPUT_BASE)
