@@ -20,8 +20,9 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 )
 
+const AppName = "flags"
+
 func TestFlags(t *testing.T) {
-	const AppName = "flags"
 	UseApp(AppName)
 
 	RunGoBuildFallible(t, "go", "build", "-thisisnotvalid")
@@ -41,4 +42,18 @@ func TestFlags(t *testing.T) {
 	RunGoBuild(t, "go")
 	RunGoBuild(t)
 	RunGoBuild(t, "")
+}
+
+func TestFlagConfigOverwriteNo(t *testing.T) {
+	UseApp(AppName)
+
+	RunSet(t, "-verbose=false")
+	RunGoBuildWithEnv(t, []string{"OTELTOOL_VERBOSE=true"},
+		"go", "build")
+	ExpectPreprocessContains(t, shared.DebugLogFile, "Available")
+
+	RunSet(t, "-verbose=true")
+	RunGoBuildWithEnv(t, []string{"OTELTOOL_VERBOSE=false"},
+		"go", "build")
+	ExpectPreprocessNotContains(t, shared.DebugLogFile, "Available")
 }
