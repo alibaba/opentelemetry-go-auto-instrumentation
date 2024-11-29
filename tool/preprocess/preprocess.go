@@ -59,7 +59,6 @@ const (
 	ReorderInitFile    = "reorder_init.go"
 	StdRulesPrefix     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
 	StdRulesPath       = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
-	ApiPath            = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 // @@ Change should sync with trampoline template

@@ -106,11 +106,6 @@ func findAvailableRules() []resource.InstRule {
 		return nil
 	}
 
-	// If rule file is not set, we will use the default rules
-	if config.GetConf().RuleJsonFiles == "" {
-		return loadDefaultRules()
-	}
-
 	rules := make([]resource.InstRule, 0)
 
 	// Load default rules unless explicitly disabled
@@ -119,27 +114,29 @@ func findAvailableRules() []resource.InstRule {
 		rules = append(rules, defaultRules...)
 	}
 
-	// Load multiple rule files if provided
-	if strings.Contains(config.GetConf().RuleJsonFiles, ",") {
-		ruleFiles := strings.Split(config.GetConf().RuleJsonFiles, ",")
-		for _, ruleFile := range ruleFiles {
-			r, err := loadRuleFile(ruleFile)
-			if err != nil {
-				log.Printf("Failed to load rules: %v", err)
-				continue
+	// If rule files are provided, load them
+	if config.GetConf().RuleJsonFiles != "" {
+		// Load multiple rule files
+		if strings.Contains(config.GetConf().RuleJsonFiles, ",") {
+			ruleFiles := strings.Split(config.GetConf().RuleJsonFiles, ",")
+			for _, ruleFile := range ruleFiles {
+				r, err := loadRuleFile(ruleFile)
+				if err != nil {
+					log.Printf("Failed to load rules: %v", err)
+					continue
+				}
+				rules = append(rules, r...)
 			}
-			rules = append(rules, r...)
+			return rules
 		}
-		return rules
+		// Load the one rule file
+		rs, err := loadRuleFile(config.GetConf().RuleJsonFiles)
+		if err != nil {
+			log.Printf("Failed to load rules: %v", err)
+			return nil
+		}
+		rules = append(rules, rs...)
 	}
-
-	// Load the one rule file if provided
-	rs, err := loadRuleFile(config.GetConf().RuleJsonFiles)
-	if err != nil {
-		log.Printf("Failed to load rules: %v", err)
-		return nil
-	}
-	rules = append(rules, rs...)
 	return rules
 }
 
