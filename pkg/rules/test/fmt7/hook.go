@@ -17,13 +17,13 @@ package fmt7
 import (
 	_ "fmt"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	aliasapi "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api" // both alias api and instrumented package(fmt) are imported
 )
 
-func onEnterSprintf3(call api.CallContext, format string, arg ...any) {
+func onEnterSprintf3(call aliasapi.CallContext, format string, arg ...any) {
 	println("a3")
 }
 
-func onExitSprintf3(call api.CallContext, s string) {
+func onExitSprintf3(call aliasapi.CallContext, s string) {
 	print("b3")
 }

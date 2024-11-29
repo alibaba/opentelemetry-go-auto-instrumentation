@@ -290,6 +290,22 @@ func RemoveImport(root *dst.File, path string) *dst.ImportSpec {
 	return nil
 }
 
+func FindImport(root *dst.File, path string) *dst.ImportSpec {
+	for _, decl := range root.Decls {
+		if genDecl, ok := decl.(*dst.GenDecl); ok &&
+			genDecl.Tok == token.IMPORT {
+			for _, spec := range genDecl.Specs {
+				if importSpec, ok := spec.(*dst.ImportSpec); ok {
+					if importSpec.Path.Value == fmt.Sprintf("%q", path) {
+						return importSpec
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func NewVarDecl(name string, paramTypes *dst.FieldList) *dst.GenDecl {
 	return &dst.GenDecl{
 		Tok: token.VAR,

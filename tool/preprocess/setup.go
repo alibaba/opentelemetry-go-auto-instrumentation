@@ -29,6 +29,12 @@ import (
 	"github.com/dave/dst"
 )
 
+const (
+	ApiPackage     = "api"
+	ApiImportPath  = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	ApiCallContext = "CallContext"
+)
+
 func initRuleDir() (err error) {
 	if exist, _ := util.PathExists(OtelRules); exist {
 		err = os.RemoveAll(OtelRules)
@@ -105,38 +111,47 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 
 	return nil
 }
-
-func renameCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
-	pkgName := bundle.PackageName
-	// Find out if the target import path is aliased to another name
-	// if so, we need to rename api.CallContext to the alias name
-	// instead of the package name
-	for _, spec := range astRoot.Imports {
-		// Same import path and alias name is not null?
-		// One exception is the alias name is "_", we should ignore it
-		if shared.IsStringLit(spec.Path, bundle.ImportPath) &&
-			spec.Name != nil &&
-			spec.Name.Name != shared.IdentIgnore {
-			pkgName = spec.Name.Name
-			break
+func rectifyCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
+	// We write hook code by using api.CallContext as the first parameter, but
+	// the actual package name is not api. Given net/http package, the actual
+	// package name is http, so we should rectify the package name in the hook
+	// code to the correct package name. We did this by renaming the import path
+	// of api to the correct package name, and add an alias name for "api", this
+	// is required because CallContext is defined in the api package, and we can
+	// omit the package name before, but we can't do that now because of renaming
+	newAliasName := bundle.PackageName + util.RandomString(5)
+	alias := ApiPackage
+	spec := shared.FindImport(astRoot, ApiImportPath)
+	if spec != nil {
+		if spec.Name != nil {
+			alias = spec.Name.Name
 		}
 	}
+	// Check if the function has api.CallContext as the first parameter
+	// If so, rename it to the correct package name
 	for _, decl := range astRoot.Decls {
 		if f, ok := decl.(*dst.FuncDecl); ok {
+			foundCallContext := false
+
 			params := f.Type.Params.List
 			for _, param := range params {
 				if sele, ok := param.Type.(*dst.SelectorExpr); ok {
 					if x, ok := sele.X.(*dst.Ident); ok {
-						if x.Name == "api" && sele.Sel.Name == "CallContext" {
-							x.Name = pkgName
+						if x.Name == alias && sele.Sel.Name == ApiCallContext {
+							foundCallContext = true
+							x.Name = newAliasName
+							break
 						}
 					}
 				}
 			}
+			if foundCallContext {
+				spec.Path.Value = fmt.Sprintf("%q", bundle.ImportPath)
+				spec.Name = &dst.Ident{Name: newAliasName}
+			}
 		}
 	}
 }
-
 func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 	// Only make hook public, keep it as it is if it's not a hook
 	hooks := make(map[string]bool)
@@ -168,45 +183,6 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 	}
 }
 
-func renameImport(root *dst.File, oldPath, newPath string) bool {
-	// Find out if the old import and replace it with new one. Why we dont
-	// remove old import and add new one? Because we are not sure if the
-	// new import will be used, it's a compilation error if we import it
-	// but never use it.
-	for _, decl := range root.Decls {
-		if genDecl, ok := decl.(*dst.GenDecl); ok &&
-			genDecl.Tok == token.IMPORT {
-			for _, spec := range genDecl.Specs {
-				if importSpec, ok := spec.(*dst.ImportSpec); ok {
-					if importSpec.Path.Value == fmt.Sprintf("%q", oldPath) {
-						// In case the new import is already present, try to
-						// remove it first
-						oldSpec := shared.RemoveImport(root, newPath)
-						// Replace old with new one
-						importSpec.Path.Value = fmt.Sprintf("%q", newPath)
-						// Respect alias name of old import, if any
-						if oldSpec != nil {
-							importSpec.Name = oldSpec.Name
-
-							// Unless the alias name is "_", we should keep it
-							// For "_" alias, we should add additional normal
-							// variant for CallContext usage, i.e. keep both
-							// imports, one for existing usages, one for
-							// CallContext usage
-							if oldSpec.Name != nil &&
-								oldSpec.Name.Name == shared.IdentIgnore {
-								shared.AddImport(root, newPath)
-							}
-						}
-						return true
-					}
-				}
-			}
-		}
-	}
-	return false
-}
-
 func (dp *DepProcessor) copyRule(path, target string,
 	bundle *resource.RuleBundle) error {
 	text, err := util.ReadFile(path)
@@ -222,13 +198,10 @@ func (dp *DepProcessor) copyRule(path, target string,
 	astRoot.Name.Name = filepath.Base(filepath.Dir(target))
 
 	// Rename api.CallContext to correct package name if present
-	renameCallContext(astRoot, bundle)
+	rectifyCallContext(astRoot, bundle)
 
 	// Make hook functions public
 	makeHookPublic(astRoot, bundle)
-
-	// Rename "api" import to the correct package prefix
-	renameImport(astRoot, ApiPath, bundle.ImportPath)
 
 	// Copy used rule into project
 	_, err = shared.WriteAstToFile(astRoot, target)

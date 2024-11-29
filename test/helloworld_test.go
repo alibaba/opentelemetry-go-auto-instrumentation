@@ -25,6 +25,7 @@ const HelloworldAppName = "helloworld"
 func TestRunHelloworld(t *testing.T) {
 	UseApp(HelloworldAppName)
 
+	RunSet(t, "-rule=")
 	RunGoBuild(t, "go", "build") // no test rules, build as usual
 	stdout, _ := RunApp(t, HelloworldAppName)
 	ExpectContains(t, stdout, "helloworld")
