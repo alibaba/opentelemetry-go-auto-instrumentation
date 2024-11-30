@@ -52,13 +52,23 @@ func ShouldNotReachHereT(msg string) {
 	panic("should not reach here: " + msg)
 }
 
+var recordedRand = make(map[string]bool)
+
+// RandomString generates a globally unique random string of length n
 func RandomString(n int) string {
-	var letters = []rune("0123456789")
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+	for {
+		var letters = []rune("0123456789")
+		b := make([]rune, n)
+		for i := range b {
+			b[i] = letters[rand.Intn(len(letters))]
+		}
+		s := string(b)
+		// Random suffix collision? Reroll until we get a unique one
+		if _, ok := recordedRand[s]; !ok {
+			recordedRand[s] = true
+			return s
+		}
 	}
-	return string(b)
 }
 
 func RunCmd(args ...string) error {
@@ -240,4 +250,18 @@ func PhaseTimer(name string) func() {
 	return func() {
 		log.Printf("%s took %f s", name, time.Since(start).Seconds())
 	}
+}
+
+// StringDedup removes duplicate strings in a slice and returns a new slice
+// in original order.
+func StringDedup(s []string) []string {
+	m := make(map[string]struct{})
+	var r []string
+	for _, v := range s {
+		if _, ok := m[v]; !ok {
+			m[v] = struct{}{}
+			r = append(r, v)
+		}
+	}
+	return r
 }

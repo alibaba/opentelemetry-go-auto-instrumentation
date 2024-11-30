@@ -15,42 +15,21 @@
 package gin
 
 import (
-	"context"
-	"strconv"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"go.opentelemetry.io/otel/sdk/trace"
+
 	"github.com/gin-gonic/gin"
 )
 
 func htmlOnEnter(call api.CallContext, c *gin.Context, code int, name string, obj any) {
+	if !ginEnabler.Enable() {
+		return
+	}
 	if c == nil {
 		return
 	}
-	ctx := netGinServerInstrument.Start(c.Request.Context(), ginRequest{
-		method:  c.Request.Method,
-		url:     *c.Request.URL,
-		header:  c.Request.Header,
-		version: strconv.Itoa(c.Request.ProtoMajor) + "." + strconv.Itoa(c.Request.ProtoMinor),
-		host:    c.Request.Host,
-		isTls:   c.Request.TLS != nil,
-	})
-	data := make(map[string]interface{}, 2)
-	data["ctx"] = ctx
-	data["code"] = code
-	call.SetData(data)
-	return
-}
-
-func htmlOnExit(call api.CallContext) {
-	data, ok := call.GetData().(map[string]interface{})
-	if !ok || data == nil || data["ctx"] == nil {
-		return
+	lcs := trace.LocalRootSpanFromGLS()
+	if lcs != nil && c.FullPath() != "" && c.Request != nil && c.Request.URL != nil && (c.FullPath() != c.Request.URL.Path) {
+		lcs.SetName(c.FullPath())
 	}
-	ctx := data["ctx"].(context.Context)
-	code := data["code"].(int)
-	netGinServerInstrument.End(ctx, ginRequest{}, ginResponse{
-		statusCode: code,
-	}, nil)
-
-	return
 }

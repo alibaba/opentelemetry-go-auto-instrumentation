@@ -30,7 +30,7 @@ const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES = "OTEL_INSTRUMEN
 
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 
-func KratosNewHTTPServiceOnEnter(call api.CallContext, opts ...http.ServerOption) {
+func kratosNewHTTPServiceOnEnter(call api.CallContext, opts ...http.ServerOption) {
 	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES) != "true" {
 		return
 	}
@@ -38,7 +38,6 @@ func KratosNewHTTPServiceOnEnter(call api.CallContext, opts ...http.ServerOption
 	call.SetParam(0, opts)
 }
 
-// AddMiddleware adds service middleware option.
 func AddHTTPMiddleware(m middleware.Middleware) http.ServerOption {
 	return func(o *http.Server) {
 		o.Use("*", m)

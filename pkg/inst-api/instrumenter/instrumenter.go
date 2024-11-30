@@ -21,13 +21,15 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+	"sync"
 	"time"
 )
 
 type Instrumenter[REQUEST any, RESPONSE any] interface {
 	StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time)
-	Start(parentContext context.Context, request REQUEST) context.Context
-	End(ctx context.Context, request REQUEST, response RESPONSE, err error)
+	StartAndEndWithOptions(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time, startOptions []trace.SpanStartOption, endOptions []trace.SpanEndOption)
+	Start(parentContext context.Context, request REQUEST, options ...trace.SpanStartOption) context.Context
+	End(ctx context.Context, request REQUEST, response RESPONSE, err error, options ...trace.SpanEndOption)
 }
 
 type InternalInstrumenter[REQUEST any, RESPONSE any] struct {
@@ -55,17 +57,37 @@ type PropagatingFromUpstreamInstrumenter[REQUEST any, RESPONSE any] struct {
 	base          InternalInstrumenter[REQUEST, RESPONSE]
 }
 
+var cachePool = &sync.Pool{
+	New: func() interface{} {
+		return make([]attribute.KeyValue, 0, 25)
+	},
+}
+
+func GetCachedAttrs() []attribute.KeyValue {
+	return cachePool.Get().([]attribute.KeyValue)
+}
+
+func PutCachedAttrs(attrs []attribute.KeyValue) {
+	attrs = attrs[:0]
+	cachePool.Put(attrs)
+}
+
 func (i *InternalInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
 	ctx := i.doStart(parentContext, request, startTime)
 	i.doEnd(ctx, request, response, err, endTime)
 }
 
-func (i *InternalInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
-	return i.doStart(parentContext, request, time.Now())
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) StartAndEndWithOptions(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time, startOptions []trace.SpanStartOption, endOptions []trace.SpanEndOption) {
+	ctx := i.doStart(parentContext, request, startTime, startOptions...)
+	i.doEnd(ctx, request, response, err, endTime, endOptions...)
 }
 
-func (i *InternalInstrumenter[REQUEST, RESPONSE]) doStart(parentContext context.Context, request REQUEST, timestamp time.Time) context.Context {
-	if i.enabler != nil && !i.enabler.IsEnabled() {
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST, options ...trace.SpanStartOption) context.Context {
+	return i.doStart(parentContext, request, time.Now(), options...)
+}
+
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) doStart(parentContext context.Context, request REQUEST, timestamp time.Time, options ...trace.SpanStartOption) context.Context {
+	if i.enabler != nil && !i.enabler.Enable() {
 		return parentContext
 	}
 	for _, listener := range i.operationListeners {
@@ -74,11 +96,12 @@ func (i *InternalInstrumenter[REQUEST, RESPONSE]) doStart(parentContext context.
 	// extract span name
 	spanName := i.spanNameExtractor.Extract(request)
 	spanKind := i.spanKindExtractor.Extract(request)
-	newCtx, span := i.tracer.Start(parentContext, spanName, trace.WithSpanKind(spanKind))
+	options = append(options, trace.WithSpanKind(spanKind))
+	newCtx, span := i.tracer.Start(parentContext, spanName, options...)
 	attrs := make([]attribute.KeyValue, 0, 20)
 	// extract span attrs
 	for _, extractor := range i.attributesExtractors {
-		attrs = extractor.OnStart(attrs, newCtx, request)
+		attrs, newCtx = extractor.OnStart(attrs, newCtx, request)
 	}
 	// execute context customizer hook
 	for _, customizer := range i.contextCustomizers {
@@ -91,12 +114,12 @@ func (i *InternalInstrumenter[REQUEST, RESPONSE]) doStart(parentContext context.
 	return i.spanSuppressor.StoreInContext(newCtx, spanKind, span)
 }
 
-func (i *InternalInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error) {
-	i.doEnd(ctx, request, response, err, time.Now())
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error, options ...trace.SpanEndOption) {
+	i.doEnd(ctx, request, response, err, time.Now(), options...)
 }
 
-func (i *InternalInstrumenter[REQUEST, RESPONSE]) doEnd(ctx context.Context, request REQUEST, response RESPONSE, err error, timestamp time.Time) {
-	if i.enabler != nil && !i.enabler.IsEnabled() {
+func (i *InternalInstrumenter[REQUEST, RESPONSE]) doEnd(ctx context.Context, request REQUEST, response RESPONSE, err error, timestamp time.Time, options ...trace.SpanEndOption) {
+	if i.enabler != nil && !i.enabler.Enable() {
 		return
 	}
 	for _, listener := range i.operationListeners {
@@ -107,14 +130,16 @@ func (i *InternalInstrumenter[REQUEST, RESPONSE]) doEnd(ctx context.Context, req
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 	}
-	var attrs []attribute.KeyValue
+	attrs := GetCachedAttrs()
+	defer PutCachedAttrs(attrs)
 	// extract span attributes
 	for _, extractor := range i.attributesExtractors {
-		attrs = extractor.OnEnd(attrs, ctx, request, response, err)
+		attrs, ctx = extractor.OnEnd(attrs, ctx, request, response, err)
 	}
 	i.spanStatusExtractor.Extract(span, request, response, err)
 	span.SetAttributes(attrs...)
-	span.End(trace.WithTimestamp(timestamp))
+	options = append(options, trace.WithTimestamp(timestamp))
+	span.End(options...)
 	for _, listener := range i.operationListeners {
 		listener.OnAfterEnd(ctx, attrs, timestamp)
 	}
@@ -132,8 +157,20 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(par
 	p.base.doEnd(newCtx, request, response, err, endTime)
 }
 
-func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
-	newCtx := p.base.Start(parentContext, request)
+func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) StartAndEndWithOptions(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time, startOptions []trace.SpanStartOption, endOptions []trace.SpanEndOption) {
+	newCtx := p.base.doStart(parentContext, request, startTime, startOptions...)
+	if p.carrierGetter != nil {
+		if p.prop != nil {
+			p.prop.Inject(newCtx, p.carrierGetter(request))
+		} else {
+			otel.GetTextMapPropagator().Inject(newCtx, p.carrierGetter(request))
+		}
+	}
+	p.base.doEnd(newCtx, request, response, err, endTime, endOptions...)
+}
+
+func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST, options ...trace.SpanStartOption) context.Context {
+	newCtx := p.base.Start(parentContext, request, options...)
 	if p.carrierGetter != nil {
 		if p.prop != nil {
 			p.prop.Inject(newCtx, p.carrierGetter(request))
@@ -145,8 +182,8 @@ func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) Start(parentCon
 	return newCtx
 }
 
-func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error) {
-	p.base.End(ctx, request, response, err)
+func (p *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error, options ...trace.SpanEndOption) {
+	p.base.End(ctx, request, response, err, options...)
 }
 
 func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time) {
@@ -165,7 +202,8 @@ func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) StartAndEnd(par
 	p.base.doEnd(ctx, request, response, err, endTime)
 }
 
-func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST) context.Context {
+func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) StartAndEndWithOptions(parentContext context.Context, request REQUEST, response RESPONSE, err error, startTime, endTime time.Time, startOptions []trace.SpanStartOption, endOptions []trace.SpanEndOption) {
+	var ctx context.Context
 	if p.carrierGetter != nil {
 		var extracted context.Context
 		if p.prop != nil {
@@ -173,12 +211,27 @@ func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) Start(parentCon
 		} else {
 			extracted = otel.GetTextMapPropagator().Extract(parentContext, p.carrierGetter(request))
 		}
-		return p.base.Start(extracted, request)
+		ctx = p.base.doStart(extracted, request, startTime, startOptions...)
+	} else {
+		ctx = parentContext
+	}
+	p.base.doEnd(ctx, request, response, err, endTime, endOptions...)
+}
+
+func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) Start(parentContext context.Context, request REQUEST, options ...trace.SpanStartOption) context.Context {
+	if p.carrierGetter != nil {
+		var extracted context.Context
+		if p.prop != nil {
+			extracted = p.prop.Extract(parentContext, p.carrierGetter(request))
+		} else {
+			extracted = otel.GetTextMapPropagator().Extract(parentContext, p.carrierGetter(request))
+		}
+		return p.base.Start(extracted, request, options...)
 	} else {
 		return parentContext
 	}
 }
 
-func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error) {
-	p.base.End(ctx, request, response, err)
+func (p *PropagatingFromUpstreamInstrumenter[REQUEST, RESPONSE]) End(ctx context.Context, request REQUEST, response RESPONSE, err error, options ...trace.SpanEndOption) {
+	p.base.End(ctx, request, response, err, options...)
 }

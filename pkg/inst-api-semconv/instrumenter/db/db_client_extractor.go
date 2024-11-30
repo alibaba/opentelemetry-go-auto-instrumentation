@@ -16,59 +16,87 @@ package db
 
 import (
 	"context"
+	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"strconv"
 )
 
+type DbExperimentalAttributesEnabler interface {
+	Enable() bool
+}
+
+type defaultDbExperimentalAttributesEnabler struct {
+}
+
+func (d defaultDbExperimentalAttributesEnabler) Enable() bool {
+	return false
+}
+
+var experimentalAttributesEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 type DbClientCommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER DbClientCommonAttrsGetter[REQUEST]] struct {
-	Getter GETTER
+	Getter           GETTER
+	AttributesFilter func(attrs []attribute.KeyValue) []attribute.KeyValue
 }
 
 func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribute.Key {
 	return utils.DB_CLIENT_KEY
 }
 
-func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
-	attributes = append(attributes, attribute.KeyValue{
-		Key:   semconv.DBNameKey,
-		Value: attribute.StringValue(d.Getter.GetName(request)),
-	}, attribute.KeyValue{
-		Key:   semconv.DBSystemKey,
-		Value: attribute.StringValue(d.Getter.GetSystem(request)),
-	}, attribute.KeyValue{
-		Key:   semconv.DBUserKey,
-		Value: attribute.StringValue(d.Getter.GetUser(request)),
-	}, attribute.KeyValue{
-		Key:   semconv.DBConnectionStringKey,
-		Value: attribute.StringValue(d.Getter.GetConnectionString(request)),
-	})
-	return attributes
+func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
+	return attributes, parentContext
 }
 
-func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
-	return attrs
+func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
+	attrs = append(attrs, attribute.KeyValue{
+		Key:   semconv.DBSystemKey,
+		Value: attribute.StringValue(d.Getter.GetSystem(request)),
+	})
+	if d.AttributesFilter != nil {
+		attrs = d.AttributesFilter(attrs)
+	}
+	return attrs, context
 }
 
 type DbClientAttrsExtractor[REQUEST any, RESPONSE any, GETTER DbClientAttrsGetter[REQUEST]] struct {
 	Base DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]
 }
 
-func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrs []attribute.KeyValue, parentContext context.Context, request REQUEST) []attribute.KeyValue {
-	attrs = d.Base.OnStart(attrs, parentContext, request)
-	attrs = append(attrs, attribute.KeyValue{
-		Key:   semconv.DBStatementKey,
-		Value: attribute.StringValue(d.Base.Getter.GetStatement(request)),
-	}, attribute.KeyValue{
-		Key:   semconv.DBOperationKey,
-		Value: attribute.StringValue(d.Base.Getter.GetOperation(request)),
-	})
-	return attrs
+func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrs []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
+	attrs, parentContext = d.Base.OnStart(attrs, parentContext, request)
+	if d.Base.AttributesFilter != nil {
+		attrs = d.Base.AttributesFilter(attrs)
+	}
+	return attrs, parentContext
 }
 
-func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) []attribute.KeyValue {
-	attrs = d.Base.OnEnd(attrs, context, request, response, err)
-	return attrs
+func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
+	attrs, context = d.Base.OnEnd(attrs, context, request, response, err)
+	attrs = append(attrs, attribute.KeyValue{
+		Key:   semconv.DBQueryTextKey,
+		Value: attribute.StringValue(d.Base.Getter.GetStatement(request)),
+	}, attribute.KeyValue{
+		Key:   semconv.DBOperationNameKey,
+		Value: attribute.StringValue(d.Base.Getter.GetOperation(request)),
+	}, attribute.KeyValue{
+		Key:   semconv.ServerAddressKey,
+		Value: attribute.StringValue(d.Base.Getter.GetServerAddress(request)),
+	})
+	if d.Base.AttributesFilter != nil {
+		attrs = d.Base.AttributesFilter(attrs)
+	}
+	if experimentalAttributesEnabler.Enable() {
+		params := d.Base.Getter.GetParameters(request)
+		if params != nil && len(params) > 0 {
+			for i, param := range params {
+				attrs = append(attrs, attribute.String("db.query.parameter."+strconv.Itoa(i), fmt.Sprintf("%v", param)))
+			}
+		}
+	}
+	return attrs, context
 }
 
 func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribute.Key {

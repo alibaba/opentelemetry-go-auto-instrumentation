@@ -52,7 +52,6 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 		rp.setRelocated(rule.FileName, target)
 
 		// Append or replace the file to the compile arguments
-		mode := "REPLACE"
 		if rule.Replace {
 			err = rp.replaceCompileArg(target, func(arg string) bool {
 				return strings.HasSuffix(arg, fileName)
@@ -61,10 +60,9 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 				return fmt.Errorf("failed to replace %v %w", fileName, err)
 			}
 		} else {
-			mode = "APPEND"
 			rp.addCompileArg(target)
 		}
-		log.Printf("Apply file rule %v by %s mode", fileName, mode)
+		log.Printf("Apply file rule %v", rule)
 		rp.saveDebugFile(target)
 	}
 	return nil

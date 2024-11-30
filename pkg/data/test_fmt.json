@@ -87,6 +87,20 @@
         "Version": "[0.5.1, 0.6.0)"
     },
     {
+        "ImportPath": "golang.org/x/time/rate",
+        "Function": "Every",
+        "OnEnter": "println(\"GCMG\")",
+        "UseRaw": true,
+        "Version": "[,0.6.0)"
+    },
+    {
+        "ImportPath": "golang.org/x/time/rate",
+        "Function": "Every",
+        "OnEnter": "println(\"BYD\")",
+        "UseRaw": true,
+        "Version": "[0.5.0,)"
+    },
+    {
         "ImportPath": "fmt",
         "StructType": "pp",
         "FieldName": "myfield",

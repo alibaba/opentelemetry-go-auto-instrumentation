@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	_ "go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 )
 

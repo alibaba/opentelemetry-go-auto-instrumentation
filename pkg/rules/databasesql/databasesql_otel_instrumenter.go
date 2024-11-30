@@ -17,6 +17,9 @@ package databasesql
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 )
 
 type databaseSqlAttrsGetter struct {
@@ -34,17 +37,8 @@ func (d databaseSqlAttrsGetter) GetSystem(request databaseSqlRequest) string {
 	return "database"
 }
 
-func (d databaseSqlAttrsGetter) GetUser(request databaseSqlRequest) string {
-	return ""
-}
-
-func (d databaseSqlAttrsGetter) GetName(request databaseSqlRequest) string {
-	// TODO: parse database name from dsn
-	return ""
-}
-
-func (d databaseSqlAttrsGetter) GetConnectionString(request databaseSqlRequest) string {
-	return request.dsn
+func (d databaseSqlAttrsGetter) GetServerAddress(request databaseSqlRequest) string {
+	return request.endpoint
 }
 
 func (d databaseSqlAttrsGetter) GetStatement(request databaseSqlRequest) string {
@@ -55,10 +49,17 @@ func (d databaseSqlAttrsGetter) GetOperation(request databaseSqlRequest) string 
 	return request.opType
 }
 
-func BuildDatabaseSqlOtelInstrumenter() instrumenter.Instrumenter[databaseSqlRequest, interface{}] {
-	builder := instrumenter.Builder[databaseSqlRequest, interface{}]{}
+func (d databaseSqlAttrsGetter) GetParameters(request databaseSqlRequest) []any {
+	return request.params
+}
+
+func BuildDatabaseSqlOtelInstrumenter() instrumenter.Instrumenter[databaseSqlRequest, any] {
+	builder := instrumenter.Builder[databaseSqlRequest, any]{}
 	getter := databaseSqlAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[databaseSqlRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[databaseSqlRequest]{}).
-		AddAttributesExtractor(&db.DbClientAttrsExtractor[databaseSqlRequest, any, databaseSqlAttrsGetter]{Base: db.DbClientCommonAttrsExtractor[databaseSqlRequest, any, databaseSqlAttrsGetter]{Getter: getter}}).
-		BuildInstrumenter()
+		AddAttributesExtractor(&db.DbClientAttrsExtractor[databaseSqlRequest, any, db.DbClientAttrsGetter[databaseSqlRequest]]{Base: db.DbClientCommonAttrsExtractor[databaseSqlRequest, any, db.DbClientAttrsGetter[databaseSqlRequest]]{Getter: getter}}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.DATABASE_SQL_SCOPE_NAME,
+			Version: version.Tag,
+		}).BuildInstrumenter()
 }

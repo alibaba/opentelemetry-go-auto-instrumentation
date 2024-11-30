@@ -35,6 +35,6 @@ func main() {
 		log.Fatal(err)
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "ping", "", "mysql", "", "127.0.0.1", "ping", "ping")
+		verifier.VerifyDbAttributes(stubs[0][0], "ping", "mysql", "127.0.0.1", "ping", "ping")
 	}, 1)
 }

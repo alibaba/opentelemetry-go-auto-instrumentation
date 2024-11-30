@@ -13,6 +13,12 @@
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error2"
     },
     {
+        "ImportPath": "errors",
+        "Function": "New",
+        "OnEnter": "onEnterErrorsNewAlias",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error3"
+    },
+    {
         "ImportPath": "errorstest/auxiliary",
         "Function": "TestSkip",
         "OnExit": "onExitTestSkipOnly",
@@ -94,5 +100,11 @@
         "Function": "NilArg",
         "OnEnter": "onEnterNilArg",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error16"
+    },
+    {
+        "ImportPath": "errorstest/dep",
+        "Function": "BadDep",
+        "OnExit": "onExitBadDep",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error17"
     }
 ]

@@ -16,12 +16,18 @@ package zap
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
+var zapEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
 func zapLogWriteOnEnter(call api.CallContext, ce *zapcore.CheckedEntry, fields ...zap.Field) {
+	if !zapEnabler.Enable() {
+		return
+	}
 	var fieldsTemp []zap.Field
 	traceId, spanId := trace.GetTraceAndSpanId()
 	if traceId != "" {

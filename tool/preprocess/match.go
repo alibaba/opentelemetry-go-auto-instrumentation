@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -37,7 +38,7 @@ func newRuleMatcher() *ruleMatcher {
 	for _, rule := range findAvailableRules() {
 		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
 	}
-	if shared.Verbose {
+	if config.GetConf().Verbose {
 		log.Printf("Available rules: %v", rules)
 	}
 	return &ruleMatcher{availableRules: rules}
@@ -87,45 +88,54 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 	return rules, nil
 }
 
+func loadDefaultRules() []resource.InstRule {
+	rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
+	if err != nil {
+		log.Printf("Failed to load default rules: %v", err)
+		return nil
+	}
+	return rules
+}
+
 func findAvailableRules() []resource.InstRule {
 	shared.GuaranteeInPreprocess()
 	// Disable all instrumentation rules and rebuild the whole project to restore
 	// all instrumentation actions, this also reverts the modification on Golang
 	// runtime package.
-	if shared.Restore {
+	if config.GetConf().Restore {
 		return nil
 	}
 
-	// If rule file is not set, we will use the default rules
-	if shared.RuleJsonFiles == "" {
-		rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
+	rules := make([]resource.InstRule, 0)
+
+	// Load default rules unless explicitly disabled
+	if !config.GetConf().IsDisableDefault() {
+		defaultRules := loadDefaultRules()
+		rules = append(rules, defaultRules...)
+	}
+
+	// If rule files are provided, load them
+	if config.GetConf().RuleJsonFiles != "" {
+		// Load multiple rule files
+		if strings.Contains(config.GetConf().RuleJsonFiles, ",") {
+			ruleFiles := strings.Split(config.GetConf().RuleJsonFiles, ",")
+			for _, ruleFile := range ruleFiles {
+				r, err := loadRuleFile(ruleFile)
+				if err != nil {
+					log.Printf("Failed to load rules: %v", err)
+					continue
+				}
+				rules = append(rules, r...)
+			}
+			return rules
+		}
+		// Load the one rule file
+		rs, err := loadRuleFile(config.GetConf().RuleJsonFiles)
 		if err != nil {
-			log.Printf("Failed to load default rules: %v", err)
+			log.Printf("Failed to load rules: %v", err)
 			return nil
 		}
-		return rules
-	}
-
-	// If set, check if there are multiple rule files
-	if strings.Contains(shared.RuleJsonFiles, ",") {
-		ruleFiles := strings.Split(shared.RuleJsonFiles, ",")
-		rules := make([]resource.InstRule, 0)
-		for _, ruleFile := range ruleFiles {
-			r, err := loadRuleFile(ruleFile)
-			if err != nil {
-				log.Printf("Failed to load rules: %v", err)
-				continue
-			}
-			rules = append(rules, r...)
-		}
-		return rules
-	}
-
-	// Load the rule file provided by the user
-	rules, err := loadRuleFile(shared.RuleJsonFiles)
-	if err != nil {
-		log.Printf("Failed to load rules: %v", err)
-		return nil
+		rules = append(rules, rs...)
 	}
 	return rules
 }
@@ -160,7 +170,8 @@ func (rm *ruleMatcher) match(importPath string,
 			// Check if the version is supported
 			matched, err := shared.MatchVersion(version, rule.GetVersion())
 			if err != nil {
-				log.Printf("Failed to match version %v", err)
+				log.Printf("Failed to match version %v between %v and %v",
+					err, file, rule)
 				continue
 			}
 			if !matched {
@@ -171,7 +182,7 @@ func (rm *ruleMatcher) match(importPath string,
 			if _, ok := rule.(*resource.InstFileRule); ok {
 				ast, err := shared.ParseAstFromFileOnlyPackage(file)
 				if ast == nil || err != nil {
-					log.Printf("Failed to parse %s %v", file, err)
+					log.Printf("Failed to parse %s: %v", file, err)
 					continue
 				}
 				log.Printf("Match file rule %s", rule)
@@ -251,7 +262,7 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 	cmdArgs := shared.SplitCmds(cmd)
 	importPath := readImportPath(cmdArgs)
 	util.Assert(importPath != "", "sanity check")
-	if shared.Verbose {
+	if config.GetConf().Verbose {
 		log.Printf("Matching %v with %v\n", importPath, cmdArgs)
 	}
 	bundle := matcher.match(importPath, cmdArgs)

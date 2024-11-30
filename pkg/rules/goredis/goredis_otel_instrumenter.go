@@ -15,8 +15,17 @@
 package goredis
 
 import (
+	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	redis "github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
+	"strconv"
+	"time"
+	"unicode/utf8"
+	"unsafe"
 )
 
 type goRedisAttrsGetter struct {
@@ -26,31 +35,120 @@ func (d goRedisAttrsGetter) GetSystem(request goRedisRequest) string {
 	return "redis"
 }
 
-func (d goRedisAttrsGetter) GetUser(request goRedisRequest) string {
-	return ""
-}
-
-func (d goRedisAttrsGetter) GetName(request goRedisRequest) string {
-	// TODO: parse database name from dsn
-	return ""
-}
-
-func (d goRedisAttrsGetter) GetConnectionString(request goRedisRequest) string {
+func (d goRedisAttrsGetter) GetServerAddress(request goRedisRequest) string {
 	return request.endpoint
 }
 
 func (d goRedisAttrsGetter) GetStatement(request goRedisRequest) string {
-	return request.cmd.String()
+	b := make([]byte, 0, 64)
+
+	for i, arg := range request.cmd.Args() {
+		if i > 0 {
+			b = append(b, ' ')
+		}
+		b = redisV9AppendArg(b, arg)
+	}
+
+	if err := request.cmd.Err(); err != nil {
+		b = append(b, ": "...)
+		b = append(b, err.Error()...)
+	}
+
+	if cmd, ok := request.cmd.(*redis.Cmd); ok {
+		b = append(b, ": "...)
+		b = redisV9AppendArg(b, cmd)
+	}
+
+	return redisV9String(b)
 }
 
 func (d goRedisAttrsGetter) GetOperation(request goRedisRequest) string {
 	return request.cmd.FullName()
 }
 
-func BuildGoRedisOtelInstrumenter() instrumenter.Instrumenter[goRedisRequest, interface{}] {
-	builder := instrumenter.Builder[goRedisRequest, interface{}]{}
+func (d goRedisAttrsGetter) GetParameters(request goRedisRequest) []any {
+	return nil
+}
+
+func BuildGoRedisOtelInstrumenter() instrumenter.Instrumenter[goRedisRequest, any] {
+	builder := instrumenter.Builder[goRedisRequest, any]{}
 	getter := goRedisAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[goRedisRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[goRedisRequest]{}).
-		AddAttributesExtractor(&db.DbClientAttrsExtractor[goRedisRequest, any, goRedisAttrsGetter]{Base: db.DbClientCommonAttrsExtractor[goRedisRequest, any, goRedisAttrsGetter]{Getter: getter}}).
+		AddAttributesExtractor(&db.DbClientAttrsExtractor[goRedisRequest, any, db.DbClientAttrsGetter[goRedisRequest]]{Base: db.DbClientCommonAttrsExtractor[goRedisRequest, any, db.DbClientAttrsGetter[goRedisRequest]]{Getter: getter}}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.GO_REDIS_V9_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		BuildInstrumenter()
+}
+
+func redisV9String(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+func redisV9AppendUTF8String(dst []byte, src []byte) []byte {
+	dst = append(dst, src...)
+	return dst
+}
+
+func redisV9Bytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			string
+			Cap int
+		}{s, len(s)},
+	))
+}
+
+func redisV9AppendArg(b []byte, v interface{}) []byte {
+	switch v := v.(type) {
+	case nil:
+		return append(b, "<nil>"...)
+	case string:
+		bts := redisV9Bytes(v)
+		if utf8.Valid(bts) {
+			return redisV9AppendUTF8String(b, bts)
+		} else {
+			return redisV9AppendUTF8String(b, redisV9Bytes("<string>"))
+		}
+	case []byte:
+		if utf8.Valid(v) {
+			return redisV9AppendUTF8String(b, v)
+		} else {
+			return redisV9AppendUTF8String(b, redisV9Bytes("<byte>"))
+		}
+	case int:
+		return strconv.AppendInt(b, int64(v), 10)
+	case int8:
+		return strconv.AppendInt(b, int64(v), 10)
+	case int16:
+		return strconv.AppendInt(b, int64(v), 10)
+	case int32:
+		return strconv.AppendInt(b, int64(v), 10)
+	case int64:
+		return strconv.AppendInt(b, v, 10)
+	case uint:
+		return strconv.AppendUint(b, uint64(v), 10)
+	case uint8:
+		return strconv.AppendUint(b, uint64(v), 10)
+	case uint16:
+		return strconv.AppendUint(b, uint64(v), 10)
+	case uint32:
+		return strconv.AppendUint(b, uint64(v), 10)
+	case uint64:
+		return strconv.AppendUint(b, v, 10)
+	case float32:
+		return strconv.AppendFloat(b, float64(v), 'f', -1, 64)
+	case float64:
+		return strconv.AppendFloat(b, v, 'f', -1, 64)
+	case bool:
+		if v {
+			return append(b, "true"...)
+		}
+		return append(b, "false"...)
+	case time.Time:
+		return v.AppendFormat(b, time.RFC3339Nano)
+	default:
+		return append(b, fmt.Sprint(v)...)
+	}
 }

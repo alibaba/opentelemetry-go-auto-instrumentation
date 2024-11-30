@@ -16,15 +16,23 @@ package preprocess
 
 import (
 	"fmt"
+	"go/token"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
+)
+
+const (
+	ApiPackage     = "api"
+	ApiImportPath  = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	ApiCallContext = "CallContext"
 )
 
 func initRuleDir() (err error) {
@@ -41,7 +49,7 @@ func initRuleDir() (err error) {
 	return nil
 }
 
-func (dp *DepProcessor) copyRules(target string) (err error) {
+func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 	if len(dp.bundles) == 0 {
 		return nil
 	}
@@ -77,13 +85,13 @@ func (dp *DepProcessor) copyRules(target string) (err error) {
 
 					for _, file := range files {
 						if !shared.IsGoFile(file) || shared.IsGoTestFile(file) {
-							if shared.Verbose {
+							if config.GetConf().Verbose {
 								log.Printf("Ignore file %v\n", file)
 							}
 							continue
 						}
 
-						ruleDir := filepath.Join(target, dir)
+						ruleDir := filepath.Join(pkgName, dir)
 						err = os.MkdirAll(ruleDir, 0777)
 						if err != nil {
 							return fmt.Errorf("failed to create dir %v: %w",
@@ -101,39 +109,49 @@ func (dp *DepProcessor) copyRules(target string) (err error) {
 		}
 	}
 
-	// for path, bundle := range uniqueResources {
-	// 	dir := res2Dir[path]
-	// 	ruleDir := filepath.Join(target, dir)
-	// 	err = os.MkdirAll(ruleDir, 0777)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to create directory %v: %w", ruleDir, err)
-	// 	}
-	// 	ruleFile := filepath.Join(ruleDir, filepath.Base(path))
-	// 	err = dp.copyRule(path, ruleFile, bundle)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to copy rule %v: %w", path, err)
-	// 	}
-	// }
 	return nil
 }
-
-func renameCallContext(astRoot *dst.File, pkgName string) {
+func rectifyCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
+	// We write hook code by using api.CallContext as the first parameter, but
+	// the actual package name is not api. Given net/http package, the actual
+	// package name is http, so we should rectify the package name in the hook
+	// code to the correct package name. We did this by renaming the import path
+	// of api to the correct package name, and add an alias name for "api", this
+	// is required because CallContext is defined in the api package, and we can
+	// omit the package name before, but we can't do that now because of renaming
+	newAliasName := bundle.PackageName + util.RandomString(5)
+	alias := ApiPackage
+	spec := shared.FindImport(astRoot, ApiImportPath)
+	if spec != nil {
+		if spec.Name != nil {
+			alias = spec.Name.Name
+		}
+	}
+	// Check if the function has api.CallContext as the first parameter
+	// If so, rename it to the correct package name
 	for _, decl := range astRoot.Decls {
 		if f, ok := decl.(*dst.FuncDecl); ok {
+			foundCallContext := false
+
 			params := f.Type.Params.List
 			for _, param := range params {
 				if sele, ok := param.Type.(*dst.SelectorExpr); ok {
 					if x, ok := sele.X.(*dst.Ident); ok {
-						if x.Name == "api" && sele.Sel.Name == "CallContext" {
-							x.Name = pkgName
+						if x.Name == alias && sele.Sel.Name == ApiCallContext {
+							foundCallContext = true
+							x.Name = newAliasName
+							break
 						}
 					}
 				}
 			}
+			if foundCallContext {
+				spec.Path.Value = fmt.Sprintf("%q", bundle.ImportPath)
+				spec.Name = &dst.Ident{Name: newAliasName}
+			}
 		}
 	}
 }
-
 func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 	// Only make hook public, keep it as it is if it's not a hook
 	hooks := make(map[string]bool)
@@ -180,26 +198,23 @@ func (dp *DepProcessor) copyRule(path, target string,
 	astRoot.Name.Name = filepath.Base(filepath.Dir(target))
 
 	// Rename api.CallContext to correct package name if present
-	renameCallContext(astRoot, bundle.PackageName)
+	rectifyCallContext(astRoot, bundle)
 
 	// Make hook functions public
 	makeHookPublic(astRoot, bundle)
-
-	// Remove "api" import if present
-	shared.ReplaceImport(astRoot, apiImport, bundle.ImportPath)
 
 	// Copy used rule into project
 	_, err = shared.WriteAstToFile(astRoot, target)
 	if err != nil {
 		return fmt.Errorf("failed to write ast to %v: %w", target, err)
 	}
-	if shared.Verbose {
+	if config.GetConf().Verbose {
 		log.Printf("Copy dependency %v to %v", path, target)
 	}
 	return nil
 }
 
-func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
+func (dp *DepProcessor) initRules(pkgName string) (err error) {
 	c := fmt.Sprintf("package %s\n", pkgName)
 	imports := make(map[string]string)
 
@@ -222,7 +237,7 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 						if bundle.PackageName == OtelPrintStackImportPath {
 							aliasPkg = OtelPrintStackPkgAlias
 						} else {
-							aliasPkg = bundle.PackageName + util.RandomString(3)
+							aliasPkg = bundle.PackageName + util.RandomString(5)
 						}
 						imports[bundle.ImportPath] = aliasPkg
 						addedImport = true
@@ -230,7 +245,10 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 						aliasPkg = imports[bundle.ImportPath]
 					}
 					if rule.OnEnter != "" {
-						rd := filepath.Join(OtelRules, dp.rule2Dir[rule])
+						// @@Dont use filepath.Join here, because this is import
+						// path presented in Go source code, which should always
+						// use forward slash
+						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
 							return fmt.Errorf("failed to get import path: %w",
@@ -247,7 +265,7 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 						)
 					}
 					if rule.OnExit != "" {
-						rd := filepath.Join(OtelRules, dp.rule2Dir[rule])
+						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
 							return fmt.Errorf("failed to get import path: %w",
@@ -287,17 +305,18 @@ func (dp *DepProcessor) initRules(pkgName, target string) (err error) {
 		imports[OtelGetStackImportPath] = OtelGetStackAliasPkg
 	}
 	for k, v := range imports {
-		c += fmt.Sprintf("import %s \"%s\"\n", v, k)
+		c += fmt.Sprintf("import %s %q\n", v, k)
 	}
 
 	// Assignments
-	c += "func init() {\n"
+	c += " func init() { \n"
 	for _, assign := range assigns {
 		c += assign
 	}
 	c += "}\n"
 
-	_, err = util.WriteFile(target, c)
+	initTarget := filepath.Join(OtelRules, OtelSetupInst)
+	_, err = util.WriteFile(initTarget, c)
 	if err != nil {
 		return err
 	}
@@ -316,8 +335,67 @@ func (dp *DepProcessor) addRuleImport() error {
 	return nil
 }
 
-func (dp *DepProcessor) setupOtelSDK(pkgName, target string) error {
-	_, err := resource.CopyOtelSetupTo(pkgName, target)
+// Very hacky code here. We need to rewrite the localPrefix within the source
+// to the real project module name. This is necessary because the localPrefix
+// is used to identify whether the init task belongs to local project or not.
+// Now that we are trying to reorder these tasks to the end of the init task
+// list, we must know which one is the target we want to reorder. During the
+// runtime, we are unable to know the real module name of the project, so we
+// must done this during the compilation.
+func (dp *DepProcessor) rewriteRules() error {
+	// Rewrite localPrefix within the source to real project module name
+	for _, bundle := range dp.bundles {
+		if len(bundle.FileRules) == 0 {
+			continue
+		}
+		for _, rule := range bundle.FileRules {
+			if !strings.HasSuffix(rule.FileName, ReorderInitFile) {
+				continue
+			}
+			astRoot, err := shared.ParseAstFromFile(rule.FileName)
+			if err != nil {
+				return fmt.Errorf("failed to parse ast from source: %w", err)
+			}
+			found := false
+			dst.Inspect(astRoot, func(n dst.Node) bool {
+				if basicLit, ok := n.(*dst.BasicLit); ok {
+					if basicLit.Kind == token.STRING {
+						quoted := fmt.Sprintf("%q", ReorderLocalPrefix)
+						if basicLit.Value == quoted {
+							gomod, err := shared.GetGoModPath()
+							if err != nil {
+								return false
+							}
+							moduleName, err := getModuleName(gomod)
+							if err != nil {
+								return false
+							}
+							found = true
+							basicLit.Value = fmt.Sprintf("%q", moduleName)
+							return false
+						}
+					}
+				}
+				return true
+			})
+			if !found {
+				return fmt.Errorf("failed to find rewrite local prefix in %v",
+					rule.FileName)
+			} else {
+				_, err = shared.WriteAstToFile(astRoot, rule.FileName)
+				if err != nil {
+					return fmt.Errorf("failed to write ast to %v: %w",
+						rule.FileName, err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (dp *DepProcessor) setupOtelSDK(pkgName string) error {
+	setupTarget := filepath.Join(OtelRules, OtelSetupSDK)
+	_, err := resource.CopyOtelSetupTo(pkgName, setupTarget)
 	if err != nil {
 		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
 	}
@@ -334,11 +412,15 @@ func (dp *DepProcessor) setupRules() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to setup rules: %w", err)
 	}
-	err = dp.initRules(OtelRules, filepath.Join(OtelRules, OtelSetupInst))
+	err = dp.initRules(OtelRules)
 	if err != nil {
 		return fmt.Errorf("failed to setup initiator: %w", err)
 	}
-	err = dp.setupOtelSDK(OtelRules, filepath.Join(OtelRules, OtelSetupSDK))
+	err = dp.rewriteRules()
+	if err != nil {
+		return fmt.Errorf("failed to rewrite rules: %w", err)
+	}
+	err = dp.setupOtelSDK(OtelRules)
 	if err != nil {
 		return fmt.Errorf("failed to setup otel sdk: %w", err)
 	}

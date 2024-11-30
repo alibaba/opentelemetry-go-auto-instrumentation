@@ -35,9 +35,47 @@ const (
 	GoSumFile            = "go.sum"
 	GoWorkSumFile        = "go.work.sum"
 	DebugLogFile         = "debug.log"
-	TInstrument          = "instrument"
-	TPreprocess          = "preprocess"
+	TempBuildDir         = ".otel-build"
+	VendorDir            = "vendor"
+	BuildModeVendor      = "-mod=vendor"
+	BuildModeMod         = "-mod=mod"
+	BuildConfFile        = "build_conf.json"
 )
+
+type RunPhase string
+
+const (
+	PInvalid    = "invalid"
+	PPreprocess = "preprocess"
+	PInstrument = "instrument"
+	PConfigure  = "configure"
+)
+
+var rp RunPhase = "bad"
+
+func SetRunPhase(phase RunPhase) {
+	rp = phase
+}
+
+func GetRunPhase() RunPhase {
+	return rp
+}
+
+func (rp RunPhase) String() string {
+	return string(rp)
+}
+
+func AssertGoBuild(args []string) {
+	if len(args) < 2 {
+		util.Assert(false, "empty go build command")
+	}
+	if !strings.Contains(args[0], "go") {
+		util.Assert(false, "invalid go build command %v", args)
+	}
+	if args[1] != "build" {
+		util.Assert(false, "invalid go build command %v", args)
+	}
+}
 
 func IsCompileCommand(line string) bool {
 	check := []string{"-o", "-p", "-buildid"}
@@ -65,11 +103,11 @@ func IsCompileCommand(line string) bool {
 }
 
 func GetTempBuildDir() string {
-	if InToolexec {
-		return filepath.Join(TempBuildDir, TInstrument)
-	} else {
-		return filepath.Join(TempBuildDir, TPreprocess)
-	}
+	return filepath.Join(TempBuildDir, rp.String())
+}
+
+func GetTempBuildDirWith(name string) string {
+	return filepath.Join(TempBuildDir, name)
 }
 
 func GetLogPath(name string) string {
@@ -77,11 +115,15 @@ func GetLogPath(name string) string {
 }
 
 func GetInstrumentLogPath(name string) string {
-	return filepath.Join(TempBuildDir, TInstrument, name)
+	return filepath.Join(TempBuildDir, PInstrument, name)
 }
 
 func GetPreprocessLogPath(name string) string {
-	return filepath.Join(TempBuildDir, TPreprocess, name)
+	return filepath.Join(TempBuildDir, PPreprocess, name)
+}
+
+func GetConfigureLogPath(name string) string {
+	return filepath.Join(TempBuildDir, PConfigure, name)
 }
 
 func GetVarNameOfFunc(fn string) string {
@@ -138,6 +180,12 @@ func GetGoModDir() (string, error) {
 	return projectDir, nil
 }
 
+// GetProjRootDir returns the root directory of the project. It's an alias of
+// GetGoModDir in the current implementation.
+func GetProjRootDir() (string, error) {
+	return GetGoModDir()
+}
+
 // IsModPath checks if the provided module path is valid.
 func IsModPath(path string) bool {
 	if strings.Contains(path, "@") {
@@ -192,19 +240,27 @@ func MakePublic(name string) string {
 }
 
 func InPreprocess() bool {
-	return !InToolexec
+	return rp == PPreprocess
 }
 
 func InInstrument() bool {
-	return InToolexec
+	return rp == PInstrument
+}
+
+func InConfigure() bool {
+	return rp == PConfigure
 }
 
 func GuaranteeInPreprocess() {
-	util.Assert(!InToolexec, "not in preprocess stage")
+	util.Assert(rp == PPreprocess, "not in preprocess stage")
 }
 
 func GuaranteeInInstrument() {
-	util.Assert(InToolexec, "not in instrument stage")
+	util.Assert(rp == PInstrument, "not in instrument stage")
+}
+
+func GuaranteeInConfigure() {
+	util.Assert(rp == PConfigure, "not in configure stage")
 }
 
 // splitVersionRange splits the version range into two parts, start and end.
@@ -256,10 +312,29 @@ func MatchVersion(version string, ruleVersion string) (bool, error) {
 
 	// Compare the version with the rule version, the rule version is in the
 	// format [start, end), where start is inclusive and end is exclusive
+	// and start or end can be omitted, which means the range is open-ended.
 	ruleVersionStart, ruleVersionEnd := splitVersionRange(ruleVersion)
-	if semver.Compare(version, ruleVersionStart) >= 0 &&
-		semver.Compare(version, ruleVersionEnd) < 0 {
-		return true, nil
+	switch {
+	case ruleVersionStart != "v" && ruleVersionEnd != "v":
+		// Full version range
+		if semver.Compare(version, ruleVersionStart) >= 0 &&
+			semver.Compare(version, ruleVersionEnd) < 0 {
+			return true, nil
+		}
+	case ruleVersionStart == "v":
+		// Only end is specified
+		util.Assert(ruleVersionEnd != "v", "sanity check")
+		if semver.Compare(version, ruleVersionEnd) < 0 {
+			return true, nil
+		}
+	case ruleVersionEnd == "v":
+		// Only start is specified
+		util.Assert(ruleVersionStart != "v", "sanity check")
+		if semver.Compare(version, ruleVersionStart) >= 0 {
+			return true, nil
+		}
+	default:
+		return false, fmt.Errorf("invalid version range %v", ruleVersion)
 	}
 	return false, nil
 }

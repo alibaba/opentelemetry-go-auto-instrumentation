@@ -16,6 +16,9 @@ package grpc
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.opentelemetry.io/otel/attribute"
@@ -31,7 +34,7 @@ const kratos_service_endpoint = "kratos.service.endpoint"
 type kratosExperimentalAttributeExtractor struct {
 }
 
-func (k kratosExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kratosRequest) []attribute.KeyValue {
+func (k kratosExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kratosRequest) ([]attribute.KeyValue, context.Context) {
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   kratos_protocol_type,
 		Value: attribute.StringValue(request.protocolType),
@@ -56,11 +59,11 @@ func (k kratosExperimentalAttributeExtractor) OnStart(attributes []attribute.Key
 			})
 		}
 	}
-	return attributes
+	return attributes, parentContext
 }
 
-func (k kratosExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request kratosRequest, response any, err error) []attribute.KeyValue {
-	return attributes
+func (k kratosExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request kratosRequest, response any, err error) ([]attribute.KeyValue, context.Context) {
+	return attributes, context
 }
 
 type kratosExperimentalSpanNameExtractor struct {
@@ -81,5 +84,9 @@ func BuildKratosInternalInstrumenter() instrumenter.Instrumenter[kratosRequest, 
 	return builder.Init().SetSpanNameExtractor(&kratosExperimentalSpanNameExtractor{}).
 		SetSpanKindExtractor(&instrumenter.AlwaysInternalExtractor[kratosRequest]{}).
 		AddAttributesExtractor(&kratosExperimentalAttributeExtractor{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.KRATOS_GRPC_INTERNAL_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		BuildInstrumenter()
 }

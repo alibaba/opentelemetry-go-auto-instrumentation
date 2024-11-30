@@ -112,20 +112,8 @@ func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
 	return nil
 }
 
-var recordedSuffixes = make(map[string]bool)
-
-func getVarSuffix() string {
-	for {
-		s := util.RandomString(5)
-		// Random suffix collision? Reroll until we get a unique one
-		if _, ok := recordedSuffixes[s]; !ok {
-			recordedSuffixes[s] = true
-			return s
-		}
-	}
-}
-
-func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule, funcDecl *dst.FuncDecl) error {
+func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
+	funcDecl *dst.FuncDecl) error {
 	util.Assert(t.OnEnter != "" || t.OnExit != "", "sanity check")
 
 	var retVals []dst.Expr // nil by default
@@ -164,7 +152,7 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule, funcDecl *dst.Fun
 		}
 	}
 
-	varSuffix := getVarSuffix()
+	varSuffix := util.RandomString(5)
 	rp.rule2Suffix[t] = varSuffix
 
 	// Generate the trampoline-jump-if. N.B. Note that future optimization pass

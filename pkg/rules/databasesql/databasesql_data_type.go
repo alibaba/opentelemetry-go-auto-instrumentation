@@ -20,4 +20,5 @@ type databaseSqlRequest struct {
 	endpoint   string
 	driverName string
 	dsn        string
+	params     []any
 }

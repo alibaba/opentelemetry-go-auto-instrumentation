@@ -10,7 +10,7 @@ Go to the root directory of `opentelemetry-go-auto-instrumentation` and execute 
 make clean && make build
 ```
 
-And there will be a `otelbuild` binary in the project root directory.
+And there will be a `otel` binary in the project root directory.
 
 ### 2. run mysql & redis
 
@@ -29,13 +29,13 @@ docker run -d -p 6379:6379 redis:latest
 
 ### 3. do hybrid compilation
 
-First, please make sure your `go` version is [compatible](../../docs/compatibility.md) with otelbuild.
+First, please make sure your `go` version is [compatible](../../docs/compatibility.md) with otel.
 
 Change directory to `example/demo` and execute the following command:
 
 ```shell
 cd example/demo
-../../otelbuild
+../../otel go build
 ```
 
 And there will be a `demo` binary in the `example/demo` directory.
@@ -109,6 +109,18 @@ And request to the server:
 ```shell
 # or you can request your real service address if you run it on k8s
 curl localhost:9000/http-service
+```
+
+### 7. check trace data
+
+if run on loacal machine:
+
+access Jaeger UI: http://localhost:16686
+
+if run on k8s, run the command to get access endpoint of Jaeger UI:
+
+```shell
+kubectl get svc opentelemetry-demo-jaeger-collector
 ```
 
 Wait a little while, you can see the corresponding trace data！All the spans are aggregated in one trace.

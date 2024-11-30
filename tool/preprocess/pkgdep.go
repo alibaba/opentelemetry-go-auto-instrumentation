@@ -18,14 +18,15 @@ import (
 	"log"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 const (
-	PkgDep         = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
-	OtelPkgDepsDir = "otel_pkgdep"
+	PkgDep     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	OtelPkgDep = "otel_pkgdep"
 )
 
 func replaceImport(importPath string, code string) string {
@@ -33,16 +34,16 @@ func replaceImport(importPath string, code string) string {
 	return code
 }
 
-func (dp *DepProcessor) replaceOtelImports(compileCmds []string) error {
-	moduleName, err := dp.getImportPathOf(OtelPkgDepsDir)
+func (dp *DepProcessor) replaceOtelImports() error {
+	moduleName, err := dp.getImportPathOf(OtelPkgDep)
 	if err != nil {
 		return fmt.Errorf("failed to get import path of otel_pkg: %w", err)
 	}
 
-	for _, dep := range []string{OtelRules, OtelPkgDepsDir} {
+	for _, dep := range []string{OtelRules, OtelPkgDep} {
 		files, err := util.ListFiles(dep)
 		if err != nil {
-			return fmt.Errorf("failed to list files during replacement: %w", err)
+			return fmt.Errorf("failed to list files: %w", err)
 		}
 		for _, file := range files {
 			// Skip non-go files as no imports within them
@@ -54,7 +55,7 @@ func (dp *DepProcessor) replaceOtelImports(compileCmds []string) error {
 			if err != nil {
 				return fmt.Errorf("failed to read file content: %w", err)
 			}
-			if shared.Verbose {
+			if config.GetConf().Verbose {
 				log.Printf("Replace import path of %s to %s", file, moduleName)
 			}
 
@@ -69,7 +70,7 @@ func (dp *DepProcessor) replaceOtelImports(compileCmds []string) error {
 }
 
 func (dp *DepProcessor) copyPkgDep() error {
-	err := resource.CopyPkgTo(OtelPkgDepsDir)
+	err := resource.CopyPkgTo(OtelPkgDep)
 	if err != nil {
 		return fmt.Errorf("failed to copy pkg deps: %w", err)
 	}

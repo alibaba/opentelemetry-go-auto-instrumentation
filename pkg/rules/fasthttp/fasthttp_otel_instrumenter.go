@@ -14,6 +14,9 @@
 package fasthttp
 
 import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
@@ -25,6 +28,8 @@ import (
 )
 
 var emptyFastHttpResponse = fastHttpResponse{}
+
+var fastHttpEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 type fastHttpClientAttrsGetter struct {
 }
@@ -191,6 +196,10 @@ func BuildFastHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstream
 	networkExtractor := net.NetworkAttrsExtractor[fastHttpRequest, fastHttpResponse, fastHttpClientAttrsGetter]{Getter: clientGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[fastHttpRequest, fastHttpResponse]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[fastHttpRequest, fastHttpResponse]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[fastHttpRequest]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.FAST_HTTP_CLIENT_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		AddAttributesExtractor(&http.HttpClientAttrsExtractor[fastHttpRequest, fastHttpResponse, fastHttpClientAttrsGetter, fastHttpClientAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor}).BuildPropagatingToDownstreamInstrumenter(func(n fastHttpRequest) propagation.TextMapCarrier {
 		return fastHttpRequestCarrier{req: n.header}
 	}, otel.GetTextMapPropagator())
@@ -203,6 +212,10 @@ func BuildFastHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstream
 	urlExtractor := net.UrlAttrsExtractor[fastHttpRequest, fastHttpResponse, fastHttpServerAttrsGetter]{Getter: serverGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[fastHttpRequest, fastHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[fastHttpRequest, fastHttpResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[fastHttpRequest]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.FAST_HTTP_SERVER_SCOPE_NAME,
+			Version: version.Tag,
+		}).
 		AddAttributesExtractor(&http.HttpServerAttrsExtractor[fastHttpRequest, fastHttpResponse, fastHttpServerAttrsGetter, fastHttpServerAttrsGetter, fastHttpServerAttrsGetter]{Base: commonExtractor, NetworkExtractor: networkExtractor, UrlExtractor: urlExtractor}).BuildPropagatingFromUpstreamInstrumenter(func(n fastHttpRequest) propagation.TextMapCarrier {
 		return fastHttpRequestCarrier{req: n.header}
 	}, otel.GetTextMapPropagator())

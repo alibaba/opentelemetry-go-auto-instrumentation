@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/cloudwego/hertz/pkg/app"
@@ -23,6 +24,8 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/config"
 	"github.com/cloudwego/hertz/pkg/common/tracer/stats"
 )
+
+var hertzServerEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 var hertzInstrumenter = BuildHertzServerInstrumenter()
 
@@ -47,6 +50,9 @@ func (m *hertzOpentelemetryTracer) Finish(ctx context.Context, c *app.RequestCon
 }
 
 func beforeHertzServerBuild(call api.CallContext, opts ...config.Option) {
+	if !hertzServerEnabler.Enable() {
+		return
+	}
 	opts = append(opts, server.WithTracer(&hertzOpentelemetryTracer{}))
 	call.SetParam(0, opts)
 }

@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
@@ -28,11 +27,14 @@ import (
 var netHttpServerInstrumenter = BuildNetHttpServerOtelInstrumenter()
 
 func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r *http.Request) {
-	request := netHttpRequest{
+	if netHttpFilter.FilterUrl(r.URL) {
+		return
+	}
+	request := &netHttpRequest{
 		method:  r.Method,
-		url:     *r.URL,
+		url:     r.URL,
 		header:  r.Header,
-		version: strconv.Itoa(r.ProtoMajor) + "." + strconv.Itoa(r.ProtoMinor),
+		version: getProtocolVersion(r.ProtoMajor, r.ProtoMinor),
 		host:    r.Host,
 		isTls:   r.TLS != nil,
 	}
@@ -42,7 +44,7 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 		call.SetParam(1, x1)
 	}
 	call.SetParam(2, r.WithContext(ctx))
-	data := make(map[string]interface{}, 1)
+	data := make(map[string]interface{}, 2)
 	data["ctx"] = ctx
 	data["request"] = request
 	call.SetData(data)
@@ -55,13 +57,13 @@ func serverOnExit(call api.CallContext) {
 		return
 	}
 	ctx := data["ctx"].(context.Context)
-	request, ok := data["request"].(netHttpRequest)
+	request, ok := data["request"].(*netHttpRequest)
 	if !ok {
 		return
 	}
 	if p, ok := call.GetParam(1).(http.ResponseWriter); ok {
 		if w1, ok := p.(*writerWrapper); ok {
-			netHttpServerInstrumenter.End(ctx, request, netHttpResponse{
+			netHttpServerInstrumenter.End(ctx, request, &netHttpResponse{
 				statusCode: w1.statusCode,
 			}, nil)
 		}
@@ -77,6 +79,9 @@ type writerWrapper struct {
 
 func (w *writerWrapper) WriteHeader(statusCode int) {
 	// cache the status code
+	if w.statusCode == statusCode {
+		return // 防止多次写入 Header
+	}
 	w.statusCode = statusCode
 
 	w.ResponseWriter.WriteHeader(statusCode)
@@ -87,4 +92,21 @@ func (w *writerWrapper) Hijack() (rwc net.Conn, buf *bufio.ReadWriter, err error
 		return h.Hijack()
 	}
 	return nil, nil, fmt.Errorf("responseWriter does not implement http.Hijacker")
+}
+
+func (w *writerWrapper) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+func (w *writerWrapper) Pusher() (pusher http.Pusher) {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher
+	}
+	return nil
+}
+
+func (w *writerWrapper) CloseNotify() <-chan bool {
+	return w.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }

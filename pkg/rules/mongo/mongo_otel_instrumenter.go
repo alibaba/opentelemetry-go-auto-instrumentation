@@ -17,6 +17,9 @@ package mongo
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -27,16 +30,8 @@ func (m mongoAttrsGetter) GetSystem(request mongoRequest) string {
 	return "mongodb"
 }
 
-func (m mongoAttrsGetter) GetUser(request mongoRequest) string {
-	return ""
-}
-
-func (m mongoAttrsGetter) GetName(request mongoRequest) string {
-	return request.DatabaseName
-}
-
-func (m mongoAttrsGetter) GetConnectionString(request mongoRequest) string {
-	return request.ConnectionID
+func (m mongoAttrsGetter) GetServerAddress(request mongoRequest) string {
+	return request.Host
 }
 
 func (m mongoAttrsGetter) GetStatement(request mongoRequest) string {
@@ -45,6 +40,10 @@ func (m mongoAttrsGetter) GetStatement(request mongoRequest) string {
 
 func (m mongoAttrsGetter) GetOperation(request mongoRequest) string {
 	return request.CommandName
+}
+
+func (m mongoAttrsGetter) GetParameters(request mongoRequest) []any {
+	return nil
 }
 
 type mongoSpanNameExtractor struct {
@@ -63,5 +62,12 @@ func (m *mongoSpanNameExtractor) Extract(request mongoRequest) string {
 
 func BuildMongoOtelInstrumenter() instrumenter.Instrumenter[mongoRequest, interface{}] {
 	builder := instrumenter.Builder[mongoRequest, interface{}]{}
-	return builder.Init().SetSpanNameExtractor(&mongoSpanNameExtractor{}).SetSpanKindExtractor(&mongoSpanKindExtractor{}).AddAttributesExtractor(&db.DbClientAttrsExtractor[mongoRequest, any, mongoAttrsGetter]{}).BuildInstrumenter()
+	return builder.Init().SetSpanNameExtractor(&mongoSpanNameExtractor{}).
+		SetSpanKindExtractor(&mongoSpanKindExtractor{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.MONGO_SCOPE_NAME,
+			Version: version.Tag,
+		}).
+		AddAttributesExtractor(&db.DbClientAttrsExtractor[mongoRequest, any, db.DbClientAttrsGetter[mongoRequest]]{Base: db.DbClientCommonAttrsExtractor[mongoRequest, any, db.DbClientAttrsGetter[mongoRequest]]{Getter: mongoAttrsGetter{}}}).
+		BuildInstrumenter()
 }

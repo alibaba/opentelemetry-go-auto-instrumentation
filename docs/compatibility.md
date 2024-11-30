@@ -42,12 +42,16 @@ are made for those systems currently.
 # OpenTelemetry Compatibility
 
 To address issues such as trace interruption caused by missing context, we need to instrument OpenTelemetry (OTel)
-itself with this `otelbuild`. This means that if users explicitly add OTel dependencies, the version of those
-dependencies must match the `otelbuild`'s requirements, otherwise, the tool will not function properly. Currently, the
-mapping of the `otelbuild` to the supported OTel versions is as follows:
+itself with this `otel`. This means that if users explicitly add OTel dependencies, the version of those
+dependencies must match the `otel`'s requirements, otherwise, the tool will not function properly. Currently, the
+mapping of the `otel` to the supported OTel versions is as follows:
 
 | Tool Version | OTel Version | OTel Contrib Version |
 |--------------|--------------|----------------------|
 | 0.1.0-RC     | v1.28.0      | -                    |
 | v0.2.0       | v1.30.0      | v0.55.0              |
-| v0.3.0       | v1.31.0      | v.056.0              |
+| v0.3.0       | v1.31.0      | v0.56.0              |
+| v0.4.0       | v1.32.0      | v0.57.0              |
+
+# Limitations
+- Go vendor build is not supported.

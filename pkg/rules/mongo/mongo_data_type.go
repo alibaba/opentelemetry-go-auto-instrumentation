@@ -15,7 +15,6 @@
 package mongo
 
 type mongoRequest struct {
-	CommandName  string
-	DatabaseName string
-	ConnectionID string
+	CommandName string
+	Host        string
 }

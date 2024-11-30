@@ -45,14 +45,6 @@ func main() {
 	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		for i, _ := range stubs[0] {
-			span := stubs[0][i]
-			fmt.Printf("%s\n", span.Name)
-			for _, attr := range span.Attributes {
-				fmt.Printf("%v %v\n", attr.Key, attr.Value)
-			}
-			println()
-		}
 		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://localhost:8080/", "http", "", "tcp", "ipv4", "", "localhost:8080", 200, 0, 8080)
 		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /", "GET", "http", "tcp", "ipv4", "", "localhost:8080", "fasthttp", "http", "/", "", "/", 200)
 	}, 1)

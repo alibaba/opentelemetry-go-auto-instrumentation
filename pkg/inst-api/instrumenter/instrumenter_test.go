@@ -19,6 +19,9 @@ import (
 	"errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	"testing"
 	"time"
 
@@ -45,7 +48,7 @@ type testOperationListener struct {
 type disableEnabler struct {
 }
 
-func (d disableEnabler) IsEnabled() bool {
+func (d disableEnabler) Enable() bool {
 	return false
 }
 
@@ -107,16 +110,16 @@ func (t *testOperationListener) OnAfterEnd(context context.Context, endAttribute
 type testAttributesExtractor struct {
 }
 
-func (t testAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request testRequest) []attribute.KeyValue {
+func (t testAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request testRequest) ([]attribute.KeyValue, context.Context) {
 	return []attribute.KeyValue{
 		attribute.String("testAttribute", "testValue"),
-	}
+	}, parentContext
 }
 
-func (t testAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request testRequest, response testResponse, err error) []attribute.KeyValue {
+func (t testAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request testRequest, response testResponse, err error) ([]attribute.KeyValue, context.Context) {
 	return []attribute.KeyValue{
 		attribute.String("testAttribute", "testValue"),
-	}
+	}, context
 }
 
 type testContextCustomizer struct {
@@ -155,8 +158,7 @@ func TestStartAndEnd(t *testing.T) {
 		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
 		AddAttributesExtractor(testAttributesExtractor{}).
 		AddOperationListeners(&testOperationListener{}).
-		AddContextCustomizers(testContextCustomizer{}).
-		SetInstVersion("test-version")
+		AddContextCustomizers(testContextCustomizer{})
 	instrumenter := builder.BuildInstrumenter()
 	ctx := context.Background()
 	instrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now())
@@ -180,7 +182,7 @@ func TestEnabler(t *testing.T) {
 		AddAttributesExtractor(testAttributesExtractor{}).
 		AddOperationListeners(&testOperationListener{}).
 		AddContextCustomizers(testContextCustomizer{}).
-		SetInstVersion("test-version").SetInstrumentEnabler(disableEnabler{})
+		SetInstrumentEnabler(disableEnabler{})
 	instrumenter := builder.BuildInstrumenter()
 	ctx := context.Background()
 	newCtx := instrumenter.Start(ctx, testRequest{})
@@ -196,8 +198,7 @@ func TestPropFromUpStream(t *testing.T) {
 		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
 		AddAttributesExtractor(testAttributesExtractor{}).
 		AddOperationListeners(&testOperationListener{}).
-		AddContextCustomizers(testContextCustomizer{}).
-		SetInstVersion("test-version")
+		AddContextCustomizers(testContextCustomizer{})
 	prop := mockProp{"test"}
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	instrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
@@ -218,8 +219,7 @@ func TestPropToDownStream(t *testing.T) {
 		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
 		AddAttributesExtractor(testAttributesExtractor{}).
 		AddOperationListeners(&testOperationListener{}).
-		AddContextCustomizers(testContextCustomizer{}).
-		SetInstVersion("test-version")
+		AddContextCustomizers(testContextCustomizer{})
 	prop := mockProp{}
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	instrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
@@ -230,5 +230,58 @@ func TestPropToDownStream(t *testing.T) {
 	instrumenter.End(ctx, testRequest{}, testResponse{}, nil)
 	if prop.val != "test" {
 		panic("prop val should be test!")
+	}
+}
+
+func TestStartAndEndWithOptions(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().
+		SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		AddAttributesExtractor(testAttributesExtractor{}).
+		AddOperationListeners(&testOperationListener{}).
+		AddContextCustomizers(testContextCustomizer{})
+	instrumenter := builder.BuildInstrumenter()
+	ctx := context.Background()
+	instrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
+	prop := mockProp{"test"}
+	dsInstrumenter := builder.BuildPropagatingToDownstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	dsInstrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
+	upInstrumenter := builder.BuildPropagatingFromUpstreamInstrumenter(func(request testRequest) propagation.TextMapCarrier {
+		return &prop
+	}, &myTextMapProp{})
+	upInstrumenter.StartAndEndWithOptions(ctx, testRequest{}, testResponse{}, nil, time.Now(), time.Now(), nil, nil)
+	// no panic here
+}
+
+func TestInstrumentationScope(t *testing.T) {
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:      "test",
+			Version:   "test",
+			SchemaURL: "test",
+		})
+	instrumenter := builder.BuildInstrumenter()
+	ctx := context.Background()
+	traceProvider := sdktrace.NewTracerProvider()
+	otel.SetTracerProvider(traceProvider)
+	newCtx := instrumenter.Start(ctx, testRequest{})
+	span := trace.SpanFromContext(newCtx)
+	if readOnly, ok := span.(sdktrace.ReadOnlySpan); !ok {
+		panic("it should be a readonly span")
+	} else {
+		if readOnly.InstrumentationScope().Name != "test" {
+			panic("scope name should be test")
+		}
+		if readOnly.InstrumentationScope().Version != "test" {
+			panic("scope version should be test")
+		}
+		if readOnly.InstrumentationScope().SchemaURL != "test" {
+			panic("scope schema url should be test")
+		}
 	}
 }

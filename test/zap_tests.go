@@ -28,12 +28,15 @@ func init() {
 
 func TestZap(t *testing.T, env ...string) {
 	UseApp("zap")
-	RunInstrument(t, "-debuglog", "--", "test_zap.go", "http_server.go")
+	RunGoBuild(t, "go", "build", "test_zap.go", "http_server.go")
 	_, stderr := RunApp(t, "test_zap", env...)
 	reader := strings.NewReader(stderr)
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
+		if strings.Contains(line, "[test debugging]") {
+			continue
+		}
 		ExpectContains(t, line, "trace_id")
 		ExpectContains(t, line, "span_id")
 	}
