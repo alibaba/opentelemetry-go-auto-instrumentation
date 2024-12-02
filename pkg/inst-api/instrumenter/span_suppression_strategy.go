@@ -18,15 +18,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"os"
-	"sync"
 )
-
-var noneSuppressor *NoopSpanSuppressor
-var bySpanKeySuppressor *SpanKeySuppressor
-var spanKindSuppressor *SpanKindSuppressor
-var semConvOnce sync.Once
-var spanKindOnce sync.Once
-var noneOnce sync.Once
 
 type SpanSuppressorStrategy interface {
 	create(spanKeys []attribute.Key) SpanSuppressor
@@ -35,28 +27,22 @@ type SpanSuppressorStrategy interface {
 type SemConvStrategy struct{}
 
 func (t *SemConvStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
-	semConvOnce.Do(func() {
-		bySpanKeySuppressor = NewSpanKeySuppressor(spanKeys)
-	})
-	return bySpanKeySuppressor
+	if len(spanKeys) == 0 {
+		return NewNoopSpanSuppressor()
+	}
+	return NewSpanKeySuppressor(spanKeys)
 }
 
 type NoneStrategy struct{}
 
 func (n *NoneStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
-	noneOnce.Do(func() {
-		noneSuppressor = NewNoopSpanSuppressor()
-	})
-	return noneSuppressor
+	return NewNoopSpanSuppressor()
 }
 
 type SpanKindStrategy struct{}
 
 func (s *SpanKindStrategy) create(spanKeys []attribute.Key) SpanSuppressor {
-	spanKindOnce.Do(func() {
-		spanKindSuppressor = NewSpanKindSuppressor()
-	})
-	return spanKindSuppressor
+	return NewSpanKindSuppressor()
 }
 
 type SpanKindSuppressor struct {
