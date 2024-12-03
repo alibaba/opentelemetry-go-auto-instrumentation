@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
@@ -98,7 +99,7 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 		if err != nil {
 			return fmt.Errorf("failed to write file: %w", err)
 		}
-		if shared.GetConf().Verbose {
+		if config.GetConf().Verbose {
 			log.Printf("Copy embed file %v to %v", p, target)
 		}
 		return nil

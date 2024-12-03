@@ -27,7 +27,7 @@ const WorldAppName = "world"
 func TestCompileTheWorld(t *testing.T) {
 	UseApp(WorldAppName)
 
-	RunInstrument(t, "-debuglog", "go", "build")
+	RunGoBuild(t, "go", "build")
 	RunApp(t, WorldAppName)
 	text := ReadPreprocessLog(t, shared.DebugLogFile)
 
@@ -41,7 +41,7 @@ func TestCompileTheWorld(t *testing.T) {
 		importPath := match[1]
 		importPaths[importPath] = struct{}{}
 	}
-	if len(importPaths) != 22 {
+	if len(importPaths) != 23 {
 		t.Log("Matched import paths:")
 		for path := range importPaths {
 			fmt.Println(path)

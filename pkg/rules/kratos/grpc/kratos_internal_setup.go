@@ -33,7 +33,7 @@ var kratosEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 
-func KratosNewGRPCServiceOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
+func kratosNewGRPCServiceOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
 	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES) != "true" {
 		return
 	}

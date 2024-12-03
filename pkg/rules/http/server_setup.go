@@ -44,7 +44,7 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 		call.SetParam(1, x1)
 	}
 	call.SetParam(2, r.WithContext(ctx))
-	data := make(map[string]interface{}, 1)
+	data := make(map[string]interface{}, 2)
 	data["ctx"] = ctx
 	data["request"] = request
 	call.SetData(data)

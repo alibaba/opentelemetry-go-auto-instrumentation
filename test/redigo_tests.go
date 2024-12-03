@@ -41,7 +41,7 @@ func TestRedigoExecutingCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedigoContainer()
 	defer clearRedigoContainer(redisC)
 	UseApp("redigo/v1.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_executing_commands.go")
+	RunGoBuild(t, "go", "build", "test_executing_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_executing_commands", env...)
 }
@@ -50,7 +50,7 @@ func TestRedigoDoCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedigoContainer()
 	defer clearRedigoContainer(redisC)
 	UseApp("redigo/v1.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_do_commands.go")
+	RunGoBuild(t, "go", "build", "test_do_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_do_commands", env...)
 }
@@ -59,7 +59,7 @@ func TestRedigoUnsupportedCommands(t *testing.T, env ...string) {
 	redisC, redisPort := initRedigoContainer()
 	defer clearRedigoContainer(redisC)
 	UseApp("redigo/v1.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_unsupported_commands.go")
+	RunGoBuild(t, "go", "build", "test_unsupported_commands.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_unsupported_commands", env...)
 }
@@ -68,7 +68,7 @@ func TestRedigoTransactions(t *testing.T, env ...string) {
 	redisC, redisPort := initRedigoContainer()
 	defer clearRedigoContainer(redisC)
 	UseApp("redigo/v1.9.0")
-	RunInstrument(t, "-debuglog", "go", "build", "test_transaction.go")
+	RunGoBuild(t, "go", "build", "test_transaction.go")
 	env = append(env, "REDIS_PORT="+redisPort.Port())
 	RunApp(t, "test_transaction", env...)
 }
