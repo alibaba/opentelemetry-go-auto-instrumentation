@@ -18,6 +18,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -54,7 +55,7 @@ func (dp *DepProcessor) replaceOtelImports() error {
 			if err != nil {
 				return fmt.Errorf("failed to read file content: %w", err)
 			}
-			if shared.GetConf().Verbose {
+			if config.GetConf().Verbose {
 				log.Printf("Replace import path of %s to %s", file, moduleName)
 			}
 

@@ -26,33 +26,40 @@ page.
 
 ### Build From Source
 
-Checkout the source code and build the tool by running the following command:
+Checkout source code and build the tool by running one of following commands:
 
 ```bash
-$ make install
+$ make         # build only
+$ make install # build and install
 ```
 
 # Getting Started
 
-Add `otel` prefix to `go build` to build your project:
+Check the version by running:
+```bash
+$ otel version
+```
+
+The configuration for the tool can be set by the following command:
+
+```bash
+$ otel set -verbose                          # print verbose logs
+$ otel set -debug                            # enable debug mode
+$ otel set -debug -verbose -rule=custom.json # set multiple configs
+$ otel set -disabledefault -rule=custom.json # disable default rules, use custom rules only
+$ otel set -rule=custom.json                 # use default and custom rules
+$ otel set -rule=a.json,b.json               # use default, a and b rules
+```
+
+Once all set up, add `otel` prefix to `go build` to build your project:
 
 ```bash
 $ otel go build
 $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
 ```
-The arguments for the tool itself should be placed before `go build`:
 
-```bash
-$ otel -help                      # print help doc
-$ otel -debug go build            # enable debug mode
-$ otel -verbose go build          # print verbose log
-$ otel -rule=custom.json go build # use custom rule
-```
-
-You can also explore [**these examples**](./example/) to get hands-on experience.
-
-Also there are several [**documents**](./docs) that you may find useful for either understanding the project or contributing to it.
+The detailed usage of otel tool can be found in [**Usage**](./docs/usage.md).
 
 > [!NOTE]
 > If you find any compilation failures while `go build` works, it's likely a bug.
@@ -60,16 +67,23 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 > at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
 > to help us enhance this project.
 
+# Examples
+
+You can also explore [**these examples**](./example/) to get hands-on experience. They are designed to construct a full picture of how to use the tool in different scenarios.
+
+Also there are several [**documents**](./docs) that you may find useful for either understanding the project or contributing to it.
+
 # Supported Libraries
 
 | Plugin Name  | Repository Url                             | Min Supported Version | Max Supported Version |
-| ------------ | ------------------------------------------ | --------------------- | --------------------- |
+|--------------| ------------------------------------------ | --------------------- |-----------------------|
 | database/sql | https://pkg.go.dev/database/sql            | -                     | -                     |
 | echo         | https://github.com/labstack/echo           | v4.0.0                | v4.12.0               |
+| elasticsearch| https://github.com/elastic/go-elasticsearch| v8.4.0                | v8.15.0               |
 | fasthttp     | https://github.com/valyala/fasthttp        | v1.45.0               | v1.57.0               |
 | gin          | https://github.com/gin-gonic/gin           | v1.7.0                | v1.10.0               |
 | go-redis     | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |
-| go-redis v8  | https://github.com/redis/go-redis          | v8.11.0                | v8.11.5              |
+| go-redis v8  | https://github.com/redis/go-redis          | v8.11.0               | v8.11.5               |
 | gorm         | https://github.com/go-gorm/gorm            | v1.22.0               | v1.25.9               |
 | grpc         | https://google.golang.org/grpc             | v1.44.0               | v1.67.0               |
 | hertz        | https://github.com/cloudwego/hertz         | v0.8.0                | v0.9.2                |
@@ -82,6 +96,7 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | redigo       | https://github.com/gomodule/redigo         | v1.9.0                | v1.9.2                |
 | slog         | https://pkg.go.dev/log/slog                | -                     | -                     |
 | zap          | https://github.com/uber-go/zap             | v1.20.0               | v1.27.0               |
+| fiber        | https://github.com/gofiber/fiber           | v2.43.0               | v2.52.5               |
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
 
@@ -97,3 +112,10 @@ our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fU
 to engage with us.
 
 <img src="docs/dingtalk.png" height="200">
+
+## Adopters
+
+These are only part of the companies using this project, for reference only. If you are using this project, please [add your company here](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) to tell us your scenario to make this project better.
+
+- <img src="./docs/alibaba.png" width="80">
+- <img src="./docs/aliyun.png" width="100">

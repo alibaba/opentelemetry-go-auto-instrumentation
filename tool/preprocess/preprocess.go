@@ -28,6 +28,7 @@ import (
 	"syscall"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -43,19 +44,21 @@ import (
 // for preparing these dependencies in advance.
 
 const (
-	OtelSetupInst    = "otel_setup_inst.go"
-	OtelSetupSDK     = "otel_setup_sdk.go"
-	OtelRules        = "otel_rules"
-	OtelUser         = "otel_user"
-	OtelRuleCache    = "rule_cache"
-	OtelBackups      = "backups"
-	OtelBackupSuffix = ".bk"
-	FuncMain         = "main"
-	FuncInit         = "init"
-	DryRunLog        = "dry_run.log"
-	StdRulesPrefix   = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
-	StdRulesPath     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
-	ApiPath          = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	OtelSetupInst      = "otel_setup_inst.go"
+	OtelSetupSDK       = "otel_setup_sdk.go"
+	OtelRules          = "otel_rules"
+	OtelUser           = "otel_user"
+	OtelRuleCache      = "rule_cache"
+	OtelBackups        = "backups"
+	OtelBackupSuffix   = ".bk"
+	FuncMain           = "main"
+	FuncInit           = "init"
+	DryRunLog          = "dry_run.log"
+	CompileRemix       = "remix"
+	ReorderLocalPrefix = "<REORDER>"
+	ReorderInitFile    = "reorder_init.go"
+	StdRulesPrefix     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
+	StdRulesPath       = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
 )
 
 // @@ Change should sync with trampoline template
@@ -77,20 +80,20 @@ var fixedDeps = []struct {
 }{
 	// otel sdk
 	{"go.opentelemetry.io/otel",
-		"v1.31.0", true, false},
+		"v1.32.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
-		"v1.31.0", true, false},
+		"v1.32.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
-		"v1.31.0", true, false},
+		"v1.32.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
-		"v1.31.0", true, false},
+		"v1.32.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc",
-		"v1.31.0", true, false},
+		"v1.32.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp",
-		"v1.31.0", true, false},
+		"v1.32.0", true, false},
 	// otel contrib
 	{"go.opentelemetry.io/contrib/instrumentation/runtime",
-		"v0.56.0", false, false},
+		"v0.57.0", false, false},
 	// otel itself
 	// {"github.com/alibaba/opentelemetry-go-auto-instrumentation",
 	// "v0.3.0", false, true},
@@ -103,6 +106,7 @@ type DepProcessor struct {
 	importCandidates []string
 	rule2Dir         map[*resource.InstFuncRule]string
 	ruleCache        embed.FS
+	goBuildCmd       []string
 }
 
 func newDepProcessor() *DepProcessor {
@@ -114,6 +118,11 @@ func newDepProcessor() *DepProcessor {
 		rule2Dir:         map[*resource.InstFuncRule]string{},
 		ruleCache:        pkg.ExportRuleCache(),
 	}
+	// There is a tricky, all arguments after the tool itself are saved for
+	// later use, which means the subcommand "go build" are also  included
+	dp.goBuildCmd = make([]string, len(os.Args)-1)
+	copy(dp.goBuildCmd, os.Args[1:])
+	shared.AssertGoBuild(dp.goBuildCmd)
 
 	// Register signal handler to catch up SIGINT/SIGTERM interrupt signals and
 	// do necessary cleanup
@@ -141,7 +150,7 @@ func (dp *DepProcessor) postProcess() {
 	// }
 
 	// Using -debug? Leave all changes for debugging
-	if shared.GetConf().Debug {
+	if config.GetConf().Debug {
 		return
 	}
 
@@ -173,7 +182,7 @@ func (dp *DepProcessor) backupFile(origin string) error {
 		}
 		dp.backups[origin] = backup
 		log.Printf("Backup %v\n", origin)
-	} else if shared.GetConf().Verbose {
+	} else if config.GetConf().Verbose {
 		log.Printf("Backup %v already exists\n", origin)
 	}
 	return nil
@@ -192,12 +201,6 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 }
 
 func getCompileCommands() ([]string, error) {
-	err := runDryBuild()
-	if err != nil {
-		// Tell us more about what happened in the dry run
-		errLog, _ := util.ReadFile(shared.GetLogPath(DryRunLog))
-		return nil, fmt.Errorf("failed to run dry build: %w\n%v", err, errLog)
-	}
 	dryRunLog, err := os.Open(shared.GetLogPath(DryRunLog))
 	if err != nil {
 		return nil, err
@@ -239,7 +242,7 @@ func (dp *DepProcessor) getImportCandidates() ([]string, error) {
 	found := false
 
 	// Find from build arguments e.g. go build test.go or go build cmd/app
-	for _, buildArg := range shared.GetConf().GoBuildCmd {
+	for _, buildArg := range dp.goBuildCmd {
 		// FIXME: Should we check file permission here? As we are likely to read
 		// it later, which would cause fatal error if permission is not granted.
 
@@ -276,7 +279,11 @@ func (dp *DepProcessor) getImportCandidates() ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to list files: %w", err)
 		}
-		candidates = append(candidates, files...)
+		for _, file := range files {
+			if shared.IsGoFile(file) {
+				candidates = append(candidates, file)
+			}
+		}
 	}
 	if len(candidates) > 0 {
 		dp.importCandidates = candidates
@@ -312,7 +319,7 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		// Prepend import path to the file
 		for _, importPath := range importPaths {
 			shared.AddImportForcely(astRoot, importPath)
-			if shared.GetConf().Verbose {
+			if config.GetConf().Verbose {
 				log.Printf("Add %s import to %v", importPath, file)
 			}
 		}
@@ -368,7 +375,7 @@ func (dp *DepProcessor) findLocalImportPath() error {
 		return fmt.Errorf("failed to get module name: %w", err)
 	}
 	dp.localImportPath = strings.Replace(workingDir, projectDir, moduleName, 1)
-	if shared.GetConf().Verbose {
+	if config.GetConf().Verbose {
 		log.Printf("Find local import path: %v", dp.localImportPath)
 	}
 	return nil
@@ -413,7 +420,7 @@ func (dp *DepProcessor) preclean() {
 			continue
 		}
 		if shared.RemoveImport(astRoot, ruleImport) != nil {
-			if shared.GetConf().Verbose {
+			if config.GetConf().Verbose {
 				log.Printf("Remove obsolete import %v from %v",
 					ruleImport, file)
 			}
@@ -443,14 +450,14 @@ func (dp *DepProcessor) storeRuleBundles() error {
 }
 
 // runDryBuild runs a dry build to get all dependencies needed for the project.
-func runDryBuild() error {
+func runDryBuild(goBuildCmd []string) error {
 	dryRunLog, err := os.Create(shared.GetLogPath(DryRunLog))
 	if err != nil {
 		return err
 	}
 	// The full build command is: "go build -a -x -n  {...}"
 	args := []string{"go", "build", "-a", "-x", "-n"}
-	args = append(args, shared.GetConf().GoBuildCmd[2:]...)
+	args = append(args, goBuildCmd...)
 	args = util.StringDedup(args)
 	shared.AssertGoBuild(args)
 
@@ -488,7 +495,7 @@ func nullDevice() string {
 	return "/dev/null"
 }
 
-func runBuildWithToolexec() (string, error) {
+func runBuildWithToolexec(goBuildCmd []string) (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return "", err
@@ -496,7 +503,8 @@ func runBuildWithToolexec() (string, error) {
 	args := []string{
 		"go",
 		"build",
-		"-toolexec=" + exe + " -in-toolexec",
+		// Add remix subcommand to tell the tool this is toolexec mode
+		"-toolexec=" + exe + " " + CompileRemix,
 	}
 
 	// Leave the temporary compilation directory
@@ -505,21 +513,21 @@ func runBuildWithToolexec() (string, error) {
 	// Force rebuilding
 	args = append(args, "-a")
 
-	if shared.GetConf().Debug {
+	if config.GetConf().Debug {
 		// Disable compiler optimizations for debugging mode
 		args = append(args, "-gcflags=all=-N -l")
 	}
 
 	// Append additional build arguments provided by the user
-	args = append(args, shared.GetConf().GoBuildCmd[2:]...)
+	args = append(args, goBuildCmd[2:]...)
 
-	if shared.GetConf().Restore {
+	if config.GetConf().Restore {
 		// Dont generate any compiled binary when using -restore
 		args = append(args, "-o")
 		args = append(args, nullDevice())
 	}
 
-	if shared.GetConf().Verbose {
+	if config.GetConf().Verbose {
 		log.Printf("Run go build with args %v in toolexec mode", args)
 	}
 	args = util.StringDedup(args)
@@ -551,7 +559,7 @@ func (dp *DepProcessor) pinDepVersion() error {
 	for _, dep := range fixedDeps {
 		p := dep.dep
 		v := dep.version
-		if shared.GetConf().Verbose {
+		if config.GetConf().Verbose {
 			log.Printf("Pin dependency version %v@%v", p, v)
 		}
 		err := fetchDep(p + "@" + v)
@@ -587,6 +595,20 @@ func precheck() error {
 	vendor := filepath.Join(projRoot, shared.VendorDir)
 	if exist, _ := util.PathExists(vendor); exist {
 		return fmt.Errorf("vendor mode is not supported")
+	}
+
+	// Check if the build arguments is sane
+	if len(os.Args) < 3 {
+		config.PrintVersion()
+		os.Exit(0)
+	}
+	if !strings.Contains(os.Args[1], "go") {
+		config.PrintVersion()
+		os.Exit(0)
+	}
+	if os.Args[2] != "build" {
+		config.PrintVersion()
+		os.Exit(0)
 	}
 	return nil
 }
@@ -645,6 +667,14 @@ func (dp *DepProcessor) setupDeps() error {
 	err = runModTidy()
 	if err != nil {
 		return fmt.Errorf("failed to run mod tidy: %w", err)
+	}
+
+	// Run dry build to the build blueprint
+	err = runDryBuild(dp.goBuildCmd)
+	if err != nil {
+		// Tell us more about what happened in the dry run
+		errLog, _ := util.ReadFile(shared.GetLogPath(DryRunLog))
+		return fmt.Errorf("failed to run dry build: %w\n%v", err, errLog)
 	}
 
 	// Find compile commands from dry run log
@@ -735,7 +765,7 @@ func Preprocess() error {
 		defer util.PhaseTimer("Instrument")()
 
 		// Run go build with toolexec to start instrumentation
-		out, err := runBuildWithToolexec()
+		out, err := runBuildWithToolexec(dp.goBuildCmd)
 		if err != nil {
 			return fmt.Errorf("failed to run go toolexec build: %w\n%s",
 				err, out)

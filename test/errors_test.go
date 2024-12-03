@@ -23,7 +23,8 @@ const ErrorsAppName = "errorstest"
 
 func TestRunErrors(t *testing.T) {
 	UseApp(ErrorsAppName)
-	RunInstrument(t, UseTestRules("test_error.json"), "-debuglog", "go", "build")
+	RunSet(t, UseTestRules("test_error.json"))
+	RunGoBuild(t, "go", "build")
 	stdout, stderr := RunApp(t, ErrorsAppName)
 	ExpectContains(t, stdout, "wow")
 	ExpectContains(t, stdout, "old:wow")
@@ -37,7 +38,9 @@ func TestRunErrors(t *testing.T) {
 	ExpectContains(t, stderr, "2024 shanghai")
 	ExpectContains(t, stdout, "2033 hangzhou")
 	ExpectNotContains(t, stderr, "failed to exec")
-	text := ReadInstrumentLog(t, filepath.Join("auxiliary", "aux.go"))
+	ExpectNotContains(t, stderr, "baddep")
+	ExpectContains(t, stderr, "gooddep")
+	text := ReadInstrumentLog(t, filepath.Join("auxiliary", "helper.go"))
 	re := regexp.MustCompile(".*OtelOnEnterTrampoline_TestSkip.*")
 	matches := re.FindAllString(text, -1)
 	if len(matches) < 1 {

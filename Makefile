@@ -12,12 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Get the current operating system and CPU architecture of the system
+#-------------------------------------------------------------------------------
+# General build options
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 CURRENT_ARCH := $(shell uname -m)
 
+MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
+VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
+XVERSION := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION)
+STRIP_DEBUG := -s -w
+LDFLAGS := $(XVERSION) $(STRIP_DEBUG)
+BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -ldflags="$(LDFLAGS)" -o $(3) ./tool/cmd
+
+OUTPUT_BASE = otel
+OUTPUT_DARWIN_AMD64 = $(OUTPUT_BASE)-darwin-amd64
+OUTPUT_LINUX_AMD64 = $(OUTPUT_BASE)-linux-amd64
+OUTPUT_WINDOWS_AMD64 = $(OUTPUT_BASE)-windows-amd64.exe
+OUTPUT_DARWIN_ARM64 = $(OUTPUT_BASE)-darwin-arm64
+OUTPUT_LINUX_ARM64 = $(OUTPUT_BASE)-linux-arm64
+
+#-------------------------------------------------------------------------------
+# Multiple OS and ARCH support
 ifeq ($(CURRENT_ARCH), x86_64)
    CURRENT_ARCH := amd64
+endif
+
+# Check if current os contains "MINGW" or "MSYS" to determine if it is Windows
+ifeq ($(findstring mingw,$(CURRENT_OS)),mingw)
+   CURRENT_OS := windows
+endif
+
+ifeq ($(findstring msys,$(CURRENT_OS)),msys)
+   CURRENT_OS := windows
 endif
 
 # Get the current Git commit ID
@@ -36,60 +62,45 @@ else
 	COMMIT_ID := default
 endif
 
-# General build options
-MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
-TOOL_REL_NAME := otel
-
-VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
-
-XVERSION := -X=$(MOD_NAME)/tool/shared.TheVersion=$(VERSION)
-XNAME := -X=$(MOD_NAME)/tool/shared.TheName=$(TOOL_REL_NAME)
-STRIP_DEBUG := -s -w
-LDFLAGS := $(XVERSION) $(XNAME) $(STRIP_DEBUG)
-BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -ldflags="$(LDFLAGS)" -o $(3) ./tool/
-
-OUTPUT_BASE = $(TOOL_REL_NAME)
-OUTPUT_DARWIN_AMD64 = $(OUTPUT_BASE)-darwin-amd64
-OUTPUT_LINUX_AMD64 = $(OUTPUT_BASE)-linux-amd64
-OUTPUT_WINDOWS_AMD64 = $(OUTPUT_BASE)-windows-amd64.exe
-OUTPUT_DARWIN_ARM64 = $(OUTPUT_BASE)-darwin-arm64
-OUTPUT_LINUX_ARM64 = $(OUTPUT_BASE)-linux-arm64
+#-------------------------------------------------------------------------------
+# Build targets
+.PHONY: build
+build: tidy
+	$(eval OUTPUT_BIN=$(OUTPUT_BASE))
+ifeq ($(CURRENT_OS),windows)
+	$(eval OUTPUT_BIN=$(OUTPUT_BASE).exe)
+endif
+	$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
 
 .PHONY: all test clean
 
 all: clean darwin_amd64 linux_amd64 windows_amd64 darwin_arm64 linux_arm64
 
-.PHONY: build
-build:
-	go mod tidy
-	$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BASE))
-
-darwin_amd64:
-	go mod tidy
+darwin_amd64: tidy
 	$(call BUILD_CMD,darwin,amd64,$(OUTPUT_DARWIN_AMD64))
 
-linux_amd64:
-	go mod tidy
+linux_amd64: tidy
 	$(call BUILD_CMD,linux,amd64,$(OUTPUT_LINUX_AMD64))
 
-windows_amd64:
-	go mod tidy
+windows_amd64: tidy
 	$(call BUILD_CMD,windows,amd64,$(OUTPUT_WINDOWS_AMD64))
 
-darwin_arm64:
-	go mod tidy
+darwin_arm64: tidy
 	$(call BUILD_CMD,darwin,arm64,$(OUTPUT_DARWIN_ARM64))
 
-linux_arm64:
-	go mod tidy
+linux_arm64: tidy
 	$(call BUILD_CMD,linux,arm64,$(OUTPUT_LINUX_ARM64))
+
+.PHONY: tidy
+tidy:
+	go mod tidy
 
 clean:
 	rm -f $(OUTPUT_DARWIN_AMD64) $(OUTPUT_LINUX_AMD64) $(OUTPUT_WINDOWS_AMD64) $(OUTPUT_DARWIN_ARM64) $(OUTPUT_LINUX_ARM64) $(OUTPUT_BASE)
 	go clean
 
 test:
-	go test -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test
+	go test -timeout 50m -v $(MOD_NAME)/test
 
 install: build
 	@echo "Running install process..."

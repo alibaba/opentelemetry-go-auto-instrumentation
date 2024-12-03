@@ -26,6 +26,7 @@ import (
 	_ "github.com/gin-gonic/gin"
 	_ "github.com/go-kratos/kratos/v2/transport/http"
 	_ "github.com/go-redis/redis/v8"
+	_ "github.com/gofiber/fiber/v2"
 	_ "github.com/gorilla/mux"
 	_ "github.com/labstack/echo/v4"
 	_ "github.com/sirupsen/logrus"

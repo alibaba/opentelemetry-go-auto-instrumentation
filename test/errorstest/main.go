@@ -17,6 +17,7 @@ package main
 import (
 	"errors"
 	"errorstest/auxiliary"
+	_ "errorstest/dep"
 	"fmt"
 )
 

@@ -28,7 +28,7 @@ func init() {
 
 func TestLogrus(t *testing.T, env ...string) {
 	UseApp("logrus")
-	RunInstrument(t, "-debuglog", "go", "build", "test_logrus.go", "http_server.go")
+	RunGoBuild(t, "go", "build", "test_logrus.go", "http_server.go")
 	_, stderr := RunApp(t, "test_logrus", env...)
 	reader := strings.NewReader(stderr)
 	scanner := bufio.NewScanner(reader)
