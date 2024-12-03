@@ -195,8 +195,10 @@ func loadConfigFromEnv(conf *BuildConfig) {
 		envKey := fmt.Sprintf("%s%s", EnvPrefix, toUpperSnakeCase(field.Name))
 		envVal := os.Getenv(envKey)
 		if envVal != "" {
-			log.Printf("Overwrite config %s with environment variable %s",
-				field.Name, envKey)
+			if shared.InPreprocess() {
+				log.Printf("Overwrite config %s with environment variable %s",
+					field.Name, envKey)
+			}
 			v := reflect.ValueOf(conf).Elem()
 			f := v.FieldByName(field.Name)
 			switch f.Kind() {

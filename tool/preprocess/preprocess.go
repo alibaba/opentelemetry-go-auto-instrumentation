@@ -33,6 +33,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/tools/go/packages"
 )
 
 // -----------------------------------------------------------------------------
@@ -44,6 +45,7 @@ import (
 // for preparing these dependencies in advance.
 
 const (
+	OtelImportHolder   = "otel_import_holder.go"
 	OtelSetupInst      = "otel_setup_inst.go"
 	OtelSetupSDK       = "otel_setup_sdk.go"
 	OtelRules          = "otel_rules"
@@ -100,29 +102,60 @@ var fixedDeps = []struct {
 }
 
 type DepProcessor struct {
-	bundles          []*resource.RuleBundle // All dependent rule bundles
-	backups          map[string]string
-	localImportPath  string
-	importCandidates []string
-	rule2Dir         map[*resource.InstFuncRule]string
-	ruleCache        embed.FS
-	goBuildCmd       []string
+	bundles         []*resource.RuleBundle // All dependent rule bundles
+	backups         map[string]string
+	localImportPath string
+	importHolder    string
+	rule2Dir        map[*resource.InstFuncRule]string
+	ruleCache       embed.FS
+	goBuildCmd      []string
 }
 
 func newDepProcessor() *DepProcessor {
 	dp := &DepProcessor{
-		bundles:          []*resource.RuleBundle{},
-		backups:          map[string]string{},
-		localImportPath:  "",
-		importCandidates: nil,
-		rule2Dir:         map[*resource.InstFuncRule]string{},
-		ruleCache:        pkg.ExportRuleCache(),
+		bundles:         []*resource.RuleBundle{},
+		backups:         map[string]string{},
+		localImportPath: "",
+		importHolder:    "",
+		rule2Dir:        map[*resource.InstFuncRule]string{},
+		ruleCache:       pkg.ExportRuleCache(),
 	}
+	return dp
+}
+
+func (dp *DepProcessor) init() error {
+	// Pre-clean before processing in case of any obsolete materials left
+	dp.cleanup()
+
+	// Parse the go build command
 	// There is a tricky, all arguments after the tool itself are saved for
-	// later use, which means the subcommand "go build" are also  included
+	// later use, which means the subcommand "go build" are also included
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	shared.AssertGoBuild(dp.goBuildCmd)
+
+	// Initialize the import holder file, all explicit imports will be added
+	// to this file
+	util.Assert(dp.importHolder == "", "already initialized")
+	util.Assert(len(dp.goBuildCmd) >= 2, "invalid go build command")
+	pkgs, err := loadPackages(dp.goBuildCmd[2:]...)
+	if err != nil {
+		return fmt.Errorf("failed to load packages: %w", err)
+	}
+	mainPkg, err := findMainPackage(pkgs)
+	if err != nil {
+		return fmt.Errorf("failed to find main package: %w", err)
+	}
+	if len(mainPkg.GoFiles) == 0 {
+		return fmt.Errorf("no go files in main package")
+	}
+	dir := filepath.Dir(mainPkg.GoFiles[0])
+	dp.importHolder = filepath.Join(dir, OtelImportHolder)
+	_, err = util.WriteFile(dp.importHolder, fmt.Sprintf("package main\n"))
+	if err != nil {
+		return fmt.Errorf("failed to write import holder: %w", err)
+	}
+	log.Printf("Create %v\n", dp.importHolder)
 
 	// Register signal handler to catch up SIGINT/SIGTERM interrupt signals and
 	// do necessary cleanup
@@ -137,9 +170,24 @@ func newDepProcessor() *DepProcessor {
 		default:
 		}
 	}()
-	return dp
+	return nil
 }
 
+func (dp *DepProcessor) cleanup() {
+	// rm -rf import holder
+	if dp.importHolder != "" {
+		_ = os.Remove(dp.importHolder)
+	}
+
+	// rm -rf otel_rules
+	_ = os.RemoveAll(OtelRules)
+
+	// rm -rf otel_pkgdep
+	_ = os.RemoveAll(OtelPkgDep)
+}
+
+// postProcess is called after the instrumentation is done. It cleans up all
+// temporary files and restores all changes made during the preprocessing.
 func (dp *DepProcessor) postProcess() {
 	shared.GuaranteeInPreprocess()
 	// Clean build cache as we may instrument some std packages(e.g. runtime)
@@ -154,11 +202,7 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
-	// rm -rf otel_rules
-	_ = os.RemoveAll(OtelRules)
-
-	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(OtelPkgDep)
+	dp.cleanup()
 
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
@@ -231,112 +275,41 @@ func getCompileCommands() ([]string, error) {
 	return compileCmds, nil
 }
 
-// assembleInitCandidate assembles the candidate files that we may add init
-// function to. The candidate files are the ones that have main or init
-// function defined.
-func (dp *DepProcessor) getImportCandidates() ([]string, error) {
-	if dp.importCandidates != nil {
-		return dp.importCandidates, nil
+func loadPackages(patterns ...string) ([]*packages.Package, error) {
+	cfg := &packages.Config{Mode: packages.NeedFiles | packages.NeedSyntax}
+	pkgs, err := packages.Load(cfg, patterns...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load packages: %w", err)
 	}
-	candidates := make([]string, 0)
-	found := false
+	if packages.PrintErrors(pkgs) > 0 {
+		return nil, fmt.Errorf("failed to load packages")
+	}
+	return pkgs, nil
+}
 
-	// Find from build arguments e.g. go build test.go or go build cmd/app
-	for _, buildArg := range dp.goBuildCmd {
-		// FIXME: Should we check file permission here? As we are likely to read
-		// it later, which would cause fatal error if permission is not granted.
-
-		// It's a golang file, good candidate
-		if shared.IsGoFile(buildArg) {
-			candidates = append(candidates, buildArg)
-			found = true
-			continue
-		}
-		// It's likely a flag, skip it
-		if strings.HasPrefix("-", buildArg) {
-			continue
-		}
-
-		// It's a directory, find all go files in it
-		if exist, _ := util.PathExists(buildArg); exist {
-			p2, err := util.ListFilesFlat(buildArg)
+func findMainPackage(pkgs []*packages.Package) (*packages.Package, error) {
+	for _, pkg := range pkgs {
+		for _, gofile := range pkg.GoFiles {
+			astRoot, err := shared.ParseAstFromFile(gofile)
 			if err != nil {
-				// Error is tolerated here, as buildArg may be a file
-				continue
+				return nil, fmt.Errorf("failed to parse ast from file: %w", err)
 			}
-			for _, file := range p2 {
-				if shared.IsGoFile(file) {
-					candidates = append(candidates, file)
-					found = true
-				}
+			if shared.FindFuncDecl(astRoot, FuncMain) != nil {
+				return pkg, nil
 			}
 		}
 	}
-
-	// Find candidates from current directory if no build arguments are provided
-	if !found {
-		files, err := util.ListFilesFlat(".")
-		if err != nil {
-			return nil, fmt.Errorf("failed to list files: %w", err)
-		}
-		for _, file := range files {
-			if shared.IsGoFile(file) {
-				candidates = append(candidates, file)
-			}
-		}
-	}
-	if len(candidates) > 0 {
-		dp.importCandidates = candidates
-	}
-	return candidates, nil
+	return nil, fmt.Errorf("main package not found")
 }
 
 func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
-	// Find out where we should forcely import our init func
-	candidate, err := dp.getImportCandidates()
-	if err != nil {
-		return fmt.Errorf("failed to get import candidates: %w", err)
-	}
-
-	addImport := false
-	for _, file := range candidate {
-		if !shared.IsGoFile(file) {
-			continue
-		}
-		astRoot, err := shared.ParseAstFromFile(file)
+	for _, importPath := range importPaths {
+		_, err = util.AppendFile(dp.importHolder,
+			fmt.Sprintf("import _ %q\n", importPath),
+		)
 		if err != nil {
-			return fmt.Errorf("failed to parse ast from source: %w", err)
+			return fmt.Errorf("failed to append import: %w", err)
 		}
-
-		foundInit := shared.FindFuncDecl(astRoot, FuncInit) != nil
-		if !foundInit {
-			foundMain := shared.FindFuncDecl(astRoot, FuncMain) != nil
-			if !foundMain {
-				continue
-			}
-		}
-
-		// Prepend import path to the file
-		for _, importPath := range importPaths {
-			shared.AddImportForcely(astRoot, importPath)
-			if config.GetConf().Verbose {
-				log.Printf("Add %s import to %v", importPath, file)
-			}
-		}
-		addImport = true
-
-		err = dp.backupFile(file)
-		if err != nil {
-			return fmt.Errorf("failed to backup file %v: %w", file, err)
-		}
-		_, err = shared.WriteAstToFile(astRoot, filepath.Join(file))
-		if err != nil {
-			return fmt.Errorf("failed to write ast to %v: %w", file, err)
-		}
-	}
-	if !addImport {
-		return fmt.Errorf("failed to add rule import, candidates are %v",
-			dp.importCandidates)
 	}
 	return nil
 }
@@ -404,39 +377,6 @@ func (dp *DepProcessor) addOtelImports() error {
 		return fmt.Errorf("failed to add otel import: %w", err)
 	}
 	return nil
-}
-
-func (dp *DepProcessor) preclean() {
-	// err is tolerated here as this is a best-effort operation
-	// Clean obsolete imports from last run
-	candidate, _ := dp.getImportCandidates()
-	ruleImport, _ := dp.getImportPathOf(OtelRules)
-	for _, file := range candidate {
-		if !shared.IsGoFile(file) {
-			continue
-		}
-		astRoot, _ := shared.ParseAstFromFile(file)
-		if astRoot == nil {
-			continue
-		}
-		if shared.RemoveImport(astRoot, ruleImport) != nil {
-			if config.GetConf().Verbose {
-				log.Printf("Remove obsolete import %v from %v",
-					ruleImport, file)
-			}
-		}
-		_, err := shared.WriteAstToFile(astRoot, file)
-		if err != nil {
-			log.Printf("Failed to write ast to %v: %v", file, err)
-		}
-	}
-	// Clean otel_rules/otel_pkgdep directory
-	if exist, _ := util.PathExists(OtelRules); exist {
-		_ = os.RemoveAll(OtelRules)
-	}
-	if exist, _ := util.PathExists(OtelPkgDep); exist {
-		_ = os.RemoveAll(OtelPkgDep)
-	}
 }
 
 func (dp *DepProcessor) storeRuleBundles() error {
@@ -649,9 +589,6 @@ func (dp *DepProcessor) saveDebugFiles() {
 }
 
 func (dp *DepProcessor) setupDeps() error {
-	// Pre-clean before processing in case of any obsolete materials left
-	dp.preclean()
-
 	err := dp.addOtelImports()
 	if err != nil {
 		return fmt.Errorf("failed to add otel imports: %w", err)
@@ -727,6 +664,10 @@ func Preprocess() error {
 	}
 
 	dp := newDepProcessor()
+	err = dp.init()
+	if err != nil {
+		return fmt.Errorf("failed to initialize: %w", err)
+	}
 	defer func() { dp.postProcess() }()
 	{
 		defer util.PhaseTimer("Preprocess")()

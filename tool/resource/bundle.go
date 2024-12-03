@@ -116,7 +116,7 @@ func FindHookFile(rule *InstFuncRule) (string, error) {
 		}
 		root, err := shared.ParseAstFromFileFast(file)
 		if err != nil {
-			return "", fmt.Errorf("failed to read file: %w", err)
+			return "", fmt.Errorf("failed to read hook file: %w", err)
 		}
 		if isHookDefined(root, rule) {
 			return file, nil
@@ -126,7 +126,7 @@ func FindHookFile(rule *InstFuncRule) (string, error) {
 }
 
 func FindRuleFiles(rule InstRule) ([]string, error) {
-	files, err := util.ListFiles(rule.GetPath())
+	files, err := util.ListFilesFlat(rule.GetPath())
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func StoreRuleBundles(bundles []*RuleBundle) error {
 	ruleFile := shared.GetPreprocessLogPath(RuleBundleJsonFile)
 	bs, err := json.Marshal(bundles)
 	if err != nil {
-		return fmt.Errorf("failed to marshal bundles: %w", err)
+		return fmt.Errorf("failed to store used rules: %w", err)
 	}
 	_, err = util.WriteFile(ruleFile, string(bs))
 	if err != nil {
@@ -164,7 +164,7 @@ func LoadRuleBundles() ([]*RuleBundle, error) {
 	var bundles []*RuleBundle
 	err = json.Unmarshal([]byte(data), &bundles)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal bundles: %w", err)
+		return nil, fmt.Errorf("failed to load used rules: %w", err)
 	}
 	return bundles, nil
 }

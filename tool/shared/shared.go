@@ -163,7 +163,7 @@ func GetGoModPath() (string, error) {
 	cmd := exec.Command("go", "env", "GOMOD")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to get go.mod directory: %w\n%v",
+		return "", fmt.Errorf("failed to execute go env GOMOD: %w\n%v",
 			err, string(out))
 	}
 	path := strings.TrimSpace(string(out))
@@ -214,7 +214,7 @@ func IsGoTestFile(path string) bool {
 func IsExistGoMod() (bool, error) {
 	gomod, err := GetGoModPath()
 	if err != nil {
-		return false, fmt.Errorf("failed to get go.mod path: %w", err)
+		return false, fmt.Errorf("failed to check go.mod existenc: %w", err)
 	}
 	if gomod == "" {
 		return false, errors.New("failed to get go.mod path: not module-aware")
