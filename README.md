@@ -95,17 +95,3 @@ We are progressively open-sourcing the libraries we have supported, and your con
 > The framework you expected is not in the list? Don't worry, you can easily inject your code into any frameworks/libraries that are not officially supported.
 >
 > Please refer to [this document](./docs/how-to-add-a-new-rule.md) to get started.
-
-# Community
-
-We are looking forward to your feedback and suggestions. You can join
-our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )
-to engage with us.
-
-<img src="docs/dingtalk.png" height="200">
-
-## Adopters
-
-These are only part of the companies using this project, for reference only. If you are using this project, please [add your company here](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) to tell us your scenario to make this project better.
-
-![Alibaba Group](./static/alibaba.png)
