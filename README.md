@@ -35,6 +35,11 @@ $ make install # build and install
 
 # Getting Started
 
+Check the version by running:
+```bash
+$ otel version
+```
+
 The configuration for the tool can be set by the following command:
 
 ```bash
@@ -54,15 +59,19 @@ $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
 ```
 
-You can also explore [**these examples**](./example/) to get hands-on experience.
-
-Also there are several [**documents**](./docs) that you may find useful for either understanding the project or contributing to it.
+The detailed usage of otel tool can be found in [**Usage**](./docs/usage.md).
 
 > [!NOTE]
 > If you find any compilation failures while `go build` works, it's likely a bug.
 > Please feel free to file a bug
 > at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
 > to help us enhance this project.
+
+# Examples
+
+You can also explore [**these examples**](./example/) to get hands-on experience. They are designed to construct a full picture of how to use the tool in different scenarios.
+
+Also there are several [**documents**](./docs) that you may find useful for either understanding the project or contributing to it.
 
 # Supported Libraries
 
@@ -108,4 +117,5 @@ to engage with us.
 
 These are only part of the companies using this project, for reference only. If you are using this project, please [add your company here](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) to tell us your scenario to make this project better.
 
-![Alibaba Group](./static/alibaba.png)
+- <img src="./docs/alibaba.png" width="80">
+- <img src="./docs/aliyun.png" width="100">

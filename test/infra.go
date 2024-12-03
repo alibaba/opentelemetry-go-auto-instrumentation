@@ -121,6 +121,28 @@ func RunGoBuild(t *testing.T, args ...string) {
 	}
 }
 
+func RunGoBuildWithEnv(t *testing.T, envs []string, args ...string) {
+	util.Assert(pwd != "", "pwd is empty")
+	RunSet(t, "-debuglog")
+	path := filepath.Join(filepath.Dir(pwd), getExecName())
+	cmd := runCmd(append([]string{path}, args...))
+	cmd.Env = append(cmd.Env, envs...)
+	err := cmd.Run()
+	if err != nil {
+		stderr := readStderrLog(t)
+		stdout := readStdoutLog(t)
+		t.Log(stdout)
+		t.Log("\n\n\n")
+		t.Log(stderr)
+		log1 := ReadPreprocessLog(t, shared.DebugLogFile)
+		log2 := ReadInstrumentLog(t, shared.DebugLogFile)
+		text := fmt.Sprintf("failed to run instrument: %v\n", err)
+		text += fmt.Sprintf("preprocess: %v\n", log1)
+		text += fmt.Sprintf("instrument: %v\n", log2)
+		t.Fatal(text)
+	}
+}
+
 func RunGoBuildFallible(t *testing.T, args ...string) {
 	util.Assert(pwd != "", "pwd is empty")
 	RunSet(t, "-debuglog")
