@@ -70,11 +70,9 @@ github.com/docker/go-connections v0.5.0 h1:USnMq7hx7gwdVZq1L49hLXaFtUdTADjXGp+uj
 github.com/docker/go-connections v0.5.0/go.mod h1:ov60Kzw0kKElRwhNs9UlUHAE/F9Fe6GLaXnqyDdmEXc=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
-github.com/elastic/elastic-transport-go/v8 v8.0.0-alpha h1:SW9xcMVxx4Nv9oRm5rQxzAMAatwiZV8xROP2a48y45Q=
-github.com/elastic/elastic-transport-go/v8 v8.0.0-alpha/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
+github.com/elastic/elastic-transport-go/v8 v8.1.0 h1:NeqEz1ty4RQz+TVbUrpSU7pZ48XkzGWQj02k5koahIE=
 github.com/elastic/elastic-transport-go/v8 v8.1.0/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
-github.com/elastic/go-elasticsearch/v8 v8.0.0 h1:Hte+pgoEZI88j/sQx7u9vK9SqisvJYkYMmxDnQXiJyM=
-github.com/elastic/go-elasticsearch/v8 v8.0.0/go.mod h1:8NCWP26meGbncX+R9sxo2JD8IqBjRTuS7yXMstHpd40=
+github.com/elastic/go-elasticsearch/v8 v8.4.0 h1:Rn1mcqaIMcNT43hnx2H62cIFZ+B6mjWtzj85BDKrvCE=
 github.com/elastic/go-elasticsearch/v8 v8.4.0/go.mod h1:yY52i2Vj0unLz+N3Nwx1gM5LXwoj3h2dgptNGBYkMLA=
 github.com/envoyproxy/go-control-plane v0.13.0 h1:HzkeUz1Knt+3bK+8LG1bxOO/jzWZmdxpwC51i202les=
 github.com/envoyproxy/go-control-plane v0.13.0/go.mod h1:GRaKG3dwvFoTg4nj7aXdZnvMg4d7nvT/wl9WgVXn3Q8=

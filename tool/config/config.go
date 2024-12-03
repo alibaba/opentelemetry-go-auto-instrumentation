@@ -236,7 +236,7 @@ func InitConfig() (err error) {
 }
 
 func PrintVersion() error {
-	fmt.Printf("%s version %s", GetToolName(), ToolVersion)
+	fmt.Printf("%s version %s\n", GetToolName(), ToolVersion)
 	os.Exit(0)
 	return nil
 }
