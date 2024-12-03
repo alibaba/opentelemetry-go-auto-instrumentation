@@ -21,10 +21,16 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
+	"unicode"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+)
+
+const (
+	EnvPrefix = "OTELTOOL_"
 )
 
 type BuildConfig struct {
@@ -162,12 +168,56 @@ func loadConfig() (*BuildConfig, error) {
 	return bc, nil
 }
 
+func toUpperSnakeCase(input string) string {
+	var result []rune
+
+	for i, char := range input {
+		if unicode.IsUpper(char) {
+			if i != 0 {
+				result = append(result, '_')
+			}
+			result = append(result, unicode.ToUpper(char))
+		} else {
+			result = append(result, unicode.ToUpper(char))
+		}
+	}
+
+	return string(result)
+}
+func loadConfigFromEnv(conf *BuildConfig) {
+	// Environment variables are able to overwrite the config items even if the
+	// config file sets them. The environment variable name is the upper snake
+	// case of the config item name, prefixed with "OTELTOOL_". For example, the
+	// environment variable for "DebugLog" is "OTELTOOL_DEBUG_LOG".
+	typ := reflect.TypeOf(*conf)
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		envKey := fmt.Sprintf("%s%s", EnvPrefix, toUpperSnakeCase(field.Name))
+		envVal := os.Getenv(envKey)
+		if envVal != "" {
+			log.Printf("Overwrite config %s with environment variable %s",
+				field.Name, envKey)
+			v := reflect.ValueOf(conf).Elem()
+			f := v.FieldByName(field.Name)
+			switch f.Kind() {
+			case reflect.Bool:
+				f.SetBool(envVal == "true")
+			case reflect.String:
+				f.SetString(envVal)
+			default:
+				log.Fatalf("Unsupported config type %s", f.Kind())
+			}
+		}
+	}
+}
+
 func InitConfig() (err error) {
 	// Load build config from json file
 	conf, err = loadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load build config: %w", err)
 	}
+	loadConfigFromEnv(conf)
 
 	err = conf.parseRuleFiles()
 	if err != nil {
