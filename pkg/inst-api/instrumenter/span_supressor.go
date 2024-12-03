@@ -88,7 +88,7 @@ func (s *SpanKeySuppressor) ShouldSuppress(parentContext context.Context, spanKi
 			instScopeName := s.InstrumentationScope().Name
 			if instScopeName != "" {
 				parentSpanKey := scopeKey[instScopeName]
-				if spanKey == parentSpanKey {
+				if spanKey != parentSpanKey {
 					return false
 				}
 			}
