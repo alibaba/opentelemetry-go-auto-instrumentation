@@ -54,14 +54,11 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 		return nil
 	}
 	// Find out which resource files we should add to project
-	// uniqueResources := make(map[string]*resource.RuleBundle)
-	// res2Dir := make(map[string]string)
 	for _, bundle := range dp.bundles {
 		for _, funcRules := range bundle.File2FuncRules {
 			// Copy resource file into project as otel_rule_\d.go
 			for _, rs := range funcRules {
 				for _, rule := range rs {
-
 					// If rule inserts raw code directly, skip adding any
 					// further dependencies
 					if rule.UseRaw {
@@ -83,11 +80,9 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 					dir := bundle.PackageName + util.RandomString(5)
 					dp.rule2Dir[rule] = dir
 
+					foundHook := false
 					for _, file := range files {
 						if !shared.IsGoFile(file) || shared.IsGoTestFile(file) {
-							if config.GetConf().Verbose {
-								log.Printf("Ignore file %v\n", file)
-							}
 							continue
 						}
 
@@ -98,11 +93,16 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 								ruleDir, err)
 						}
 						ruleFile := filepath.Join(ruleDir, filepath.Base(file))
-						err = dp.copyRule(file, ruleFile, bundle)
+						found, err := dp.copyRule(file, ruleFile, bundle)
+						foundHook = foundHook || found
 						if err != nil {
 							return fmt.Errorf("failed to copy rule %v: %w",
 								file, err)
 						}
+					}
+					if !foundHook {
+						return fmt.Errorf("no hook found from %s",
+							rule.GetPath())
 					}
 				}
 			}
@@ -152,7 +152,7 @@ func rectifyCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
 		}
 	}
 }
-func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
+func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) bool {
 	// Only make hook public, keep it as it is if it's not a hook
 	hooks := make(map[string]bool)
 	for _, funcRules := range bundle.File2FuncRules {
@@ -163,6 +163,7 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 			}
 		}
 	}
+	foundHook := false
 	for _, decl := range astRoot.Decls {
 		if f, ok := decl.(*dst.FuncDecl); ok {
 			if _, ok := hooks[f.Name.Name]; !ok {
@@ -172,8 +173,9 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 			for _, param := range params {
 				if sele, ok := param.Type.(*dst.SelectorExpr); ok {
 					if _, ok := sele.X.(*dst.Ident); ok {
-						if sele.Sel.Name == "CallContext" {
+						if sele.Sel.Name == ApiCallContext {
 							f.Name.Name = strings.Title(f.Name.Name)
+							foundHook = true
 							break
 						}
 					}
@@ -181,18 +183,19 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 			}
 		}
 	}
+	return foundHook
 }
 
 func (dp *DepProcessor) copyRule(path, target string,
-	bundle *resource.RuleBundle) error {
+	bundle *resource.RuleBundle) (bool, error) {
 	text, err := util.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read rule file %v: %w", path, err)
+		return false, fmt.Errorf("failed to read rule file %v: %w", path, err)
 	}
 	text = shared.RemoveGoBuildComment(text)
 	astRoot, err := shared.ParseAstFromSource(text)
 	if err != nil {
-		return fmt.Errorf("failed to parse ast from source: %w", err)
+		return false, fmt.Errorf("failed to parse ast from source: %w", err)
 	}
 	// Rename package name nevertheless
 	astRoot.Name.Name = filepath.Base(filepath.Dir(target))
@@ -201,17 +204,17 @@ func (dp *DepProcessor) copyRule(path, target string,
 	rectifyCallContext(astRoot, bundle)
 
 	// Make hook functions public
-	makeHookPublic(astRoot, bundle)
+	foundHook := makeHookPublic(astRoot, bundle)
 
 	// Copy used rule into project
 	_, err = shared.WriteAstToFile(astRoot, target)
 	if err != nil {
-		return fmt.Errorf("failed to write ast to %v: %w", target, err)
+		return false, fmt.Errorf("failed to write ast to %v: %w", target, err)
 	}
 	if config.GetConf().Verbose {
 		log.Printf("Copy dependency %v to %v", path, target)
 	}
-	return nil
+	return foundHook, nil
 }
 
 func (dp *DepProcessor) initRules(pkgName string) (err error) {

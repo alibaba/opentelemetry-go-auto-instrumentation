@@ -11,7 +11,10 @@ otel
 otel-*
 *.log
 .otel-build
+otel_import_holder.go
 
+example/extension/nethttp/net_http
+test/build/app
 test/errors-test/errors-test
 test/errorstest/errorstest
 test/helloworld/helloworld
