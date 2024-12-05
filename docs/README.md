@@ -7,7 +7,7 @@
 - [How to debug](./how-to-debug.md)
 - [Context Propagation](./context-propagation.md)
 - [Supported Libraries](./supported-libraries.md)
-- [Benchmark](./example/benchmark/benchmark.md)
+- [Benchmark](../example/benchmark/benchmark.md)
 - [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)
 - [面向OpenTelemetry的Golang应用无侵入插桩技术](https://mp.weixin.qq.com/s/FKCwzRB5Ujhe1stOH2ibXg)
 
