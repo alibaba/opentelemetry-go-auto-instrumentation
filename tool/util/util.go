@@ -159,11 +159,34 @@ func WriteFile(filePath string, content string) (string, error) {
 	return file.Name(), nil
 }
 
+func AppendFile(filePath string, content string) (string, error) {
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return "", err
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Fatalf("failed to close file %s: %v", file.Name(), err)
+		}
+	}(file)
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		return "", err
+	}
+	return file.Name(), nil
+}
+
 func ListFiles(dir string) ([]string, error) {
 	var files []string
 	walkFn := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+		// Dont list files under hidden directories
+		if strings.HasPrefix(info.Name(), ".") {
+			return filepath.SkipDir
 		}
 		if !info.IsDir() {
 			files = append(files, path)
