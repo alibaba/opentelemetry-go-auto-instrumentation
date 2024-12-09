@@ -32,10 +32,15 @@ func (ts testSpan) SetStatus(status codes.Code, desc string) {
 
 type testReadOnlySpan struct {
 	sdktrace.ReadWriteSpan
+	isRecording bool
 }
 
 func (t *testReadOnlySpan) Name() string {
 	return "http-route"
+}
+
+func (t *testReadOnlySpan) IsRecording() bool {
+	return t.isRecording
 }
 
 type customizedNetHttpAttrsGetter struct {

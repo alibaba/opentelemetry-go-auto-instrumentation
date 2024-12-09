@@ -124,7 +124,7 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	attributes, context = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
 	span := trace.SpanFromContext(context)
 	localRootSpan, ok := span.(sdktrace.ReadOnlySpan)
-	if ok {
+	if ok && span.IsRecording() {
 		route := h.Base.HttpGetter.GetHttpRoute(request)
 		if !strings.Contains(localRootSpan.Name(), route) {
 			route = localRootSpan.Name()
