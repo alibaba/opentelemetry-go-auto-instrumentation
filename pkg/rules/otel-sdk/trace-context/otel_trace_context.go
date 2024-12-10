@@ -23,10 +23,11 @@ import (
 const maxSpans = 300
 
 type traceContext struct {
-	sw   *spanWrapper
-	n    int
-	Data map[string]interface{}
-	lcs  trace.Span
+	sw    *spanWrapper
+	n     int
+	DataK []string
+	DataV []interface{}
+	lcs   trace.Span
 }
 
 type spanWrapper struct {
@@ -54,6 +55,7 @@ func (tc *traceContext) add(span trace.Span) bool {
 	return true
 }
 
+//go:norace
 func (tc *traceContext) tail() trace.Span {
 	if tc.n == 0 {
 		return nil
@@ -92,43 +94,50 @@ func (tc *traceContext) del(span trace.Span) {
 func (tc *traceContext) clear() {
 	tc.sw = nil
 	tc.n = 0
-	tc.Data = nil
+	tc.DataK = make([]string, 0)
+	tc.DataV = make([]interface{}, 0)
 	SetBaggageContainerToGLS(nil)
 }
 
+//go:norace
 func (tc *traceContext) TakeSnapShot() interface{} {
 	// take a deep copy to avoid reading & writing the same map at the same time
-	var dataCopy = make(map[string]interface{})
-	for key, value := range tc.Data {
-		dataCopy[key] = value
-	}
+	k := make([]string, len(tc.DataK))
+	v := make([]interface{}, len(tc.DataV))
+	copy(k, tc.DataK)
+	copy(v, tc.DataV)
 	if tc.n == 0 {
-		return &traceContext{nil, 0, dataCopy, nil}
+		return &traceContext{nil, 0, k, v, nil}
 	}
 	last := tc.tail()
 	sw := &spanWrapper{last, nil}
-	return &traceContext{sw, 1, dataCopy, nil}
+	return &traceContext{sw, 1, k, v, nil}
 }
 
 func GetGLocalData(key string) interface{} {
 	t := getOrInitTraceContext()
-	r := t.Data[key]
-	return r
+	for i := 0; i < len(t.DataK); i++ {
+		if t.DataK[i] == key {
+			return t.DataV[i]
+		}
+	}
+	return nil
 }
 
 func SetGLocalData(key string, value interface{}) {
 	t := getOrInitTraceContext()
-	if t.Data == nil {
-		t.Data = make(map[string]interface{})
+	t.DataK = append(t.DataK, key)
+	t.DataV = append(t.DataV, value)
+	if len(t.DataK) != len(t.DataV) {
+		panic("DataK and DataV should have the same length")
 	}
-	t.Data[key] = value
 	setTraceContext(t)
 }
 
 func getOrInitTraceContext() *traceContext {
 	tc := GetTraceContextFromGLS()
 	if tc == nil {
-		newTc := &traceContext{nil, 0, nil, nil}
+		newTc := &traceContext{nil, 0, nil, nil, nil}
 		setTraceContext(newTc)
 		return newTc
 	} else {
