@@ -18,6 +18,7 @@ type BaggageContainer struct {
 	baggage interface{}
 }
 
+//go:norace
 func (bc *BaggageContainer) TakeSnapShot() interface{} {
 	return &BaggageContainer{bc.baggage}
 }
