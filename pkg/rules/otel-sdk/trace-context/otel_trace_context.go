@@ -23,11 +23,9 @@ import (
 const maxSpans = 300
 
 type traceContext struct {
-	sw    *spanWrapper
-	n     int
-	DataK []string
-	DataV []interface{}
-	lcs   trace.Span
+	sw  *spanWrapper
+	n   int
+	lcs trace.Span
 }
 
 type spanWrapper struct {
@@ -94,50 +92,37 @@ func (tc *traceContext) del(span trace.Span) {
 func (tc *traceContext) clear() {
 	tc.sw = nil
 	tc.n = 0
-	tc.DataK = make([]string, 0)
-	tc.DataV = make([]interface{}, 0)
 	SetBaggageContainerToGLS(nil)
 }
 
 //go:norace
 func (tc *traceContext) TakeSnapShot() interface{} {
 	// take a deep copy to avoid reading & writing the same map at the same time
-	k := make([]string, len(tc.DataK))
-	v := make([]interface{}, len(tc.DataV))
-	copy(k, tc.DataK)
-	copy(v, tc.DataV)
 	if tc.n == 0 {
-		return &traceContext{nil, 0, k, v, nil}
+		return &traceContext{nil, 0, nil}
 	}
 	last := tc.tail()
 	sw := &spanWrapper{last, nil}
-	return &traceContext{sw, 1, k, v, nil}
+	return &traceContext{sw, 1, nil}
 }
 
 func GetGLocalData(key string) interface{} {
-	t := getOrInitTraceContext()
-	for i := 0; i < len(t.DataK); i++ {
-		if t.DataK[i] == key {
-			return t.DataV[i]
-		}
-	}
+	//todo set key into traceContext struct
+	//t := getOrInitTraceContext()
+
 	return nil
 }
 
 func SetGLocalData(key string, value interface{}) {
 	t := getOrInitTraceContext()
-	t.DataK = append(t.DataK, key)
-	t.DataV = append(t.DataV, value)
-	if len(t.DataK) != len(t.DataV) {
-		panic("DataK and DataV should have the same length")
-	}
+
 	setTraceContext(t)
 }
 
 func getOrInitTraceContext() *traceContext {
 	tc := GetTraceContextFromGLS()
 	if tc == nil {
-		newTc := &traceContext{nil, 0, nil, nil, nil}
+		newTc := &traceContext{nil, 0, nil}
 		setTraceContext(newTc)
 		return newTc
 	} else {
