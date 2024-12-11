@@ -347,6 +347,10 @@ func (dp *DepProcessor) findLocalImportPath() error {
 	if err != nil {
 		return fmt.Errorf("failed to get module name: %w", err)
 	}
+	// Note that import path is different from file path, it should be presented
+	// in slash-separated form on all platforms
+	workingDir = filepath.ToSlash(workingDir)
+	projectDir = filepath.ToSlash(projectDir)
 	dp.localImportPath = strings.Replace(workingDir, projectDir, moduleName, 1)
 	if config.GetConf().Verbose {
 		log.Printf("Find local import path: %v", dp.localImportPath)
