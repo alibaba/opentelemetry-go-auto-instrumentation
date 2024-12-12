@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"embed"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -132,7 +131,7 @@ func newDepProcessor() *DepProcessor {
 		s := <-sigc
 		switch s {
 		case syscall.SIGTERM, syscall.SIGINT:
-			log.Printf("Interrupted instrumentation, cleaning up")
+			util.Log("Interrupted instrumentation, cleaning up")
 			dp.postProcess()
 		default:
 		}
@@ -141,13 +140,7 @@ func newDepProcessor() *DepProcessor {
 }
 
 func (dp *DepProcessor) postProcess() {
-	shared.GuaranteeInPreprocess()
-	// Clean build cache as we may instrument some std packages(e.g. runtime)
-	// TODO: fine-grained cache cleanup
-	// err := util.RunCmd("go", "clean", "-cache")
-	// if err != nil {
-	// 	log.Fatalf("failed to clean cache: %v", err)
-	// }
+	util.GuaranteeInPreprocess()
 
 	// Using -debug? Leave all changes for debugging
 	if config.GetConf().Debug {
@@ -163,12 +156,12 @@ func (dp *DepProcessor) postProcess() {
 	// Restore everything we have modified during instrumentation
 	err := dp.restoreBackupFiles()
 	if err != nil {
-		log.Fatalf("failed to restore: %v", err)
+		util.LogFatal("failed to restore: %v", err)
 	}
 }
 
 func (dp *DepProcessor) backupFile(origin string) error {
-	shared.GuaranteeInPreprocess()
+	util.GuaranteeInPreprocess()
 	backup := filepath.Base(origin) + OtelBackupSuffix
 	backup = shared.GetLogPath(filepath.Join(OtelBackups, backup))
 	err := os.MkdirAll(filepath.Dir(backup), 0777)
@@ -181,21 +174,21 @@ func (dp *DepProcessor) backupFile(origin string) error {
 			return fmt.Errorf("failed to backup file %v: %w", origin, err)
 		}
 		dp.backups[origin] = backup
-		log.Printf("Backup %v\n", origin)
+		util.Log("Backup %v", origin)
 	} else if config.GetConf().Verbose {
-		log.Printf("Backup %v already exists\n", origin)
+		util.Log("Backup %v already exists", origin)
 	}
 	return nil
 }
 
 func (dp *DepProcessor) restoreBackupFiles() error {
-	shared.GuaranteeInPreprocess()
+	util.GuaranteeInPreprocess()
 	for origin, backup := range dp.backups {
 		err := util.CopyFile(backup, origin)
 		if err != nil {
 			return err
 		}
-		log.Printf("Restore %v\n", origin)
+		util.Log("Restore %v", origin)
 	}
 	return nil
 }
@@ -208,7 +201,7 @@ func getCompileCommands() ([]string, error) {
 	defer func(dryRunLog *os.File) {
 		err := dryRunLog.Close()
 		if err != nil {
-			log.Printf("Failed to close dry run log file: %v", err)
+			util.Log("Failed to close dry run log file: %v", err)
 		}
 	}(dryRunLog)
 
@@ -320,7 +313,7 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		for _, importPath := range importPaths {
 			shared.AddImportForcely(astRoot, importPath)
 			if config.GetConf().Verbose {
-				log.Printf("Add %s import to %v", importPath, file)
+				util.Log("Add %s import to %v", importPath, file)
 			}
 		}
 		addImport = true
@@ -374,9 +367,13 @@ func (dp *DepProcessor) findLocalImportPath() error {
 	if err != nil {
 		return fmt.Errorf("failed to get module name: %w", err)
 	}
+	// Replace all backslashes with slashes. The import path is different from
+	// the file path, which should always use slashes.
+	workingDir = filepath.ToSlash(workingDir)
+	projectDir = filepath.ToSlash(projectDir)
 	dp.localImportPath = strings.Replace(workingDir, projectDir, moduleName, 1)
 	if config.GetConf().Verbose {
-		log.Printf("Find local import path: %v", dp.localImportPath)
+		util.Log("Find local import path: %v", dp.localImportPath)
 	}
 	return nil
 }
@@ -421,13 +418,13 @@ func (dp *DepProcessor) preclean() {
 		}
 		if shared.RemoveImport(astRoot, ruleImport) != nil {
 			if config.GetConf().Verbose {
-				log.Printf("Remove obsolete import %v from %v",
+				util.Log("Remove obsolete import %v from %v",
 					ruleImport, file)
 			}
 		}
 		_, err := shared.WriteAstToFile(astRoot, file)
 		if err != nil {
-			log.Printf("Failed to write ast to %v: %v", file, err)
+			util.Log("Failed to write ast to %v: %v", file, err)
 		}
 	}
 	// Clean otel_rules/otel_pkgdep directory
@@ -469,19 +466,27 @@ func runDryBuild(goBuildCmd []string) error {
 }
 
 func runModTidy() error {
-	return util.RunCmd("go", "mod", "tidy")
+	out, err := util.RunCmdOutput("go", "mod", "tidy")
+	util.Log("Run go mod tidy: %v", out)
+	return err
 }
 
 func runGoGet(dep string) error {
-	return util.RunCmd("go", "get", dep)
+	out, err := util.RunCmdOutput("go", "get", dep)
+	util.Log("Run go get %v: %v", dep, out)
+	return err
 }
 
 func runGoModDownload(path string) error {
-	return util.RunCmd("go", "mod", "download", path)
+	out, err := util.RunCmdOutput("go", "mod", "download", path)
+	util.Log("Run go mod download %v: %v", path, out)
+	return err
 }
 
 func runGoModEdit(require string) error {
-	return util.RunCmd("go", "mod", "edit", "-require="+require)
+	out, err := util.RunCmdOutput("go", "mod", "edit", "-require="+require)
+	util.Log("Run go mod edit %v: %v", require, out)
+	return err
 }
 
 func runCleanCache() error {
@@ -495,10 +500,10 @@ func nullDevice() string {
 	return "/dev/null"
 }
 
-func runBuildWithToolexec(goBuildCmd []string) (string, error) {
+func runBuildWithToolexec(goBuildCmd []string) error {
 	exe, err := os.Executable()
 	if err != nil {
-		return "", err
+		return err
 	}
 	args := []string{
 		"go",
@@ -528,11 +533,13 @@ func runBuildWithToolexec(goBuildCmd []string) (string, error) {
 	}
 
 	if config.GetConf().Verbose {
-		log.Printf("Run go build with args %v in toolexec mode", args)
+		util.Log("Run go build with args %v in toolexec mode", args)
 	}
 	args = util.StringDedup(args)
 	shared.AssertGoBuild(args)
-	return util.RunCmdOutput(args...)
+	out, err := util.RunCmdOutput(args...)
+	util.Log("Run go build with toolexec: %v", out)
+	return err
 }
 
 func fetchDep(path string) error {
@@ -560,12 +567,12 @@ func (dp *DepProcessor) pinDepVersion() error {
 		p := dep.dep
 		v := dep.version
 		if config.GetConf().Verbose {
-			log.Printf("Pin dependency version %v@%v", p, v)
+			util.Log("Pin dependency version %v@%v", p, v)
 		}
 		err := fetchDep(p + "@" + v)
 		if err != nil {
 			if dep.fallible {
-				log.Printf("Failed to pin dependency %v: %v", p, err)
+				util.Log("Failed to pin dependency %v: %v", p, err)
 				continue
 			}
 			return fmt.Errorf("failed to pin dependency %v: %w", dep, err)
@@ -765,13 +772,11 @@ func Preprocess() error {
 		defer util.PhaseTimer("Instrument")()
 
 		// Run go build with toolexec to start instrumentation
-		out, err := runBuildWithToolexec(dp.goBuildCmd)
+		err = runBuildWithToolexec(dp.goBuildCmd)
 		if err != nil {
-			return fmt.Errorf("failed to run go toolexec build: %w\n%s",
-				err, out)
-		} else {
-			log.Printf("CompileRemix: %s", out)
+			return fmt.Errorf("failed to run go toolexec build: %w", err)
 		}
 	}
+	util.Log("Build completed successfully")
 	return nil
 }

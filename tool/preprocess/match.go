@@ -17,7 +17,6 @@ package preprocess
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -39,7 +38,7 @@ func newRuleMatcher() *ruleMatcher {
 		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
 	}
 	if config.GetConf().Verbose {
-		log.Printf("Available rules: %v", rules)
+		util.Log("Available rules: %v", rules)
 	}
 	return &ruleMatcher{availableRules: rules}
 }
@@ -91,14 +90,14 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 func loadDefaultRules() []resource.InstRule {
 	rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
 	if err != nil {
-		log.Printf("Failed to load default rules: %v", err)
+		util.Log("Failed to load default rules: %v", err)
 		return nil
 	}
 	return rules
 }
 
 func findAvailableRules() []resource.InstRule {
-	shared.GuaranteeInPreprocess()
+	util.GuaranteeInPreprocess()
 	// Disable all instrumentation rules and rebuild the whole project to restore
 	// all instrumentation actions, this also reverts the modification on Golang
 	// runtime package.
@@ -122,7 +121,7 @@ func findAvailableRules() []resource.InstRule {
 			for _, ruleFile := range ruleFiles {
 				r, err := loadRuleFile(ruleFile)
 				if err != nil {
-					log.Printf("Failed to load rules: %v", err)
+					util.Log("Failed to load rules: %v", err)
 					continue
 				}
 				rules = append(rules, r...)
@@ -132,7 +131,7 @@ func findAvailableRules() []resource.InstRule {
 		// Load the one rule file
 		rs, err := loadRuleFile(config.GetConf().RuleJsonFiles)
 		if err != nil {
-			log.Printf("Failed to load rules: %v", err)
+			util.Log("Failed to load rules: %v", err)
 			return nil
 		}
 		rules = append(rules, rs...)
@@ -170,7 +169,7 @@ func (rm *ruleMatcher) match(importPath string,
 			// Check if the version is supported
 			matched, err := shared.MatchVersion(version, rule.GetVersion())
 			if err != nil {
-				log.Printf("Failed to match version %v between %v and %v",
+				util.Log("Failed to match version %v between %v and %v",
 					err, file, rule)
 				continue
 			}
@@ -182,10 +181,10 @@ func (rm *ruleMatcher) match(importPath string,
 			if _, ok := rule.(*resource.InstFileRule); ok {
 				ast, err := shared.ParseAstFromFileOnlyPackage(file)
 				if ast == nil || err != nil {
-					log.Printf("Failed to parse %s: %v", file, err)
+					util.Log("Failed to parse %s: %v", file, err)
 					continue
 				}
-				log.Printf("Match file rule %s", rule)
+				util.Log("Match file rule %s", rule)
 				bundle.AddFileRule(rule.(*resource.InstFileRule))
 				bundle.SetPackageName(ast.Name.Name)
 				availables = append(availables[:i], availables[i+1:]...)
@@ -197,7 +196,7 @@ func (rm *ruleMatcher) match(importPath string,
 			if _, ok := parsedAst[file]; !ok {
 				fileAst, err := shared.ParseAstFromFileFast(file)
 				if fileAst == nil || err != nil {
-					log.Printf("failed to parse file %s: %v", file, err)
+					util.Log("failed to parse file %s: %v", file, err)
 					continue
 				}
 				parsedAst[file] = fileAst
@@ -211,7 +210,7 @@ func (rm *ruleMatcher) match(importPath string,
 			if tree == nil {
 				// Failed to parse the file, stop here and log only
 				// sicne it's a tolerant failure
-				log.Printf("Failed to parse file %s", file)
+				util.Log("Failed to parse file %s", file)
 				continue
 			}
 
@@ -221,7 +220,7 @@ func (rm *ruleMatcher) match(importPath string,
 				if genDecl, ok := decl.(*dst.GenDecl); ok {
 					if rl, ok := rule.(*resource.InstStructRule); ok {
 						if shared.MatchStructDecl(genDecl, rl.StructType) {
-							log.Printf("Match struct rule %s", rule)
+							util.Log("Match struct rule %s", rule)
 							bundle.AddFile2StructRule(file, rl)
 							valid = true
 							break
@@ -231,7 +230,7 @@ func (rm *ruleMatcher) match(importPath string,
 					if rl, ok := rule.(*resource.InstFuncRule); ok {
 						if shared.MatchFuncDecl(funcDecl, rl.Function,
 							rl.ReceiverType) {
-							log.Printf("Match func rule %s", rule)
+							util.Log("Match func rule %s", rule)
 							bundle.AddFile2FuncRule(file, rl)
 							valid = true
 							break
@@ -262,9 +261,7 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 	cmdArgs := shared.SplitCmds(cmd)
 	importPath := readImportPath(cmdArgs)
 	util.Assert(importPath != "", "sanity check")
-	if config.GetConf().Verbose {
-		log.Printf("Matching %v with %v\n", importPath, cmdArgs)
-	}
+	util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
 	bundle := matcher.match(importPath, cmdArgs)
 	ch <- bundle
 }

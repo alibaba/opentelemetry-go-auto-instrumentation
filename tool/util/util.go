@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -28,7 +27,52 @@ import (
 	"time"
 )
 
-var Guarantee = Assert // More meaningful name:)
+type RunPhase string
+
+const (
+	PInvalid    = "invalid"
+	PPreprocess = "preprocess"
+	PInstrument = "instrument"
+	PConfigure  = "configure"
+)
+
+var rp RunPhase = "bad"
+
+func SetRunPhase(phase RunPhase) {
+	rp = phase
+}
+
+func GetRunPhase() RunPhase {
+	return rp
+}
+
+func (rp RunPhase) String() string {
+	return string(rp)
+}
+
+func InPreprocess() bool {
+	return rp == PPreprocess
+}
+
+func InInstrument() bool {
+	return rp == PInstrument
+}
+
+func InConfigure() bool {
+	return rp == PConfigure
+}
+
+func GuaranteeInPreprocess() {
+	Assert(rp == PPreprocess, "not in preprocess stage")
+}
+
+func GuaranteeInInstrument() {
+	Assert(rp == PInstrument, "not in instrument stage")
+}
+
+func GuaranteeInConfigure() {
+	Assert(rp == PConfigure, "not in configure stage")
+}
 
 func Assert(cond bool, format string, args ...interface{}) {
 	if !cond {
@@ -97,7 +141,7 @@ func CopyFile(src, dst string) error {
 	defer func(sourceFile *os.File) {
 		err := sourceFile.Close()
 		if err != nil {
-			log.Fatalf("failed to close file %s: %v", sourceFile.Name(), err)
+			LogFatal("failed to close file %s: %v", sourceFile.Name(), err)
 		}
 	}(sourceFile)
 
@@ -108,7 +152,7 @@ func CopyFile(src, dst string) error {
 	defer func(destFile *os.File) {
 		err := destFile.Close()
 		if err != nil {
-			log.Fatalf("failed to close file %s: %v", destFile.Name(), err)
+			LogFatal("failed to close file %s: %v", destFile.Name(), err)
 		}
 	}(destFile)
 
@@ -127,7 +171,7 @@ func ReadFile(filePath string) (string, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Fatalf("failed to close file %s: %v", file.Name(), err)
+			LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
 
@@ -148,7 +192,7 @@ func WriteFile(filePath string, content string) (string, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Fatalf("failed to close file %s: %v", file.Name(), err)
+			LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
 
@@ -164,6 +208,10 @@ func ListFiles(dir string) ([]string, error) {
 	walkFn := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+		// Dont list files under hidden directories
+		if strings.HasPrefix(info.Name(), ".") {
+			return filepath.SkipDir
 		}
 		if !info.IsDir() {
 			files = append(files, path)
@@ -248,7 +296,7 @@ func IsUnix() bool {
 func PhaseTimer(name string) func() {
 	start := time.Now()
 	return func() {
-		log.Printf("%s took %f s", name, time.Since(start).Seconds())
+		Log("%s took %f s", name, time.Since(start).Seconds())
 	}
 }
 
@@ -264,4 +312,14 @@ func StringDedup(s []string) []string {
 		}
 	}
 	return r
+}
+
+func GetToolName() string {
+	// Get the path of the current executable
+	ex, err := os.Executable()
+	if err != nil {
+		LogFatal("failed to get executable: %v", err)
+		os.Exit(0)
+	}
+	return filepath.Base(ex)
 }

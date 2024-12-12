@@ -17,7 +17,6 @@ package instrument
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -128,12 +127,12 @@ func (rp *RuleProcessor) saveDebugFile(path string) {
 	dest = shared.GetInstrumentLogPath(dest)
 	err := os.MkdirAll(filepath.Dir(dest), os.ModePerm)
 	if err != nil { // error is tolerable here
-		log.Printf("failed to create debug file directory %s: %v", dest, err)
+		util.Log("failed to create debug file directory %s: %v", dest, err)
 		return
 	}
 	err = util.CopyFile(path, dest)
 	if err != nil { // error is tolerable here
-		log.Printf("failed to save debug file %s: %v", dest, err)
+		util.Log("failed to save debug file %s: %v", dest, err)
 	}
 }
 
@@ -216,7 +215,7 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	}
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
-	log.Printf("RunCmd: %v (%v)\n",
+	util.Log("RunCmd: %v (%v)",
 		bundle.ImportPath, rp.compileArgs)
 	return err
 }
@@ -227,7 +226,7 @@ func Instrument() error {
 	// Is compile command?
 	if shared.IsCompileCommand(strings.Join(args, " ")) {
 		if config.GetConf().Verbose {
-			log.Printf("RunCmd: %v\n", args)
+			util.Log("RunCmd: %v", args)
 		}
 		bundles, err := resource.LoadRuleBundles()
 		if err != nil {
@@ -237,7 +236,7 @@ func Instrument() error {
 			util.Assert(bundle.IsValid(), "sanity check")
 			// Is compiling the target package?
 			if matchImportPath(bundle.ImportPath, args) {
-				log.Printf("Apply bundle %v\n", bundle)
+				util.Log("Apply bundle %v", bundle)
 				return compileRemix(bundle, args)
 			}
 		}

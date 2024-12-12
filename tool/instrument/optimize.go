@@ -16,7 +16,6 @@ package instrument
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
@@ -122,7 +121,7 @@ func (rp *RuleProcessor) removeOnExitTrampolineCall(tjump *TJump) error {
 			// trampoline-jump-if inlining work
 			elseBlock.List[i] = newDecoratedEmptyStmt()
 			if config.GetConf().Verbose {
-				log.Printf("Optimize tjump branch in %s",
+				util.Log("Optimize tjump branch in %s",
 					tjump.target.Name.Name)
 			}
 			break
@@ -186,7 +185,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	tjump.ifStmt.Cond = shared.BoolFalse()
 	tjump.ifStmt.Body = shared.Block(newDecoratedEmptyStmt())
 	if config.GetConf().Verbose {
-		log.Printf("Optimize tjump branch in %s", tjump.target.Name.Name)
+		util.Log("Optimize tjump branch in %s", tjump.target.Name.Name)
 	}
 	// Remove generated onEnter trampoline function
 	removed := rp.removeDeclWhen(func(d dst.Decl) bool {
@@ -222,7 +221,7 @@ func flattenTJump(tjump *TJump, removedOnExit bool) {
 		shared.MakeUnusedIdent(skipCallIdent)
 	}
 	if config.GetConf().Verbose {
-		log.Printf("Optimize skipCall in %s", tjump.target.Name.Name)
+		util.Log("Optimize skipCall in %s", tjump.target.Name.Name)
 	}
 }
 

@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -235,7 +234,7 @@ func SwitchCase(list []dst.Expr, stmts []dst.Stmt) *dst.CaseClause {
 func AddStructField(decl dst.Decl, name string, typ string) {
 	gen, ok := decl.(*dst.GenDecl)
 	if !ok {
-		log.Fatalf("decl is not a GenDecl")
+		util.LogFatal("decl is not a GenDecl")
 	}
 	fd := NewField(name, Ident(typ))
 	st := gen.Specs[0].(*dst.TypeSpec).Type.(*dst.StructType)
@@ -427,7 +426,7 @@ func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Fatalf("failed to close file %s: %v", file.Name(), err)
+			util.LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
 	astFile, err := parser.ParseFile(fset, name, file, mode)
@@ -464,7 +463,7 @@ func WriteAstToFile(astRoot *dst.File, filePath string) (string, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Fatalf("failed to close file %s: %v", file.Name(), err)
+			util.LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
 

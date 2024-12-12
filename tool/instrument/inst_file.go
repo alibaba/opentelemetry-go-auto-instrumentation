@@ -16,7 +16,6 @@ package instrument
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -62,7 +61,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 		} else {
 			rp.addCompileArg(target)
 		}
-		log.Printf("Apply file rule %v", rule)
+		util.Log("Apply file rule %v", rule)
 		rp.saveDebugFile(target)
 	}
 	return nil
