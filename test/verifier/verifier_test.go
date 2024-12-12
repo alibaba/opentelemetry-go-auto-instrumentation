@@ -31,7 +31,7 @@ func TestNoSqlAttributesPass(t *testing.T) {
 		{Key: semconv.DBConnectionStringKey, Value: attribute.StringValue("connString")},
 		{Key: semconv.DBStatementKey, Value: attribute.StringValue("statement")},
 		{Key: semconv.DBOperationKey, Value: attribute.StringValue("operation")},
-	}}, "name", "dbname", "system", "user", "connString", "statement", "operation")
+	}}, "name", "system", "connString", "statement", "operation")
 }
 
 func TestNoSqlAttributesFail(t *testing.T) {
@@ -51,5 +51,5 @@ func TestNoSqlAttributesFail(t *testing.T) {
 		{Key: semconv.DBConnectionStringKey, Value: attribute.StringValue("connString")},
 		{Key: semconv.DBStatementKey, Value: attribute.StringValue("wrong statement")},
 		{Key: semconv.DBOperationKey, Value: attribute.StringValue("operation")},
-	}}, "name", "dbname", "system", "user", "connString", "statement", "operation")
+	}}, "name", "system", "connString", "statement", "operation")
 }
