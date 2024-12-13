@@ -44,6 +44,7 @@ The configuration for the tool can be set by the following command:
 
 ```bash
 $ otel set -verbose                          # print verbose logs
+$ otel set -log=/path/to/file.log            # set log file
 $ otel set -debug                            # enable debug mode
 $ otel set -debug -verbose -rule=custom.json # set multiple configs
 $ otel set -disabledefault -rule=custom.json # disable default rules, use custom rules only
