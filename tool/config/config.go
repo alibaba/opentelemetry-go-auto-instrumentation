@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -42,8 +41,8 @@ type BuildConfig struct {
 	// default rules, you can configure -disabledefault flag in advance.
 	RuleJsonFiles string
 
-	// DebugLog true means debug log is enabled.
-	DebugLog bool
+	// Log specifies the log file path. If not set, log will be saved to file.
+	Log string
 
 	// Verbose true means print verbose log.
 	Verbose bool
@@ -62,20 +61,10 @@ type BuildConfig struct {
 // is passed. This value is specified by the build system.
 var ToolVersion = "1.0.0"
 
-var GetToolName = func() string {
-	// Get the path of the current executable
-	ex, err := os.Executable()
-	if err != nil {
-		log.Fatalf("failed to get executable: %v", err)
-		os.Exit(0)
-	}
-	return filepath.Base(ex)
-}
-
 var conf *BuildConfig
 
 func GetConf() *BuildConfig {
-	util.Assert(!shared.InConfigure(), "called in configure")
+	util.Assert(!util.InConfigure(), "called in configure")
 	util.Assert(conf != nil, "build config is not initialized")
 	return conf
 }
@@ -100,7 +89,7 @@ func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {
 }
 
 func (bc *BuildConfig) parseRuleFiles() error {
-	if shared.InInstrument() {
+	if util.InInstrument() {
 		return nil
 	}
 	// Get absolute path of rule file, otherwise instrument will not
@@ -131,7 +120,7 @@ func (bc *BuildConfig) parseRuleFiles() error {
 
 func storeConfig(bc *BuildConfig) error {
 	util.Assert(bc != nil, "build config is not initialized")
-	util.Assert(shared.InConfigure(), "sanity check")
+	util.Assert(util.InConfigure(), "sanity check")
 
 	file := shared.GetConfigureLogPath(shared.BuildConfFile)
 	bs, err := json.Marshal(bc)
@@ -188,15 +177,17 @@ func loadConfigFromEnv(conf *BuildConfig) {
 	// Environment variables are able to overwrite the config items even if the
 	// config file sets them. The environment variable name is the upper snake
 	// case of the config item name, prefixed with "OTELTOOL_". For example, the
-	// environment variable for "DebugLog" is "OTELTOOL_DEBUG_LOG".
+	// environment variable for "Log" is "OTELTOOL_LOG".
 	typ := reflect.TypeOf(*conf)
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
 		envKey := fmt.Sprintf("%s%s", EnvPrefix, toUpperSnakeCase(field.Name))
 		envVal := os.Getenv(envKey)
 		if envVal != "" {
-			log.Printf("Overwrite config %s with environment variable %s",
-				field.Name, envKey)
+			if util.InPreprocess() {
+				util.Log("Overwrite config %s with environment variable %s",
+					field.Name, envKey)
+			}
 			v := reflect.ValueOf(conf).Elem()
 			f := v.FieldByName(field.Name)
 			switch f.Kind() {
@@ -205,7 +196,7 @@ func loadConfigFromEnv(conf *BuildConfig) {
 			case reflect.String:
 				f.SetString(envVal)
 			default:
-				log.Fatalf("Unsupported config type %s", f.Kind())
+				util.LogFatal("Unsupported config type %s", f.Kind())
 			}
 		}
 	}
@@ -224,33 +215,46 @@ func InitConfig() (err error) {
 		return fmt.Errorf("failed to parse rule files: %w", err)
 	}
 
-	if conf.DebugLog {
-		// Redirect log to debug log if required
-		debugLogPath := shared.GetLogPath(shared.DebugLogFile)
-		debugLog, _ := os.OpenFile(debugLogPath, os.O_WRONLY|os.O_APPEND, 0777)
+	mode := os.O_WRONLY | os.O_APPEND
+	if util.InPreprocess() {
+		// We always create log file in preprocess phase, but in further
+		// instrument phase, we append log content to the existing file.
+		mode = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	}
+	if conf.Log == "" {
+		// Redirect log to file if flag is not set
+		debugLogPath := shared.GetPreprocessLogPath(shared.DebugLogFile)
+		debugLog, _ := os.OpenFile(debugLogPath, mode, 0777)
 		if debugLog != nil {
-			log.SetOutput(debugLog)
+			util.SetLogTo(debugLog)
 		}
+	} else {
+		// Otherwise, log to the specified file
+		logFile, err := os.OpenFile(conf.Log, mode, 0777)
+		if err != nil {
+			return fmt.Errorf("failed to open log file: %w", err)
+		}
+		util.SetLogTo(logFile)
 	}
 	return nil
 }
 
 func PrintVersion() error {
-	fmt.Printf("%s version %s\n", GetToolName(), ToolVersion)
+	fmt.Printf("%s version %s\n", util.GetToolName(), ToolVersion)
 	os.Exit(0)
 	return nil
 }
 
 func Configure() error {
-	shared.GuaranteeInConfigure()
+	util.GuaranteeInConfigure()
 
 	// Parse command line flags to get build config
 	bc, err := loadConfig()
 	if err != nil {
 		bc = &BuildConfig{}
 	}
-	flag.BoolVar(&bc.DebugLog, "debuglog", bc.DebugLog,
-		"Print debug log to file")
+	flag.StringVar(&bc.Log, "log", bc.Log,
+		"Log file path. If not set, log will be saved to file.")
 	flag.BoolVar(&bc.Verbose, "verbose", bc.Verbose,
 		"Print verbose log")
 	flag.BoolVar(&bc.Debug, "debug", bc.Debug,
@@ -263,7 +267,7 @@ func Configure() error {
 		"Disable default rules")
 	flag.CommandLine.Parse(os.Args[2:])
 
-	fmt.Printf("Configured in %s",
+	util.Log("Configured in %s",
 		shared.GetConfigureLogPath(shared.BuildConfFile))
 
 	// Store build config for future phases
