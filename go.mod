@@ -13,6 +13,7 @@ require (
 	github.com/docker/go-connections v0.5.0
 	github.com/elastic/elastic-transport-go/v8 v8.1.0
 	github.com/elastic/go-elasticsearch/v8 v8.4.0
+	github.com/emicklei/go-restful/v3 v3.10.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/kratos/v2 v2.8.0
 	github.com/go-redis/redis/v8 v8.11.0
