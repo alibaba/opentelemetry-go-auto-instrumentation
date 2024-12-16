@@ -56,7 +56,6 @@ func (b *Builder[REQUEST, RESPONSE]) Init() *Builder[REQUEST, RESPONSE] {
 	b.Enabler = &defaultInstrumentEnabler{}
 	b.AttributesExtractors = make([]AttributesExtractor[REQUEST, RESPONSE], 0)
 	b.ContextCustomizers = make([]ContextCustomizer[REQUEST], 0)
-	b.SpanSuppressor = b.buildSpanSuppressor()
 	b.SpanStatusExtractor = &defaultSpanStatusExtractor[REQUEST, RESPONSE]{}
 	return b
 }
@@ -114,7 +113,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *InternalInstrumenter[R
 		attributesExtractors: b.AttributesExtractors,
 		operationListeners:   b.OperationListeners,
 		contextCustomizers:   b.ContextCustomizers,
-		spanSuppressor:       b.SpanSuppressor,
+		spanSuppressor:       b.buildSpanSuppressor(),
 		tracer:               tracer,
 		instVersion:          b.InstVersion,
 	}
@@ -134,7 +133,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 			attributesExtractors: b.AttributesExtractors,
 			operationListeners:   b.OperationListeners,
 			contextCustomizers:   b.ContextCustomizers,
-			spanSuppressor:       b.SpanSuppressor,
+			spanSuppressor:       b.buildSpanSuppressor(),
 			tracer:               tracer,
 			instVersion:          b.InstVersion,
 		},
@@ -156,8 +155,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(ca
 			spanStatusExtractor:  b.SpanStatusExtractor,
 			attributesExtractors: b.AttributesExtractors,
 			operationListeners:   b.OperationListeners,
-			contextCustomizers:   b.ContextCustomizers,
-			spanSuppressor:       b.SpanSuppressor,
+			spanSuppressor:       b.buildSpanSuppressor(),
 			tracer:               tracer,
 			instVersion:          b.InstVersion,
 		},
@@ -166,8 +164,8 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingFromUpstreamInstrumenter(ca
 	}
 }
 
-// TODO: create suppressor by otel.instrumentation.experimental.span-suppression-strategy
 func (b *Builder[REQUEST, RESPONSE]) buildSpanSuppressor() SpanSuppressor {
+	spanSuppressorStrategy := getSpanSuppressionStrategyFromEnv()
 	kvs := make(map[attribute.Key]bool)
 	for _, extractor := range b.AttributesExtractors {
 		provider, ok := extractor.(SpanKeyProvider)
@@ -179,5 +177,5 @@ func (b *Builder[REQUEST, RESPONSE]) buildSpanSuppressor() SpanSuppressor {
 	for k := range kvs {
 		kSlice = append(kSlice, k)
 	}
-	return NewSpanKeySuppressor(kSlice)
+	return spanSuppressorStrategy.create(kSlice)
 }
