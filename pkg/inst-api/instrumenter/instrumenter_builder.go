@@ -178,5 +178,4 @@ func (b *Builder[REQUEST, RESPONSE]) buildSpanSuppressor() SpanSuppressor {
 		kSlice = append(kSlice, k)
 	}
 	return spanSuppressorStrategy.create(kSlice)
-
 }

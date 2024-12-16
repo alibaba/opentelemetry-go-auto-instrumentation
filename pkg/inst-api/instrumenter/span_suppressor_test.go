@@ -28,7 +28,8 @@ import (
 )
 
 func TestNoopSpanSuppressor(t *testing.T) {
-	n := NoopSpanSuppressor{}
+	ns := &NoneStrategy{}
+	n := ns.create([]attribute.Key{})
 	ctx := context.Background()
 	n.StoreInContext(ctx, trace.SpanKindClient, noop.Span{})
 	if n.ShouldSuppress(ctx, trace.SpanKindClient) != false {
@@ -84,6 +85,29 @@ func TestSpanKeySuppressorNotMatch(t *testing.T) {
 	span := trace.SpanFromContext(newCtx)
 	newCtx = s.StoreInContext(newCtx, trace.SpanKindClient, span)
 	if s.ShouldSuppress(newCtx, trace.SpanKindClient) {
+		t.Errorf("should not suppress span with different span key")
+	}
+}
+
+func TestSpanKindSuppressor(t *testing.T) {
+	sks := &SpanKindStrategy{}
+	s := sks.create([]attribute.Key{})
+	builder := Builder[testRequest, testResponse]{}
+	builder.Init().SetSpanNameExtractor(testNameExtractor{}).
+		SetSpanKindExtractor(&AlwaysClientExtractor[testRequest]{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:      utils.FAST_HTTP_CLIENT_SCOPE_NAME,
+			Version:   "test",
+			SchemaURL: "test",
+		})
+	instrumenter := builder.BuildInstrumenter()
+	ctx := context.Background()
+	traceProvider := sdktrace.NewTracerProvider()
+	otel.SetTracerProvider(traceProvider)
+	newCtx := instrumenter.Start(ctx, testRequest{})
+	span := trace.SpanFromContext(newCtx)
+	newCtx = s.StoreInContext(newCtx, trace.SpanKindClient, span)
+	if !s.ShouldSuppress(newCtx, trace.SpanKindClient) {
 		t.Errorf("should not suppress span with different span key")
 	}
 }
