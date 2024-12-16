@@ -57,12 +57,11 @@ type PropagatingFromUpstreamInstrumenter[REQUEST any, RESPONSE any] struct {
 	prop          propagation.TextMapPropagator
 	base          InternalInstrumenter[REQUEST, RESPONSE]
 }
+
 func (i *InternalInstrumenter[REQUEST, RESPONSE]) ShouldStart(parentContext context.Context, request REQUEST) bool {
 	spanKind := i.spanKindExtractor.Extract(request)
 	suppressed := i.spanSuppressor.ShouldSuppress(parentContext, spanKind)
-	if suppressed {
-		// todo record suppressed span
-	}
+	// TODO: record suppressed span
 	return !suppressed
 }
 
