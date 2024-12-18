@@ -4,7 +4,7 @@ The example shows how to use opentelemetry-go-auto-instrumentation to report met
 
 ## Do hybrid compilation with otel
 
-Do hybrid compilation with otel according to [README.md](../demo/README.md).
+Do hybrid compilation with otel according to [README.md](../../demo/README.md).
 
 ## Start OpenTelemetry Collector and Prometheus server
 

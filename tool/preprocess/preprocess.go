@@ -90,6 +90,8 @@ var fixedDeps = []struct {
 		"v1.32.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp",
 		"v1.32.0", true, false},
+	{"go.opentelemetry.io/otel/exporters/prometheus",
+		"v0.42.0", true, false},
 	// otel contrib
 	{"go.opentelemetry.io/contrib/instrumentation/runtime",
 		"v0.57.0", false, false},

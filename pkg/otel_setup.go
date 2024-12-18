@@ -17,7 +17,11 @@ package pkg
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"log"
+	http2 "net/http"
 	"os"
 	"strings"
 
@@ -46,6 +50,9 @@ import (
 const exec_name = "otel"
 const report_protocol = "OTEL_EXPORTER_OTLP_PROTOCOL"
 const trace_report_protocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
+const metrics_exporter = "OTEL_METRICS_EXPORTER"
+const prometheus_exporter_port = "OTEL_EXPORTER_PROMETHEUS_PORT"
+const default_prometheus_exporter_port = "9464"
 
 func init() {
 	path, err := os.Executable()
@@ -115,7 +122,16 @@ func initMetrics() error {
 			metric.WithReader(verifier.ManualReader),
 		)
 	} else {
-		if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
+		if os.Getenv(metrics_exporter) == "prometheus" {
+			exporter, err := prometheus.New()
+			if err != nil {
+				log.Fatalf("new otlp metric prometheus exporter failed: %v", err)
+			}
+			mp = metric.NewMeterProvider(
+				metric.WithReader(exporter),
+			)
+			go serveMetrics()
+		} else if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
 			exporter, err := otlpmetricgrpc.New(ctx)
 			if err != nil {
 				log.Fatalf("new otlp metric grpc exporter failed: %v", err)
@@ -143,4 +159,18 @@ func initMetrics() error {
 	http.InitHttpMetrics(m)
 	// DefaultMinimumReadMemStatsInterval is 15 second
 	return runtime.Start(runtime.WithMeterProvider(mp))
+}
+
+func serveMetrics() {
+	http2.Handle("/metrics", promhttp.Handler())
+	port := os.Getenv(prometheus_exporter_port)
+	if port == "" {
+		port = default_prometheus_exporter_port
+	}
+	log.Printf("serving serveMetrics at localhost:%s/metrics", port)
+	err := http2.ListenAndServe(fmt.Sprintf(":%s", port), nil)
+	if err != nil {
+		fmt.Printf("error serving serveMetrics: %v", err)
+		return
+	}
 }
