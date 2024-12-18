@@ -17,9 +17,11 @@ package util
 import (
 	"fmt"
 	"os"
+	"sync"
 )
 
 var logWriter *os.File = os.Stdout
+var logMutex sync.Mutex
 
 var Guarantee = Assert // More meaningful name:)
 
@@ -29,7 +31,9 @@ func SetLogTo(w *os.File) {
 
 func Log(format string, args ...interface{}) {
 	template := "[" + GetRunPhase().String() + "] " + format + "\n"
+	logMutex.Lock()
 	fmt.Fprintf(logWriter, template, args...)
+	logMutex.Unlock()
 }
 
 func LogFatal(format string, args ...interface{}) {

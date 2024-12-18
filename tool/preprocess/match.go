@@ -28,6 +28,11 @@ import (
 	"github.com/dave/dst"
 )
 
+const (
+	CompileFlagPattern = "-p"
+	CompileFlagGoVer   = "-goversion"
+)
+
 type ruleMatcher struct {
 	availableRules map[string][]resource.InstRule
 }
@@ -141,9 +146,10 @@ func findAvailableRules() []resource.InstRule {
 
 // match gives compilation arguments and finds out all interested rules
 // for it.
-func (rm *ruleMatcher) match(importPath string,
-	candidates []string) *resource.RuleBundle {
+func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
+	importPath := findFlagValue(cmdArgs, CompileFlagPattern)
 	util.Assert(importPath != "", "sanity check")
+	util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
 	availables := make([]resource.InstRule, len(rm.availableRules[importPath]))
 
 	// Okay, we are interested in these candidates, let's read it and match with
@@ -155,7 +161,12 @@ func (rm *ruleMatcher) match(importPath string,
 	}
 	parsedAst := make(map[string]*dst.File)
 	bundle := resource.NewRuleBundle(importPath)
-	for _, candidate := range candidates {
+
+	goVersion := findFlagValue(cmdArgs, CompileFlagGoVer)
+	util.Assert(goVersion != "", "sanity check")
+	util.Assert(strings.HasPrefix(goVersion, "go"), "sanity check")
+	goVersion = strings.Replace(goVersion, "go", "v", 1)
+	for _, candidate := range cmdArgs {
 		// It's not a go file, ignore silently
 		if !shared.IsGoFile(candidate) {
 			continue
@@ -176,6 +187,19 @@ func (rm *ruleMatcher) match(importPath string,
 			if !matched {
 				continue
 			}
+			// Check if the rule requires a specific Go version(range)
+			if rule.GetGoVersion() != "" {
+				matched, err = shared.MatchVersion(goVersion, rule.GetGoVersion())
+				if err != nil {
+					util.Log("Failed to match Go version %v between %v and %v",
+						err, file, rule)
+					continue
+				}
+				if !matched {
+					continue
+				}
+			}
+
 			// Check if it matches with file rule early as we try to avoid
 			// parsing the file content, which is time consuming
 			if _, ok := rule.(*resource.InstFileRule); ok {
@@ -247,22 +271,17 @@ func (rm *ruleMatcher) match(importPath string,
 	return bundle
 }
 
-func readImportPath(cmd []string) string {
-	var pkg string
+func findFlagValue(cmd []string, flag string) string {
 	for i, v := range cmd {
-		if v == "-p" {
+		if v == flag {
 			return cmd[i+1]
 		}
 	}
-	return pkg
+	return ""
 }
 
 func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
-	cmdArgs := shared.SplitCmds(cmd)
-	importPath := readImportPath(cmdArgs)
-	util.Assert(importPath != "", "sanity check")
-	util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
-	bundle := matcher.match(importPath, cmdArgs)
+	bundle := matcher.match(shared.SplitCmds(cmd))
 	ch <- bundle
 }
 
