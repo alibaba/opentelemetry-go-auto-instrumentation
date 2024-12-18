@@ -164,6 +164,10 @@ func (rm *ruleMatcher) match(importPath string,
 			continue
 		}
 		file := candidate
+
+		// If it's a vendor build, we need to extract the version of the module
+		// from vendor/modules.txt, otherwise we find the version from source
+		// code file path
 		version := shared.ExtractVersion(file)
 		if rm.moduleVersions != nil {
 			if v, ok := rm.moduleVersions[importPath]; ok {
