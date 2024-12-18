@@ -108,6 +108,7 @@ type DepProcessor struct {
 	rule2Dir         map[*resource.InstFuncRule]string
 	ruleCache        embed.FS
 	goBuildCmd       []string
+	vendorBuild      bool
 }
 
 func newDepProcessor() *DepProcessor {
@@ -118,6 +119,7 @@ func newDepProcessor() *DepProcessor {
 		importCandidates: nil,
 		rule2Dir:         map[*resource.InstFuncRule]string{},
 		ruleCache:        pkg.ExportRuleCache(),
+		vendorBuild:      shared.IsVendorBuild(),
 	}
 	// There is a tricky, all arguments after the tool itself are saved for
 	// later use, which means the subcommand "go build" are also  included
@@ -473,6 +475,12 @@ func runModTidy() error {
 	return err
 }
 
+func runModVendor() error {
+	out, err := util.RunCmdOutput("go", "mod", "vendor")
+	util.Log("Run go mod vendor: %v", out)
+	return err
+}
+
 func runGoGet(dep string) error {
 	out, err := util.RunCmdOutput("go", "get", dep)
 	util.Log("Run go get %v: %v", dep, out)
@@ -596,15 +604,6 @@ func precheck() error {
 	if err != nil {
 		return fmt.Errorf("failed to check go.mod: %w", err)
 	}
-	// Check if the project is build with vendor mode
-	projRoot, err := shared.GetGoModDir()
-	if err != nil {
-		return fmt.Errorf("failed to get project root: %w", err)
-	}
-	vendor := filepath.Join(projRoot, shared.VendorDir)
-	if exist, _ := util.PathExists(vendor); exist {
-		return fmt.Errorf("vendor mode is not supported")
-	}
 
 	// Check if the build arguments is sane
 	if len(os.Args) < 3 {
@@ -676,6 +675,13 @@ func (dp *DepProcessor) setupDeps() error {
 	err = runModTidy()
 	if err != nil {
 		return fmt.Errorf("failed to run mod tidy: %w", err)
+	}
+
+	if dp.vendorBuild {
+		err = runModVendor()
+		if err != nil {
+			return fmt.Errorf("failed to run mod vendor: %w", err)
+		}
 	}
 
 	// Run dry build to the build blueprint
@@ -764,6 +770,13 @@ func Preprocess() error {
 		err = runModTidy()
 		if err != nil {
 			return fmt.Errorf("failed to run mod tidy: %w", err)
+		}
+
+		if dp.vendorBuild {
+			err = runModVendor()
+			if err != nil {
+				return fmt.Errorf("failed to run mod vendor: %w", err)
+			}
 		}
 
 		// 	// Retain otel rules and modified user files for debugging

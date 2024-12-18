@@ -15,9 +15,11 @@
 package preprocess
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
@@ -35,6 +37,7 @@ const (
 
 type ruleMatcher struct {
 	availableRules map[string][]resource.InstRule
+	moduleVersions map[string]string // vendor used only
 }
 
 func newRuleMatcher() *ruleMatcher {
@@ -172,7 +175,16 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			continue
 		}
 		file := candidate
+
+		// If it's a vendor build, we need to extract the version of the module
+		// from vendor/modules.txt, otherwise we find the version from source
+		// code file path
 		version := shared.ExtractVersion(file)
+		if rm.moduleVersions != nil {
+			if v, ok := rm.moduleVersions[importPath]; ok {
+				version = v
+			}
+		}
 
 		for i := len(availables) - 1; i >= 0; i-- {
 			rule := availables[i]
@@ -280,6 +292,47 @@ func findFlagValue(cmd []string, flag string) string {
 	return ""
 }
 
+func parseVendorModules() (map[string]string, error) {
+	util.Assert(shared.IsVendorBuild(), "why not otherwise")
+	vendorFile := filepath.Join("vendor", "modules.txt")
+	if exist, _ := util.PathExists(vendorFile); !exist {
+		return nil, fmt.Errorf("vendor/modules.txt not found")
+	}
+	// Read the vendor/modules.txt file line by line and parse it in form of
+	// #ImportPath Version
+	file, err := os.Open(vendorFile)
+	if err != nil {
+		return nil, err
+	}
+	defer func(dryRunLog *os.File) {
+		err := dryRunLog.Close()
+		if err != nil {
+			util.Log("Failed to close dry run log file: %v", err)
+		}
+	}(file)
+
+	vendorModules := make(map[string]string)
+	scanner := bufio.NewScanner(file)
+	// 10MB should be enough to accommodate most long line
+	buffer := make([]byte, 0, 10*1024*1024)
+	scanner.Buffer(buffer, cap(buffer))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "# ") {
+			parts := strings.Split(line, " ")
+			if len(parts) == 3 {
+				util.Assert(parts[0] == "#", "sanity check")
+				util.Assert(strings.HasPrefix(parts[2], "v"), "sanity check")
+				vendorModules[parts[1]] = parts[2]
+			}
+		}
+	}
+	if err = scanner.Err(); err != nil {
+		return nil, err
+	}
+	return vendorModules, nil
+}
+
 func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 	bundle := matcher.match(shared.SplitCmds(cmd))
 	ch <- bundle
@@ -288,6 +341,20 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	defer util.PhaseTimer("Match")()
 	matcher := newRuleMatcher()
+
+	// If we are in vendor mode, we need to parse the vendor/modules.txt file
+	// to get the version of each module for future matching
+	if dp.vendorBuild {
+		modules, err := parseVendorModules()
+		if err != nil {
+			return fmt.Errorf("failed to parse vendor/modules.txt: %w", err)
+		}
+		if config.GetConf().Verbose {
+			util.Log("Vendor modules: %v", modules)
+		}
+		matcher.moduleVersions = modules
+	}
+
 	// Find used instrumentation rule according to compile commands
 	ch := make(chan *resource.RuleBundle)
 	for _, cmd := range compileCmds {

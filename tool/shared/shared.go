@@ -330,3 +330,15 @@ func SplitCmds(input string) []string {
 	}
 	return args
 }
+
+func IsVendorBuild() bool {
+	projRoot, err := GetGoModDir()
+	if err != nil {
+		return false
+	}
+	vendor := filepath.Join(projRoot, VendorDir)
+	if exist, _ := util.PathExists(vendor); exist {
+		return true
+	}
+	return false
+}
