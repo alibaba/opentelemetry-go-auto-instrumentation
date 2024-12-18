@@ -15,6 +15,7 @@
 package test
 
 import (
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"testing"
@@ -55,21 +56,33 @@ func TestRunHelloworld(t *testing.T) {
 	}
 }
 
-// FIXME: Support vendor build mode
-// func TestBuildHelloworldWithVendor1(t *testing.T) {
-// 	UseApp(HelloworldAppName)
-// 	util.RunCmd("go", "mod", "vendor")
-// 	RunGoBuild(t, "-debuglog", "go", "build")
-// }
+func runModVendor(t *testing.T) {
+	cmd := exec.Command("go", "mod", "tidy")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("go mod tidy failed: %v\n%s", err, out)
+	}
+	cmd = exec.Command("go", "mod", "vendor")
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("go mod vendor failed: %v\n%s", err, out)
+	}
+}
 
-// func TestBuildHelloworldWithVendor2(t *testing.T) {
-// 	UseApp(HelloworldAppName)
-// 	util.RunCmd("go", "mod", "vendor")
-// 	RunGoBuild(t, "-debuglog", "go", "build", "-mod=vendor")
-// }
+func TestBuildHelloworldWithVendor1(t *testing.T) {
+	UseApp(HelloworldAppName)
+	runModVendor(t)
+	RunGoBuild(t, "go", "build")
+}
 
-// func TestBuildHelloworldWithVendor3(t *testing.T) {
-// 	UseApp(HelloworldAppName)
-// 	util.RunCmd("go", "mod", "vendor")
-// 	RunGoBuild(t, "-debuglog", "go", "build", "-mod", "vendor")
-// }
+func TestBuildHelloworldWithVendor2(t *testing.T) {
+	UseApp(HelloworldAppName)
+	runModVendor(t)
+	RunGoBuild(t, "go", "build", "-mod=vendor")
+}
+
+func TestBuildHelloworldWithVendor3(t *testing.T) {
+	UseApp(HelloworldAppName)
+	runModVendor(t)
+	RunGoBuild(t, "go", "build", "-mod", "vendor")
+}
