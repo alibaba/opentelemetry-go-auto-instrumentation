@@ -51,29 +51,18 @@ func main() {
 	fmt.Printf("[grpc] SayHello %+v\n", reply)
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		protocolType := verifier.GetAttribute(stubs[0][2].Attributes, "kratos.protocol.type").AsString()
-		if protocolType != "grpc" {
-			panic("protocol type should be grpc, actually got " + protocolType)
-		}
-		serviceName := verifier.GetAttribute(stubs[0][2].Attributes, "kratos.service.name").AsString()
-		if serviceName != "opentelemetry-kratos-server" {
-			panic("service name should be opentelemetry-kratos-server, actually got " + serviceName)
-		}
-		serviceId := verifier.GetAttribute(stubs[0][2].Attributes, "kratos.service.id").AsString()
-		if serviceId != "opentelemetry-id" {
-			panic("service id should be opentelemetry-id, actually got " + serviceId)
-		}
-		serviceVersion := verifier.GetAttribute(stubs[0][2].Attributes, "kratos.service.version").AsString()
-		if serviceVersion != "v1" {
-			panic("service version should be v1, actually got " + serviceVersion)
-		}
-		serviceMetaAgent := verifier.GetAttribute(stubs[0][2].Attributes, "kratos.service.meta.agent").AsString()
-		if serviceMetaAgent != "opentelemetry-go" {
-			panic("service meta agent should be opentelemetry-go, actually got " + serviceMetaAgent)
-		}
-		serviceEndpoint := verifier.GetAttribute(stubs[0][2].Attributes, "kratos.service.endpoint").AsStringSlice()
-		if !strings.Contains(serviceEndpoint[0], ":9000") || !strings.Contains(serviceEndpoint[1], ":8000") {
-			panic("service endpoint should be grpc://30.221.144.142:9000 http://30.221.144.142:8000, actually got " + fmt.Sprintf("%v", serviceEndpoint))
-		}
+		verifier.NewSpanVerifier().
+			HasStringAttribute("kratos.protocol.type", "grpc").
+			HasStringAttribute("kratos.service.name", "opentelemetry-kratos-server").
+			HasStringAttribute("kratos.service.id", "opentelemetry-id").
+			HasStringAttribute("kratos.service.version", "v1").
+			HasStringAttribute("kratos.service.meta.agent", "opentelemetry-go").
+			HasItemInStringSliceAttribute("kratos.service.endpoint", 0, func(s string) (bool, string) {
+				return strings.Contains(s, ":9000"), fmt.Sprintf("First endpoint should be xxx:9000, actual value: %v", s)
+			}).
+			HasItemInStringSliceAttribute("kratos.service.endpoint", 1, func(s string) (bool, string) {
+				return strings.Contains(s, ":8000"), fmt.Sprintf("First endpoint should be xxx:8000, actual value: %v", s)
+			}).
+			Verify(stubs[0][2])
 	}, 1)
 }
