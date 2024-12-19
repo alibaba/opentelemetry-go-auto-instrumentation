@@ -26,7 +26,7 @@ func init() {
 		NewGeneralTestCase("kitex-grpc-test", kitex_module_name, "", "", "1.18", "", TestKitexBasic),
 		NewGeneralTestCase("kitex-http-test", kitex_module_name, "", "", "1.18", "", TestKitexBasic),
 		NewMuzzleTestCase("kitex-basic-test", kitex_dependency_name, kitex_module_name, "", "", "1.18", "", []string{"test_grpc_kitex.go", "handler.go"}),
-		NewLatestDepthTestCase("kitex-latestdepth-test", kitex_dependency_name, kitex_module_name, "", "", "1.18", "", TestKitexBasic),
+		NewLatestDepthTestCase("kitex-latestdepth-test", kitex_dependency_name, kitex_module_name, "", "v0.11.3", "1.18", "", TestKitexBasic),
 	)
 }
 
