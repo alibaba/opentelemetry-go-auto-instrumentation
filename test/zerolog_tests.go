@@ -27,7 +27,7 @@ func init() {
 }
 
 func TestZeroLog(t *testing.T, env ...string) {
-	UseApp("zap")
+	UseApp("zerolog")
 	RunGoBuild(t, "go", "build", "test_zerolog.go", "http_server.go")
 	_, stderr := RunApp(t, "test_zap", env...)
 	reader := strings.NewReader(stderr)
