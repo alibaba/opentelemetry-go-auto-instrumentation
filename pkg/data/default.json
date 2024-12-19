@@ -610,5 +610,13 @@
     "OnEnter": "restContainerHandleOnEnter",
     "OnExit": "restContainerHandleOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
+  },
+  {
+    "Version": "[1.10.0,1.33.1)",
+    "ImportPath": "github.com/rs/zerolog",
+    "Function": "msg",
+    "ReceiverType": "*Event",
+    "OnEnter": "zeroLogWriteOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/zerolog"
   }
 ]
