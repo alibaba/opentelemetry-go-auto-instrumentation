@@ -29,7 +29,7 @@ func init() {
 func TestZeroLog(t *testing.T, env ...string) {
 	UseApp("zerolog")
 	RunGoBuild(t, "go", "build", "test_zerolog.go", "http_server.go")
-	_, stderr := RunApp(t, "test_zap", env...)
+	_, stderr := RunApp(t, "test_zerolog", env...)
 	reader := strings.NewReader(stderr)
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
