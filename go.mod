@@ -11,6 +11,7 @@ require (
 	github.com/cloudwego/hertz v0.9.3
 	github.com/dave/dst v0.27.3
 	github.com/docker/go-connections v0.5.0
+	github.com/rs/zerolog v1.10.0
 	github.com/elastic/elastic-transport-go/v8 v8.1.0
 	github.com/elastic/go-elasticsearch/v8 v8.4.0
 	github.com/emicklei/go-restful/v3 v3.10.1
