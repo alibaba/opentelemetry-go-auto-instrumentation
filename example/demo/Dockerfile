@@ -7,4 +7,5 @@ RUN echo "hosts: files dns" > /etc/nsswitch.conf
 RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 RUN echo 'Asia/Shanghai' >/etc/timezone
 RUN apk del tzdata
+RUN apk add curl
 ENTRYPOINT ["/demo"]
