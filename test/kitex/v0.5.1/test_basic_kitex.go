@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/cloudwego/kitex/transport"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"time"
@@ -37,7 +38,7 @@ func main() {
 		}
 	}()
 	time.Sleep(3 * time.Second)
-	client, err := hello.NewClient("hello", client.WithHostPorts("0.0.0.0:8888"))
+	client, err := hello.NewClient("hello", client.WithHostPorts("0.0.0.0:8888"), client.WithTransportProtocol(transport.TTHeaderFramed))
 	if err != nil {
 		log.Fatal(err)
 	}

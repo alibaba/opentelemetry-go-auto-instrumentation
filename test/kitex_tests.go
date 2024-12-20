@@ -22,9 +22,7 @@ const kitex_module_name = "kitex"
 func init() {
 	TestCases = append(TestCases,
 		NewGeneralTestCase("kitex-basic-test", kitex_module_name, "", "", "1.18", "", TestKitexBasic),
-		NewGeneralTestCase("kitex-frame-test", kitex_module_name, "", "", "1.18", "", TestKitexBasic),
-		NewGeneralTestCase("kitex-grpc-test", kitex_module_name, "", "", "1.18", "", TestKitexBasic),
-		NewGeneralTestCase("kitex-http-test", kitex_module_name, "", "", "1.18", "", TestKitexBasic),
+		NewGeneralTestCase("kitex-grpc-test", kitex_module_name, "", "", "1.18", "", TestKitexGrpc),
 		NewMuzzleTestCase("kitex-basic-test", kitex_dependency_name, kitex_module_name, "", "", "1.18", "", []string{"test_grpc_kitex.go", "handler.go"}),
 		NewLatestDepthTestCase("kitex-latestdepth-test", kitex_dependency_name, kitex_module_name, "", "v0.11.3", "1.18", "", TestKitexBasic),
 	)
@@ -36,20 +34,8 @@ func TestKitexBasic(t *testing.T, env ...string) {
 	RunApp(t, "test_basic_kitex", env...)
 }
 
-func TestKitexFrame(t *testing.T, env ...string) {
-	UseApp("kitex/v0.5.1")
-	RunGoBuild(t, "go", "build", "test_frame_kitex.go", "handler.go")
-	RunApp(t, "test_frame_kitex", env...)
-}
-
 func TestKitexGrpc(t *testing.T, env ...string) {
 	UseApp("kitex/v0.5.1")
 	RunGoBuild(t, "go", "build", "test_grpc_kitex.go", "handler.go")
 	RunApp(t, "test_grpc_kitex", env...)
-}
-
-func TestKitexHttp(t *testing.T, env ...string) {
-	UseApp("kitex/v0.5.1")
-	RunGoBuild(t, "go", "build", "test_http_kitex.go", "handler.go")
-	RunApp(t, "test_http_kitex", env...)
 }

@@ -4,6 +4,8 @@ package hello
 
 import (
 	"context"
+	"errors"
+	"github.com/cloudwego/kitex/pkg/streaming"
 	"kitex/v0.5.1/kitex_gen/api"
 	"github.com/cloudwego/kitex/client"
 	kitex "github.com/cloudwego/kitex/pkg/serviceinfo"
@@ -36,14 +38,29 @@ func NewServiceInfo() *kitex.ServiceInfo {
 }
 
 func echoHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
-	realArg := arg.(*api.HelloEchoArgs)
-	realResult := result.(*api.HelloEchoResult)
-	success, err := handler.(api.Hello).Echo(ctx, realArg.Req)
-	if err != nil {
-		return err
+	switch s := arg.(type) {
+	case *streaming.Args:
+		st := s.Stream
+		req := new(api.Request)
+		if err := st.RecvMsg(req); err != nil {
+			return err
+		}
+		resp, err := handler.(api.Hello).Echo(ctx, req)
+		if err != nil {
+			return err
+		}
+		return st.SendMsg(resp)
+	case *api.HelloEchoArgs:
+		success, err := handler.(api.Hello).Echo(ctx, s.Req)
+		if err != nil {
+			return err
+		}
+		realResult := result.(*api.HelloEchoResult)
+		realResult.Success = success
+		return nil
+	default:
+		return errors.New("invalid message type for service method handler")
 	}
-	realResult.Success = success
-	return nil
 }
 func newHelloEchoArgs() interface{} {
 	return api.NewHelloEchoArgs()
