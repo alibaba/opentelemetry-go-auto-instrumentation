@@ -618,5 +618,19 @@
     "ReceiverType": "*Event",
     "OnEnter": "zeroLogWriteOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/zerolog"
+  },
+  {
+    "Version": "[0.5.1,0.11.4)",
+    "ImportPath": "github.com/cloudwego/kitex/client",
+    "Function": "NewClient",
+    "OnEnter": "beforeNewKitexClientInstrument",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kitex"
+  },
+  {
+    "Version": "[0.5.1,0.11.4)",
+    "ImportPath": "github.com/cloudwego/kitex/server",
+    "Function": "NewServer",
+    "OnEnter": "beforeNewKitexServerInstrument",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kitex"
   }
 ]

@@ -14,6 +14,7 @@
 | gorm         | https://github.com/go-gorm/gorm            | v1.22.0               | v1.25.9               |
 | grpc         | https://google.golang.org/grpc             | v1.44.0               | v1.67.0               |
 | hertz        | https://github.com/cloudwego/hertz         | v0.8.0                | v0.9.2                |
+| kitex        | https://github.com/cloudwego/kitex         | v0.5.1                |  v0.11.3              |
 | kratos       | https://github.com/go-kratos/kratos        | v2.6.3                | v2.8.2                |
 | log          | https://pkg.go.dev/log                     | -                     | -                     |
 | logrus       | https://github.com/sirupsen/logrus         | v1.5.0                | v1.9.3                |
