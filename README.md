@@ -82,7 +82,9 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | echo          | https://github.com/labstack/echo           | v4.0.0                | v4.12.0               |
 | elasticsearch | https://github.com/elastic/go-elasticsearch| v8.4.0                | v8.15.0               |
 | fasthttp      | https://github.com/valyala/fasthttp        | v1.45.0               | v1.57.0               |
+| fiber         | https://github.com/gofiber/fiber           | v2.43.0               | v2.52.5               |
 | gin           | https://github.com/gin-gonic/gin           | v1.7.0                | v1.10.0               |
+| gorestful     | https://github.com/emicklei/go-restful     | v3.7.0                | v3.12.1               |
 | go-redis      | https://github.com/redis/go-redis          | v9.0.5                | v9.5.1                |
 | go-redis v8   | https://github.com/redis/go-redis          | v8.11.0               | v8.11.5               |
 | gorm          | https://github.com/go-gorm/gorm            | v1.22.0               | v1.25.9               |
@@ -98,8 +100,7 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | redigo        | https://github.com/gomodule/redigo         | v1.9.0                | v1.9.2                |
 | slog          | https://pkg.go.dev/log/slog                | -                     | -                     |
 | zap           | https://github.com/uber-go/zap             | v1.20.0               | v1.27.0               |
-| fiber         | https://github.com/gofiber/fiber           | v2.43.0               | v2.52.5               |
-| gorestful     | https://github.com/emicklei/go-restful     | v3.7.0                | v3.12.1               |
+| zerolog       | https://github.com/rs/zerolog              | v1.10.0               | v1.33.0               |
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
 
