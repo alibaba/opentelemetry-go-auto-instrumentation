@@ -553,14 +553,14 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goslog"
   },
   {
-    "Version": "[2.6.3,2.8.3)",
+    "Version": "[2.6.3,2.8.4)",
     "ImportPath": "github.com/go-kratos/kratos/v2/transport/http",
     "Function": "NewServer",
     "OnEnter": "kratosNewHTTPServiceOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kratos/http"
   },
   {
-    "Version": "[2.6.3,2.8.3)",
+    "Version": "[2.6.3,2.8.4)",
     "ImportPath": "github.com/go-kratos/kratos/v2/transport/grpc",
     "Function": "NewServer",
     "OnEnter": "kratosNewGRPCServiceOnEnter",
@@ -610,5 +610,19 @@
     "OnEnter": "restContainerHandleOnEnter",
     "OnExit": "restContainerHandleOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
+  },
+  {
+    "Version": "[0.5.1,0.11.4)",
+    "ImportPath": "github.com/cloudwego/kitex/client",
+    "Function": "NewClient",
+    "OnEnter": "beforeNewKitexClientInstrument",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kitex"
+  },
+  {
+    "Version": "[0.5.1,0.11.4)",
+    "ImportPath": "github.com/cloudwego/kitex/server",
+    "Function": "NewServer",
+    "OnEnter": "beforeNewKitexServerInstrument",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kitex"
   }
 ]

@@ -57,6 +57,9 @@ var kindKey = map[string]trace.SpanKind{
 	// grpc
 	utils.GRPC_CLIENT_SCOPE_NAME: trace.SpanKindClient,
 	utils.GRPC_SERVER_SCOPE_NAME: trace.SpanKindServer,
+	// kitex
+	utils.KITEX_CLIENT_SCOPE_NAME: trace.SpanKindClient,
+	utils.KITEX_SERVER_SCOPE_NAME: trace.SpanKindServer,
 
 	// database
 	utils.DATABASE_SQL_SCOPE_NAME: trace.SpanKindClient,
