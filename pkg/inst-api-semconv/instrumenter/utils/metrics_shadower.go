@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//      rpc://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpc
+package utils
 
 import (
-	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/attribute"
 )
 
-var grpcClientInstrument = BuildGrpcClientInstrumenter()
-
-type grpcRequest struct {
-	methodName    string
-	serverAddress string
-	propagators   propagation.TextMapCarrier
-}
-
-type grpcResponse struct {
-	statusCode int
-}
-
-type gRPCContextKey struct{}
-
-type gRPCContext struct {
-	methodName string
+func Shadow(attrs []attribute.KeyValue, metricsSemConv map[attribute.Key]bool) (int, []attribute.KeyValue) {
+	swap := func(attrs []attribute.KeyValue, i, j int) {
+		tmp := attrs[i]
+		attrs[i] = attrs[j]
+		attrs[j] = tmp
+	}
+	index := 0
+	for i, attr := range attrs {
+		if _, ok := metricsSemConv[attr.Key]; ok {
+			if index != i {
+				swap(attrs, i, index)
+			}
+			index++
+		}
+	}
+	return index, attrs
 }

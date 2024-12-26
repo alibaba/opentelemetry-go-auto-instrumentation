@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//      rpc://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package http
+package rpc
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-func TestHttpServerMetrics(t *testing.T) {
+func TestRpcServerMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
@@ -35,7 +35,7 @@ func TestHttpServerMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	meter := mp.Meter("test-meter")
-	server, err := newHttpServerMetric("test", meter)
+	server, err := newRpcServerMetric("test", meter)
 	if err != nil {
 		panic(err)
 	}
@@ -47,12 +47,12 @@ func TestHttpServerMetrics(t *testing.T) {
 	server.OnAfterEnd(ctx, []attribute.KeyValue{}, time.Now())
 	rm := &metricdata.ResourceMetrics{}
 	reader.Collect(ctx, rm)
-	if rm.ScopeMetrics[0].Metrics[0].Name != "http.server.request.duration" {
+	if rm.ScopeMetrics[0].Metrics[0].Name != "rpc.server.duration" {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
 	}
 }
 
-func TestHttpClientMetrics(t *testing.T) {
+func TestRpcClientMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
@@ -61,7 +61,7 @@ func TestHttpClientMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	meter := mp.Meter("test-meter")
-	client, err := newHttpClientMetric("test", meter)
+	client, err := newRpcClientMetric("test", meter)
 	if err != nil {
 		panic(err)
 	}
@@ -73,27 +73,27 @@ func TestHttpClientMetrics(t *testing.T) {
 	client.OnAfterEnd(ctx, []attribute.KeyValue{}, time.Now())
 	rm := &metricdata.ResourceMetrics{}
 	reader.Collect(ctx, rm)
-	if rm.ScopeMetrics[0].Metrics[0].Name != "http.client.request.duration" {
+	if rm.ScopeMetrics[0].Metrics[0].Name != "rpc.client.duration" {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
 	}
 }
 
-func TestHttpMetricAttributesShadower(t *testing.T) {
+func TestRpcMetricAttributesShadower(t *testing.T) {
 	attrs := make([]attribute.KeyValue, 0)
 	attrs = append(attrs, attribute.KeyValue{
-		Key:   semconv.HTTPRequestMethodKey,
+		Key:   semconv.RPCMethodKey,
 		Value: attribute.StringValue("method"),
 	}, attribute.KeyValue{
 		Key:   "unknown",
 		Value: attribute.Value{},
 	}, attribute.KeyValue{
-		Key:   semconv.NetworkProtocolNameKey,
-		Value: attribute.StringValue("http"),
+		Key:   semconv.RPCServiceKey,
+		Value: attribute.StringValue("rpc"),
 	}, attribute.KeyValue{
-		Key:   semconv.ServerPortKey,
-		Value: attribute.IntValue(8080),
+		Key:   semconv.RPCSystemKey,
+		Value: attribute.StringValue("abc"),
 	})
-	n, attrs := utils.Shadow(attrs, httpMetricsConv)
+	n, attrs := utils.Shadow(attrs, rpcMetricsConv)
 	if n != 3 {
 		panic("wrong shadow array")
 	}
@@ -102,7 +102,7 @@ func TestHttpMetricAttributesShadower(t *testing.T) {
 	}
 }
 
-func TestLazyHttpServerMetrics(t *testing.T) {
+func TestLazyRpcServerMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
@@ -111,8 +111,8 @@ func TestLazyHttpServerMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	InitHttpMetrics(m)
-	server := HttpServerMetrics("net.http.server")
+	InitRpcMetrics(m)
+	server := RpcServerMetrics("net.rpc.server")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = server.OnBeforeStart(ctx, start)
@@ -121,12 +121,12 @@ func TestLazyHttpServerMetrics(t *testing.T) {
 	server.OnAfterEnd(ctx, []attribute.KeyValue{}, time.Now())
 	rm := &metricdata.ResourceMetrics{}
 	reader.Collect(ctx, rm)
-	if rm.ScopeMetrics[0].Metrics[0].Name != "http.server.request.duration" {
+	if rm.ScopeMetrics[0].Metrics[0].Name != "rpc.server.duration" {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
 	}
 }
 
-func TestLazyHttpClientMetrics(t *testing.T) {
+func TestLazyRpcClientMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
@@ -135,8 +135,8 @@ func TestLazyHttpClientMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	InitHttpMetrics(m)
-	client := HttpClientMetrics("net.http.client")
+	InitRpcMetrics(m)
+	client := RpcClientMetrics("net.rpc.client")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = client.OnBeforeStart(ctx, start)
@@ -145,12 +145,12 @@ func TestLazyHttpClientMetrics(t *testing.T) {
 	client.OnAfterEnd(ctx, []attribute.KeyValue{}, time.Now())
 	rm := &metricdata.ResourceMetrics{}
 	reader.Collect(ctx, rm)
-	if rm.ScopeMetrics[0].Metrics[0].Name != "http.client.request.duration" {
+	if rm.ScopeMetrics[0].Metrics[0].Name != "rpc.client.duration" {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
 	}
 }
 
-func TestGlobalHttpServerMetrics(t *testing.T) {
+func TestGlobalRpcServerMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
@@ -159,8 +159,8 @@ func TestGlobalHttpServerMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	InitHttpMetrics(m)
-	server := HttpServerMetrics("net.http.server")
+	InitRpcMetrics(m)
+	server := RpcServerMetrics("net.rpc.server")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = server.OnBeforeStart(ctx, start)
@@ -169,12 +169,12 @@ func TestGlobalHttpServerMetrics(t *testing.T) {
 	server.OnAfterEnd(ctx, []attribute.KeyValue{}, time.Now())
 	rm := &metricdata.ResourceMetrics{}
 	reader.Collect(ctx, rm)
-	if rm.ScopeMetrics[0].Metrics[0].Name != "http.server.request.duration" {
+	if rm.ScopeMetrics[0].Metrics[0].Name != "rpc.server.duration" {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
 	}
 }
 
-func TestGlobalHttpClientMetrics(t *testing.T) {
+func TestGlobalRpcClientMetrics(t *testing.T) {
 	reader := metric.NewManualReader()
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
@@ -183,8 +183,8 @@ func TestGlobalHttpClientMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	InitHttpMetrics(m)
-	client := HttpClientMetrics("net.http.client")
+	InitRpcMetrics(m)
+	client := RpcClientMetrics("net.rpc.client")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = client.OnBeforeStart(ctx, start)
@@ -193,7 +193,7 @@ func TestGlobalHttpClientMetrics(t *testing.T) {
 	client.OnAfterEnd(ctx, []attribute.KeyValue{}, time.Now())
 	rm := &metricdata.ResourceMetrics{}
 	reader.Collect(ctx, rm)
-	if rm.ScopeMetrics[0].Metrics[0].Name != "http.client.request.duration" {
+	if rm.ScopeMetrics[0].Metrics[0].Name != "rpc.client.duration" {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
 	}
 }

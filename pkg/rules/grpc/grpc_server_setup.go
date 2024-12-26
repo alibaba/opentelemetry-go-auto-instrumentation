@@ -52,11 +52,13 @@ func NewServerHandler(opts ...Option) stats.Handler {
 }
 
 type serverHandler struct {
+	serverAddr string
 	*grpcOtelConfig
 }
 
 // TagConn can attach some information to the given context.
 func (h *serverHandler) TagConn(ctx context.Context, info *stats.ConnTagInfo) context.Context {
+	h.serverAddr = info.LocalAddr.String()
 	return ctx
 }
 
@@ -73,7 +75,8 @@ func (h *serverHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) cont
 		md = metadata.MD{}
 	}
 	nCtx := grpcServerInstrument.Start(ctx, grpcRequest{
-		methodName: info.FullMethodName,
+		methodName:    info.FullMethodName,
+		serverAddress: h.serverAddr,
 		propagators: &grpcMetadataSupplier{
 			metadata: &md,
 		},
@@ -88,6 +91,5 @@ func (h *serverHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) cont
 
 // HandleRPC processes the RPC stats.
 func (h *serverHandler) HandleRPC(ctx context.Context, rs stats.RPCStats) {
-	isServer := true
-	h.handleRPC(ctx, rs, isServer)
+	h.handleRPC(ctx, rs, true)
 }

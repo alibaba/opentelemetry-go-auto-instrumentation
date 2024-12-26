@@ -52,7 +52,6 @@ func (c *grpcOtelConfig) handleRPC(ctx context.Context, rs stats.RPCStats, isSer
 	if span == nil {
 		return
 	}
-	//var metricAttrs []coreAttr.KeyValue
 	var (
 		messageId int64
 	)

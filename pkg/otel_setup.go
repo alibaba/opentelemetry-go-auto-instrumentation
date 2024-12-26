@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"log"
@@ -157,6 +159,10 @@ func initMetrics() error {
 	meter.SetMeter(m)
 	// init http metrics
 	http.InitHttpMetrics(m)
+	// init rpc metrics
+	rpc.InitRpcMetrics(m)
+	// nacos experimental metrics
+	experimental.InitNacosExperimentalMetrics(m)
 	// DefaultMinimumReadMemStatsInterval is 15 second
 	return runtime.Start(runtime.WithMeterProvider(mp))
 }

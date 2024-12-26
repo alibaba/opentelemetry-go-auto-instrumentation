@@ -33,13 +33,13 @@ func init() {
 func TestKratosGrpc(t *testing.T, env ...string) {
 	UseApp("kratos/v2.6.3")
 	RunGoBuild(t, "go", "build", "test_kratos_grpc.go", "server.go")
-	env = append(env, "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES=true")
+	env = append(env, "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE=true")
 	RunApp(t, "test_kratos_grpc", env...)
 }
 
 func TestKratosHttp(t *testing.T, env ...string) {
 	UseApp("kratos/v2.6.3")
 	RunGoBuild(t, "go", "build", "test_kratos_http.go", "server.go")
-	env = append(env, "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES=true")
+	env = append(env, "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE=true")
 	RunApp(t, "test_kratos_http", env...)
 }
