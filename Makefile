@@ -15,7 +15,7 @@
 #-------------------------------------------------------------------------------
 # General build options
 # Change this parameter while releasing
-MAIN_VERSION := 0.4.0
+MAIN_VERSION := 0.6.0
 
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 CURRENT_ARCH := $(shell uname -m)
