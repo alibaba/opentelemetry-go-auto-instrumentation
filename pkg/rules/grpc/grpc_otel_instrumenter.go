@@ -83,7 +83,7 @@ func BuildGrpcClientInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcRe
 			Name:    utils.GRPC_CLIENT_SCOPE_NAME,
 			Version: version.Tag,
 		}).
-		AddOperationListeners(rpc.RpcServerMetrics("grpc.client")).
+		AddOperationListeners(rpc.RpcClientMetrics("grpc.client")).
 		BuildInstrumenter()
 }
 

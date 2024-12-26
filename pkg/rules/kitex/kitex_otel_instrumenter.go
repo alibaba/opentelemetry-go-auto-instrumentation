@@ -49,6 +49,10 @@ func (g kitexAttrsGetter) GetMethod(ri rpcinfo.RPCInfo) string {
 	return ri.Invocation().ServiceName() + "/" + ri.Invocation().MethodName()
 }
 
+func (g kitexAttrsGetter) GetServerAddress(request rpcinfo.RPCInfo) string {
+	return request.To().Address().String()
+}
+
 func BuildKitexClientInstrumenter() instrumenter.Instrumenter[rpcinfo.RPCInfo, rpcinfo.RPCInfo] {
 	builder := instrumenter.Builder[rpcinfo.RPCInfo, rpcinfo.RPCInfo]{}
 	clientGetter := kitexAttrsGetter{}

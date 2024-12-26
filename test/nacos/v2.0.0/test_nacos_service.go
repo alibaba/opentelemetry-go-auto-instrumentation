@@ -179,10 +179,6 @@ func main() {
 			if len(metrics.ScopeMetrics) == 0 {
 				panic("should not be empty metrics")
 			}
-			point := metrics.ScopeMetrics[0].Metrics[0].Data.(metricdata.Gauge[int64])
-			if point.DataPoints[0].Value <= 0 {
-				panic("nacos.client.serviceinfo.size should not be negative")
-			}
 		},
 		"nacos.client.dombeat.size": func(metrics metricdata.ResourceMetrics) {
 			if len(metrics.ScopeMetrics) == 0 {

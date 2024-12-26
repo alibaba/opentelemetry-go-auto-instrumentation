@@ -46,6 +46,10 @@ func (t testGetter) GetMethod(request testRequest) string {
 	return ""
 }
 
+func (t testGetter) GetServerAddress(request testRequest) string {
+	return "test"
+}
+
 func TestExtractSpanName(t *testing.T) {
 	r := RpcSpanNameExtractor[testRequest]{Getter: testGetter{}}
 	spanName := r.Extract(testRequest{Method: "method", Service: "service"})

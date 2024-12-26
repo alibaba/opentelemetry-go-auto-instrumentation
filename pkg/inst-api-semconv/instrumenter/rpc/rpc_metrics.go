@@ -72,7 +72,7 @@ func RpcClientMetrics(key string) *RpcClientMetric {
 	return &RpcClientMetric{key: attribute.Key(key)}
 }
 
-func newrpcServerRequestDurationMeasures(meter metric.Meter) (metric.Float64Histogram, error) {
+func newRpcServerRequestDurationMeasures(meter metric.Meter) (metric.Float64Histogram, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if meter == nil {
@@ -130,7 +130,7 @@ func (h *RpcServerMetric) OnAfterEnd(context context.Context, endAttributes []at
 	// end attributes should be shadowed by AttrsShadower
 	if h.serverRequestDuration == nil {
 		var err error
-		h.serverRequestDuration, err = newrpcServerRequestDurationMeasures(globalMeter)
+		h.serverRequestDuration, err = newRpcServerRequestDurationMeasures(globalMeter)
 		if err != nil {
 			log.Printf("failed to create serverRequestDuration, err is %v\n", err)
 		}
@@ -177,4 +177,30 @@ func (h *RpcClientMetric) OnAfterEnd(context context.Context, endAttributes []at
 	if h.clientRequestDuration != nil {
 		h.clientRequestDuration.Record(context, float64(endTime.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))
 	}
+}
+
+// for test only
+func newRpcServerMetric(key string, meter metric.Meter) (*RpcServerMetric, error) {
+	m := &RpcServerMetric{
+		key: attribute.Key(key),
+	}
+	d, err := newRpcServerRequestDurationMeasures(meter)
+	if err != nil {
+		return nil, err
+	}
+	m.serverRequestDuration = d
+	return m, nil
+}
+
+// for test only
+func newRpcClientMetric(key string, meter metric.Meter) (*RpcClientMetric, error) {
+	m := &RpcClientMetric{
+		key: attribute.Key(key),
+	}
+	d, err := newRpcClientRequestDurationMeasures(meter)
+	if err != nil {
+		return nil, err
+	}
+	m.clientRequestDuration = d
+	return m, nil
 }

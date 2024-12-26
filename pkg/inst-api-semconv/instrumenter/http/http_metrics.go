@@ -78,6 +78,7 @@ func HttpClientMetrics(key string) *HttpClientMetric {
 	return &HttpClientMetric{key: attribute.Key(key)}
 }
 
+// for test only
 func newHttpServerMetric(key string, meter metric.Meter) (*HttpServerMetric, error) {
 	m := &HttpServerMetric{
 		key: attribute.Key(key),
@@ -106,6 +107,7 @@ func newHttpServerRequestDurationMeasures(meter metric.Meter) (metric.Float64His
 	}
 }
 
+// for test only
 func newHttpClientMetric(key string, meter metric.Meter) (*HttpClientMetric, error) {
 	m := &HttpClientMetric{
 		key: attribute.Key(key),

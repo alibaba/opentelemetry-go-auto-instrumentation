@@ -16,7 +16,6 @@ package http
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/utils"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -112,7 +111,7 @@ func TestLazyHttpServerMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	meter.SetMeter(m)
+	InitHttpMetrics(m)
 	server := HttpServerMetrics("net.http.server")
 	ctx := context.Background()
 	start := time.Now()
@@ -136,7 +135,7 @@ func TestLazyHttpClientMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	meter.SetMeter(m)
+	InitHttpMetrics(m)
 	client := HttpClientMetrics("net.http.client")
 	ctx := context.Background()
 	start := time.Now()
@@ -160,7 +159,7 @@ func TestGlobalHttpServerMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	meter.SetMeter(m)
+	InitHttpMetrics(m)
 	server := HttpServerMetrics("net.http.server")
 	ctx := context.Background()
 	start := time.Now()
@@ -184,7 +183,7 @@ func TestGlobalHttpClientMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	meter.SetMeter(m)
+	InitHttpMetrics(m)
 	client := HttpClientMetrics("net.http.client")
 	ctx := context.Background()
 	start := time.Now()
