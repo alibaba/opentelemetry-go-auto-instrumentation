@@ -24,6 +24,7 @@ func TestBuildProject(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 	RunGoBuild(t, "go", "build", "-o", "default", "cmd/foo.go")
+	RunGoBuild(t, "go", "build", "-o", "./cmd", "./cmd")
 	RunGoBuild(t, "go", "build", "cmd/foo.go")
 	RunGoBuild(t, "go", "build", "cmd/foo.go", "cmd/bar.go")
 	RunGoBuild(t, "go", "build", "cmd")
