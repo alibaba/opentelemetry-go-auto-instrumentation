@@ -17,7 +17,7 @@ package test
 import (
 	"testing"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 func TestBuildProject(t *testing.T) {
@@ -72,8 +72,8 @@ func TestBuildProject5(t *testing.T) {
 	RunGoBuild(t, "go", "build", "m1")
 	// both test_fmt.json and default.json rules should be available
 	// because we always append new -rule to the default.json by default
-	ExpectPreprocessContains(t, shared.DebugLogFile, "fmt")
-	ExpectPreprocessContains(t, shared.DebugLogFile, "database/sql")
+	ExpectPreprocessContains(t, util.DebugLogFile, "fmt")
+	ExpectPreprocessContains(t, util.DebugLogFile, "database/sql")
 }
 
 func TestBuildProject6(t *testing.T) {
@@ -83,6 +83,6 @@ func TestBuildProject6(t *testing.T) {
 	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/test_fmt.json", "-verbose")
 	RunGoBuild(t, "go", "build", "m1")
 	// only test_fmt.json should be available because -disabledefault is set
-	ExpectPreprocessContains(t, shared.DebugLogFile, "fmt")
-	ExpectPreprocessNotContains(t, shared.DebugLogFile, "database/sql")
+	ExpectPreprocessContains(t, util.DebugLogFile, "fmt")
+	ExpectPreprocessNotContains(t, util.DebugLogFile, "database/sql")
 }

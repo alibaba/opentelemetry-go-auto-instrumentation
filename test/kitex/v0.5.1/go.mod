@@ -2,8 +2,6 @@ module kitex/v0.5.1
 
 go 1.22.0
 
-toolchain go1.22.7
-
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier

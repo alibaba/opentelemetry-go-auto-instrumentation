@@ -25,8 +25,13 @@ var logMutex sync.Mutex
 
 var Guarantee = Assert // More meaningful name:)
 
-func SetLogTo(w *os.File) {
+// Be caution it's not thread safe
+func SetLogger(w *os.File) {
 	logWriter = w
+}
+
+func GetLoggerPath() string {
+	return logWriter.Name()
 }
 
 func Log(format string, args ...interface{}) {
@@ -37,13 +42,9 @@ func Log(format string, args ...interface{}) {
 }
 
 func LogFatal(format string, args ...interface{}) {
-	// Log errors to debug file
 	Log(format, args...)
-	// And print to stderr then, in red color
-	template := "Build error:\033[31m\n" + format + "\033[0m\n"
-	fmt.Fprintf(os.Stderr, template,
-		args...)
-	fmt.Fprintf(os.Stderr, "See build log %s for details.\n",
-		logWriter.Name())
+	if InPreprocess() {
+		fmt.Fprintf(os.Stderr, format, args...)
+	}
 	os.Exit(1)
 }

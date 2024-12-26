@@ -15,10 +15,10 @@ package resource
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 // -----------------------------------------------------------------------------
@@ -135,12 +135,12 @@ func (rule *InstFileRule) String() string {
 func verifyRule(rule *InstBaseRule, checkPath bool) error {
 	if checkPath {
 		if rule.Path == "" {
-			return fmt.Errorf("local path is empty")
+			return errc.New(errc.ErrInvalidRule, "local path is empty")
 		}
 	}
 	// Import path should not be empty
 	if rule.ImportPath == "" {
-		return fmt.Errorf("import path is empty")
+		return errc.New(errc.ErrInvalidRule, "import path is empty")
 	}
 	// If version is specified, it should be in the format of [start,end)
 	for _, v := range []string{rule.Version, rule.GoVersion} {
@@ -149,7 +149,7 @@ func verifyRule(rule *InstBaseRule, checkPath bool) error {
 				!strings.Contains(v, ")") ||
 				!strings.Contains(v, ",") ||
 				strings.Contains(v, "v") {
-				return fmt.Errorf("invalid version format %s", v)
+				return errc.New(errc.ErrInvalidRule, "bad version "+v)
 			}
 		}
 	}
@@ -170,10 +170,10 @@ func (rule *InstFileRule) Verify() error {
 		return err
 	}
 	if rule.FileName == "" {
-		return fmt.Errorf("file name is empty")
+		return errc.New(errc.ErrInvalidRule, "empty file name")
 	}
-	if !shared.IsGoFile(rule.FileName) {
-		return fmt.Errorf("file name should not end with .go")
+	if !util.IsGoFile(rule.FileName) {
+		return errc.New(errc.ErrInvalidRule, "not a go file")
 	}
 	return nil
 }
@@ -189,10 +189,10 @@ func (rule *InstFuncRule) Verify() error {
 		return err
 	}
 	if rule.Function == "" {
-		return fmt.Errorf("function name is empty")
+		return errc.New(errc.ErrInvalidRule, "empty function name")
 	}
 	if rule.OnEnter == "" && rule.OnExit == "" {
-		return fmt.Errorf("both onEnter and onExit are empty")
+		return errc.New(errc.ErrInvalidRule, "empty hook")
 	}
 	return nil
 }
@@ -203,10 +203,10 @@ func (rule *InstStructRule) Verify() error {
 		return err
 	}
 	if rule.StructType == "" {
-		return fmt.Errorf("struct type is empty")
+		return errc.New(errc.ErrInvalidRule, "empty struct type")
 	}
 	if rule.FieldName == "" || rule.FieldType == "" {
-		return fmt.Errorf("field name is empty")
+		return errc.New(errc.ErrInvalidRule, "empty field name or type")
 	}
 	return nil
 }
