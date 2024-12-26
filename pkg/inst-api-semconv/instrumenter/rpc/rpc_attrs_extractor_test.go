@@ -41,6 +41,10 @@ func (h rpcAttrsGetter) GetMethod(request testRequest) string {
 	return "method"
 }
 
+func (h rpcAttrsGetter) GetServerAddress(request testRequest) string {
+	return "serverAddress"
+}
+
 func TestClientGetSpanKey(t *testing.T) {
 	rpcExtractor := &ClientRpcAttrsExtractor[testRequest, any, rpcAttrsGetter]{}
 	if rpcExtractor.GetSpanKey() != utils.RPC_CLIENT_KEY {

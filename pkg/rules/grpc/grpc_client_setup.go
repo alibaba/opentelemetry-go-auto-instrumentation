@@ -41,6 +41,7 @@ func grpcClientOnExit(call api.CallContext, cc *grpc.ClientConn, err error) {
 }
 
 type clientHandler struct {
+	serverAddr string
 	*grpcOtelConfig
 }
 
@@ -55,7 +56,8 @@ func NewClientHandler(opts ...Option) stats.Handler {
 // TagRPC can attach some information to the given context.
 func (h *clientHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
 	nCtx := grpcClientInstrument.Start(ctx, grpcRequest{
-		methodName: info.FullMethodName,
+		methodName:    info.FullMethodName,
+		serverAddress: h.serverAddr,
 	})
 	gctx := gRPCContext{
 		methodName: info.FullMethodName,
@@ -66,12 +68,12 @@ func (h *clientHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) cont
 
 // HandleRPC processes the RPC stats.
 func (h *clientHandler) HandleRPC(ctx context.Context, rs stats.RPCStats) {
-	isServer := false
-	h.handleRPC(ctx, rs, isServer)
+	h.handleRPC(ctx, rs, false)
 }
 
 // TagConn can attach some information to the given context.
 func (h *clientHandler) TagConn(ctx context.Context, info *stats.ConnTagInfo) context.Context {
+	h.serverAddr = info.RemoteAddr.String()
 	return ctx
 }
 
