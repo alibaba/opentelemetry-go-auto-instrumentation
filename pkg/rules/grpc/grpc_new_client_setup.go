@@ -49,6 +49,10 @@ func NewClientNewHandler(opts ...Option) stats.Handler {
 
 // TagRPC can attach some information to the given context.
 func (h *clientNewHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
+	filter, _ := ctx.Value("stream_filter").(*bool)
+	if filter != nil && *filter {
+		return ctx
+	}
 	nCtx := grpcClientInstrument.Start(ctx, grpcRequest{
 		methodName:    info.FullMethodName,
 		serverAddress: h.serverAddr,
