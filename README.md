@@ -96,6 +96,7 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | logrus        | https://github.com/sirupsen/logrus         | v1.5.0                | v1.9.3                |
 | mongodb       | https://github.com/mongodb/mongo-go-driver | v1.11.1               | v1.15.2               |
 | mux           | https://github.com/gorilla/mux             | v1.3.0                | v1.8.1                |
+| nacos         | github.com/nacos-group/nacos-sdk-go/v2     | v2.0.0                | v2.2.7                |
 | net/http      | https://pkg.go.dev/net/http                | -                     | -                     |
 | redigo        | https://github.com/gomodule/redigo         | v1.9.0                | v1.9.2                |
 | slog          | https://pkg.go.dev/log/slog                | -                     | -                     |

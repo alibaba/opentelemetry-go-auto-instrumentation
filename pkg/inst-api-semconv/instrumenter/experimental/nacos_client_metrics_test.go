@@ -16,6 +16,7 @@ package experimental
 
 import (
 	"go.opentelemetry.io/otel/sdk/metric"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,4 +39,19 @@ func TestInitNacosExperimentalMetrics_GlobalMeterNotNull_AllMetricsInitialized(t
 	assert.NotNil(t, ClientDomBeatMapSize)
 	assert.NotNil(t, ClientConfigRequestDuration)
 	assert.NotNil(t, ClientNamingRequestDuration)
+}
+
+func TestNacosEnablerDisable(t *testing.T) {
+	ne := nacosEnabler{}
+	if ne.Enable() {
+		panic("should not enable without OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE")
+	}
+}
+
+func TestNacosEnablerEnable(t *testing.T) {
+	os.Setenv("OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE", "true")
+	ne := nacosEnabler{}
+	if !ne.Enable() {
+		panic("should enable with OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE")
+	}
 }
