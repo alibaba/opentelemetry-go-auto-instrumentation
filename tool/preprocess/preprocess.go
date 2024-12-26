@@ -458,11 +458,11 @@ func runDryBuild(goBuildCmd []string) error {
 	}
 	// The full build command is: "go build -a -x -n  {...}"
 	args := []string{"go", "build", "-a", "-x", "-n"}
-	args = append(args, goBuildCmd...)
-	args = util.StringDedup(args)
+	args = append(args, goBuildCmd[2:]...)
 	shared.AssertGoBuild(args)
 
 	// Run the dry build
+	util.Log("Run dry build %v", args)
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = dryRunLog
 	cmd.Stderr = dryRunLog
@@ -545,7 +545,6 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	if config.GetConf().Verbose {
 		util.Log("Run go build with args %v in toolexec mode", args)
 	}
-	args = util.StringDedup(args)
 	shared.AssertGoBuild(args)
 	out, err := util.RunCmdOutput(args...)
 	util.Log("Run go build with toolexec: %v", out)

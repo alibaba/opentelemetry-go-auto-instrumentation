@@ -300,20 +300,6 @@ func PhaseTimer(name string) func() {
 	}
 }
 
-// StringDedup removes duplicate strings in a slice and returns a new slice
-// in original order.
-func StringDedup(s []string) []string {
-	m := make(map[string]struct{})
-	var r []string
-	for _, v := range s {
-		if _, ok := m[v]; !ok {
-			m[v] = struct{}{}
-			r = append(r, v)
-		}
-	}
-	return r
-}
-
 func GetToolName() string {
 	// Get the path of the current executable
 	ex, err := os.Executable()
