@@ -30,23 +30,14 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"log"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
 	"unsafe"
 )
 
-type nacosEnabler struct{}
-
-func (n nacosEnabler) Enable() bool {
-	return os.Getenv("OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_ENABLE") == "true"
-}
-
-var enabler nacosEnabler
-
 func beforeNewConfigClient(call api.CallContext, nc nacos_client.INacosClient) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	param, err := nc.GetClientConfig()
@@ -61,7 +52,7 @@ func beforeNewConfigClient(call api.CallContext, nc nacos_client.INacosClient) {
 }
 
 func afterNewConfigClient(call api.CallContext, client *config_client.ConfigClient, err error) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	if client == nil {
@@ -110,7 +101,7 @@ func afterNewConfigClient(call api.CallContext, client *config_client.ConfigClie
 }
 
 func beforeConfigClientClose(call api.CallContext, sc *config_client.ConfigClient) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	if sc.OtelReg == nil {
@@ -126,7 +117,7 @@ func beforeConfigClientClose(call api.CallContext, sc *config_client.ConfigClien
 
 func beforeCallConfigServer(call api.CallContext, server *nacos_server.NacosServer, api string, params map[string]string, newHeaders map[string]string,
 	method string, curServer string, contextPath string, timeoutMS uint64) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	call.SetKeyData("ts", time.Now().UnixMilli())
@@ -135,7 +126,7 @@ func beforeCallConfigServer(call api.CallContext, server *nacos_server.NacosServ
 }
 
 func afterCallConfigServer(call api.CallContext, result string, err error) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	method := call.GetKeyData("method").(string)
@@ -161,7 +152,7 @@ func afterCallConfigServer(call api.CallContext, result string, err error) {
 }
 
 func beforeRequestProxy(call api.CallContext, cp *config_client.ConfigProxy, rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	call.SetKeyData("ts", time.Now().UnixMilli())
@@ -169,7 +160,7 @@ func beforeRequestProxy(call api.CallContext, cp *config_client.ConfigProxy, rpc
 }
 
 func afterRequestProxy(call api.CallContext, resp rpc_response.IResponse, err error) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	t := call.GetKeyData("ts").(int64)

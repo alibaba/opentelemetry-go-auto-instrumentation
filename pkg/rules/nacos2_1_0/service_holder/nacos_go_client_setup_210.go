@@ -22,20 +22,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"log"
-	"os"
 	"strconv"
 )
 
-type nacosEnabler struct{}
-
-func (n nacosEnabler) Enable() bool {
-	return os.Getenv("OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_ENABLE") == "true"
-}
-
-var enabler nacosEnabler
-
 func beforeNewServiceInfoHolder(call api.CallContext, namespace, cacheDir string, updateCacheWhenEmpty, notLoadCacheAtStart bool) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	call.SetKeyData("namespace", namespace)
@@ -45,7 +36,7 @@ func beforeNewServiceInfoHolder(call api.CallContext, namespace, cacheDir string
 }
 
 func afterNewServiceInfoHolder(call api.CallContext, holder *naming_cache.ServiceInfoHolder) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	reg, err := experimental.GlobalMeter.RegisterCallback(func(ctx context.Context, observer metric.Observer) error {

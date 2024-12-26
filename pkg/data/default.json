@@ -699,12 +699,20 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
   },
   {
-    "Version": "[2.0.0,2.2.8)",
+    "Version": "[2.0.0,2.1.1)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
     "Function": "NewBeatReactor",
     "OnEnter": "beforeNewBeatReactor",
     "OnExit": "afterNewBeatReactor",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/dom"
+  },
+  {
+    "Version": "[2.1.1,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
+    "Function": "NewBeatReactor",
+    "OnEnter": "beforeNewBeatReactor",
+    "OnExit": "afterNewBeatReactor",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos_2_1_0/dom"
   },
   {
     "Version": "[2.0.0,2.2.8)",

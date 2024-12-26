@@ -30,23 +30,14 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"log"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
 	"unsafe"
 )
 
-type nacosEnabler struct{}
-
-func (n nacosEnabler) Enable() bool {
-	return os.Getenv("OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_ENABLE") == "true"
-}
-
-var enabler nacosEnabler
-
 func beforeNamingHttpProxyCloseClient(call api.CallContext, proxy *naming_http.NamingHttpProxy) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	t := reflect.ValueOf(proxy)
@@ -71,7 +62,7 @@ func beforeNamingHttpProxyCloseClient(call api.CallContext, proxy *naming_http.N
 }
 
 func beforeNamingClientClose(call api.CallContext, sc *naming_client.NamingClient) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	t := reflect.ValueOf(sc)
@@ -96,7 +87,7 @@ func beforeNamingClientClose(call api.CallContext, sc *naming_client.NamingClien
 }
 
 func beforeRequestToServer(call api.CallContext, proxy *naming_grpc.NamingGrpcProxy, request rpc_request.IRequest) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	call.SetKeyData("ts", time.Now().UnixMilli())
@@ -104,7 +95,7 @@ func beforeRequestToServer(call api.CallContext, proxy *naming_grpc.NamingGrpcPr
 }
 
 func afterRequestToServer(call api.CallContext, resp rpc_response.IResponse, err error) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	t := call.GetKeyData("ts").(int64)
@@ -127,7 +118,7 @@ func afterRequestToServer(call api.CallContext, resp rpc_response.IResponse, err
 }
 
 func beforeCallServer(call api.CallContext, server *nacos_server.NacosServer, api string, params map[string]string, method string, curServer string, contextPath string) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	call.SetKeyData("ts", time.Now().UnixMilli())
@@ -136,7 +127,7 @@ func beforeCallServer(call api.CallContext, server *nacos_server.NacosServer, ap
 }
 
 func afterCallServer(call api.CallContext, result string, err error) {
-	if !enabler.Enable() {
+	if !experimental.NacosEnabler.Enable() {
 		return
 	}
 	method := call.GetKeyData("method").(string)

@@ -17,6 +17,7 @@ package experimental
 import (
 	"go.opentelemetry.io/otel/metric"
 	"log"
+	"os"
 )
 
 var (
@@ -27,6 +28,14 @@ var (
 	ClientNamingRequestDuration metric.Float64Histogram
 	GlobalMeter                 metric.Meter
 )
+
+type nacosEnabler struct{}
+
+func (n nacosEnabler) Enable() bool {
+	return os.Getenv("OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE") == "true"
+}
+
+var NacosEnabler nacosEnabler
 
 func InitNacosExperimentalMetrics(m metric.Meter) {
 	GlobalMeter = m

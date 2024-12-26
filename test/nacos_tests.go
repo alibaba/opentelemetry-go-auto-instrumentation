@@ -34,27 +34,27 @@ func init() {
 func TestNacos200Config(t *testing.T, env ...string) {
 	UseApp("nacos/v2.0.0")
 	RunGoBuild(t, "go", "build", "test_nacos_config.go")
-	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_ENABLE=true")
+	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE=true")
 	RunApp(t, "test_nacos_config", env...)
 }
 
 func TestNacos200Service(t *testing.T, env ...string) {
 	UseApp("nacos/v2.0.0")
 	RunGoBuild(t, "go", "build", "test_nacos_service.go")
-	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_ENABLE=true")
+	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE=true")
 	RunApp(t, "test_nacos_service", env...)
 }
 
 func TestNacos210Config(t *testing.T, env ...string) {
 	UseApp("nacos/v2.1.0")
 	RunGoBuild(t, "go", "build", "test_nacos_config.go")
-	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_ENABLE=true")
+	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE=true")
 	RunApp(t, "test_nacos_config", env...)
 }
 
 func TestNacos210Service(t *testing.T, env ...string) {
 	UseApp("nacos/v2.1.0")
 	RunGoBuild(t, "go", "build", "test_nacos_service.go")
-	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_ENABLE=true")
+	env = append(env, "OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE=true")
 	RunApp(t, "test_nacos_service", env...)
 }

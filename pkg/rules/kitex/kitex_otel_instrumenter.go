@@ -19,9 +19,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
-	"github.com/cloudwego/kitex/pkg/stats"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
-	"time"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
@@ -50,7 +48,10 @@ func (g kitexAttrsGetter) GetMethod(ri rpcinfo.RPCInfo) string {
 }
 
 func (g kitexAttrsGetter) GetServerAddress(request rpcinfo.RPCInfo) string {
-	return request.To().Address().String()
+	if request.To() != nil && request.To().Address() != nil {
+		return request.To().Address().String()
+	}
+	return ""
 }
 
 func BuildKitexClientInstrumenter() instrumenter.Instrumenter[rpcinfo.RPCInfo, rpcinfo.RPCInfo] {
@@ -91,11 +92,4 @@ func parseRPCError(ri rpcinfo.RPCInfo) (panicMsg, panicStack string, err error) 
 		}
 	}
 	return
-}
-
-func getStartTimeOrNow(ri rpcinfo.RPCInfo) time.Time {
-	if event := ri.Stats().GetEvent(stats.RPCStart); event != nil {
-		return event.Time()
-	}
-	return time.Now()
 }

@@ -29,7 +29,7 @@ import (
 	"unsafe"
 )
 
-func beforeNewBeatReactor(call api.CallContext, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) {
+func beforeNewBeatReactor(call api.CallContext, ctx context.Context, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) {
 	if !experimental.NacosEnabler.Enable() {
 		return
 	}
