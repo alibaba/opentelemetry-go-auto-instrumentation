@@ -40,10 +40,19 @@ func LogFatal(format string, args ...interface{}) {
 	// Log errors to debug file
 	Log(format, args...)
 	// And print to stderr then, in red color
-	template := "Build error:\033[31m\n" + format + "\033[0m\n"
-	fmt.Fprintf(os.Stderr, template,
-		args...)
-	fmt.Fprintf(os.Stderr, "See build log %s for details.\n",
-		logWriter.Name())
+	if InPreprocess() {
+		// Print more information for preprocess
+		details := map[string]string{}
+		details["Command"] = os.Args[0]
+		details["ErrorLog"] = logWriter.Name()
+		details["WorkDir"] = os.Getenv("PWD")
+
+		fmt.Fprintf(os.Stderr, "%-10s: ",
+			"BuildError")
+		fmt.Fprintf(os.Stderr, "\033[31m"+format+"\033[0m", args...)
+		for name, value := range details {
+			fmt.Fprintf(os.Stderr, "%-10s: %s\n", name, value)
+		}
+	}
 	os.Exit(1)
 }

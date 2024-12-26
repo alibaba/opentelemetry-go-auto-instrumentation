@@ -549,7 +549,8 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	shared.AssertGoBuild(args)
 	out, err := util.RunCmdOutput(args...)
 	util.Log("Run go build with toolexec: %v", out)
-	return err
+	return fmt.Errorf("failed to run go build with toolexec: %w output: %s",
+		err, out)
 }
 
 func fetchDep(path string) error {
