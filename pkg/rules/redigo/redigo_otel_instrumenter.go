@@ -70,6 +70,7 @@ func BuildRedigoInstrumenter() instrumenter.Instrumenter[*redigoRequest, interfa
 			Name:    utils.REDIGO_SCOPE_NAME,
 			Version: version.Tag,
 		}).
+		AddOperationListeners(db.DbClientMetrics("nosql.redigo")).
 		AddAttributesExtractor(&db.DbClientAttrsExtractor[*redigoRequest, any, db.DbClientAttrsGetter[*redigoRequest]]{Base: db.DbClientCommonAttrsExtractor[*redigoRequest, any, db.DbClientAttrsGetter[*redigoRequest]]{Getter: getter}}).
 		BuildInstrumenter()
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -161,6 +162,8 @@ func initMetrics() error {
 	http.InitHttpMetrics(m)
 	// init rpc metrics
 	rpc.InitRpcMetrics(m)
+	// init db metrics
+	db.InitDbMetrics(m)
 	// nacos experimental metrics
 	experimental.InitNacosExperimentalMetrics(m)
 	// DefaultMinimumReadMemStatsInterval is 15 second

@@ -60,6 +60,7 @@ func BuildKitexClientInstrumenter() instrumenter.Instrumenter[rpcinfo.RPCInfo, r
 	return builder.Init().SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[rpcinfo.RPCInfo]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[rpcinfo.RPCInfo]{}).
 		AddAttributesExtractor(&rpc.ClientRpcAttrsExtractor[rpcinfo.RPCInfo, rpcinfo.RPCInfo, kitexAttrsGetter]{Base: rpc.RpcAttrsExtractor[rpcinfo.RPCInfo, rpcinfo.RPCInfo, kitexAttrsGetter]{Getter: clientGetter}}).
+		AddOperationListeners(rpc.RpcClientMetrics("kitex.client")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.KITEX_CLIENT_SCOPE_NAME,
 			Version: version.Tag,
@@ -72,6 +73,7 @@ func BuildKitexServerInstrumenter() instrumenter.Instrumenter[rpcinfo.RPCInfo, r
 	serverGetter := kitexAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&rpc.RpcSpanNameExtractor[rpcinfo.RPCInfo]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[rpcinfo.RPCInfo]{}).
+		AddOperationListeners(rpc.RpcServerMetrics("kitex.server")).
 		AddAttributesExtractor(&rpc.ServerRpcAttrsExtractor[rpcinfo.RPCInfo, rpcinfo.RPCInfo, kitexAttrsGetter]{Base: rpc.RpcAttrsExtractor[rpcinfo.RPCInfo, rpcinfo.RPCInfo, kitexAttrsGetter]{Getter: serverGetter}}).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.KITEX_SERVER_SCOPE_NAME,
