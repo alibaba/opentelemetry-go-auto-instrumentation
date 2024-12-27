@@ -513,6 +513,15 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
   },
   {
+    "Version": "[1.44.0,)",
+    "ImportPath": "google.golang.org/grpc",
+    "ReceiverType": "*ClientConn",
+    "Function": "NewStream",
+    "OnEnter": "grpcClientNewStreamOnEnter",
+    "OnExit": "grpcClientNewStreamOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
+  },
+  {
     "ImportPath": "github.com/cloudwego/hertz/pkg/app/server",
     "Function": "New",
     "OnEnter": "beforeHertzServerBuild",

@@ -88,7 +88,7 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | go-redis      | https://github.com/redis/go-redis              | v9.0.5                | v9.5.1                |
 | go-redis v8   | https://github.com/redis/go-redis              | v8.11.0               | v8.11.5               |
 | gorm          | https://github.com/go-gorm/gorm                | v1.22.0               | v1.25.9               |
-| grpc          | https://google.golang.org/grpc                 | v1.44.0               | v1.67.0               |
+| grpc          | https://google.golang.org/grpc                 | v1.44.0               | v1.68.2               |
 | hertz         | https://github.com/cloudwego/hertz             | v0.8.0                | v0.9.2                |
 | kitex         | https://github.com/cloudwego/kitex             | v0.5.1                | v0.11.3               |
 | kratos        | https://github.com/go-kratos/kratos            | v2.6.3                | v2.8.2                |
