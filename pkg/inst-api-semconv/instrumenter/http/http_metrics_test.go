@@ -197,3 +197,31 @@ func TestGlobalHttpClientMetrics(t *testing.T) {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
 	}
 }
+
+func TestClientNilMeter(t *testing.T) {
+	reader := metric.NewManualReader()
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName("my-service"),
+		semconv.ServiceVersion("v0.1.0"),
+	)
+	_ = metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
+	_, err := newHttpClientMetric("test", nil)
+	if err == nil {
+		panic(err)
+	}
+}
+
+func TestServerNilMeter(t *testing.T) {
+	reader := metric.NewManualReader()
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName("my-service"),
+		semconv.ServiceVersion("v0.1.0"),
+	)
+	_ = metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
+	_, err := newHttpServerMetric("test", nil)
+	if err == nil {
+		panic(err)
+	}
+}

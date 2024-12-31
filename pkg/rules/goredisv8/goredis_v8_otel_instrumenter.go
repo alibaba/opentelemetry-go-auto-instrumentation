@@ -69,6 +69,7 @@ func BuildRedisv8Instrumenter() instrumenter.Instrumenter[redisv8Data, any] {
 	getter := goRedisV8AttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[redisv8Data]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[redisv8Data]{}).
 		AddAttributesExtractor(&db.DbClientAttrsExtractor[redisv8Data, any, db.DbClientAttrsGetter[redisv8Data]]{Base: db.DbClientCommonAttrsExtractor[redisv8Data, any, db.DbClientAttrsGetter[redisv8Data]]{Getter: getter}}).
+		AddOperationListeners(db.DbClientMetrics("nosql.goredisv8")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.GO_REDIS_V8_SCOPE_NAME,
 			Version: version.Tag,

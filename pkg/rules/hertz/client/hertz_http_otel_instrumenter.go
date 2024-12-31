@@ -154,6 +154,7 @@ func BuildHertzClientInstrumenter() *instrumenter.PropagatingToDownstreamInstrum
 	networkExtractor := net.NetworkAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpClientAttrsGetter]{Getter: clientGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[*protocol.Request, *protocol.Response]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*protocol.Request]{}).
+		AddOperationListeners(http.HttpClientMetrics("hertz.client")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.HERTZ_HTTP_CLIENT_SCOPE_NAME,
 			Version: version.Tag,

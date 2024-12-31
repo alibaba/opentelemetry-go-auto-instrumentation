@@ -52,7 +52,7 @@ var rpcMetricsConv = map[attribute.Key]bool{
 
 var globalMeter metric.Meter
 
-// so we need to make sure the otel_setup is executed before all the init() function
+// InitRpcMetrics so we need to make sure the otel_setup is executed before all the init() function
 // related to issue rpcs://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/48
 func InitRpcMetrics(m metric.Meter) {
 	mu.Lock()
