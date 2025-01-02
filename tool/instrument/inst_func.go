@@ -65,15 +65,6 @@ func (rp *RuleProcessor) restoreAst(filePath string, root *dst.File) (string, er
 	if err != nil {
 		return "", fmt.Errorf("failed to write ast to file: %w", err)
 	}
-	// Remove old filepath from compilation files and use new file
-	// Since dry run may produce relative file path(e.g. $WORK/b012/file.go)
-	// while real compilation produce absolute file path(e.g. /tmp/b012/file.go)
-	// we need to convert the relative path to absolute path for replacement
-	// purpose.
-	filePath, err = filepath.Abs(filePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to get absolute path: %w", err)
-	}
 	err = rp.replaceCompileArg(newFile, func(arg string) bool {
 		return arg == filePath
 	})
@@ -341,6 +332,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 	// Applied all matched func rules, either inserting raw code or inserting
 	// our trampoline calls.
 	for file, fn2rules := range bundle.File2FuncRules {
+		util.Assert(filepath.IsAbs(file), "file path must be absolute")
 		astRoot, err := rp.loadAst(file)
 		if err != nil {
 			return fmt.Errorf("failed to load ast from file: %w", err)

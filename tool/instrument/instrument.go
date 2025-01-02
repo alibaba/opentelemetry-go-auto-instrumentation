@@ -104,6 +104,12 @@ func (rp *RuleProcessor) addCompileArg(newArg string) {
 
 func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool) error {
 	for i, arg := range rp.compileArgs {
+		// Use absolute file path of the compile argument to compare with the
+		// instrumented file(path), which is also an absolute path
+		arg, err := filepath.Abs(arg)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path: %w", err)
+		}
 		if pred(arg) {
 			rp.compileArgs[i] = newArg
 			// Relocate the replaced file to new target, any rules targeting the
