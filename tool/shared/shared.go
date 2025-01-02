@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -137,8 +136,10 @@ func GetGoModPath() (string, error) {
 	// If module-aware mode is enabled, but there is no go.mod, GOMOD will be
 	// os.DevNull ("/dev/null" on Unix-like systems, "NUL" on Windows).
 	// If module-aware mode is disabled, GOMOD will be the empty string.
-	cmd := exec.Command("go", "env", "GOMOD")
-	out, err := cmd.CombinedOutput()
+	// The rationale on why using Output instead of CombinedOutput variant is
+	// that we only care about the output of the command, and we can handle the
+	// error when the command fails.
+	out, err := util.RunCmdOutput("go", "env", "GOMOD")
 	if err != nil {
 		return "", fmt.Errorf("failed to check go.mod existence: %w\n%v",
 			err, string(out))
