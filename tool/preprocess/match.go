@@ -257,7 +257,11 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 					if rl, ok := rule.(*resource.InstStructRule); ok {
 						if shared.MatchStructDecl(genDecl, rl.StructType) {
 							util.Log("Match struct rule %s", rule)
-							bundle.AddFile2StructRule(file, rl)
+							err = bundle.AddFile2StructRule(file, rl)
+							if err != nil {
+								util.Log("Failed to add struct rule: %v", err)
+								continue
+							}
 							valid = true
 							break
 						}
@@ -267,7 +271,11 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 						if shared.MatchFuncDecl(funcDecl, rl.Function,
 							rl.ReceiverType) {
 							util.Log("Match func rule %s", rule)
-							bundle.AddFile2FuncRule(file, rl)
+							err = bundle.AddFile2FuncRule(file, rl)
+							if err != nil {
+								util.Log("Failed to add func rule: %v", err)
+								continue
+							}
 							valid = true
 							break
 						}
