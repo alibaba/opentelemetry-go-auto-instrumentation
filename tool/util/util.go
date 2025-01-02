@@ -129,6 +129,14 @@ func RunCmdOutput(args ...string) (string, error) {
 	path := args[0]
 	args = args[1:]
 	cmd := exec.Command(path, args...)
+	out, err := cmd.Output()
+	return string(out), err
+}
+
+func RunCmdCombinedOutput(args ...string) (string, error) {
+	path := args[0]
+	args = args[1:]
+	cmd := exec.Command(path, args...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
