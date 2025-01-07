@@ -16,6 +16,7 @@ package instrument
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
@@ -32,6 +33,7 @@ func addStructField(rule *resource.InstStructRule, decl dst.Decl) {
 
 func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 	for file, struct2Rules := range bundle.File2StructRules {
+		util.Assert(filepath.IsAbs(file), "file path must be absolute")
 		// Apply struct rules to the file
 		astRoot, err := rp.loadAst(file)
 		if err != nil {

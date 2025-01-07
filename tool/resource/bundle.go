@@ -17,6 +17,7 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -58,7 +59,11 @@ func (rb *RuleBundle) IsValid() bool {
 			len(rb.File2StructRules) > 0)
 }
 
-func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) {
+func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) error {
+	file, err := filepath.Abs(file)
+	if err != nil {
+		return fmt.Errorf("failed to get abs path: %w", err)
+	}
 	fn := rule.Function + "," + rule.ReceiverType
 	util.Assert(fn != "", "sanity check")
 	if _, exist := rb.File2FuncRules[file]; !exist {
@@ -68,9 +73,14 @@ func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) {
 		rb.File2FuncRules[file][fn] =
 			append(rb.File2FuncRules[file][fn], rule)
 	}
+	return nil
 }
 
-func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) {
+func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) error {
+	file, err := filepath.Abs(file)
+	if err != nil {
+		return fmt.Errorf("failed to get abs path: %w", err)
+	}
 	st := rule.StructType
 	util.Assert(st != "", "sanity check")
 	if _, exist := rb.File2StructRules[file]; !exist {
@@ -80,6 +90,7 @@ func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) {
 		rb.File2StructRules[file][st] =
 			append(rb.File2StructRules[file][st], rule)
 	}
+	return nil
 }
 
 func (rb *RuleBundle) SetPackageName(name string) {
