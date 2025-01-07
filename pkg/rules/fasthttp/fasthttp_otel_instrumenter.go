@@ -213,7 +213,7 @@ func BuildFastHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstream
 	urlExtractor := net.UrlAttrsExtractor[fastHttpRequest, fastHttpResponse, fastHttpServerAttrsGetter]{Getter: serverGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[fastHttpRequest, fastHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[fastHttpRequest, fastHttpResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[fastHttpRequest]{}).
-		AddOperationListeners(http.HttpClientMetrics("fasthttp.server")).
+		AddOperationListeners(http.HttpServerMetrics("fasthttp.server")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.FAST_HTTP_SERVER_SCOPE_NAME,
 			Version: version.Tag,
