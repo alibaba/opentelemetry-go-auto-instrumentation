@@ -52,6 +52,6 @@ mapping of the `otel` to the supported OTel versions is as follows:
 | v0.2.0       | v1.30.0      | v0.55.0              |
 | v0.3.0       | v1.31.0      | v0.56.0              |
 | v0.4.0       | v1.32.0      | v0.57.0              |
-
-# Limitations
-- Go vendor build is not supported.
+| v0.4.1       | v1.32.0      | v0.57.0              |
+| v0.5.0       | v1.32.0      | v0.57.0              |
+| v0.6.0       | v1.33.0      | v0.58.0              |
