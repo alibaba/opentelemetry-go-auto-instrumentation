@@ -196,7 +196,7 @@ func BuildFastHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstream
 	networkExtractor := net.NetworkAttrsExtractor[fastHttpRequest, fastHttpResponse, fastHttpClientAttrsGetter]{Getter: clientGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[fastHttpRequest, fastHttpResponse]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[fastHttpRequest, fastHttpResponse]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[fastHttpRequest]{}).
-		AddOperationListeners(http.HttpClientMetrics("fasthttp.server")).
+		AddOperationListeners(http.HttpClientMetrics("fasthttp.client")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.FAST_HTTP_CLIENT_SCOPE_NAME,
 			Version: version.Tag,
@@ -213,7 +213,7 @@ func BuildFastHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstream
 	urlExtractor := net.UrlAttrsExtractor[fastHttpRequest, fastHttpResponse, fastHttpServerAttrsGetter]{Getter: serverGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[fastHttpRequest, fastHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[fastHttpRequest, fastHttpResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[fastHttpRequest]{}).
-		AddOperationListeners(http.HttpClientMetrics("fasthttp.client")).
+		AddOperationListeners(http.HttpServerMetrics("fasthttp.server")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.FAST_HTTP_SERVER_SCOPE_NAME,
 			Version: version.Tag,
