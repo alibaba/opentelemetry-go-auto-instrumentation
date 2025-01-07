@@ -15,4 +15,4 @@
 package version
 
 // Tag specifies the current release tag. It needs to be manually updated.
-var Tag = "v0.4.0"
+var Tag = "v0.7.0"
