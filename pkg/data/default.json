@@ -772,7 +772,6 @@
     "Function": "HandleRequest",
     "ReceiverType": "*routerHandler",
     "OnEnter": "irisHttpOnEnter",
-    "OnExit": "",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/iris"
   }
 ]
