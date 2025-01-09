@@ -296,7 +296,11 @@ func findFlagValue(cmd []string, flag string) string {
 
 func parseVendorModules() (map[string]string, error) {
 	util.Assert(util.IsVendorBuild(), "why not otherwise")
-	vendorFile := filepath.Join("vendor", "modules.txt")
+	projDir, err := util.GetProjRootDir()
+	if err != nil {
+		return nil, err
+	}
+	vendorFile := filepath.Join(projDir, "vendor", "modules.txt")
 	if util.PathNotExists(vendorFile) {
 		return nil, errc.New(errc.ErrNotExist, "vendor/modules.txt not found")
 	}
