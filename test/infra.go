@@ -26,7 +26,6 @@ import (
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -55,7 +54,7 @@ func runCmd(args []string) *exec.Cmd {
 }
 
 func ReadInstrumentLog(t *testing.T, fileName string) string {
-	path := filepath.Join(shared.TempBuildDir, util.PInstrument, fileName)
+	path := filepath.Join(util.TempBuildDir, util.PInstrument, fileName)
 	content, err := util.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +63,7 @@ func ReadInstrumentLog(t *testing.T, fileName string) string {
 }
 
 func ReadPreprocessLog(t *testing.T, fileName string) string {
-	path := filepath.Join(shared.TempBuildDir, util.PPreprocess, fileName)
+	path := filepath.Join(util.TempBuildDir, util.PPreprocess, fileName)
 	content, err := util.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -111,7 +110,7 @@ func RunGoBuild(t *testing.T, args ...string) {
 		t.Log(stdout)
 		t.Log("\n\n\n")
 		t.Log(stderr)
-		log1 := ReadPreprocessLog(t, shared.DebugLogFile)
+		log1 := ReadPreprocessLog(t, util.DebugLogFile)
 		text := fmt.Sprintf("failed to run instrument: %v\n", err)
 		text += fmt.Sprintf("text: %v\n", log1)
 		t.Fatal(text)
@@ -130,7 +129,7 @@ func RunGoBuildWithEnv(t *testing.T, envs []string, args ...string) {
 		t.Log(stdout)
 		t.Log("\n\n\n")
 		t.Log(stderr)
-		log1 := ReadPreprocessLog(t, shared.DebugLogFile)
+		log1 := ReadPreprocessLog(t, util.DebugLogFile)
 		text := fmt.Sprintf("failed to run instrument: %v\n", err)
 		text += fmt.Sprintf("text: %v\n", log1)
 		t.Fatal(text)
@@ -212,25 +211,25 @@ func ExpectStderrContains(t *testing.T, expect string) {
 }
 
 func ExpectInstrumentContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, util.PInstrument, log)
+	path := filepath.Join(util.TempBuildDir, util.PInstrument, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
 func ExpectInstrumentNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, util.PInstrument, log)
+	path := filepath.Join(util.TempBuildDir, util.PInstrument, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
 }
 
 func ExpectPreprocessContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, util.PPreprocess, log)
+	path := filepath.Join(util.TempBuildDir, util.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectContains(t, content, rule)
 }
 
 func ExpectPreprocessNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(shared.TempBuildDir, util.PPreprocess, log)
+	path := filepath.Join(util.TempBuildDir, util.PPreprocess, log)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, rule)
 }

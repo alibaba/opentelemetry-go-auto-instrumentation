@@ -19,23 +19,23 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error) {
 	for _, rule := range bundle.FileRules {
 		if rule.FileName == "" {
-			return fmt.Errorf("file rule must have a file name")
+			return errc.New(errc.ErrInvalidRule, "no file name")
 		}
 		// Decorate the source code to remove //go:build exclude
 		// and rename package name
 		source, err := util.ReadFile(rule.FileName)
 		if err != nil {
-			return fmt.Errorf("failed to read file %s: %w", rule.FileName, err)
+			return errc.Adhere(err, "file", rule.FileName)
 		}
-		source = shared.RemoveGoBuildComment(source)
+		source = util.RemoveGoBuildComment(source)
 
 		// Get last section of file path as file name
 		fileName := filepath.Base(rule.FileName)
@@ -43,7 +43,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 			fmt.Sprintf("otel_inst_file_%s", fileName))
 		_, err = util.WriteFile(target, source)
 		if err != nil {
-			return fmt.Errorf("failed to write extra file %s: %w", target, err)
+			return err
 		}
 		// Relocate the file dependency of the rule, any rules targeting the
 		// file dependency specified by the rule should be updated to target the
@@ -56,7 +56,10 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 				return strings.HasSuffix(arg, fileName)
 			})
 			if err != nil {
-				return fmt.Errorf("failed to replace %v %w", fileName, err)
+				err = errc.Adhere(err, "compileArgs",
+					strings.Join(rp.compileArgs, " "))
+				err = errc.Adhere(err, "newArg", target)
+				return err
 			}
 		} else {
 			rp.addCompileArg(target)

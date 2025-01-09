@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -84,7 +83,7 @@ func CopyOtelSetupTo(pkgName, target string) (string, error) {
 	template := pkg.ExportOtelSetupSDKTemplate()
 	snippet := strings.Replace(template,
 		"package pkg", "package "+pkgName, 1)
-	snippet = shared.RemoveGoBuildComment(snippet)
+	snippet = util.RemoveGoBuildComment(snippet)
 	return util.WriteFile(target, snippet)
 }
 

@@ -24,7 +24,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -74,16 +74,12 @@ func (bc *BuildConfig) IsDisableDefault() bool {
 }
 
 func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {
-	exist, err := util.PathExists(file)
-	if err != nil {
-		return "", fmt.Errorf("failed to check rule file: %w", err)
+	if util.PathNotExists(file) {
+		return "", errc.New(errc.ErrNotExist, file)
 	}
-	if !exist {
-		return "", fmt.Errorf("rule file %s not found", file)
-	}
-	file, err = filepath.Abs(file)
+	file, err := filepath.Abs(file)
 	if err != nil {
-		return "", fmt.Errorf("failed to get rule file: %w", err)
+		return "", errc.New(errc.ErrAbsPath, err.Error())
 	}
 	return file, nil
 }
@@ -103,7 +99,7 @@ func (bc *BuildConfig) parseRuleFiles() error {
 		for i, file := range files {
 			f, err := bc.makeRuleAbs(file)
 			if err != nil {
-				return fmt.Errorf("failed to set rule file: %w", err)
+				return err
 			}
 			files[i] = f
 		}
@@ -111,7 +107,7 @@ func (bc *BuildConfig) parseRuleFiles() error {
 	} else {
 		f, err := bc.makeRuleAbs(bc.RuleJsonFiles)
 		if err != nil {
-			return fmt.Errorf("failed to set rule file: %w", err)
+			return err
 		}
 		bc.RuleJsonFiles = f
 	}
@@ -122,14 +118,14 @@ func storeConfig(bc *BuildConfig) error {
 	util.Assert(bc != nil, "build config is not initialized")
 	util.Assert(util.InConfigure(), "sanity check")
 
-	file := shared.GetConfigureLogPath(shared.BuildConfFile)
+	file := util.GetConfigureLogPath(util.BuildConfFile)
 	bs, err := json.Marshal(bc)
 	if err != nil {
-		return fmt.Errorf("failed to marshal build config: %w", err)
+		return errc.New(errc.ErrInvalidJSON, err.Error())
 	}
 	_, err = util.WriteFile(file, string(bs))
 	if err != nil {
-		return fmt.Errorf("failed to write build config: %w", err)
+		return err
 	}
 	return nil
 }
@@ -137,22 +133,20 @@ func storeConfig(bc *BuildConfig) error {
 func loadConfig() (*BuildConfig, error) {
 	util.Assert(conf == nil, "build config is already initialized")
 	// If the build config file does not exist, return a default build config
-	confFile := shared.GetConfigureLogPath(shared.BuildConfFile)
-	exist, _ := util.PathExists(confFile)
-	if !exist {
+	confFile := util.GetConfigureLogPath(util.BuildConfFile)
+	if util.PathNotExists(confFile) {
 		return &BuildConfig{}, nil
 	}
 	// Load build config from json file
-	file := shared.GetConfigureLogPath(shared.BuildConfFile)
+	file := util.GetConfigureLogPath(util.BuildConfFile)
 	data, err := util.ReadFile(file)
 	if err != nil {
-		return &BuildConfig{},
-			fmt.Errorf("failed to read build config: %w", err)
+		return &BuildConfig{}, err
 	}
 	bc := &BuildConfig{}
 	err = json.Unmarshal([]byte(data), bc)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal build config: %w", err)
+		return nil, errc.New(errc.ErrInvalidJSON, err.Error())
 	}
 	return bc, nil
 }
@@ -196,7 +190,7 @@ func loadConfigFromEnv(conf *BuildConfig) {
 			case reflect.String:
 				f.SetString(envVal)
 			default:
-				util.LogFatal("Unsupported config type %s", f.Kind())
+				util.ShouldNotReachHere()
 			}
 		}
 	}
@@ -206,13 +200,13 @@ func InitConfig() (err error) {
 	// Load build config from json file
 	conf, err = loadConfig()
 	if err != nil {
-		return fmt.Errorf("failed to load build config: %w", err)
+		return err
 	}
 	loadConfigFromEnv(conf)
 
 	err = conf.parseRuleFiles()
 	if err != nil {
-		return fmt.Errorf("failed to parse rule files: %w", err)
+		return err
 	}
 
 	mode := os.O_WRONLY | os.O_APPEND
@@ -223,25 +217,28 @@ func InitConfig() (err error) {
 	}
 	if conf.Log == "" {
 		// Redirect log to file if flag is not set
-		debugLogPath := shared.GetPreprocessLogPath(shared.DebugLogFile)
+		debugLogPath := util.GetPreprocessLogPath(util.DebugLogFile)
 		debugLog, _ := os.OpenFile(debugLogPath, mode, 0777)
 		if debugLog != nil {
-			util.SetLogTo(debugLog)
+			util.SetLogger(debugLog)
 		}
 	} else {
 		// Otherwise, log to the specified file
 		logFile, err := os.OpenFile(conf.Log, mode, 0777)
 		if err != nil {
-			return fmt.Errorf("failed to open log file: %w", err)
+			return errc.New(errc.ErrOpenFile, err.Error())
 		}
-		util.SetLogTo(logFile)
+		util.SetLogger(logFile)
 	}
 	return nil
 }
 
 func PrintVersion() error {
-	fmt.Printf("%s version %s\n", util.GetToolName(), ToolVersion)
-	os.Exit(0)
+	name, err := util.GetToolName()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s version %s\n", name, ToolVersion)
 	return nil
 }
 
@@ -267,13 +264,12 @@ func Configure() error {
 		"Disable default rules")
 	flag.CommandLine.Parse(os.Args[2:])
 
-	util.Log("Configured in %s",
-		shared.GetConfigureLogPath(shared.BuildConfFile))
+	util.Log("Configured in %s", util.GetConfigureLogPath(util.BuildConfFile))
 
 	// Store build config for future phases
 	err = storeConfig(bc)
 	if err != nil {
-		return fmt.Errorf("failed to store build config: %w", err)
+		return err
 	}
 	return nil
 }

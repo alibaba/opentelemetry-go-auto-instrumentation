@@ -16,13 +16,11 @@ package instrument
 
 import (
 	_ "embed"
-	"errors"
-	"fmt"
 	"go/token"
 	"strconv"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
@@ -73,9 +71,9 @@ var trampolineTemplate string
 func (rp *RuleProcessor) materializeTemplate() error {
 	// Read trampoline template and materialize onEnter and onExit function
 	// declarations based on that
-	astRoot, err := shared.ParseAstFromSource(trampolineTemplate)
+	astRoot, err := util.ParseAstFromSource(trampolineTemplate)
 	if err != nil {
-		return fmt.Errorf("failed to parse trampoline template: %w", err)
+		return err
 	}
 
 	rp.varDecls = make([]dst.Decl, 0)
@@ -89,7 +87,7 @@ func (rp *RuleProcessor) materializeTemplate() error {
 			} else if decl.Name.Name == TrampolineOnExitName {
 				rp.onExitHookFunc = decl
 				rp.addDecl(decl)
-			} else if shared.HasReceiver(decl) {
+			} else if util.HasReceiver(decl) {
 				// We know exactly this is CallContextImpl method
 				t := decl.Recv.List[0].Type.(*dst.StarExpr).X.(*dst.Ident).Name
 				util.Assert(t == TrampolineCallContextImplType, "sanity check")
@@ -127,9 +125,9 @@ func getNames(list *dst.FieldList) []string {
 
 func makeOnXName(t *resource.InstFuncRule, onEnter bool) string {
 	if onEnter {
-		return shared.GetVarNameOfFunc(t.OnEnter)
+		return util.GetVarNameOfFunc(t.OnEnter)
 	} else {
-		return shared.GetVarNameOfFunc(t.OnExit)
+		return util.GetVarNameOfFunc(t.OnExit)
 	}
 }
 
@@ -142,42 +140,43 @@ type ParamTrait struct {
 func getHookFunc(t *resource.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
 	file, err := resource.FindHookFile(t)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", t, err)
+		return nil, err
 	}
-	astRoot, err := shared.ParseAstFromFile(file)
+	astRoot, err := util.ParseAstFromFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse ast from file: %w", err)
+		return nil, err
 	}
 	var target *dst.FuncDecl
 	if onEnter {
-		target = shared.FindFuncDecl(astRoot, t.OnEnter)
+		target = util.FindFuncDecl(astRoot, t.OnEnter)
 	} else {
-		target = shared.FindFuncDecl(astRoot, t.OnExit)
+		target = util.FindFuncDecl(astRoot, t.OnExit)
 	}
 	if target != nil {
 		return target, nil
 	}
 
 	if onEnter {
-		return nil, fmt.Errorf("failed to find hook func %s", t.OnEnter)
+		err = errc.Adhere(err, "hook", t.OnEnter)
 	} else {
-		return nil, fmt.Errorf("failed to find hook func %s", t.OnExit)
+		err = errc.Adhere(err, "hook", t.OnExit)
 	}
+	return nil, err
 }
 
 func getHookParamTraits(t *resource.InstFuncRule, onEnter bool) ([]ParamTrait, error) {
 	target, err := getHookFunc(t, onEnter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get hook func: %w", err)
+		return nil, err
 	}
 	var attrs []ParamTrait
 	// Find which parameter is type of interface{}
 	for i, field := range target.Type.Params.List {
 		attr := ParamTrait{Index: i}
-		if shared.IsInterfaceType(field.Type) {
+		if util.IsInterfaceType(field.Type) {
 			attr.IsInterfaceAny = true
 		}
-		if shared.IsEllipsis(field.Type) {
+		if util.IsEllipsis(field.Type) {
 			attr.IsVaradic = true
 		}
 		attrs = append(attrs, attr)
@@ -187,7 +186,7 @@ func getHookParamTraits(t *resource.InstFuncRule, onEnter bool) ([]ParamTrait, e
 
 func (rp *RuleProcessor) callOnEnterHook(t *resource.InstFuncRule, traits []ParamTrait) error {
 	if len(traits) != (len(rp.onEnterHookFunc.Type.Params.List) + 1 /*CallContext*/) {
-		return errors.New("hook param traits mismatch on enter hook")
+		return errc.New(errc.ErrInternal, "mismatched param traits")
 	}
 	// Hook: 	   func onEnterFoo(callContext* CallContext, p*[]int)
 	// Trampoline: func OtelOnEnterTrampoline_foo(p *[]int)
@@ -196,18 +195,18 @@ func (rp *RuleProcessor) callOnEnterHook(t *resource.InstFuncRule, traits []Para
 		trait := traits[idx+1 /*CallContext*/]
 		for _, name := range field.Names { // syntax of n1,n2 type
 			if trait.IsVaradic {
-				args = append(args, shared.DereferenceOf(shared.Ident(name.Name+"...")))
+				args = append(args, util.DereferenceOf(util.Ident(name.Name+"...")))
 			} else {
-				args = append(args, shared.DereferenceOf(dst.NewIdent(name.Name)))
+				args = append(args, util.DereferenceOf(dst.NewIdent(name.Name)))
 			}
 		}
 	}
 	// Call onEnter if it exists
 	fnName := makeOnXName(t, true)
-	call := shared.ExprStmt(shared.CallTo(fnName, args))
-	iff := shared.IfNotNilStmt(
+	call := util.ExprStmt(util.CallTo(fnName, args))
+	iff := util.IfNotNilStmt(
 		dst.NewIdent(fnName),
-		shared.Block(call),
+		util.Block(call),
 		nil,
 	)
 	insertAt(rp.onEnterHookFunc, iff, len(rp.onEnterHookFunc.Body.List)-1)
@@ -216,7 +215,7 @@ func (rp *RuleProcessor) callOnEnterHook(t *resource.InstFuncRule, traits []Para
 
 func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []ParamTrait) error {
 	if len(traits) != len(rp.onExitHookFunc.Type.Params.List) {
-		return errors.New("hook param traits mismatch on exit hook")
+		return errc.New(errc.ErrInternal, "mismatched param traits")
 	}
 	// Hook: 	   func onExitFoo(ctx* CallContext, p*[]int)
 	// Trampoline: func OtelOnExitTrampoline_foo(ctx* CallContext, p *[]int)
@@ -229,20 +228,20 @@ func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []Param
 		trait := traits[idx]
 		for _, name := range field.Names { // syntax of n1,n2 type
 			if trait.IsVaradic {
-				arg := shared.DereferenceOf(shared.Ident(name.Name + "..."))
+				arg := util.DereferenceOf(util.Ident(name.Name + "..."))
 				args = append(args, arg)
 			} else {
-				arg := shared.DereferenceOf(dst.NewIdent(name.Name))
+				arg := util.DereferenceOf(dst.NewIdent(name.Name))
 				args = append(args, arg)
 			}
 		}
 	}
 	// Call onExit if it exists
 	fnName := makeOnXName(t, false)
-	call := shared.ExprStmt(shared.CallTo(fnName, args))
-	iff := shared.IfNotNilStmt(
+	call := util.ExprStmt(util.CallTo(fnName, args))
+	iff := util.IfNotNilStmt(
 		dst.NewIdent(fnName),
-		shared.Block(call),
+		util.Block(call),
 		nil,
 	)
 	insertAtEnd(rp.onExitHookFunc, iff)
@@ -251,14 +250,13 @@ func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []Param
 
 func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	if len(paramList.List) != len(traits) {
-		return fmt.Errorf("param list length mismatch: %d vs %d",
-			len(paramList.List), len(traits))
+		return errc.New(errc.ErrInternal, "mismatched param traits")
 	}
 	for i, field := range paramList.List {
 		trait := traits[i]
 		if trait.IsInterfaceAny {
 			// Rectify type to "interface{}"
-			field.Type = shared.InterfaceType()
+			field.Type = util.InterfaceType()
 		}
 	}
 	return nil
@@ -272,11 +270,11 @@ func (rp *RuleProcessor) addHookFuncVar(t *resource.InstFuncRule,
 	// raw function is not exposed
 	err := rectifyAnyType(paramTypes, traits)
 	if err != nil {
-		return fmt.Errorf("failed to rectify any type on enter: %w", err)
+		return err
 	}
 
 	// Generate var decl
-	varDecl := shared.NewVarDecl(makeOnXName(t, onEnter), paramTypes)
+	varDecl := util.NewVarDecl(makeOnXName(t, onEnter), paramTypes)
 	rp.addDecl(varDecl)
 	return nil
 }
@@ -316,7 +314,7 @@ func (rp *RuleProcessor) renameFunc(t *resource.InstFuncRule) {
 }
 
 func addCallContext(list *dst.FieldList) {
-	callCtx := shared.NewField(
+	callCtx := util.NewField(
 		TrampolineCallContextName,
 		dst.NewIdent(TrampolineCallContextType),
 	)
@@ -326,7 +324,7 @@ func addCallContext(list *dst.FieldList) {
 func (rp *RuleProcessor) buildTrampolineType(onEnter bool) *dst.FieldList {
 	paramList := &dst.FieldList{List: []*dst.Field{}}
 	if onEnter {
-		if shared.HasReceiver(rp.rawFunc) {
+		if util.HasReceiver(rp.rawFunc) {
 			recvField := dst.Clone(rp.rawFunc.Recv.List[0]).(*dst.Field)
 			paramList.List = append(paramList.List, recvField)
 		}
@@ -357,7 +355,7 @@ func (rp *RuleProcessor) rectifyTypes() {
 		for i := 0; i < len(list.List); i++ {
 			paramField := list.List[i]
 			paramFieldType := desugarType(paramField)
-			paramField.Type = shared.DereferenceOf(paramFieldType)
+			paramField.Type = util.DereferenceOf(paramFieldType)
 		}
 	}
 	addCallContext(onExitHookFunc.Type.Params)
@@ -381,7 +379,7 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 							// SKip first callContext parameter for onExit
 							continue
 						}
-						elems = append(elems, shared.Ident(name))
+						elems = append(elems, util.Ident(name))
 					}
 					compositeLit.Elts = elems
 					return true
@@ -432,19 +430,19 @@ func (rp *RuleProcessor) implementCallContext(t *resource.InstFuncRule) {
 func setValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
 	// *(c.Params[idx].(*int)) = val.(int)
 	// c.Params[idx] = val iff type is interface{}
-	se := shared.SelectorExpr(shared.Ident(TrampolineCtxIdentifier), field)
-	ie := shared.IndexExpr(se, shared.IntLit(idx))
-	te := shared.TypeAssertExpr(ie, shared.DereferenceOf(typ))
-	pe := shared.ParenExpr(te)
-	de := shared.DereferenceOf(pe)
-	val := shared.Ident(TrampolineValIdentifier)
-	assign := shared.AssignStmt(de, shared.TypeAssertExpr(val, typ))
-	if shared.IsInterfaceType(typ) {
-		assign = shared.AssignStmt(ie, val)
+	se := util.SelectorExpr(util.Ident(TrampolineCtxIdentifier), field)
+	ie := util.IndexExpr(se, util.IntLit(idx))
+	te := util.TypeAssertExpr(ie, util.DereferenceOf(typ))
+	pe := util.ParenExpr(te)
+	de := util.DereferenceOf(pe)
+	val := util.Ident(TrampolineValIdentifier)
+	assign := util.AssignStmt(de, util.TypeAssertExpr(val, typ))
+	if util.IsInterfaceType(typ) {
+		assign = util.AssignStmt(ie, val)
 	}
-	caseClause := shared.SwitchCase(
-		shared.Exprs(shared.IntLit(idx)),
-		shared.Stmts(assign),
+	caseClause := util.SwitchCase(
+		util.Exprs(util.IntLit(idx)),
+		util.Stmts(assign),
 	)
 	return caseClause
 }
@@ -452,18 +450,18 @@ func setValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
 func getValue(field string, idx int, typ dst.Expr) *dst.CaseClause {
 	// return *(c.Params[idx].(*int))
 	// return c.Params[idx] iff type is interface{}
-	se := shared.SelectorExpr(shared.Ident(TrampolineCtxIdentifier), field)
-	ie := shared.IndexExpr(se, shared.IntLit(idx))
-	te := shared.TypeAssertExpr(ie, shared.DereferenceOf(typ))
-	pe := shared.ParenExpr(te)
-	de := shared.DereferenceOf(pe)
-	ret := shared.ReturnStmt(shared.Exprs(de))
-	if shared.IsInterfaceType(typ) {
-		ret = shared.ReturnStmt(shared.Exprs(ie))
+	se := util.SelectorExpr(util.Ident(TrampolineCtxIdentifier), field)
+	ie := util.IndexExpr(se, util.IntLit(idx))
+	te := util.TypeAssertExpr(ie, util.DereferenceOf(typ))
+	pe := util.ParenExpr(te)
+	de := util.DereferenceOf(pe)
+	ret := util.ReturnStmt(util.Exprs(de))
+	if util.IsInterfaceType(typ) {
+		ret = util.ReturnStmt(util.Exprs(ie))
 	}
-	caseClause := shared.SwitchCase(
-		shared.Exprs(shared.IntLit(idx)),
-		shared.Stmts(ret),
+	caseClause := util.SwitchCase(
+		util.Exprs(util.IntLit(idx)),
+		util.Stmts(ret),
 	)
 	return caseClause
 }
@@ -488,7 +486,7 @@ func setReturnValClause(idx int, typ dst.Expr) *dst.CaseClause {
 // is type of ...T, it will be converted to []T
 func desugarType(param *dst.Field) dst.Expr {
 	if ft, ok := param.Type.(*dst.Ellipsis); ok {
-		return shared.ArrayType(ft.Elt)
+		return util.ArrayType(ft.Elt)
 	}
 	return param.Type
 }
@@ -525,7 +523,7 @@ func (rp *RuleProcessor) rewriteCallContextImpl() {
 	methodGetRetValBody.List = nil
 	methodSetRetValBody.List = nil
 	idx := 0
-	if shared.HasReceiver(rp.rawFunc) {
+	if util.HasReceiver(rp.rawFunc) {
 		recvType := rp.rawFunc.Recv.List[0].Type
 		clause := setParamClause(idx, recvType)
 		methodSetParamBody.List = append(methodSetParamBody.List, clause)
@@ -567,11 +565,11 @@ func (rp *RuleProcessor) callHookFunc(t *resource.InstFuncRule,
 	onEnter bool) error {
 	traits, err := getHookParamTraits(t, onEnter)
 	if err != nil {
-		return fmt.Errorf("failed to get hook param traits: %w", err)
+		return err
 	}
 	err = rp.addHookFuncVar(t, traits, onEnter)
 	if err != nil {
-		return fmt.Errorf("failed to add onEnter var hook decl: %w", err)
+		return err
 	}
 	if onEnter {
 		err = rp.callOnEnterHook(t, traits)
@@ -579,10 +577,10 @@ func (rp *RuleProcessor) callHookFunc(t *resource.InstFuncRule,
 		err = rp.callOnExitHook(t, traits)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to call onEnter: %w", err)
+		return err
 	}
 	if !rp.replenishCallContext(onEnter) {
-		return errors.New("failed to replenish context in onEnter hook")
+		return errc.New(errc.ErrInstrument, "can not rewrite hook function")
 	}
 	return nil
 }
@@ -594,7 +592,7 @@ func (rp *RuleProcessor) generateTrampoline(t *resource.InstFuncRule,
 	// a bunch of manual AST code generation, isn't it?
 	err := rp.materializeTemplate()
 	if err != nil {
-		return fmt.Errorf("failed to materialize template: %w", err)
+		return err
 	}
 	// Implement CallContext interface
 	rp.implementCallContext(t)
@@ -608,13 +606,13 @@ func (rp *RuleProcessor) generateTrampoline(t *resource.InstFuncRule,
 	if t.OnEnter != "" {
 		err = rp.callHookFunc(t, true)
 		if err != nil {
-			return fmt.Errorf("failed to call onEnter: %w", err)
+			return err
 		}
 	}
 	if t.OnExit != "" {
 		err = rp.callHookFunc(t, false)
 		if err != nil {
-			return fmt.Errorf("failed to call onExit: %w", err)
+			return err
 		}
 	}
 	return nil

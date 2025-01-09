@@ -16,10 +16,9 @@ package resource
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
@@ -62,7 +61,7 @@ func (rb *RuleBundle) IsValid() bool {
 func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) error {
 	file, err := filepath.Abs(file)
 	if err != nil {
-		return fmt.Errorf("failed to get abs path: %w", err)
+		return errc.New(errc.ErrAbsPath, err.Error())
 	}
 	fn := rule.Function + "," + rule.ReceiverType
 	util.Assert(fn != "", "sanity check")
@@ -79,7 +78,7 @@ func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) error {
 func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) error {
 	file, err := filepath.Abs(file)
 	if err != nil {
-		return fmt.Errorf("failed to get abs path: %w", err)
+		return errc.New(errc.ErrAbsPath, err.Error())
 	}
 	st := rule.StructType
 	util.Assert(st != "", "sanity check")
@@ -104,12 +103,12 @@ func (rb *RuleBundle) AddFileRule(rule *InstFileRule) {
 func isHookDefined(root *dst.File, rule *InstFuncRule) bool {
 	util.Assert(rule.OnEnter != "" || rule.OnExit != "", "hook must be set")
 	if rule.OnEnter != "" {
-		if shared.FindFuncDecl(root, rule.OnEnter) == nil {
+		if util.FindFuncDecl(root, rule.OnEnter) == nil {
 			return false
 		}
 	}
 	if rule.OnExit != "" {
-		if shared.FindFuncDecl(root, rule.OnExit) == nil {
+		if util.FindFuncDecl(root, rule.OnExit) == nil {
 			return false
 		}
 	}
@@ -119,15 +118,15 @@ func isHookDefined(root *dst.File, rule *InstFuncRule) bool {
 func FindHookFile(rule *InstFuncRule) (string, error) {
 	files, err := FindRuleFiles(rule)
 	if err != nil {
-		return "", fmt.Errorf("failed to find rule files: %w", err)
+		return "", err
 	}
 	for _, file := range files {
-		if !shared.IsGoFile(file) {
+		if !util.IsGoFile(file) {
 			continue
 		}
-		root, err := shared.ParseAstFromFileFast(file)
+		root, err := util.ParseAstFromFileFast(file)
 		if err != nil {
-			return "", fmt.Errorf("failed to read hook file: %w", err)
+			return "", err
 		}
 		if isHookDefined(root, rule) {
 			return file, nil
@@ -152,14 +151,14 @@ func FindRuleFiles(rule InstRule) ([]string, error) {
 
 func StoreRuleBundles(bundles []*RuleBundle) error {
 	util.GuaranteeInPreprocess()
-	ruleFile := shared.GetPreprocessLogPath(RuleBundleJsonFile)
+	ruleFile := util.GetPreprocessLogPath(RuleBundleJsonFile)
 	bs, err := json.Marshal(bundles)
 	if err != nil {
-		return fmt.Errorf("failed to store used rules: %w", err)
+		return errc.New(errc.ErrInvalidJSON, err.Error())
 	}
 	_, err = util.WriteFile(ruleFile, string(bs))
 	if err != nil {
-		return fmt.Errorf("failed to write used rules: %w", err)
+		return err
 	}
 	return nil
 }
@@ -167,15 +166,15 @@ func StoreRuleBundles(bundles []*RuleBundle) error {
 func LoadRuleBundles() ([]*RuleBundle, error) {
 	util.GuaranteeInInstrument()
 
-	ruleFile := shared.GetPreprocessLogPath(RuleBundleJsonFile)
+	ruleFile := util.GetPreprocessLogPath(RuleBundleJsonFile)
 	data, err := util.ReadFile(ruleFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read used rules: %w", err)
+		return nil, err
 	}
 	var bundles []*RuleBundle
 	err = json.Unmarshal([]byte(data), &bundles)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load used rules: %w", err)
+		return nil, errc.New(errc.ErrInvalidJSON, "bad "+ruleFile)
 	}
 	return bundles, nil
 }

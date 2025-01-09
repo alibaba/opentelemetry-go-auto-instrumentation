@@ -19,7 +19,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 const WorldAppName = "world"
@@ -29,7 +29,7 @@ func TestCompileTheWorld(t *testing.T) {
 
 	RunGoBuild(t, "go", "build")
 	RunApp(t, WorldAppName)
-	text := ReadPreprocessLog(t, shared.DebugLogFile)
+	text := ReadPreprocessLog(t, util.DebugLogFile)
 
 	regex := `\"ImportPath\":\"([^"]+)\"`
 	r := regexp.MustCompile(regex)

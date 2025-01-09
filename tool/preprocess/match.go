@@ -17,22 +17,16 @@ package preprocess
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
-)
-
-const (
-	CompileFlagPattern = "-p"
-	CompileFlagGoVer   = "-goversion"
 )
 
 type ruleMatcher struct {
@@ -62,8 +56,8 @@ func loadRuleFile(path string) ([]resource.InstRule, error) {
 	content, err := util.ReadFile(path)
 	if err != nil {
 		currentDir, _ := os.Getwd()
-		return nil, fmt.Errorf("failed to read rule file: %w %v",
-			err, currentDir)
+		err = errc.Adhere(err, "pwd", currentDir)
+		return nil, err
 	}
 	return loadRuleRaw(content)
 }
@@ -72,7 +66,7 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 	var h []*ruleHolder
 	err := json.Unmarshal([]byte(content), &h)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal rules: %w", err)
+		return nil, errc.New(errc.ErrInvalidJSON, err.Error())
 	}
 	rules := make([]resource.InstRule, 0)
 	for _, rule := range h {
@@ -150,7 +144,7 @@ func findAvailableRules() []resource.InstRule {
 // match gives compilation arguments and finds out all interested rules
 // for it.
 func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
-	importPath := findFlagValue(cmdArgs, CompileFlagPattern)
+	importPath := findFlagValue(cmdArgs, util.BuildPattern)
 	util.Assert(importPath != "", "sanity check")
 	util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
 	availables := make([]resource.InstRule, len(rm.availableRules[importPath]))
@@ -165,13 +159,13 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 	parsedAst := make(map[string]*dst.File)
 	bundle := resource.NewRuleBundle(importPath)
 
-	goVersion := findFlagValue(cmdArgs, CompileFlagGoVer)
+	goVersion := findFlagValue(cmdArgs, util.BuildGoVer)
 	util.Assert(goVersion != "", "sanity check")
 	util.Assert(strings.HasPrefix(goVersion, "go"), "sanity check")
 	goVersion = strings.Replace(goVersion, "go", "v", 1)
 	for _, candidate := range cmdArgs {
 		// It's not a go file, ignore silently
-		if !shared.IsGoFile(candidate) {
+		if !util.IsGoFile(candidate) {
 			continue
 		}
 		file := candidate
@@ -179,7 +173,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 		// If it's a vendor build, we need to extract the version of the module
 		// from vendor/modules.txt, otherwise we find the version from source
 		// code file path
-		version := shared.ExtractVersion(file)
+		version := util.ExtractVersion(file)
 		if rm.moduleVersions != nil {
 			if v, ok := rm.moduleVersions[importPath]; ok {
 				version = v
@@ -190,7 +184,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			rule := availables[i]
 
 			// Check if the version is supported
-			matched, err := shared.MatchVersion(version, rule.GetVersion())
+			matched, err := util.MatchVersion(version, rule.GetVersion())
 			if err != nil {
 				util.Log("Failed to match version %v between %v and %v",
 					err, file, rule)
@@ -201,7 +195,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			}
 			// Check if the rule requires a specific Go version(range)
 			if rule.GetGoVersion() != "" {
-				matched, err = shared.MatchVersion(goVersion, rule.GetGoVersion())
+				matched, err = util.MatchVersion(goVersion, rule.GetGoVersion())
 				if err != nil {
 					util.Log("Failed to match Go version %v between %v and %v",
 						err, file, rule)
@@ -215,7 +209,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			// Check if it matches with file rule early as we try to avoid
 			// parsing the file content, which is time consuming
 			if _, ok := rule.(*resource.InstFileRule); ok {
-				ast, err := shared.ParseAstFromFileOnlyPackage(file)
+				ast, err := util.ParseAstFromFileOnlyPackage(file)
 				if ast == nil || err != nil {
 					util.Log("Failed to parse %s: %v", file, err)
 					continue
@@ -230,7 +224,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			// Fair enough, parse the file content
 			var tree *dst.File
 			if _, ok := parsedAst[file]; !ok {
-				fileAst, err := shared.ParseAstFromFileFast(file)
+				fileAst, err := util.ParseAstFromFileFast(file)
 				if fileAst == nil || err != nil {
 					util.Log("failed to parse file %s: %v", file, err)
 					continue
@@ -255,7 +249,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			for _, decl := range tree.Decls {
 				if genDecl, ok := decl.(*dst.GenDecl); ok {
 					if rl, ok := rule.(*resource.InstStructRule); ok {
-						if shared.MatchStructDecl(genDecl, rl.StructType) {
+						if util.MatchStructDecl(genDecl, rl.StructType) {
 							util.Log("Match struct rule %s", rule)
 							err = bundle.AddFile2StructRule(file, rl)
 							if err != nil {
@@ -268,7 +262,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 					}
 				} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
 					if rl, ok := rule.(*resource.InstFuncRule); ok {
-						if shared.MatchFuncDecl(funcDecl, rl.Function,
+						if util.MatchFuncDecl(funcDecl, rl.Function,
 							rl.ReceiverType) {
 							util.Log("Match func rule %s", rule)
 							err = bundle.AddFile2FuncRule(file, rl)
@@ -301,16 +295,16 @@ func findFlagValue(cmd []string, flag string) string {
 }
 
 func parseVendorModules() (map[string]string, error) {
-	util.Assert(shared.IsVendorBuild(), "why not otherwise")
+	util.Assert(util.IsVendorBuild(), "why not otherwise")
 	vendorFile := filepath.Join("vendor", "modules.txt")
-	if exist, _ := util.PathExists(vendorFile); !exist {
-		return nil, fmt.Errorf("vendor/modules.txt not found")
+	if util.PathNotExists(vendorFile) {
+		return nil, errc.New(errc.ErrNotExist, "vendor/modules.txt not found")
 	}
 	// Read the vendor/modules.txt file line by line and parse it in form of
 	// #ImportPath Version
 	file, err := os.Open(vendorFile)
 	if err != nil {
-		return nil, err
+		return nil, errc.New(errc.ErrOpenFile, err.Error())
 	}
 	defer func(dryRunLog *os.File) {
 		err := dryRunLog.Close()
@@ -342,7 +336,7 @@ func parseVendorModules() (map[string]string, error) {
 }
 
 func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
-	bundle := matcher.match(shared.SplitCmds(cmd))
+	bundle := matcher.match(util.SplitCmds(cmd))
 	ch <- bundle
 }
 
@@ -355,7 +349,7 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	if dp.vendorBuild {
 		modules, err := parseVendorModules()
 		if err != nil {
-			return fmt.Errorf("failed to parse vendor/modules.txt: %w", err)
+			return err
 		}
 		if config.GetConf().Verbose {
 			util.Log("Vendor modules: %v", modules)

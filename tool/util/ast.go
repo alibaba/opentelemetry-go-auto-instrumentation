@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package shared
+package util
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 )
@@ -234,7 +234,7 @@ func SwitchCase(list []dst.Expr, stmts []dst.Stmt) *dst.CaseClause {
 func AddStructField(decl dst.Decl, name string, typ string) {
 	gen, ok := decl.(*dst.GenDecl)
 	if !ok {
-		util.LogFatal("decl is not a GenDecl")
+		LogFatal("decl is not a GenDecl")
 	}
 	fd := NewField(name, Ident(typ))
 	st := gen.Specs[0].(*dst.TypeSpec).Type.(*dst.StructType)
@@ -359,7 +359,7 @@ func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
 		case *dst.Ident:
 			return recvTypeExpr.Name == receiverType
 		default:
-			util.Unimplemented()
+			Unimplemented()
 		}
 	} else {
 		if HasReceiver(funcDecl) {
@@ -400,18 +400,18 @@ func ParseAstFromSnippet(codeSnippnet string) ([]dst.Stmt, error) {
 	snippet := "package main; func _() {" + codeSnippnet + "}"
 	file, err := decorator.ParseFile(fset, "", snippet, 0)
 	if err != nil {
-		return nil, err
+		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
 	return file.Decls[0].(*dst.FuncDecl).Body.List, nil
 }
 
 // ParseAstFromSource parses the AST from complete source code.
 func ParseAstFromSource(source string) (*dst.File, error) {
-	util.Assert(source != "", "empty source")
+	Assert(source != "", "empty source")
 	dec := decorator.NewDecorator(token.NewFileSet())
 	dstRoot, err := dec.Parse(source)
 	if err != nil {
-		return nil, err
+		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
 	return dstRoot, nil
 }
@@ -421,22 +421,22 @@ func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
 	fset := token.NewFileSet()
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, err
+		return nil, errc.New(errc.ErrOpenFile, err.Error())
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			util.LogFatal("failed to close file %s: %v", file.Name(), err)
+			LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
 	astFile, err := parser.ParseFile(fset, name, file, mode)
 	if err != nil {
-		return nil, err
+		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
 	dec := decorator.NewDecorator(fset)
 	dstFile, err := dec.DecorateFile(astFile)
 	if err != nil {
-		return nil, err
+		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
 	return dstFile, nil
 }
@@ -458,19 +458,19 @@ func ParseAstFromFile(filePath string) (*dst.File, error) {
 func WriteAstToFile(astRoot *dst.File, filePath string) (string, error) {
 	file, err := os.Create(filePath)
 	if err != nil {
-		return "", err
+		return "", errc.New(errc.ErrCreateFile, err.Error())
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			util.LogFatal("failed to close file %s: %v", file.Name(), err)
+			LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
 
 	r := decorator.NewRestorer()
 	err = r.Fprint(file, astRoot)
 	if err != nil {
-		return "", err
+		return "", errc.New(errc.ErrParseCode, err.Error())
 	}
 	return file.Name(), nil
 }

@@ -25,6 +25,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 )
 
 type RunPhase string
@@ -122,7 +124,12 @@ func RunCmd(args ...string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		return errc.New(errc.ErrRunCmd, err.Error()).
+			With("command", fmt.Sprintf("%v", args))
+	}
+	return nil
 }
 
 func RunCmdOutput(args ...string) (string, error) {
@@ -130,13 +137,17 @@ func RunCmdOutput(args ...string) (string, error) {
 	args = args[1:]
 	cmd := exec.Command(path, args...)
 	out, err := cmd.CombinedOutput()
-	return string(out), err
+	if err != nil {
+		return "", errc.New(errc.ErrRunCmd, string(out)).
+			With("command", fmt.Sprintf("%v", args))
+	}
+	return string(out), nil
 }
 
 func CopyFile(src, dst string) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {
-		return err
+		return errc.New(errc.ErrOpenFile, err.Error())
 	}
 	defer func(sourceFile *os.File) {
 		err := sourceFile.Close()
@@ -147,7 +158,7 @@ func CopyFile(src, dst string) error {
 
 	destFile, err := os.Create(dst)
 	if err != nil {
-		return err
+		return errc.New(errc.ErrCreateFile, err.Error())
 	}
 	defer func(destFile *os.File) {
 		err := destFile.Close()
@@ -158,7 +169,7 @@ func CopyFile(src, dst string) error {
 
 	_, err = io.Copy(destFile, sourceFile)
 	if err != nil {
-		return err
+		return errc.New(errc.ErrCopyFile, err.Error())
 	}
 	return nil
 }
@@ -166,7 +177,7 @@ func CopyFile(src, dst string) error {
 func ReadFile(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", err
+		return "", errc.New(errc.ErrOpenFile, err.Error())
 	}
 	defer func(file *os.File) {
 		err := file.Close()
@@ -178,7 +189,7 @@ func ReadFile(filePath string) (string, error) {
 	buf := new(strings.Builder)
 	_, err = io.Copy(buf, file)
 	if err != nil {
-		return "", err
+		return "", errc.New(errc.ErrCopyFile, err.Error())
 	}
 	return buf.String(), nil
 
@@ -187,7 +198,7 @@ func ReadFile(filePath string) (string, error) {
 func WriteFile(filePath string, content string) (string, error) {
 	file, err := os.Create(filePath)
 	if err != nil {
-		return "", err
+		return "", errc.New(errc.ErrOpenFile, err.Error())
 	}
 	defer func(file *os.File) {
 		err := file.Close()
@@ -198,7 +209,7 @@ func WriteFile(filePath string, content string) (string, error) {
 
 	_, err = file.WriteString(content)
 	if err != nil {
-		return "", err
+		return "", errc.New(errc.ErrWriteFile, err.Error())
 	}
 	return file.Name(), nil
 }
@@ -207,7 +218,7 @@ func ListFiles(dir string) ([]string, error) {
 	var files []string
 	walkFn := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			return errc.New(errc.ErrWalkDir, err.Error())
 		}
 		// Dont list files under hidden directories
 		if strings.HasPrefix(info.Name(), ".") {
@@ -219,14 +230,17 @@ func ListFiles(dir string) ([]string, error) {
 		return nil
 	}
 	err := filepath.Walk(dir, walkFn)
-	return files, err
+	if err != nil {
+		return nil, errc.New(errc.ErrWalkDir, err.Error())
+	}
+	return files, nil
 }
 
 func ListFilesFlat(dir string) ([]string, error) {
 	// no recursive
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read directory %s: %w", dir, err)
+		return nil, errc.New(errc.ErrReadDir, err.Error())
 	}
 	var paths []string
 	for _, file := range files {
@@ -239,18 +253,18 @@ func CopyDir(src string, dst string) error {
 	// Get the properties of the source directory
 	sourceInfo, err := os.Stat(src)
 	if err != nil {
-		return err
+		return errc.New(errc.ErrStat, err.Error())
 	}
 
 	// Create the destination directory
 	if err := os.MkdirAll(dst, sourceInfo.Mode()); err != nil {
-		return err
+		return errc.New(errc.ErrMkdirAll, err.Error())
 	}
 
 	// Read the contents of the source directory
 	entries, err := ioutil.ReadDir(src)
 	if err != nil {
-		return err
+		return errc.New(errc.ErrReadDir, err.Error())
 	}
 
 	// Iterate through each entry in the source directory
@@ -274,15 +288,13 @@ func CopyDir(src string, dst string) error {
 	return nil
 }
 
-func PathExists(path string) (bool, error) {
+func PathExists(path string) bool {
 	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
+	return err == nil
+}
+
+func PathNotExists(path string) bool {
+	return !PathExists(path)
 }
 
 func IsWindows() bool {
@@ -300,12 +312,11 @@ func PhaseTimer(name string) func() {
 	}
 }
 
-func GetToolName() string {
+func GetToolName() (string, error) {
 	// Get the path of the current executable
 	ex, err := os.Executable()
 	if err != nil {
-		LogFatal("failed to get executable: %v", err)
-		os.Exit(0)
+		return "", errc.New(errc.ErrGetExecutable, err.Error())
 	}
-	return filepath.Base(ex)
+	return filepath.Base(ex), nil
 }

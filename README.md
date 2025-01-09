@@ -118,7 +118,7 @@ to engage with us.
 
 <img src="docs/dingtalk.png" height="200">
 
-## Adopters
+# Adopters
 
 These are only part of the companies using this project, for reference only. If you are using this project, please [add your company here](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) to tell us your scenario to make this project better.
 
