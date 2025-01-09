@@ -333,8 +333,10 @@ func parseVendorModules() (map[string]string, error) {
 			}
 		}
 	}
-	if err = scanner.Err(); err != nil {
-		return nil, err
+	err = scanner.Err()
+	if err != nil {
+		return nil, errc.New(errc.ErrParseCode,
+			"cannot parse vendor/modules.txt")
 	}
 	return vendorModules, nil
 }

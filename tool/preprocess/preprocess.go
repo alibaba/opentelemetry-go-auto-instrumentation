@@ -197,7 +197,7 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 func getCompileCommands() ([]string, error) {
 	dryRunLog, err := os.Open(util.GetLogPath(DryRunLog))
 	if err != nil {
-		return nil, err
+		return nil, errc.New(errc.ErrOpenFile, err.Error())
 	}
 	defer func(dryRunLog *os.File) {
 		err := dryRunLog.Close()
@@ -219,8 +219,9 @@ func getCompileCommands() ([]string, error) {
 			compileCmds = append(compileCmds, line)
 		}
 	}
-	if err = scanner.Err(); err != nil {
-		return nil, err
+	err = scanner.Err()
+	if err != nil {
+		return nil, errc.New(errc.ErrParseCode, "cannot parse dry run log")
 	}
 	return compileCmds, nil
 }
