@@ -405,7 +405,9 @@
   {
     "Version": "[1.5.0,1.9.4)",
     "ImportPath": "github.com/sirupsen/logrus",
+    "ReceiverType": "*Logger",
     "Function": "SetFormatter",
+    "OnEnter": "logNewOnEnter",
     "OnExit": "logNewOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/logrus"
   },

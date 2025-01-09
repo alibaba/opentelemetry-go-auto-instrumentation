@@ -23,12 +23,19 @@ import (
 
 var logrusEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
+func logNewOnEnter(call api.CallContext, log *logrus.Logger, formatter logrus.Formatter) {
+	if !logrusEnabler.Enable() {
+		return
+	}
+	call.SetData(log)
+}
+
 func logNewOnExit(call api.CallContext) {
 	if !logrusEnabler.Enable() {
 		return
 	}
-	std := logrus.StandardLogger()
-	std.AddHook(&logHook{})
+	logger := call.GetData().(*logrus.Logger)
+	logger.AddHook(&logHook{})
 	return
 }
 
@@ -39,6 +46,9 @@ func (hook *logHook) Levels() []logrus.Level {
 }
 
 func (hook *logHook) Fire(entry *logrus.Entry) error {
+	if !logrusEnabler.Enable() {
+		return nil
+	}
 	// 修改日志内容
 	traceId, spanId := trace.GetTraceAndSpanId()
 	if traceId != "" {
