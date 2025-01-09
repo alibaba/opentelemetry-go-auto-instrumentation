@@ -104,7 +104,6 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | zerolog       | https://github.com/rs/zerolog                  | v1.10.0               | v1.33.0               |
 | iris          | https://github.com/kataras/iris                | v12.2.0               | v12.2.11              |
 
-
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
 
 > [!IMPORTANT]
