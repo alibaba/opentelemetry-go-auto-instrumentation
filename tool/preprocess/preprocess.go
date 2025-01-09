@@ -458,6 +458,7 @@ func runDryBuild(goBuildCmd []string) error {
 	// The full build command is: "go build -a -x -n  {...}"
 	args := []string{"go", "build", "-a", "-x", "-n"}
 	args = append(args, goBuildCmd[2:]...)
+	util.AssertGoBuild(goBuildCmd)
 	util.AssertGoBuild(args)
 
 	// Run the dry build
@@ -477,31 +478,31 @@ func runDryBuild(goBuildCmd []string) error {
 }
 
 func runModTidy() error {
-	out, err := util.RunCmdOutput("go", "mod", "tidy")
+	out, err := util.RunCmdCombinedOutput("go", "mod", "tidy")
 	util.Log("Run go mod tidy: %v", out)
 	return err
 }
 
 func runModVendor() error {
-	out, err := util.RunCmdOutput("go", "mod", "vendor")
+	out, err := util.RunCmdCombinedOutput("go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
 	return err
 }
 
 func runGoGet(dep string) error {
-	out, err := util.RunCmdOutput("go", "get", dep)
+	out, err := util.RunCmdCombinedOutput("go", "get", dep)
 	util.Log("Run go get %v: %v", dep, out)
 	return err
 }
 
 func runGoModDownload(path string) error {
-	out, err := util.RunCmdOutput("go", "mod", "download", path)
+	out, err := util.RunCmdCombinedOutput("go", "mod", "download", path)
 	util.Log("Run go mod download %v: %v", path, out)
 	return err
 }
 
 func runGoModEdit(require string) error {
-	out, err := util.RunCmdOutput("go", "mod", "edit", "-require="+require)
+	out, err := util.RunCmdCombinedOutput("go", "mod", "edit", "-require="+require)
 	util.Log("Run go mod edit %v: %v", require, out)
 	return err
 }
@@ -549,7 +550,7 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 		util.Log("Run go build with args %v in toolexec mode", args)
 	}
 	util.AssertGoBuild(args)
-	out, err := util.RunCmdOutput(args...)
+	out, err := util.RunCmdCombinedOutput(args...)
 	util.Log("Run go build with toolexec: %v", out)
 	return err
 }

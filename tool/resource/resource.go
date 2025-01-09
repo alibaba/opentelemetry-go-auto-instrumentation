@@ -31,6 +31,7 @@ func listFiles(fs embed.FS, dir string) ([]string, error) {
 	}
 	var files []string
 	for _, item := range list {
+		// embedded file path is always / rather than os.PathSeparator
 		path := dir + "/" + item.Name()
 		if item.IsDir() {
 			subFiles, err := listFiles(fs, path)
