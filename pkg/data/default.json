@@ -765,5 +765,14 @@
     "OnEnter": "beforeCallConfigServer",
     "onExit": "afterCallConfigServer",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
+  },
+  {
+    "Version": "[12.2.0,12.2.12)",
+    "ImportPath": "github.com/kataras/iris/v12/core/router",
+    "Function": "HandleRequest",
+    "ReceiverType": "*routerHandler",
+    "OnEnter": "irisHttpOnEnter",
+    "OnExit": "",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/iris"
   }
 ]
