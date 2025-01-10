@@ -1,6 +1,6 @@
 module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
-go 1.22.10
+go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
 
