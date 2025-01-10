@@ -27,6 +27,7 @@
 | zap          | https://github.com/uber-go/zap                 | v1.20.0               | v1.27.0               |
 | zerolog      | https://github.com/rs/zerolog                  | v1.10.0               | v1.33.0               |
 | iris          | https://github.com/kataras/iris               | v12.2.0               | v12.2.11              |
+| gomicro       | https://github.com/micro/go-micro             | v5.0.0                | v5.3.0                |
 
 ### Notice
 
