@@ -34,3 +34,5 @@ const KRATOS_HTTP_INTERNAL_SCOPE_NAME = "pkg/rules/kratos/http/kratos_internal_s
 const MONGO_SCOPE_NAME = "pkg/rules/mongo/client_setup.go"
 const REDIGO_SCOPE_NAME = "pkg/rules/redigo/redigo_client_setup.go"
 const ELASTICSEARCH_SCOPE_NAME = "pkg/rules/elasticsearch/es_client_setup.go"
+const GOMICRO_CLIENT_SCOPE_NAME = "pkg/rules/gomicro/client/gomicro_client_setup.go"
+const GOMICRO_SERVER_SCOPE_NAME = "pkg/rules/gomicro/server/gomicro_server_setup.go"

@@ -1,0 +1,92 @@
+package gomicro
+
+import (
+	"context"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	micro "go-micro.dev/v5"
+	"go-micro.dev/v5/client"
+	"go-micro.dev/v5/metadata"
+	"go-micro.dev/v5/registry"
+	"go-micro.dev/v5/selector"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+)
+
+var goMicroClientEnabler = instrumenter.NewDefaultInstrumentEnabler()
+
+type clientV5Wrapper struct {
+	client.Client
+}
+
+func NewV5ClientWrapper(cli client.Client) client.Client {
+	return &clientV5Wrapper{cli}
+}
+
+// Call is used for client calls
+func (s *clientV5Wrapper) Call(ctx context.Context, req client.Request, rsp interface{}, opts ...client.CallOption) error {
+	request := goMicroRequest{
+		request: req,
+		reqType: CallRequest,
+		ctx:     ctx,
+	}
+	ctx = goMicroClientInstrument.Start(ctx, request)
+	mda, _ := metadata.FromContext(request.ctx)
+	md := metadata.Copy(mda)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(md))
+	ctx = metadata.NewContext(ctx, md)
+	request.ctx = ctx
+	err := s.Client.Call(request.ctx, req, rsp, opts...)
+	response := goMicroResponse{
+		response: rsp,
+		err:      err,
+		ctx:      request.ctx,
+	}
+	goMicroClientInstrument.End(ctx, request, response, err)
+	return nil
+}
+
+func (s *clientV5Wrapper) Stream(ctx context.Context, req client.Request, opts ...client.CallOption) (client.Stream, error) {
+	request := goMicroRequest{
+		request: req,
+		reqType: StreamRequest,
+		ctx:     ctx,
+	}
+	ctx = goMicroClientInstrument.Start(ctx, request)
+	stream, err := s.Client.Stream(ctx, req, opts...)
+	response := goMicroResponse{
+		response: stream,
+		err:      err,
+		ctx:      ctx,
+	}
+	goMicroClientInstrument.End(ctx, request, response, err)
+
+	return nil, nil
+
+}
+
+func (s *clientV5Wrapper) Publish(ctx context.Context, p client.Message, opts ...client.PublishOption) error {
+	return s.Client.Publish(ctx, p, opts...)
+
+}
+
+func NewServiceOnEnter(call api.CallContext, opts ...micro.Option) {
+	opts = append(opts, micro.WrapClient(NewV5ClientWrapper))
+	call.SetParam(0, opts)
+}
+
+func NextOnExit(call api.CallContext, nextSelector selector.Next, e error) {
+	span := sdktrace.SpanFromGLS()
+	if nextSelector != nil && span != nil {
+		var selectWrapper selector.Next = func() (*registry.Node, error) {
+			node, tmp := nextSelector()
+			if node != nil {
+				span.SetAttributes(semconv.ServerAddressKey.String(node.Address))
+			}
+			return node, tmp
+		}
+		call.SetReturnVal(0, selectWrapper)
+	}
+}
