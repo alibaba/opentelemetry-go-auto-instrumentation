@@ -136,6 +136,18 @@ func RunCmdOutput(args ...string) (string, error) {
 	path := args[0]
 	args = args[1:]
 	cmd := exec.Command(path, args...)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errc.New(errc.ErrRunCmd, string(out)).
+			With("command", fmt.Sprintf("%v", args))
+	}
+	return string(out), nil
+}
+
+func RunCmdCombinedOutput(args ...string) (string, error) {
+	path := args[0]
+	args = args[1:]
+	cmd := exec.Command(path, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errc.New(errc.ErrRunCmd, string(out)).

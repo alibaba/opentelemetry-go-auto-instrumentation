@@ -26,17 +26,16 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
-func runModDownload(path string) (string, error) {
-	return util.RunCmdOutput("go", "mod", "download", "-json", path)
-}
-
 type moduleHolder struct {
 	Error string // error loading module
 	Dir   string // absolute path to cached source root directory
 }
 
 func fetchNetwork(path string) (string, error) {
-	text, err := runModDownload(path)
+	// Note we dont use CombinedOutput here because some unexpected output may
+	// be printed to stderr, which is not what we want, we only care about the
+	// json output and handle the error when the command fails
+	text, err := util.RunCmdOutput("go", "mod", "download", "-json", path)
 	if err != nil {
 		return "", err
 
