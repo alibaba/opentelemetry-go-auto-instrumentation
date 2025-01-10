@@ -27,6 +27,9 @@ import (
 var goMicroServerInstrument = BuildGoMicroServerOtelInstrumenter()
 
 func ServeRequestOnEnter(call api.CallContext, _ interface{}, ctx context.Context, request server.Request, response server.Response) {
+	if !goMicroEnabler.Enable() {
+		return
+	}
 	propagators := otel.GetTextMapPropagator()
 	mda, _ := metadata.FromContext(ctx)
 	for key, val := range mda {
@@ -47,6 +50,9 @@ func ServeRequestOnEnter(call api.CallContext, _ interface{}, ctx context.Contex
 }
 
 func ServeRequestOnExit(call api.CallContext, r error) {
+	if !goMicroEnabler.Enable() {
+		return
+	}
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return

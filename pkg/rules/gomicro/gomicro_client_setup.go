@@ -41,6 +41,9 @@ func NewV5ClientWrapper(cli client.Client) client.Client {
 
 // Call is used for client calls
 func (s *clientV5Wrapper) Call(ctx context.Context, req client.Request, rsp interface{}, opts ...client.CallOption) error {
+	if !goMicroEnabler.Enable() {
+		return s.Client.Call(ctx, req, rsp, opts...)
+	}
 	request := goMicroRequest{
 		request: req,
 		reqType: CallRequest,
@@ -59,10 +62,13 @@ func (s *clientV5Wrapper) Call(ctx context.Context, req client.Request, rsp inte
 		ctx:      request.ctx,
 	}
 	goMicroClientInstrument.End(ctx, request, response, err)
-	return nil
+	return err
 }
 
 func (s *clientV5Wrapper) Stream(ctx context.Context, req client.Request, opts ...client.CallOption) (client.Stream, error) {
+	if !goMicroEnabler.Enable() {
+		return s.Client.Stream(ctx, req, opts...)
+	}
 	request := goMicroRequest{
 		request: req,
 		reqType: StreamRequest,
@@ -77,7 +83,7 @@ func (s *clientV5Wrapper) Stream(ctx context.Context, req client.Request, opts .
 	}
 	goMicroClientInstrument.End(ctx, request, response, err)
 
-	return nil, nil
+	return stream, err
 
 }
 
