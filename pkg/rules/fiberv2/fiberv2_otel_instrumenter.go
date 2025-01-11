@@ -14,10 +14,11 @@
 package fiberv2
 
 import (
+	"strconv"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
-	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
@@ -73,11 +74,10 @@ func (n fiberv2ServerAttrsGetter) GetNetworkTransport(request *fiberv2Request, r
 	return "tcp"
 }
 func (n fiberv2ServerAttrsGetter) GetNetworkProtocolName(request *fiberv2Request, response *fiberv2Response) string {
-	if request.isTls == false {
+	if !request.isTls {
 		return "http"
-	} else {
-		return "https"
 	}
+	return "https"
 }
 func (n fiberv2ServerAttrsGetter) GetNetworkProtocolVersion(request *fiberv2Request, response *fiberv2Response) string {
 	return ""
@@ -128,6 +128,7 @@ func BuildFiberV2ServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamI
 	networkExtractor := net.NetworkAttrsExtractor[*fiberv2Request, *fiberv2Response, fiberv2ServerAttrsGetter]{Getter: serverGetter}
 	urlExtractor := net.UrlAttrsExtractor[*fiberv2Request, *fiberv2Response, fiberv2ServerAttrsGetter]{Getter: serverGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*fiberv2Request, *fiberv2Response]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*fiberv2Request, *fiberv2Response]{Getter: serverGetter}).
+		AddOperationListeners(http.HttpServerMetrics("fiberv2.server")).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[*fiberv2Request]{}).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.FIBER_V2_SERVER_SCOPE_NAME,

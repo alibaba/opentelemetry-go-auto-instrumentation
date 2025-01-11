@@ -16,6 +16,7 @@ package instrumenter
 
 import (
 	"context"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -31,6 +32,8 @@ var scopeKey = map[string]attribute.Key{
 	utils.NET_HTTP_SERVER_SCOPE_NAME:   utils.HTTP_SERVER_KEY,
 	utils.HERTZ_HTTP_CLIENT_SCOPE_NAME: utils.HTTP_CLIENT_KEY,
 	utils.HERTZ_HTTP_SERVER_SCOPE_NAME: utils.HTTP_SERVER_KEY,
+	utils.FIBER_V2_SERVER_SCOPE_NAME:   utils.HTTP_SERVER_KEY,
+	utils.ELASTICSEARCH_SCOPE_NAME:     utils.HTTP_CLIENT_KEY,
 
 	// grpc
 	utils.GRPC_CLIENT_SCOPE_NAME: utils.RPC_CLIENT_KEY,
@@ -53,6 +56,8 @@ var kindKey = map[string]trace.SpanKind{
 	utils.NET_HTTP_SERVER_SCOPE_NAME:   trace.SpanKindServer,
 	utils.HERTZ_HTTP_CLIENT_SCOPE_NAME: trace.SpanKindClient,
 	utils.HERTZ_HTTP_SERVER_SCOPE_NAME: trace.SpanKindServer,
+	utils.FIBER_V2_SERVER_SCOPE_NAME:   trace.SpanKindServer,
+	utils.ELASTICSEARCH_SCOPE_NAME:     trace.SpanKindClient,
 
 	// grpc
 	utils.GRPC_CLIENT_SCOPE_NAME: trace.SpanKindClient,
