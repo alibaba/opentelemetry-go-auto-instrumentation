@@ -19,6 +19,7 @@ import (
 	"errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"io"
 	"log"
 	"net"
 )
@@ -32,6 +33,19 @@ func (s *service) Hello(ctx context.Context, req *Req) (*Resp, error) {
 		return &Resp{Message: "Error Grpc"}, errors.New("error Grpc")
 	}
 	return &Resp{Message: "Hello Gprc"}, nil
+}
+
+func (s *service) StreamHello(req *Req, res HelloGrpc_StreamHelloServer) error {
+	if req.Error {
+		return errors.New("error Grpc")
+	}
+	for i := 0; i < 2; i++ {
+		err := res.Send(&Resp{Message: "Hello Gprc"})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func setupGRPC() {
@@ -73,4 +87,26 @@ func sendErrReq(ctx context.Context) string {
 		return resp.Message
 	}
 	return "error resp"
+}
+
+func sendStreamReq(ctx context.Context) string {
+	conn, err := grpc.NewClient("localhost:9003", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		panic(err)
+	}
+	c := NewHelloGrpcClient(conn)
+	stream, err := c.StreamHello(ctx, &Req{})
+	if err != nil {
+		panic(err)
+	}
+	for {
+		_, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+	}
+	return "stream success"
 }

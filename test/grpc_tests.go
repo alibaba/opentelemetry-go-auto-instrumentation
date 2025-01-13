@@ -25,6 +25,7 @@ func init() {
 		NewGeneralTestCase("grpc-fail-status-test", grpc_module_name, "v1.44.0", "", "1.21", "", TestGrpcStatus),
 		NewLatestDepthTestCase("grpc-latest-depth", grpc_dependency_name, grpc_module_name, "v1.44.0", "v1.69.2", "1.21", "", TestBasicGrpc),
 		NewMuzzleTestCase("grpc-muzzle", grpc_dependency_name, grpc_module_name, "v1.44.0", "", "1.21", "", []string{"go", "build", "test_grpc_basic.go", "grpc_common.go", "grpc.pb.go", "grpc_grpc.pb.go"}),
+		NewGeneralTestCase("grpc-client-stream-test", grpc_module_name, "v1.44.0", "", "1.21", "", TestGrpcClientStream),
 	)
 }
 
@@ -40,4 +41,11 @@ func TestGrpcStatus(t *testing.T, env ...string) {
 	RunGoBuild(t, "go", "build", "test_grpc_fail_status.go", "grpc_common.go", "grpc.pb.go", "grpc_grpc.pb.go")
 	env = append(env, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
 	RunApp(t, "test_grpc_fail_status", env...)
+}
+
+func TestGrpcClientStream(t *testing.T, env ...string) {
+	UseApp("grpc/v1.44.0")
+	RunGoBuild(t, "go", "build", "test_grpc_client_stream.go", "grpc_common.go", "grpc.pb.go", "grpc_grpc.pb.go")
+	env = append(env, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
+	RunApp(t, "test_grpc_client_stream", env...)
 }
