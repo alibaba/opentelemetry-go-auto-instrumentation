@@ -18,7 +18,8 @@ Replace the `Path` in `config.json` with the actual absolute path of `rules` dir
 Use `otel` to build the binary with `config.json`:
 ```
 cd example/extension/sqlinject
-../../../otel -rule=config.json go build demo/sql_inject.go
+../../../otel set -rule=config.json
+../../../otel go build demo/sql_inject.go
 ```
 Users can get the `otel` according to [documentation](../../../README.md)
 

@@ -163,6 +163,7 @@ func BuildHertzServerInstrumenter() *instrumenter.PropagatingFromUpstreamInstrum
 	urlExtractor := net.UrlAttrsExtractor[*protocol.Request, *protocol.Response, hertzHttpServerAttrsGetter]{Getter: serverGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*protocol.Request, *protocol.Response]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*protocol.Request, *protocol.Response]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[*protocol.Request]{}).
+		AddOperationListeners(http.HttpServerMetrics("hertz.server")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.HERTZ_HTTP_SERVER_SCOPE_NAME,
 			Version: version.Tag,

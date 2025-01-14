@@ -16,15 +16,15 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/instrument"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/preprocess"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -49,18 +49,18 @@ Command:
 `
 
 func printUsage() {
-	usage = strings.ReplaceAll(usage, "{}", config.GetToolName())
+	name, _ := util.GetToolName()
+	usage = strings.ReplaceAll(usage, "{}", name)
 	fmt.Print(usage)
 }
 
-func initLogs(names ...string) error {
-	for _, name := range names {
-		path := shared.GetTempBuildDirWith(name)
-		logPath := filepath.Join(path, shared.DebugLogFile)
-		_, err := os.Create(logPath)
-		if err != nil {
-			return fmt.Errorf("failed to create log file: %w", err)
-		}
+func initLog() error {
+	name := util.PPreprocess
+	path := util.GetTempBuildDirWith(name)
+	logPath := filepath.Join(path, util.DebugLogFile)
+	_, err := os.Create(logPath)
+	if err != nil {
+		return errc.New(errc.ErrCreateFile, err.Error())
 	}
 	return nil
 }
@@ -68,39 +68,37 @@ func initLogs(names ...string) error {
 func initTempDir() error {
 	// All temp directories are prepared before, instrument phase should not
 	// create any new directories.
-	if shared.GetRunPhase() == shared.PInstrument {
+	if util.GetRunPhase() == util.PInstrument {
 		return nil
 	}
 
 	// Make temp build directory if not exists
-	if exist, _ := util.PathExists(shared.TempBuildDir); !exist {
-		err := os.MkdirAll(shared.TempBuildDir, 0777)
+	if util.PathNotExists(util.TempBuildDir) {
+		err := os.MkdirAll(util.TempBuildDir, 0777)
 		if err != nil {
-			return fmt.Errorf("failed to make working directory: %w", err)
+			return errc.New(errc.ErrMkdirAll, err.Error())
 		}
 	}
 	// Make sub-directory of temp build directory for each phase. Specifaclly,
 	// we always recreate the preprocess and instrument directories, but only
 	// create the configure directory if it does not exist. This is because
 	// the configure directory can be used across multiple runs.
-	exist, _ := util.PathExists(shared.GetTempBuildDirWith(shared.PConfigure))
-	if !exist {
-		err := os.MkdirAll(shared.GetTempBuildDirWith(shared.PConfigure), 0777)
+	if util.PathNotExists(util.GetTempBuildDirWith(util.PConfigure)) {
+		err := os.MkdirAll(util.GetTempBuildDirWith(util.PConfigure), 0777)
 		if err != nil {
-			return fmt.Errorf("failed to make log directory: %w", err)
+			return errc.New(errc.ErrMkdirAll, err.Error())
 		}
 	}
-	for _, subdir := range []string{shared.PPreprocess, shared.PInstrument} {
-		exist, _ = util.PathExists(shared.GetTempBuildDirWith(subdir))
-		if exist {
-			err := os.RemoveAll(shared.GetTempBuildDirWith(subdir))
+	for _, subdir := range []string{util.PPreprocess, util.PInstrument} {
+		if util.PathExists(util.GetTempBuildDirWith(subdir)) {
+			err := os.RemoveAll(util.GetTempBuildDirWith(subdir))
 			if err != nil {
-				return fmt.Errorf("failed to remove directory: %w", err)
+				return errc.New(errc.ErrRemoveAll, err.Error())
 			}
 		}
-		err := os.MkdirAll(shared.GetTempBuildDirWith(subdir), 0777)
+		err := os.MkdirAll(util.GetTempBuildDirWith(subdir), 0777)
 		if err != nil {
-			return fmt.Errorf("failed to make log directory: %w", err)
+			return errc.New(errc.ErrMkdirAll, err.Error())
 		}
 	}
 
@@ -114,41 +112,54 @@ func initEnv() error {
 	switch {
 	case os.Args[1] == SubcommandSet:
 		// otel set?
-		shared.SetRunPhase(shared.PConfigure)
+		util.SetRunPhase(util.PConfigure)
 	case strings.HasSuffix(os.Args[1], SubcommandGo):
 		// otel go build?
-		shared.SetRunPhase(shared.PPreprocess)
+		util.SetRunPhase(util.PPreprocess)
 	case os.Args[1] == SubcommandRemix:
 		// otel remix?
-		shared.SetRunPhase(shared.PInstrument)
+		util.SetRunPhase(util.PInstrument)
 	default:
 		// do nothing
 	}
 
-	log.SetPrefix("[" + shared.GetRunPhase().String() + "] ")
-
 	// Create temp build directory
 	err := initTempDir()
 	if err != nil {
-		return fmt.Errorf("failed to init temp dir: %w", err)
+		return err
 	}
 
 	// Create log files under temp build directory
-	if shared.InPreprocess() {
-		err := initLogs(shared.PPreprocess, shared.PInstrument)
+	if util.InPreprocess() {
+		err := initLog()
 		if err != nil {
-			return fmt.Errorf("failed to init logs: %w", err)
+			return err
 		}
 	}
 
 	// Prepare shared configuration
-	if shared.InPreprocess() || shared.InInstrument() {
+	if util.InPreprocess() || util.InInstrument() {
 		err = config.InitConfig()
 		if err != nil {
-			return fmt.Errorf("failed to init config: %w", err)
+			return err
 		}
 	}
 	return nil
+}
+
+func fatal(err error) {
+	message := "===== Environments =====\n"
+	message += fmt.Sprintf("%-11s: %s\n", "Command", strings.Join(os.Args, " "))
+	message += fmt.Sprintf("%-11s: %s\n", "ErrorLog", util.GetLoggerPath())
+	message += fmt.Sprintf("%-11s: %s\n", "WorkDir", os.Getenv("PWD"))
+	path, _ := util.GetGoModPath()
+	message += fmt.Sprintf("%-11s: %s\n", "GoMod", path)
+	message += fmt.Sprintf("%-11s: %s, %s, %s\n", "Toolchain",
+		runtime.GOOS+"/"+runtime.GOARCH,
+		runtime.Version(), config.ToolVersion)
+	message += "===== Fatal Error ======\n"
+	message += err.Error()
+	util.LogFatal("\033[31m%s\033[0m", message) // log in red color
 }
 
 func main() {
@@ -159,8 +170,7 @@ func main() {
 
 	err := initEnv()
 	if err != nil {
-		log.Printf("failed to init env: %v", err)
-		os.Exit(1)
+		fatal(err)
 	}
 
 	subcmd := os.Args[1]
@@ -177,7 +187,13 @@ func main() {
 		printUsage()
 	}
 	if err != nil {
-		log.Printf("failed to run command %s: %v", subcmd, err)
-		os.Exit(1)
+		if subcmd != SubcommandRemix {
+			fatal(err)
+		} else {
+			// If error occurs in remix phase, we dont want to decoret the error
+			// message with the environments, just print the error message, the
+			// caller(preprocess) phase will decorate instead.
+			util.LogFatal(err.Error())
+		}
 	}
 }

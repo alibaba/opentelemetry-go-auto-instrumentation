@@ -61,5 +61,6 @@ func BuildDatabaseSqlOtelInstrumenter() instrumenter.Instrumenter[databaseSqlReq
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.DATABASE_SQL_SCOPE_NAME,
 			Version: version.Tag,
-		}).BuildInstrumenter()
+		}).AddOperationListeners(db.DbClientMetrics("database.sql")).
+		BuildInstrumenter()
 }

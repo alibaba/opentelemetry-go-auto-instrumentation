@@ -15,16 +15,14 @@
 package instrument
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
@@ -105,6 +103,12 @@ func (rp *RuleProcessor) addCompileArg(newArg string) {
 
 func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool) error {
 	for i, arg := range rp.compileArgs {
+		// Use absolute file path of the compile argument to compare with the
+		// instrumented file(path), which is also an absolute path
+		arg, err := filepath.Abs(arg)
+		if err != nil {
+			return errc.New(errc.ErrAbsPath, err.Error())
+		}
 		if pred(arg) {
 			rp.compileArgs[i] = newArg
 			// Relocate the replaced file to new target, any rules targeting the
@@ -113,7 +117,7 @@ func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool
 			return nil
 		}
 	}
-	return errors.New("no matching compile arg found")
+	return errc.New(errc.ErrInstrument, "can not innstrument the file "+newArg)
 }
 
 func (rp *RuleProcessor) saveDebugFile(path string) {
@@ -125,15 +129,15 @@ func (rp *RuleProcessor) saveDebugFile(path string) {
 	dest := filepath.Base(path)
 	util.Assert(rp.packageName != "", "sanity check")
 	dest = filepath.Join(escape(rp.packageName), dest)
-	dest = shared.GetInstrumentLogPath(dest)
+	dest = util.GetInstrumentLogPath(dest)
 	err := os.MkdirAll(filepath.Dir(dest), os.ModePerm)
 	if err != nil { // error is tolerable here
-		log.Printf("failed to create debug file directory %s: %v", dest, err)
+		util.Log("failed to create debug file directory %s: %v", dest, err)
 		return
 	}
 	err = util.CopyFile(path, dest)
 	if err != nil { // error is tolerable here
-		log.Printf("failed to save debug file %s: %v", dest, err)
+		util.Log("failed to save debug file %s: %v", dest, err)
 	}
 }
 
@@ -141,17 +145,20 @@ func (rp *RuleProcessor) applyRules(bundle *resource.RuleBundle) (err error) {
 	// Apply file instrument rules first
 	err = rp.applyFileRules(bundle)
 	if err != nil {
-		return fmt.Errorf("failed to apply file rules: %w", err)
+		err = errc.Adhere(err, "package", bundle.ImportPath)
+		return err
 	}
 
 	err = rp.applyStructRules(bundle)
 	if err != nil {
-		return fmt.Errorf("failed to apply struct rules: %w", err)
+		err = errc.Adhere(err, "package", bundle.ImportPath)
+		return err
 	}
 
 	err = rp.applyFuncRules(bundle)
 	if err != nil {
-		return fmt.Errorf("failed to apply function rules: %w %v", err, bundle)
+		err = errc.Adhere(err, "package", bundle.ImportPath)
+		return err
 	}
 
 	return nil
@@ -170,32 +177,41 @@ func matchImportPath(importPath string, args []string) bool {
 func guaranteeVersion(bundle *resource.RuleBundle, candidates []string) error {
 	for _, candidate := range candidates {
 		// It's not a go file, ignore silently
-		if !shared.IsGoFile(candidate) {
+		if !util.IsGoFile(candidate) {
 			continue
 		}
-		version := shared.ExtractVersion(candidate)
+		version := util.ExtractVersion(candidate)
 		for _, funcRules := range bundle.File2FuncRules {
 			for _, rules := range funcRules {
 				for _, rule := range rules {
-					matched, err := shared.MatchVersion(version, rule.GetVersion())
+					matched, err := util.MatchVersion(version, rule.GetVersion())
 					if err != nil || !matched {
-						return fmt.Errorf("failed to match version %v", err)
+						err = errc.Adhere(err, "rule", rule.String())
+						err = errc.Adhere(err, "candidate", candidate)
+						err = errc.Adhere(err, "version", version)
+						return err
 					}
 				}
 			}
 		}
 		for _, fileRule := range bundle.FileRules {
-			matched, err := shared.MatchVersion(version, fileRule.GetVersion())
+			matched, err := util.MatchVersion(version, fileRule.GetVersion())
 			if err != nil || !matched {
-				return fmt.Errorf("failed to match version %v", err)
+				err = errc.Adhere(err, "rule", fileRule.String())
+				err = errc.Adhere(err, "candidate", candidate)
+				err = errc.Adhere(err, "version", version)
+				return err
 			}
 		}
 		for _, structRules := range bundle.File2StructRules {
 			for _, rules := range structRules {
 				for _, rule := range rules {
-					matched, err := shared.MatchVersion(version, rule.GetVersion())
+					matched, err := util.MatchVersion(version, rule.GetVersion())
 					if err != nil || !matched {
-						return fmt.Errorf("failed to match version %v", err)
+						err = errc.Adhere(err, "rule", rule.String())
+						err = errc.Adhere(err, "candidate", candidate)
+						err = errc.Adhere(err, "version", version)
+						return err
 					}
 				}
 			}
@@ -212,12 +228,11 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	rp := newRuleProcessor(args, bundle.PackageName)
 	err := rp.applyRules(bundle)
 	if err != nil {
-		return fmt.Errorf("failed to apply rules: %w", err)
+		return err
 	}
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
-	log.Printf("RunCmd: %v (%v)\n",
-		bundle.ImportPath, rp.compileArgs)
+	util.Log("RunCmd: %v (%v)", bundle.ImportPath, rp.compileArgs)
 	return err
 }
 
@@ -225,20 +240,27 @@ func Instrument() error {
 	// Remove the tool itself from the command line arguments
 	args := os.Args[2:]
 	// Is compile command?
-	if shared.IsCompileCommand(strings.Join(args, " ")) {
+	if util.IsCompileCommand(strings.Join(args, " ")) {
 		if config.GetConf().Verbose {
-			log.Printf("RunCmd: %v\n", args)
+			util.Log("RunCmd: %v", args)
 		}
 		bundles, err := resource.LoadRuleBundles()
 		if err != nil {
-			return fmt.Errorf("failed to load rule bundles: %w", err)
+			err = errc.Adhere(err, "cmd", fmt.Sprintf("%v", args))
+			return err
 		}
 		for _, bundle := range bundles {
 			util.Assert(bundle.IsValid(), "sanity check")
 			// Is compiling the target package?
 			if matchImportPath(bundle.ImportPath, args) {
-				log.Printf("Apply bundle %v\n", bundle)
-				return compileRemix(bundle, args)
+				util.Log("Apply bundle %v", bundle)
+				err = compileRemix(bundle, args)
+				if err != nil {
+					err = errc.Adhere(err, "cmd", fmt.Sprintf("%v", args))
+					err = errc.Adhere(err, "bundle", bundle.String())
+					return err
+				}
+				return nil
 			}
 		}
 	}

@@ -27,14 +27,14 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 )
 
-const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES = "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES"
+const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE = "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE"
 
 var kratosEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 
 func kratosNewGRPCServiceOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
-	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ATTRIBUTES) != "true" {
+	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE) != "true" {
 		return
 	}
 	opts = append(opts, AddGRPCMiddleware(ServerTracingMiddleWare()))

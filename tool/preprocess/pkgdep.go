@@ -14,13 +14,9 @@
 package preprocess
 
 import (
-	"fmt"
-	"log"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -37,32 +33,28 @@ func replaceImport(importPath string, code string) string {
 func (dp *DepProcessor) replaceOtelImports() error {
 	moduleName, err := dp.getImportPathOf(OtelPkgDep)
 	if err != nil {
-		return fmt.Errorf("failed to get import path of otel_pkg: %w", err)
+		return err
 	}
 
 	for _, dep := range []string{OtelRules, OtelPkgDep} {
 		files, err := util.ListFiles(dep)
 		if err != nil {
-			return fmt.Errorf("failed to list files: %w", err)
+			return err
 		}
 		for _, file := range files {
 			// Skip non-go files as no imports within them
-			if !shared.IsGoFile(file) {
+			if !util.IsGoFile(file) {
 				continue
 			}
 			// Read file content and replace content then write back
 			content, err := util.ReadFile(file)
 			if err != nil {
-				return fmt.Errorf("failed to read file content: %w", err)
+				return err
 			}
-			if config.GetConf().Verbose {
-				log.Printf("Replace import path of %s to %s", file, moduleName)
-			}
-
 			content = replaceImport(moduleName, content)
 			_, err = util.WriteFile(file, content)
 			if err != nil {
-				return fmt.Errorf("failed to write file content: %w", err)
+				return err
 			}
 		}
 	}
@@ -70,9 +62,5 @@ func (dp *DepProcessor) replaceOtelImports() error {
 }
 
 func (dp *DepProcessor) copyPkgDep() error {
-	err := resource.CopyPkgTo(OtelPkgDep)
-	if err != nil {
-		return fmt.Errorf("failed to copy pkg deps: %w", err)
-	}
-	return nil
+	return resource.CopyPkgTo(OtelPkgDep)
 }

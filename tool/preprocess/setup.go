@@ -17,14 +17,13 @@ package preprocess
 import (
 	"fmt"
 	"go/token"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
@@ -36,15 +35,15 @@ const (
 )
 
 func initRuleDir() (err error) {
-	if exist, _ := util.PathExists(OtelRules); exist {
+	if util.PathExists(OtelRules) {
 		err = os.RemoveAll(OtelRules)
 		if err != nil {
-			return fmt.Errorf("failed to remove dir %v: %w", OtelRules, err)
+			return errc.New(errc.ErrRemoveAll, OtelRules)
 		}
 	}
 	err = os.MkdirAll(OtelRules, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("failed to create dir %v: %w", OtelRules, err)
+		return errc.New(errc.ErrMkdirAll, OtelRules)
 	}
 	return nil
 }
@@ -54,8 +53,6 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 		return nil
 	}
 	// Find out which resource files we should add to project
-	// uniqueResources := make(map[string]*resource.RuleBundle)
-	// res2Dir := make(map[string]string)
 	for _, bundle := range dp.bundles {
 		for _, funcRules := range bundle.File2FuncRules {
 			// Copy resource file into project as otel_rule_\d.go
@@ -73,7 +70,7 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 						return err
 					}
 					if len(files) == 0 {
-						return fmt.Errorf("can not find resource for %v", rule)
+						return errc.New(errc.ErrInvalidRule, rule.String())
 					}
 					// Although different rule hooks may instrument the same
 					// function, we still need to create separate directories
@@ -84,24 +81,19 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 					dp.rule2Dir[rule] = dir
 
 					for _, file := range files {
-						if !shared.IsGoFile(file) || shared.IsGoTestFile(file) {
-							if config.GetConf().Verbose {
-								log.Printf("Ignore file %v\n", file)
-							}
+						if !util.IsGoFile(file) || util.IsGoTestFile(file) {
 							continue
 						}
 
 						ruleDir := filepath.Join(pkgName, dir)
 						err = os.MkdirAll(ruleDir, 0777)
 						if err != nil {
-							return fmt.Errorf("failed to create dir %v: %w",
-								ruleDir, err)
+							return errc.New(errc.ErrMkdirAll, err.Error())
 						}
 						ruleFile := filepath.Join(ruleDir, filepath.Base(file))
 						err = dp.copyRule(file, ruleFile, bundle)
 						if err != nil {
-							return fmt.Errorf("failed to copy rule %v: %w",
-								file, err)
+							return err
 						}
 					}
 				}
@@ -111,6 +103,7 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 
 	return nil
 }
+
 func rectifyCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
 	// We write hook code by using api.CallContext as the first parameter, but
 	// the actual package name is not api. Given net/http package, the actual
@@ -121,7 +114,7 @@ func rectifyCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
 	// omit the package name before, but we can't do that now because of renaming
 	newAliasName := bundle.PackageName + util.RandomString(5)
 	alias := ApiPackage
-	spec := shared.FindImport(astRoot, ApiImportPath)
+	spec := util.FindImport(astRoot, ApiImportPath)
 	if spec != nil {
 		if spec.Name != nil {
 			alias = spec.Name.Name
@@ -152,6 +145,7 @@ func rectifyCallContext(astRoot *dst.File, bundle *resource.RuleBundle) {
 		}
 	}
 }
+
 func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 	// Only make hook public, keep it as it is if it's not a hook
 	hooks := make(map[string]bool)
@@ -172,7 +166,7 @@ func makeHookPublic(astRoot *dst.File, bundle *resource.RuleBundle) {
 			for _, param := range params {
 				if sele, ok := param.Type.(*dst.SelectorExpr); ok {
 					if _, ok := sele.X.(*dst.Ident); ok {
-						if sele.Sel.Name == "CallContext" {
+						if sele.Sel.Name == ApiCallContext {
 							f.Name.Name = strings.Title(f.Name.Name)
 							break
 						}
@@ -187,12 +181,12 @@ func (dp *DepProcessor) copyRule(path, target string,
 	bundle *resource.RuleBundle) error {
 	text, err := util.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read rule file %v: %w", path, err)
+		return err
 	}
-	text = shared.RemoveGoBuildComment(text)
-	astRoot, err := shared.ParseAstFromSource(text)
+	text = util.RemoveGoBuildComment(text)
+	astRoot, err := util.ParseAstFromSource(text)
 	if err != nil {
-		return fmt.Errorf("failed to parse ast from source: %w", err)
+		return err
 	}
 	// Rename package name nevertheless
 	astRoot.Name.Name = filepath.Base(filepath.Dir(target))
@@ -204,12 +198,12 @@ func (dp *DepProcessor) copyRule(path, target string,
 	makeHookPublic(astRoot, bundle)
 
 	// Copy used rule into project
-	_, err = shared.WriteAstToFile(astRoot, target)
+	_, err = util.WriteAstToFile(astRoot, target)
 	if err != nil {
-		return fmt.Errorf("failed to write ast to %v: %w", target, err)
+		return err
 	}
 	if config.GetConf().Verbose {
-		log.Printf("Copy dependency %v to %v", path, target)
+		util.Log("Copy dependency %v to %v", path, target)
 	}
 	return nil
 }
@@ -251,16 +245,15 @@ func (dp *DepProcessor) initRules(pkgName string) (err error) {
 						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
-							return fmt.Errorf("failed to get import path: %w",
-								err)
+							return err
 						}
 						imports[path] = dp.rule2Dir[rule]
 						assigns = append(assigns,
 							fmt.Sprintf("\t%s.%s = %s.%s\n",
 								aliasPkg,
-								shared.GetVarNameOfFunc(rule.OnEnter),
+								util.GetVarNameOfFunc(rule.OnEnter),
 								dp.rule2Dir[rule],
-								shared.MakePublic(rule.OnEnter),
+								util.MakePublic(rule.OnEnter),
 							),
 						)
 					}
@@ -268,17 +261,16 @@ func (dp *DepProcessor) initRules(pkgName string) (err error) {
 						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
-							return fmt.Errorf("failed to get import path: %w",
-								err)
+							return err
 						}
 						imports[path] = dp.rule2Dir[rule]
 						assigns = append(assigns,
 							fmt.Sprintf(
 								"\t%s.%s = %s.%s\n",
 								aliasPkg,
-								shared.GetVarNameOfFunc(rule.OnExit),
+								util.GetVarNameOfFunc(rule.OnExit),
 								dp.rule2Dir[rule],
-								shared.MakePublic(rule.OnExit),
+								util.MakePublic(rule.OnExit),
 							),
 						)
 					}
@@ -326,11 +318,11 @@ func (dp *DepProcessor) initRules(pkgName string) (err error) {
 func (dp *DepProcessor) addRuleImport() error {
 	ruleImportPath, err := dp.getImportPathOf(OtelRules)
 	if err != nil {
-		return fmt.Errorf("failed to get import path: %w", err)
+		return err
 	}
 	err = dp.addExplicitImport(ruleImportPath)
 	if err != nil {
-		return fmt.Errorf("failed to add rule import: %w", err)
+		return err
 	}
 	return nil
 }
@@ -352,9 +344,9 @@ func (dp *DepProcessor) rewriteRules() error {
 			if !strings.HasSuffix(rule.FileName, ReorderInitFile) {
 				continue
 			}
-			astRoot, err := shared.ParseAstFromFile(rule.FileName)
+			astRoot, err := util.ParseAstFromFile(rule.FileName)
 			if err != nil {
-				return fmt.Errorf("failed to parse ast from source: %w", err)
+				return err
 			}
 			found := false
 			dst.Inspect(astRoot, func(n dst.Node) bool {
@@ -362,7 +354,7 @@ func (dp *DepProcessor) rewriteRules() error {
 					if basicLit.Kind == token.STRING {
 						quoted := fmt.Sprintf("%q", ReorderLocalPrefix)
 						if basicLit.Value == quoted {
-							gomod, err := shared.GetGoModPath()
+							gomod, err := util.GetGoModPath()
 							if err != nil {
 								return false
 							}
@@ -379,13 +371,11 @@ func (dp *DepProcessor) rewriteRules() error {
 				return true
 			})
 			if !found {
-				return fmt.Errorf("failed to find rewrite local prefix in %v",
-					rule.FileName)
+				return errc.New(errc.ErrInternal, "no localPrefix found")
 			} else {
-				_, err = shared.WriteAstToFile(astRoot, rule.FileName)
+				_, err = util.WriteAstToFile(astRoot, rule.FileName)
 				if err != nil {
-					return fmt.Errorf("failed to write ast to %v: %w",
-						rule.FileName, err)
+					return err
 				}
 			}
 		}
@@ -397,37 +387,37 @@ func (dp *DepProcessor) setupOtelSDK(pkgName string) error {
 	setupTarget := filepath.Join(OtelRules, OtelSetupSDK)
 	_, err := resource.CopyOtelSetupTo(pkgName, setupTarget)
 	if err != nil {
-		return fmt.Errorf("failed to copy otel setup sdk: %w", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func (dp *DepProcessor) setupRules() (err error) {
 	defer util.PhaseTimer("Setup")()
 	err = initRuleDir()
 	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		return err
 	}
 	err = dp.copyRules(OtelRules)
 	if err != nil {
-		return fmt.Errorf("failed to setup rules: %w", err)
+		return err
 	}
 	err = dp.initRules(OtelRules)
 	if err != nil {
-		return fmt.Errorf("failed to setup initiator: %w", err)
+		return err
 	}
 	err = dp.rewriteRules()
 	if err != nil {
-		return fmt.Errorf("failed to rewrite rules: %w", err)
+		return err
 	}
 	err = dp.setupOtelSDK(OtelRules)
 	if err != nil {
-		return fmt.Errorf("failed to setup otel sdk: %w", err)
+		return err
 	}
 	// Add rule import to all candidates
 	err = dp.addRuleImport()
 	if err != nil {
-		return fmt.Errorf("failed to add rule import: %w", err)
+		return err
 	}
 	return nil
 }

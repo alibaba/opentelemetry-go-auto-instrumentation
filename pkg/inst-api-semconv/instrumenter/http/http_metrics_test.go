@@ -16,7 +16,7 @@ package http
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/utils"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -79,7 +79,6 @@ func TestHttpClientMetrics(t *testing.T) {
 }
 
 func TestHttpMetricAttributesShadower(t *testing.T) {
-	s := httpMetricAttributesShadower{}
 	attrs := make([]attribute.KeyValue, 0)
 	attrs = append(attrs, attribute.KeyValue{
 		Key:   semconv.HTTPRequestMethodKey,
@@ -94,7 +93,7 @@ func TestHttpMetricAttributesShadower(t *testing.T) {
 		Key:   semconv.ServerPortKey,
 		Value: attribute.IntValue(8080),
 	})
-	n, attrs := s.Shadow(attrs)
+	n, attrs := utils.Shadow(attrs, httpMetricsConv)
 	if n != 3 {
 		panic("wrong shadow array")
 	}
@@ -112,8 +111,8 @@ func TestLazyHttpServerMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	meter.SetMeter(m)
-	server := HttpServerMetrics()
+	InitHttpMetrics(m)
+	server := HttpServerMetrics("net.http.server")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = server.OnBeforeStart(ctx, start)
@@ -136,8 +135,8 @@ func TestLazyHttpClientMetrics(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
-	meter.SetMeter(m)
-	client := HttpClientMetrics()
+	InitHttpMetrics(m)
+	client := HttpClientMetrics("net.http.client")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = client.OnBeforeStart(ctx, start)
@@ -161,7 +160,7 @@ func TestGlobalHttpServerMetrics(t *testing.T) {
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
 	InitHttpMetrics(m)
-	server := HttpServerMetrics()
+	server := HttpServerMetrics("net.http.server")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = server.OnBeforeStart(ctx, start)
@@ -185,7 +184,7 @@ func TestGlobalHttpClientMetrics(t *testing.T) {
 	mp := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
 	m := mp.Meter("test-meter")
 	InitHttpMetrics(m)
-	client := HttpClientMetrics()
+	client := HttpClientMetrics("net.http.client")
 	ctx := context.Background()
 	start := time.Now()
 	ctx = client.OnBeforeStart(ctx, start)
@@ -196,5 +195,33 @@ func TestGlobalHttpClientMetrics(t *testing.T) {
 	reader.Collect(ctx, rm)
 	if rm.ScopeMetrics[0].Metrics[0].Name != "http.client.request.duration" {
 		panic("wrong metrics name, " + rm.ScopeMetrics[0].Metrics[0].Name)
+	}
+}
+
+func TestClientNilMeter(t *testing.T) {
+	reader := metric.NewManualReader()
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName("my-service"),
+		semconv.ServiceVersion("v0.1.0"),
+	)
+	_ = metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
+	_, err := newHttpClientMetric("test", nil)
+	if err == nil {
+		panic(err)
+	}
+}
+
+func TestServerNilMeter(t *testing.T) {
+	reader := metric.NewManualReader()
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName("my-service"),
+		semconv.ServiceVersion("v0.1.0"),
+	)
+	_ = metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(reader))
+	_, err := newHttpServerMetric("test", nil)
+	if err == nil {
+		panic(err)
 	}
 }

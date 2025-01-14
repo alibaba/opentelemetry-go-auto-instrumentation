@@ -16,21 +16,15 @@ package preprocess
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
-
-func runModDownload(path string) (string, error) {
-	return util.RunCmdOutput("go", "mod", "download", "-json", path)
-}
 
 type moduleHolder struct {
 	Error string // error loading module
@@ -38,29 +32,24 @@ type moduleHolder struct {
 }
 
 func fetchNetwork(path string) (string, error) {
-	text, err := runModDownload(path)
+	// Note we dont use CombinedOutput here because some unexpected output may
+	// be printed to stderr, which is not what we want, we only care about the
+	// json output and handle the error when the command fails
+	text, err := util.RunCmdOutput("go", "mod", "download", "-json", path)
 	if err != nil {
-		return "", fmt.Errorf("failed to download rule: %w %v %v",
-			err, text, path)
+		return "", err
+
 	}
 	var mod *moduleHolder
 	err = json.Unmarshal([]byte(text), &mod)
 	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal rule: %w %v",
-			err, path)
+		return "", errc.New(errc.ErrInvalidJSON, "bad "+path)
 	}
 	if mod.Error != "" {
-		return "", fmt.Errorf("failed to download rule: %s %v",
-			mod.Error, path)
+		return "", errc.New(errc.ErrInvalidJSON, mod.Error)
 	}
-	exist, err := util.PathExists(mod.Dir)
-	if err != nil {
-		return "", fmt.Errorf("failed to check path: %w %v",
-			err, mod.Dir)
-	}
-	if !exist {
-		return "", fmt.Errorf("failed to find module path: %s",
-			mod.Dir)
+	if util.PathNotExists(mod.Dir) {
+		return "", errc.New(errc.ErrNotExist, mod.Dir)
 	}
 	return mod.Dir, nil
 }
@@ -90,72 +79,68 @@ func (dp *DepProcessor) fetchEmbed(path string) (string, error) {
 		if err != nil {
 			return err
 		}
-		target := shared.GetPreprocessLogPath(filepath.Join(OtelRuleCache, p))
+		target := util.GetPreprocessLogPath(filepath.Join(OtelRuleCache, p))
 		err = os.MkdirAll(filepath.Dir(target), 0777)
 		if err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
+			return errc.New(errc.ErrMkdirAll, err.Error())
 		}
 		_, err = util.WriteFile(target, string(data))
 		if err != nil {
-			return fmt.Errorf("failed to write file: %w", err)
+			return err
 		}
 		if config.GetConf().Verbose {
-			log.Printf("Copy embed file %v to %v", p, target)
+			util.Log("Copy embed file %v to %v", p, target)
 		}
 		return nil
 	}
 
 	err := fs.WalkDir(dp.ruleCache, path, walkFn)
 	if err != nil {
-		return "", fmt.Errorf("failed to walk dir: %w", err)
+		return "", errc.New(errc.ErrWalkDir, err.Error())
 	}
 	// Now all rule files are copied to the local file system, we can return
 	// the path to corresponding local file system
-	dir := shared.GetPreprocessLogPath(filepath.Join(OtelRuleCache, path))
+	dir := util.GetPreprocessLogPath(filepath.Join(OtelRuleCache, path))
 	return dir, nil
 }
 
 func (dp *DepProcessor) fetchFrom(path string) (string, error) {
 	// Path to local file system, use local directory directly
-	exist, err := util.PathExists(path)
-	if err != nil {
-		return "", fmt.Errorf("failed to check path: %w", err)
-	}
-	if exist {
-		log.Printf("Fetch %s from local file system", path)
+	if util.PathExists(path) {
+		util.Log("Fetch %s from local file system", path)
 		return path, nil
 	}
 	// Path to network
-	if shared.IsModPath(path) {
+	if util.IsModPath(path) {
 		// If the path points to the network but is an officially provided
 		// module, then we can retrieve it from the embed cache instead of
 		// downloading it from the network.
 		if isStdRulePath(path) {
 			dir, err := dp.fetchEmbed(path)
 			if err != nil {
-				return "", fmt.Errorf("failed to fetch embed: %w", err)
+				return "", err
 			}
-			log.Printf("Fetch %s from embed cache", path)
+			util.Log("Fetch %s from embed cache", path)
 			return dir, nil
 		}
 
 		// Download the module to the local file system
 		dir, err := fetchNetwork(path)
 		if err != nil {
-			return "", fmt.Errorf("failed to download module: %w", err)
+			return "", err
 		}
 		// Get path to the local module cache
-		log.Printf("Fetch %s from network %s", path, dir)
+		util.Log("Fetch %s from network %s", path, dir)
 		return dir, nil
 	}
 
 	// Best effort to find the path but not found, give up
-	return "", fmt.Errorf("can not fetch path %s", path)
+	return "", errc.New(errc.ErrNotExist, "cannot fetch "+path)
 }
 
 // fetchRules fetches the rules via the network
 func (dp *DepProcessor) fetchRules() error {
-	shared.GuaranteeInPreprocess()
+	util.GuaranteeInPreprocess()
 	defer util.PhaseTimer("Fetch")()
 	// Different rules may share the same path, we dont want to fetch the same
 	// path multiple times, so we use a map to record the resolved paths
@@ -175,7 +160,7 @@ func (dp *DepProcessor) fetchRules() error {
 					util.Assert(rule.GetPath() != "", "sanity check")
 					path, err := dp.fetchFrom(rule.GetPath())
 					if err != nil {
-						return fmt.Errorf("failed to fetch func rules: %w", err)
+						return err
 					}
 					resolved[rule.GetPath()] = path
 					rule.SetPath(path)
@@ -194,7 +179,7 @@ func (dp *DepProcessor) fetchRules() error {
 			} else {
 				p, err := dp.fetchFrom(fileRule.GetPath())
 				if err != nil {
-					return fmt.Errorf("failed to fetch file rules: %w", err)
+					return err
 				}
 				path = p
 				resolved[fileRule.GetPath()] = path
@@ -202,13 +187,8 @@ func (dp *DepProcessor) fetchRules() error {
 
 			// Further check if the joined file exists
 			file := filepath.Join(path, fileRule.FileName)
-			exist, err := util.PathExists(file)
-			if err != nil {
-				return fmt.Errorf("failed to check file path: %w %v",
-					err, fileRule.FileName)
-			}
-			if !exist {
-				return fmt.Errorf("failed to find file %v", fileRule.FileName)
+			if util.PathNotExists(file) {
+				return errc.New(errc.ErrNotExist, file)
 			}
 			fileRule.FileName = file
 			fileRule.SetPath(path)

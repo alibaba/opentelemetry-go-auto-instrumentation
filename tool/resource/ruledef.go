@@ -15,10 +15,10 @@ package resource
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 // -----------------------------------------------------------------------------
@@ -38,6 +38,7 @@ import (
 
 type InstRule interface {
 	GetVersion() string    // GetVersion returns the version of the rule
+	GetGoVersion() string  // GetGoVersion returns the go version of the rule
 	GetImportPath() string // GetImportPath returns import path of the rule
 	GetPath() string       // GetPath returns the local path of the rule
 	SetPath(path string)   // SetPath sets the local path of the rule
@@ -46,16 +47,25 @@ type InstRule interface {
 }
 
 type InstBaseRule struct {
-	// Local path of the rule
+	// Local path of the rule, it desginates where we can found the hook code
 	Path string `json:"Path,omitempty"`
-	// Version of the rule, e.g. "[1.9.1,1.9.2)" or ""
+	// Version of the rule, e.g. "[1.9.1,1.9.2)" or "", it desginates the
+	// version range of rule, all other version will not be instrumented
 	Version string `json:"Version,omitempty"`
-	// Import path of the rule, e.g. "github.com/gin-gonic/gin"
+	// Go version of the rule, e.g. "[1.22.0,)" or "", it desginates the go
+	// version range of rule, all other go version will not be instrumented
+	GoVersion string `json:"GoVersion,omitempty"`
+	// Import path of the rule, e.g. "github.com/gin-gonic/gin", it desginates
+	// the import path of rule, all other import path will not be instrumented
 	ImportPath string `json:"ImportPath,omitempty"`
 }
 
 func (rule *InstBaseRule) GetVersion() string {
 	return rule.Version
+}
+
+func (rule *InstBaseRule) GetGoVersion() string {
+	return rule.GoVersion
 }
 
 func (rule *InstBaseRule) GetImportPath() string {
@@ -107,30 +117,6 @@ type InstFileRule struct {
 	Replace bool `json:"Replace,omitempty"`
 }
 
-func (rule *InstFuncRule) WithVersion(version string) *InstFuncRule {
-	rule.Version = version
-	return rule
-}
-
-func (rule *InstFuncRule) WithUseRaw(useRaw bool) *InstFuncRule {
-	rule.UseRaw = useRaw
-	return rule
-}
-
-func (rule *InstFuncRule) WithFileDeps(deps ...string) *InstFuncRule {
-	return rule
-}
-
-func (rule *InstFileRule) WithReplace(replace bool) *InstFileRule {
-	rule.Replace = replace
-	return rule
-}
-
-func (rule *InstFileRule) WithVersion(version string) *InstFileRule {
-	rule.Version = version
-	return rule
-}
-
 // String returns string representation of the rule
 func (rule *InstFuncRule) String() string {
 	bs, _ := json.Marshal(rule)
@@ -146,39 +132,36 @@ func (rule *InstFileRule) String() string {
 }
 
 // Verify checks the rule is valid
-func verifyRuleBase(rule *InstBaseRule) error {
-	if rule.Path == "" {
-		return fmt.Errorf("local path is empty")
+func verifyRule(rule *InstBaseRule, checkPath bool) error {
+	if checkPath {
+		if rule.Path == "" {
+			return errc.New(errc.ErrInvalidRule, "local path is empty")
+		}
 	}
+	// Import path should not be empty
 	if rule.ImportPath == "" {
-		return fmt.Errorf("import path is empty")
+		return errc.New(errc.ErrInvalidRule, "import path is empty")
 	}
-	if rule.Version != "" {
-		// If version is specified, it should be in the format of [start,end)
-		if !strings.Contains(rule.Version, "[") ||
-			!strings.Contains(rule.Version, ")") ||
-			!strings.Contains(rule.Version, ",") ||
-			strings.Contains(rule.Version, "v") {
-			return fmt.Errorf("invalid version format %s", rule.Version)
+	// If version is specified, it should be in the format of [start,end)
+	for _, v := range []string{rule.Version, rule.GoVersion} {
+		if v != "" {
+			if !strings.Contains(v, "[") ||
+				!strings.Contains(v, ")") ||
+				!strings.Contains(v, ",") ||
+				strings.Contains(v, "v") {
+				return errc.New(errc.ErrInvalidRule, "bad version "+v)
+			}
 		}
 	}
 	return nil
 }
 
+func verifyRuleBase(rule *InstBaseRule) error {
+	return verifyRule(rule, false)
+}
+
 func verifyRuleBaseWithoutPath(rule *InstBaseRule) error {
-	if rule.ImportPath == "" {
-		return fmt.Errorf("import path is empty")
-	}
-	if rule.Version != "" {
-		// If version is specified, it should be in the format of [start,end)
-		if !strings.Contains(rule.Version, "[") ||
-			!strings.Contains(rule.Version, ")") ||
-			!strings.Contains(rule.Version, ",") ||
-			strings.Contains(rule.Version, "v") {
-			return fmt.Errorf("invalid version format %s", rule.Version)
-		}
-	}
-	return nil
+	return verifyRule(rule, true)
 }
 
 func (rule *InstFileRule) Verify() error {
@@ -187,10 +170,10 @@ func (rule *InstFileRule) Verify() error {
 		return err
 	}
 	if rule.FileName == "" {
-		return fmt.Errorf("file name is empty")
+		return errc.New(errc.ErrInvalidRule, "empty file name")
 	}
-	if !shared.IsGoFile(rule.FileName) {
-		return fmt.Errorf("file name should not end with .go")
+	if !util.IsGoFile(rule.FileName) {
+		return errc.New(errc.ErrInvalidRule, "not a go file")
 	}
 	return nil
 }
@@ -206,10 +189,10 @@ func (rule *InstFuncRule) Verify() error {
 		return err
 	}
 	if rule.Function == "" {
-		return fmt.Errorf("function name is empty")
+		return errc.New(errc.ErrInvalidRule, "empty function name")
 	}
 	if rule.OnEnter == "" && rule.OnExit == "" {
-		return fmt.Errorf("both onEnter and onExit are empty")
+		return errc.New(errc.ErrInvalidRule, "empty hook")
 	}
 	return nil
 }
@@ -220,10 +203,10 @@ func (rule *InstStructRule) Verify() error {
 		return err
 	}
 	if rule.StructType == "" {
-		return fmt.Errorf("struct type is empty")
+		return errc.New(errc.ErrInvalidRule, "empty struct type")
 	}
 	if rule.FieldName == "" || rule.FieldType == "" {
-		return fmt.Errorf("field name is empty")
+		return errc.New(errc.ErrInvalidRule, "empty field name or type")
 	}
 	return nil
 }

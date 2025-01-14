@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/utils"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -42,9 +42,6 @@ type HttpClientMetric struct {
 }
 
 var mu sync.Mutex
-var httpServerOperationListener *HttpServerMetric
-var httpClientOperationListener *HttpClientMetric
-var shadower = httpMetricAttributesShadower{}
 
 var httpMetricsConv = map[attribute.Key]bool{
 	semconv.HTTPRequestMethodKey:      true,
@@ -58,41 +55,30 @@ var httpMetricsConv = map[attribute.Key]bool{
 	semconv.ServerPortKey:             true,
 }
 
+var globalMeter metric.Meter
+
 // InitHttpMetrics TODO: The init function may be executed after the HttpServerOperationListener() method
 // so we need to make sure the otel_setup is executed before all the init() function
 // related to issue https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/48
-func InitHttpMetrics(meter metric.Meter) {
-	var err error
-	httpServerOperationListener, err = newHttpServerMetric("net.http.server", meter)
-	if err != nil {
-		panic(err)
-	}
-	httpClientOperationListener, err = newHttpClientMetric("net.http.client", meter)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func HttpServerMetrics() *HttpServerMetric {
+func InitHttpMetrics(m metric.Meter) {
 	mu.Lock()
 	defer mu.Unlock()
-	if httpServerOperationListener != nil {
-		return httpServerOperationListener
-	} else {
-		return &HttpServerMetric{}
-	}
+	globalMeter = m
 }
 
-func HttpClientMetrics() *HttpClientMetric {
+func HttpServerMetrics(key string) *HttpServerMetric {
 	mu.Lock()
 	defer mu.Unlock()
-	if httpClientOperationListener != nil {
-		return httpClientOperationListener
-	} else {
-		return &HttpClientMetric{}
-	}
+	return &HttpServerMetric{key: attribute.Key(key)}
 }
 
+func HttpClientMetrics(key string) *HttpClientMetric {
+	mu.Lock()
+	defer mu.Unlock()
+	return &HttpClientMetric{key: attribute.Key(key)}
+}
+
+// for test only
 func newHttpServerMetric(key string, meter metric.Meter) (*HttpServerMetric, error) {
 	m := &HttpServerMetric{
 		key: attribute.Key(key),
@@ -121,6 +107,7 @@ func newHttpServerRequestDurationMeasures(meter metric.Meter) (metric.Float64His
 	}
 }
 
+// for test only
 func newHttpClientMetric(key string, meter metric.Meter) (*HttpClientMetric, error) {
 	m := &HttpClientMetric{
 		key: attribute.Key(key),
@@ -175,13 +162,13 @@ func (h *HttpServerMetric) OnAfterEnd(context context.Context, endAttributes []a
 	// end attributes should be shadowed by AttrsShadower
 	if h.serverRequestDuration == nil {
 		var err error
-		h.serverRequestDuration, err = newHttpServerRequestDurationMeasures(meter.GetMeter())
+		h.serverRequestDuration, err = newHttpServerRequestDurationMeasures(globalMeter)
 		if err != nil {
 			log.Printf("failed to create serverRequestDuration, err is %v\n", err)
 		}
 	}
 	endAttributes = append(endAttributes, startAttributes...)
-	n, metricsAttrs := shadower.Shadow(endAttributes)
+	n, metricsAttrs := utils.Shadow(endAttributes, httpMetricsConv)
 	if h.serverRequestDuration != nil {
 		h.serverRequestDuration.Record(context, float64(endTime.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))
 	}
@@ -209,34 +196,14 @@ func (h HttpClientMetric) OnAfterEnd(context context.Context, endAttributes []at
 	if h.clientRequestDuration == nil {
 		var err error
 		// second change to init the metric
-		h.clientRequestDuration, err = newHttpClientRequestDurationMeasures(meter.GetMeter())
+		h.clientRequestDuration, err = newHttpClientRequestDurationMeasures(globalMeter)
 		if err != nil {
 			log.Printf("failed to create clientRequestDuration, err is %v\n", err)
 		}
 	}
 	endAttributes = append(endAttributes, startAttributes...)
-	n, metricsAttrs := shadower.Shadow(endAttributes)
+	n, metricsAttrs := utils.Shadow(endAttributes, httpMetricsConv)
 	if h.clientRequestDuration != nil {
 		h.clientRequestDuration.Record(context, float64(endTime.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))
 	}
-}
-
-type httpMetricAttributesShadower struct{}
-
-func (h httpMetricAttributesShadower) Shadow(attrs []attribute.KeyValue) (int, []attribute.KeyValue) {
-	swap := func(attrs []attribute.KeyValue, i, j int) {
-		tmp := attrs[i]
-		attrs[i] = attrs[j]
-		attrs[j] = tmp
-	}
-	index := 0
-	for i, attr := range attrs {
-		if _, ok := httpMetricsConv[attr.Key]; ok {
-			if index != i {
-				swap(attrs, i, index)
-			}
-			index++
-		}
-	}
-	return index, attrs
 }

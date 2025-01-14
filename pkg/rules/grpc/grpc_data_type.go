@@ -21,8 +21,9 @@ import (
 var grpcClientInstrument = BuildGrpcClientInstrumenter()
 
 type grpcRequest struct {
-	methodName  string
-	propagators propagation.TextMapCarrier
+	methodName    string
+	serverAddress string
+	propagators   propagation.TextMapCarrier
 }
 
 type grpcResponse struct {

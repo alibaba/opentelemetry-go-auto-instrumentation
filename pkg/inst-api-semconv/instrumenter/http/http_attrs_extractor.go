@@ -17,6 +17,7 @@ package http
 import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -92,6 +93,10 @@ func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnEnd(at
 	return attributes, context
 }
 
+func (h *HttpClientAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) GetSpanKey() attribute.Key {
+	return utils.HTTP_CLIENT_KEY
+}
+
 type HttpServerAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpServerAttrsGetter[REQUEST, RESPONSE], GETTER2 net.NetworkAttrsGetter[REQUEST, RESPONSE], GETTER3 net.UrlAttrsGetter[REQUEST]] struct {
 	Base             HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]
 	NetworkExtractor net.NetworkAttrsExtractor[REQUEST, RESPONSE, GETTER2]
@@ -124,7 +129,7 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 	attributes, context = h.NetworkExtractor.OnEnd(attributes, context, request, response, err)
 	span := trace.SpanFromContext(context)
 	localRootSpan, ok := span.(sdktrace.ReadOnlySpan)
-	if ok {
+	if ok && span.IsRecording() {
 		route := h.Base.HttpGetter.GetHttpRoute(request)
 		if !strings.Contains(localRootSpan.Name(), route) {
 			route = localRootSpan.Name()
@@ -138,4 +143,8 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 		attributes = h.Base.AttributesFilter(attributes)
 	}
 	return attributes, context
+}
+
+func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3]) GetSpanKey() attribute.Key {
+	return utils.HTTP_SERVER_KEY
 }

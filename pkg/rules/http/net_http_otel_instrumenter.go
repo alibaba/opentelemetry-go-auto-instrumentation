@@ -205,7 +205,7 @@ func BuildNetHttpClientOtelInstrumenter() *instrumenter.PropagatingToDownstreamI
 	networkExtractor := net.NetworkAttrsExtractor[*netHttpRequest, *netHttpResponse, net.NetworkAttrsGetter[*netHttpRequest, *netHttpResponse]]{Getter: clientGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpClientSpanStatusExtractor[*netHttpRequest, *netHttpResponse]{Getter: clientGetter}).SetSpanNameExtractor(&http.HttpClientSpanNameExtractor[*netHttpRequest, *netHttpResponse]{Getter: clientGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*netHttpRequest]{}).
-		AddOperationListeners(http.HttpClientMetrics(), http.HttpClientMetrics()).
+		AddOperationListeners(http.HttpClientMetrics("net.http.client")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.NET_HTTP_CLIENT_SCOPE_NAME,
 			Version: version.Tag,
@@ -226,7 +226,7 @@ func BuildNetHttpServerOtelInstrumenter() *instrumenter.PropagatingFromUpstreamI
 	urlExtractor := net.UrlAttrsExtractor[*netHttpRequest, *netHttpResponse, net.UrlAttrsGetter[*netHttpRequest]]{Getter: serverGetter}
 	return builder.Init().SetSpanStatusExtractor(http.HttpServerSpanStatusExtractor[*netHttpRequest, *netHttpResponse]{Getter: serverGetter}).SetSpanNameExtractor(&http.HttpServerSpanNameExtractor[*netHttpRequest, *netHttpResponse]{Getter: serverGetter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[*netHttpRequest]{}).
-		AddOperationListeners(http.HttpServerMetrics()).
+		AddOperationListeners(http.HttpServerMetrics("net.http.server")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.NET_HTTP_SERVER_SCOPE_NAME,
 			Version: version.Tag,

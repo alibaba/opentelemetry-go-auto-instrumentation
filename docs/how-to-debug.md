@@ -5,7 +5,7 @@
 ## 1. Perform instrumentation with -debug options
 
 ```bash
-$ ./otel -debug go build
+$ ./otel set -debug
 ```
 
 When using the `-debug` compilation option, the tool will compile an unoptimized binary 

@@ -75,6 +75,7 @@ func BuildGoRedisOtelInstrumenter() instrumenter.Instrumenter[goRedisRequest, an
 	getter := goRedisAttrsGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[goRedisRequest]{Getter: getter}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[goRedisRequest]{}).
 		AddAttributesExtractor(&db.DbClientAttrsExtractor[goRedisRequest, any, db.DbClientAttrsGetter[goRedisRequest]]{Base: db.DbClientCommonAttrsExtractor[goRedisRequest, any, db.DbClientAttrsGetter[goRedisRequest]]{Getter: getter}}).
+		AddOperationListeners(db.DbClientMetrics("nosql.goredisv9")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.GO_REDIS_V9_SCOPE_NAME,
 			Version: version.Tag,

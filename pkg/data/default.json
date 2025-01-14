@@ -8,7 +8,8 @@
     "ImportPath": "runtime",
     "Function":"doInit",
     "OnEnter": "reorderInitTasks(ts)",
-    "UseRaw": true
+    "UseRaw": true,
+    "GoVersion": "[1.21.0,)"
   },
   {
     "ImportPath": "runtime",
@@ -404,7 +405,9 @@
   {
     "Version": "[1.5.0,1.9.4)",
     "ImportPath": "github.com/sirupsen/logrus",
+    "ReceiverType": "*Logger",
     "Function": "SetFormatter",
+    "OnEnter": "logNewOnEnter",
     "OnExit": "logNewOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/logrus"
   },
@@ -488,6 +491,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/zap"
   },
   {
+    "Version": "[1.44.0,1.63.0)",
     "ImportPath": "google.golang.org/grpc",
     "Function": "DialContext",
     "OnEnter": "grpcClientOnEnter",
@@ -495,6 +499,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
   },
   {
+    "Version": "[1.63.0,)",
     "ImportPath": "google.golang.org/grpc",
     "Function": "NewClient",
     "OnEnter": "grpcNewClientOnEnter",
@@ -502,10 +507,20 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
   },
   {
+    "Version": "[1.44.0,)",
     "ImportPath": "google.golang.org/grpc",
     "Function": "NewServer",
     "OnEnter": "grpcServerOnEnter",
     "OnExit": "grpcServerOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
+  },
+  {
+    "Version": "[1.44.0,)",
+    "ImportPath": "google.golang.org/grpc",
+    "ReceiverType": "*ClientConn",
+    "Function": "NewStream",
+    "OnEnter": "grpcClientNewStreamOnEnter",
+    "OnExit": "grpcClientNewStreamOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
   },
   {
@@ -521,7 +536,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/hertz/client"
   },
   {
-    "Version": "[1.45.0,1.57.1)",
+    "Version": "[1.45.0,1.58.1)",
     "ImportPath": "github.com/valyala/fasthttp",
     "Function": "Do",
     "ReceiverType": "*HostClient",
@@ -530,7 +545,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fasthttp"
   },
   {
-    "Version": "[1.45.0,1.57.1)",
+    "Version": "[1.45.0,1.58.1)",
     "ImportPath": "github.com/valyala/fasthttp",
     "Function": "ListenAndServe",
     "ReceiverType": "*Server",
@@ -552,14 +567,14 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goslog"
   },
   {
-    "Version": "[2.6.3,2.8.3)",
+    "Version": "[2.6.3,2.8.4)",
     "ImportPath": "github.com/go-kratos/kratos/v2/transport/http",
     "Function": "NewServer",
     "OnEnter": "kratosNewHTTPServiceOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kratos/http"
   },
   {
-    "Version": "[2.6.3,2.8.3)",
+    "Version": "[2.6.3,2.8.4)",
     "ImportPath": "github.com/go-kratos/kratos/v2/transport/grpc",
     "Function": "NewServer",
     "OnEnter": "kratosNewGRPCServiceOnEnter",
@@ -575,12 +590,214 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/elasticsearch"
   },
   {
-    "Version": "[2.43.0,2.52.6)",
+    "Version": "[2.43.0,2.52.7)",
     "ImportPath": "github.com/gofiber/fiber/v2",
     "Function": "handler",
     "ReceiverType": "*App",
     "OnEnter": "fiberHttpOnEnterv2",
     "OnExit": "fiberHttpOnExitv2",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fiberv2"
+  },
+  {
+    "Version": "[3.7.0,3.12.2)",
+    "ImportPath": "github.com/emicklei/go-restful/v3",
+    "Function": "Add",
+    "ReceiverType": "*Container",
+    "OnEnter": "restContainerAddOnEnter",
+    "OnExit": "restContainerAddOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
+  },
+  {
+    "Version": "[3.7.0,3.12.2)",
+    "ImportPath": "github.com/emicklei/go-restful/v3",
+    "Function": "Dispatch",
+    "ReceiverType": "*Container",
+    "OnEnter": "restContainerDispatchOnEnter",
+    "OnExit": "restContainerDispatchOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
+  },
+  {
+    "Version": "[3.7.0,3.12.2)",
+    "ImportPath": "github.com/emicklei/go-restful/v3",
+    "Function": "HandleWithFilter",
+    "ReceiverType": "*Container",
+    "OnEnter": "restContainerHandleOnEnter",
+    "OnExit": "restContainerHandleOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
+  },
+  {
+    "Version": "[1.10.0,1.33.1)",
+    "ImportPath": "github.com/rs/zerolog",
+    "Function": "msg",
+    "ReceiverType": "*Event",
+    "OnEnter": "zeroLogWriteOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/zerolog"
+  },
+  {
+    "Version": "[0.5.1,0.11.4)",
+    "ImportPath": "github.com/cloudwego/kitex/client",
+    "Function": "NewClient",
+    "OnEnter": "beforeNewKitexClientInstrument",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kitex"
+  },
+  {
+    "Version": "[0.5.1,0.11.4)",
+    "ImportPath": "github.com/cloudwego/kitex/server",
+    "Function": "NewServer",
+    "OnEnter": "beforeNewKitexServerInstrument",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kitex"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client",
+    "Function": "CloseClient",
+    "ReceiverType": "*NamingClient",
+    "OnEnter": "beforeNamingClientClose",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
+  },
+  {
+    "Version": "[2.0.0,2.1.0)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache",
+    "Function": "NewServiceInfoHolder",
+    "OnEnter": "beforeNewServiceInfoHolder",
+    "OnExit": "afterNewServiceInfoHolder",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service_holder"
+  },
+  {
+    "Version": "[2.1.0,)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache",
+    "Function": "NewServiceInfoHolder",
+    "OnEnter": "beforeNewServiceInfoHolder",
+    "OnExit": "afterNewServiceInfoHolder",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos2_1_0/service_holder"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache",
+    "StructType": "ServiceInfoHolder",
+    "FieldName": "OtelReg",
+    "FieldType": "interface{}"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client",
+    "Function": "CloseClient",
+    "ReceiverType": "*ConfigClient",
+    "OnEnter": "beforeConfigClientClose",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client",
+    "Function": "NewConfigClient",
+    "OnEnter": "beforeNewConfigClient",
+    "OnExit": "afterNewConfigClient",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client",
+    "StructType": "ConfigClient",
+    "FieldName": "OtelReg",
+    "FieldType": "interface{}"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
+    "Function": "CloseClient",
+    "ReceiverType": "*NamingHttpProxy",
+    "OnEnter": "beforeNamingHttpProxyCloseClient",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
+  },
+  {
+    "Version": "[2.0.0,2.1.1)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
+    "Function": "NewBeatReactor",
+    "OnEnter": "beforeNewBeatReactor",
+    "OnExit": "afterNewBeatReactor",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/dom"
+  },
+  {
+    "Version": "[2.1.1,)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
+    "Function": "NewBeatReactor",
+    "OnEnter": "beforeNewBeatReactor",
+    "OnExit": "afterNewBeatReactor",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos2_1_1/dom"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
+    "StructType": "BeatReactor",
+    "FieldName": "OtelReg",
+    "FieldType": "interface{}"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc",
+    "Function": "requestToServer",
+    "ReceiverType": "*NamingGrpcProxy",
+    "OnEnter": "beforeRequestToServer",
+    "onExit": "afterRequestToServer",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client",
+    "Function": "requestProxy",
+    "ReceiverType": "*ConfigProxy",
+    "OnEnter": "beforeRequestProxy",
+    "onExit": "afterRequestProxy",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server",
+    "Function": "callServer",
+    "ReceiverType": "*NacosServer",
+    "OnEnter": "beforeCallServer",
+    "onExit": "afterCallServer",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
+  },
+  {
+    "Version": "[2.0.0,2.2.8)",
+    "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server",
+    "Function": "callConfigServer",
+    "ReceiverType": "*NacosServer",
+    "OnEnter": "beforeCallConfigServer",
+    "onExit": "afterCallConfigServer",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
+  },
+  {
+    "Version": "[12.2.0,12.2.12)",
+    "ImportPath": "github.com/kataras/iris/v12/core/router",
+    "Function": "HandleRequest",
+    "ReceiverType": "*routerHandler",
+    "OnEnter": "irisHttpOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/iris"
+  },
+  {
+    "Version": "[5.0.0,5.3.1)",
+    "ImportPath": "go-micro.dev/v5/client",
+    "Function": "next",
+    "ReceiverType": "*rpcClient",
+    "OnExit": "NextOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gomicro"
+  },
+  {
+    "Version": "[5.0.0,5.3.1)",
+    "ImportPath": "go-micro.dev/v5",
+    "Function": "NewService",
+    "OnEnter": "NewServiceOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gomicro"
+  },
+  {
+    "Version": "[5.0.0,5.3.1)",
+    "ImportPath": "go-micro.dev/v5/server",
+    "Function": "ServeRequest",
+    "ReceiverType": "*router",
+    "OnEnter": "ServeRequestOnEnter",
+    "OnExit": "ServeRequestOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gomicro"
   }
 ]

@@ -304,7 +304,7 @@ func TestHttpServerExtractorEnd(t *testing.T) {
 	}
 	attrs := make([]attribute.KeyValue, 0)
 	ctx := context.Background()
-	ctx = trace.ContextWithSpan(ctx, &testReadOnlySpan{})
+	ctx = trace.ContextWithSpan(ctx, &testReadOnlySpan{isRecording: true})
 	attrs, _ = httpServerExtractor.OnEnd(attrs, ctx, testRequest{}, testResponse{}, nil)
 	if attrs[0].Key != semconv.HTTPResponseStatusCodeKey || attrs[0].Value.AsInt64() != 200 {
 		t.Fatalf("status code should be 200")
@@ -390,5 +390,50 @@ func TestHttpClientExtractorWithFilter(t *testing.T) {
 	attrs, _ = httpClientExtractor.OnEnd(attrs, parentContext, testRequest{Method: "test"}, testResponse{}, nil)
 	if attrs[0].Key != "test" || attrs[0].Value.AsString() != "test" {
 		panic("attribute should be test")
+	}
+}
+
+func TestNonRecordingSpan(t *testing.T) {
+	httpServerExtractor := HttpServerAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter, urlAttrsGetter]{
+		Base:             HttpCommonAttrsExtractor[testRequest, testResponse, httpServerAttrsGetter, networkAttrsGetter]{},
+		NetworkExtractor: net.NetworkAttrsExtractor[testRequest, testResponse, networkAttrsGetter]{},
+		UrlExtractor:     net.UrlAttrsExtractor[testRequest, testResponse, urlAttrsGetter]{},
+	}
+	attrs := make([]attribute.KeyValue, 0)
+	ctx := context.Background()
+	ctx = trace.ContextWithSpan(ctx, &testReadOnlySpan{isRecording: false})
+	attrs, _ = httpServerExtractor.OnEnd(attrs, ctx, testRequest{}, testResponse{}, nil)
+	if attrs[0].Key != semconv.HTTPResponseStatusCodeKey || attrs[0].Value.AsInt64() != 200 {
+		t.Fatalf("status code should be 200")
+	}
+	if attrs[1].Key != semconv.NetworkProtocolNameKey || attrs[1].Value.AsString() != "network-protocol-name" {
+		t.Fatalf("wrong network protocol name")
+	}
+	if attrs[2].Key != semconv.NetworkProtocolVersionKey || attrs[2].Value.AsString() != "network-protocol-version" {
+		t.Fatalf("wrong network protocol version")
+	}
+	if attrs[3].Key != semconv.NetworkTransportKey || attrs[3].Value.AsString() != "network-transport" {
+		t.Fatalf("wrong network transport")
+	}
+	if attrs[4].Key != semconv.NetworkTypeKey || attrs[4].Value.AsString() != "network-type" {
+		t.Fatalf("wrong network type")
+	}
+	if attrs[5].Key != semconv.NetworkProtocolNameKey || attrs[5].Value.AsString() != "network-protocol-name" {
+		t.Fatalf("wrong network protocol name")
+	}
+	if attrs[6].Key != semconv.NetworkProtocolVersionKey || attrs[6].Value.AsString() != "network-protocol-version" {
+		t.Fatalf("wrong network protocol version")
+	}
+	if attrs[7].Key != semconv.NetworkLocalAddressKey || attrs[7].Value.AsString() != "network-local-inet-address" {
+		t.Fatalf("wrong network protocol inet address")
+	}
+	if attrs[8].Key != semconv.NetworkPeerAddressKey || attrs[8].Value.AsString() != "network-peer-inet-address" {
+		t.Fatalf("wrong network peer address")
+	}
+	if attrs[9].Key != semconv.NetworkLocalPortKey || attrs[9].Value.AsInt64() != 8080 {
+		t.Fatalf("wrong network local port")
+	}
+	if attrs[10].Key != semconv.NetworkPeerPortKey || attrs[10].Value.AsInt64() != 8080 {
+		t.Fatalf("wrong network peer port")
 	}
 }

@@ -16,9 +16,9 @@ package resource
 
 import (
 	"encoding/json"
-	"fmt"
+	"path/filepath"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
@@ -58,7 +58,11 @@ func (rb *RuleBundle) IsValid() bool {
 			len(rb.File2StructRules) > 0)
 }
 
-func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) {
+func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) error {
+	file, err := filepath.Abs(file)
+	if err != nil {
+		return errc.New(errc.ErrAbsPath, err.Error())
+	}
 	fn := rule.Function + "," + rule.ReceiverType
 	util.Assert(fn != "", "sanity check")
 	if _, exist := rb.File2FuncRules[file]; !exist {
@@ -68,9 +72,14 @@ func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) {
 		rb.File2FuncRules[file][fn] =
 			append(rb.File2FuncRules[file][fn], rule)
 	}
+	return nil
 }
 
-func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) {
+func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) error {
+	file, err := filepath.Abs(file)
+	if err != nil {
+		return errc.New(errc.ErrAbsPath, err.Error())
+	}
 	st := rule.StructType
 	util.Assert(st != "", "sanity check")
 	if _, exist := rb.File2StructRules[file]; !exist {
@@ -80,6 +89,7 @@ func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) {
 		rb.File2StructRules[file][st] =
 			append(rb.File2StructRules[file][st], rule)
 	}
+	return nil
 }
 
 func (rb *RuleBundle) SetPackageName(name string) {
@@ -93,12 +103,12 @@ func (rb *RuleBundle) AddFileRule(rule *InstFileRule) {
 func isHookDefined(root *dst.File, rule *InstFuncRule) bool {
 	util.Assert(rule.OnEnter != "" || rule.OnExit != "", "hook must be set")
 	if rule.OnEnter != "" {
-		if shared.FindFuncDecl(root, rule.OnEnter) == nil {
+		if util.FindFuncDecl(root, rule.OnEnter) == nil {
 			return false
 		}
 	}
 	if rule.OnExit != "" {
-		if shared.FindFuncDecl(root, rule.OnExit) == nil {
+		if util.FindFuncDecl(root, rule.OnExit) == nil {
 			return false
 		}
 	}
@@ -108,15 +118,15 @@ func isHookDefined(root *dst.File, rule *InstFuncRule) bool {
 func FindHookFile(rule *InstFuncRule) (string, error) {
 	files, err := FindRuleFiles(rule)
 	if err != nil {
-		return "", fmt.Errorf("failed to find rule files: %w", err)
+		return "", err
 	}
 	for _, file := range files {
-		if !shared.IsGoFile(file) {
+		if !util.IsGoFile(file) {
 			continue
 		}
-		root, err := shared.ParseAstFromFileFast(file)
+		root, err := util.ParseAstFromFileFast(file)
 		if err != nil {
-			return "", fmt.Errorf("failed to read file: %w", err)
+			return "", err
 		}
 		if isHookDefined(root, rule) {
 			return file, nil
@@ -140,31 +150,31 @@ func FindRuleFiles(rule InstRule) ([]string, error) {
 }
 
 func StoreRuleBundles(bundles []*RuleBundle) error {
-	shared.GuaranteeInPreprocess()
-	ruleFile := shared.GetPreprocessLogPath(RuleBundleJsonFile)
+	util.GuaranteeInPreprocess()
+	ruleFile := util.GetPreprocessLogPath(RuleBundleJsonFile)
 	bs, err := json.Marshal(bundles)
 	if err != nil {
-		return fmt.Errorf("failed to marshal bundles: %w", err)
+		return errc.New(errc.ErrInvalidJSON, err.Error())
 	}
 	_, err = util.WriteFile(ruleFile, string(bs))
 	if err != nil {
-		return fmt.Errorf("failed to write used rules: %w", err)
+		return err
 	}
 	return nil
 }
 
 func LoadRuleBundles() ([]*RuleBundle, error) {
-	shared.GuaranteeInInstrument()
+	util.GuaranteeInInstrument()
 
-	ruleFile := shared.GetPreprocessLogPath(RuleBundleJsonFile)
+	ruleFile := util.GetPreprocessLogPath(RuleBundleJsonFile)
 	data, err := util.ReadFile(ruleFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read used rules: %w", err)
+		return nil, err
 	}
 	var bundles []*RuleBundle
 	err = json.Unmarshal([]byte(data), &bundles)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal bundles: %w", err)
+		return nil, errc.New(errc.ErrInvalidJSON, "bad "+ruleFile)
 	}
 	return bundles, nil
 }

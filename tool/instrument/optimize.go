@@ -16,12 +16,11 @@ package instrument
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
@@ -101,7 +100,7 @@ type TJump struct {
 }
 
 func newDecoratedEmptyStmt() *dst.EmptyStmt {
-	emptyStmt := shared.EmptyStmt()
+	emptyStmt := util.EmptyStmt()
 	emptyStmt.Decorations().Start.Append(TrampolineNoNewlinePlaceholder)
 	emptyStmt.Decorations().End.Append(TrampolineSemicolonPlaceholder)
 	return emptyStmt
@@ -122,7 +121,7 @@ func (rp *RuleProcessor) removeOnExitTrampolineCall(tjump *TJump) error {
 			// trampoline-jump-if inlining work
 			elseBlock.List[i] = newDecoratedEmptyStmt()
 			if config.GetConf().Verbose {
-				log.Printf("Optimize tjump branch in %s",
+				util.Log("Optimize tjump branch in %s",
 					tjump.target.Name.Name)
 			}
 			break
@@ -140,7 +139,7 @@ func replenishCallContextLiteral(tjump *TJump, expr dst.Expr) {
 	rawFunc := tjump.target
 	names := make([]dst.Expr, 0)
 	for _, name := range getNames(rawFunc.Type.Params) {
-		names = append(names, shared.AddressOf(shared.Ident(name)))
+		names = append(names, util.AddressOf(util.Ident(name)))
 	}
 	elems := expr.(*dst.UnaryExpr).X.(*dst.CompositeLit).Elts
 	paramLiteral := elems[0].(*dst.KeyValueExpr).Value.(*dst.CompositeLit)
@@ -151,9 +150,9 @@ func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
 	// One line please, otherwise debugging line number will be a nightmare
 	tmpl := fmt.Sprintf("&CallContextImpl%s{Params:[]interface{}{},ReturnVals:[]interface{}{}}",
 		rp.rule2Suffix[tjump.rule])
-	astRoot, err := shared.ParseAstFromSnippet(tmpl)
+	astRoot, err := util.ParseAstFromSnippet(tmpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse new CallContext: %w", err)
+		return nil, err
 	}
 	ctxExpr := astRoot[0].(*dst.ExprStmt).X
 	// Replenish call context by passing addresses of all arguments
@@ -165,7 +164,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	// Construct CallContext on the fly and pass to onExit trampoline defer call
 	callContextExpr, err := rp.newCallContextImpl(tjump)
 	if err != nil {
-		return fmt.Errorf("failed to construct CallContext: %w", err)
+		return err
 	}
 	// Find defer call to onExit and replace its call context with new one
 	found := false
@@ -183,10 +182,10 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	// Rewrite condition of trampoline-jump-if to always false and null out its
 	// initialization statement and then block
 	tjump.ifStmt.Init = nil
-	tjump.ifStmt.Cond = shared.BoolFalse()
-	tjump.ifStmt.Body = shared.Block(newDecoratedEmptyStmt())
+	tjump.ifStmt.Cond = util.BoolFalse()
+	tjump.ifStmt.Body = util.Block(newDecoratedEmptyStmt())
 	if config.GetConf().Verbose {
-		log.Printf("Optimize tjump branch in %s", tjump.target.Name.Name)
+		util.Log("Optimize tjump branch in %s", tjump.target.Name.Name)
 	}
 	// Remove generated onEnter trampoline function
 	removed := rp.removeDeclWhen(func(d dst.Decl) bool {
@@ -197,7 +196,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 		return false
 	})
 	if removed == nil {
-		return fmt.Errorf("failed to remove onEnter trampoline function")
+		return errc.New(errc.ErrInternal, "onEnter trampoline not found")
 	}
 	return nil
 }
@@ -207,22 +206,22 @@ func flattenTJump(tjump *TJump, removedOnExit bool) {
 	initStmt := ifStmt.Init.(*dst.AssignStmt)
 	util.Assert(len(initStmt.Lhs) == 2, "must be")
 
-	ifStmt.Cond = shared.BoolFalse()
-	ifStmt.Body = shared.Block(newDecoratedEmptyStmt())
+	ifStmt.Cond = util.BoolFalse()
+	ifStmt.Body = util.Block(newDecoratedEmptyStmt())
 
 	if removedOnExit {
 		// We removed the last reference to call context after nulling out body
 		// block, at this point, all lhs are unused, replace assignment to simple
 		// function call
-		ifStmt.Init = shared.ExprStmt(initStmt.Rhs[0])
+		ifStmt.Init = util.ExprStmt(initStmt.Rhs[0])
 		// TODO: Remove onExit declaration
 	} else {
 		// Otherwise, mark skipCall identifier as unused
 		skipCallIdent := initStmt.Lhs[1].(*dst.Ident)
-		shared.MakeUnusedIdent(skipCallIdent)
+		util.MakeUnusedIdent(skipCallIdent)
 	}
 	if config.GetConf().Verbose {
-		log.Printf("Optimize skipCall in %s", tjump.target.Name.Name)
+		util.Log("Optimize skipCall in %s", tjump.target.Name.Name)
 	}
 }
 
@@ -240,7 +239,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnExit == "" {
 			err = rp.removeOnExitTrampolineCall(tjump)
 			if err != nil {
-				return fmt.Errorf("failed to optimize tjump: %w", err)
+				return err
 			}
 			removedOnExit = true
 		}
@@ -250,7 +249,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnEnter == "" {
 			err = rp.removeOnEnterTrampolineCall(tjump)
 			if err != nil {
-				return fmt.Errorf("failed to optimize tjump: %w", err)
+				return err
 			}
 		}
 
@@ -262,7 +261,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnEnter != "" {
 			onEnterHook, err := getHookFunc(rule, true)
 			if err != nil {
-				return fmt.Errorf("failed to get hook: %w", err)
+				return err
 			}
 			foundPoison := false
 			const poison = "SkipCall"

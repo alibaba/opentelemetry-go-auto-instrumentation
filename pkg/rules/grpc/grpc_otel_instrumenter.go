@@ -54,6 +54,10 @@ func (g grpcAttrsGetter) GetMethod(request grpcRequest) string {
 	return fullMethodName[slashIndex+1:]
 }
 
+func (g grpcAttrsGetter) GetServerAddress(request grpcRequest) string {
+	return request.serverAddress
+}
+
 type grpcStatusCodeExtractor[REQUEST grpcRequest, RESPONSE grpcResponse] struct {
 }
 
@@ -79,6 +83,7 @@ func BuildGrpcClientInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcRe
 			Name:    utils.GRPC_CLIENT_SCOPE_NAME,
 			Version: version.Tag,
 		}).
+		AddOperationListeners(rpc.RpcClientMetrics("grpc.client")).
 		BuildInstrumenter()
 }
 
@@ -92,5 +97,6 @@ func BuildGrpcServerInstrumenter() instrumenter.Instrumenter[grpcRequest, grpcRe
 			Name:    utils.GRPC_SERVER_SCOPE_NAME,
 			Version: version.Tag,
 		}).
+		AddOperationListeners(rpc.RpcServerMetrics("grpc.server")).
 		BuildInstrumenter()
 }

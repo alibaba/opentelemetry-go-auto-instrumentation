@@ -16,15 +16,13 @@ package instrument
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/shared"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
 )
@@ -48,7 +46,7 @@ func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
 	target := filepath.Join(rp.workDir, OtelAPIFile)
 	file, err := resource.CopyAPITo(target, pkgName)
 	if err != nil {
-		return fmt.Errorf("failed to copy otel api: %w", err)
+		return err
 	}
 	rp.addCompileArg(file)
 	return nil
@@ -56,31 +54,23 @@ func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
 
 func (rp *RuleProcessor) loadAst(filePath string) (*dst.File, error) {
 	file := rp.tryRelocated(filePath)
-	return shared.ParseAstFromFile(file)
+	return util.ParseAstFromFile(file)
 }
 
 func (rp *RuleProcessor) restoreAst(filePath string, root *dst.File) (string, error) {
 	filePath = rp.tryRelocated(filePath)
 	name := filepath.Base(filePath)
-	newFile, err := shared.WriteAstToFile(root, filepath.Join(rp.workDir, name))
+	newFile, err := util.WriteAstToFile(root, filepath.Join(rp.workDir, name))
 	if err != nil {
-		return "", fmt.Errorf("failed to write ast to file: %w", err)
-	}
-	// Remove old filepath from compilation files and use new file
-	// Since dry run may produce relative file path(e.g. $WORK/b012/file.go)
-	// while real compilation produce absolute file path(e.g. /tmp/b012/file.go)
-	// we need to convert the relative path to absolute path for replacement
-	// purpose.
-	filePath, err = filepath.Abs(filePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to get absolute path: %w", err)
+		return "", err
 	}
 	err = rp.replaceCompileArg(newFile, func(arg string) bool {
 		return arg == filePath
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to replace compile arg: %w %v %v||%v",
-			err, filePath, rp.compileArgs, os.Args)
+		err = errc.Adhere(err, "compileArgs", strings.Join(rp.compileArgs, " "))
+		err = errc.Adhere(err, "newArg", newFile)
+		return "", err
 	}
 	return newFile, nil
 }
@@ -137,10 +127,10 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 	// Arguments for onEnter trampoline
 	args := make([]dst.Expr, 0)
 	// Receiver as argument for trampoline func, if any
-	if shared.HasReceiver(funcDecl) {
+	if util.HasReceiver(funcDecl) {
 		if recv := funcDecl.Recv.List; recv != nil {
 			receiver := recv[0].Names[0].Name
-			args = append(args, shared.AddressOf(shared.Ident(receiver)))
+			args = append(args, util.AddressOf(util.Ident(receiver)))
 		} else {
 			util.Unimplemented()
 		}
@@ -148,7 +138,7 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 	// Original function arguments as arguments for trampoline func
 	for _, field := range funcDecl.Type.Params.List {
 		for _, name := range field.Names {
-			args = append(args, shared.AddressOf(shared.Ident(name.Name)))
+			args = append(args, util.AddressOf(util.Ident(name.Name)))
 		}
 	}
 
@@ -158,32 +148,32 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 	// Generate the trampoline-jump-if. N.B. Note that future optimization pass
 	// heavily depends on the structure of trampoline-jump-if. Any change in it
 	// should be carefully examined.
-	onEnterCall := shared.CallTo(rp.makeName(t, true), args)
-	onExitCall := shared.CallTo(rp.makeName(t, false), func() []dst.Expr {
+	onEnterCall := util.CallTo(rp.makeName(t, true), args)
+	onExitCall := util.CallTo(rp.makeName(t, false), func() []dst.Expr {
 		// NB. DST framework disallows duplicated node in the
 		// AST tree, we need to replicate the return values
 		// as they are already used in return statement above
 		clone := make([]dst.Expr, len(retVals)+1)
-		clone[0] = shared.Ident(TrampolineCallContextName + varSuffix)
+		clone[0] = util.Ident(TrampolineCallContextName + varSuffix)
 		for i := 1; i < len(clone); i++ {
-			clone[i] = shared.AddressOf(retVals[i-1])
+			clone[i] = util.AddressOf(retVals[i-1])
 		}
 		return clone
 	}())
-	tjumpInit := shared.DefineStmts(
-		shared.Exprs(
-			shared.Ident(TrampolineCallContextName+varSuffix),
-			shared.Ident(TrampolineSkipName+varSuffix),
+	tjumpInit := util.DefineStmts(
+		util.Exprs(
+			util.Ident(TrampolineCallContextName+varSuffix),
+			util.Ident(TrampolineSkipName+varSuffix),
 		),
-		shared.Exprs(onEnterCall),
+		util.Exprs(onEnterCall),
 	)
-	tjumpCond := shared.Ident(TrampolineSkipName + varSuffix)
-	tjumpBody := shared.BlockStmts(
-		shared.ExprStmt(onExitCall),
-		shared.ReturnStmt(retVals),
+	tjumpCond := util.Ident(TrampolineSkipName + varSuffix)
+	tjumpBody := util.BlockStmts(
+		util.ExprStmt(onExitCall),
+		util.ReturnStmt(retVals),
 	)
-	tjumpElse := shared.Block(shared.DeferStmt(onExitCall))
-	tjump := shared.IfStmt(tjumpInit, tjumpCond, tjumpBody, tjumpElse)
+	tjumpElse := util.Block(util.DeferStmt(onExitCall))
+	tjump := util.IfStmt(tjumpInit, tjumpCond, tjumpBody, tjumpElse)
 	// Add this trampoline-jump-if as optimization candidates
 	rp.trampolineJumps = append(rp.trampolineJumps, &TJump{
 		target: funcDecl,
@@ -224,7 +214,7 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 		if ifStmt, ok := firstStmt.(*dst.IfStmt); ok {
 			point := findJumpPoint(ifStmt)
 			if point != nil {
-				point.List = append(point.List, shared.EmptyStmt())
+				point.List = append(point.List, util.EmptyStmt())
 				point.List = append(point.List, tjump)
 				found = true
 			}
@@ -269,7 +259,7 @@ func (rp *RuleProcessor) insertRaw(r *resource.InstFuncRule, decl *dst.FuncDecl)
 	util.Assert(r.OnEnter != "" || r.OnExit != "", "sanity check")
 	if r.OnEnter != "" {
 		// Prepend raw code snippet to function body for onEnter
-		onEnterSnippet, err := shared.ParseAstFromSnippet(r.OnEnter)
+		onEnterSnippet, err := util.ParseAstFromSnippet(r.OnEnter)
 		if err != nil {
 			return err
 		}
@@ -277,7 +267,7 @@ func (rp *RuleProcessor) insertRaw(r *resource.InstFuncRule, decl *dst.FuncDecl)
 	}
 	if r.OnExit != "" {
 		// Use defer func(){ raw_code_snippet }() for onExit
-		onExitSnippet, err := shared.ParseAstFromSnippet(
+		onExitSnippet, err := util.ParseAstFromSnippet(
 			fmt.Sprintf("defer func(){ %s }()", r.OnExit),
 		)
 		if err != nil {
@@ -294,7 +284,7 @@ func nameReturnValues(funcDecl *dst.FuncDecl) {
 		for _, field := range funcDecl.Type.Results.List {
 			if field.Names == nil {
 				name := fmt.Sprintf("retVal%d", idx)
-				field.Names = []*dst.Ident{shared.Ident(name)}
+				field.Names = []*dst.Ident{util.Ident(name)}
 				idx++
 			}
 		}
@@ -311,15 +301,15 @@ func sortFuncRules(fnRules []*resource.InstFuncRule) []*resource.InstFuncRule {
 func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 	// Prepare trampoline code header
 	code := "package " + pkgName
-	trampoline, err := shared.ParseAstFromSource(code)
+	trampoline, err := util.ParseAstFromSource(code)
 	if err != nil {
-		return fmt.Errorf("failed to parse trampoline code header: %w", err)
+		return err
 	}
 	// One trampoline file shares common variable declarations
 	trampoline.Decls = append(trampoline.Decls, rp.varDecls...)
 	// Write trampoline code to file
 	path := filepath.Join(rp.workDir, OtelTrampolineFile)
-	trampolineFile, err := shared.WriteAstToFile(trampoline, path)
+	trampolineFile, err := util.WriteAstToFile(trampoline, path)
 	if err != nil {
 		return err
 	}
@@ -336,15 +326,16 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 	// Copy API file to compilation working directory
 	err = rp.copyOtelApi(bundle.PackageName)
 	if err != nil {
-		return fmt.Errorf("failed to copy otel api: %w", err)
+		return err
 	}
 
 	// Applied all matched func rules, either inserting raw code or inserting
 	// our trampoline calls.
 	for file, fn2rules := range bundle.File2FuncRules {
+		util.Assert(filepath.IsAbs(file), "file path must be absolute")
 		astRoot, err := rp.loadAst(file)
 		if err != nil {
-			return fmt.Errorf("failed to load ast from file: %w", err)
+			return err
 		}
 		rp.target = astRoot
 		rp.trampolineJumps = make([]*TJump, 0)
@@ -353,7 +344,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 				nameAndRecvType := strings.Split(fnName, ",")
 				name := nameAndRecvType[0]
 				recvType := nameAndRecvType[1]
-				if shared.MatchFuncDecl(decl, name, recvType) {
+				if util.MatchFuncDecl(decl, name, recvType) {
 					fnDecl := decl.(*dst.FuncDecl)
 					// Add explicit names for return values, they can be further
 					// referenced if we're willing
@@ -368,10 +359,9 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 							err = rp.insertTJump(rule, fnDecl)
 						}
 						if err != nil {
-							return fmt.Errorf("failed to rewrite: %w for %v",
-								err, rule)
+							return err
 						}
-						log.Printf("Apply func rule %s\n", rule)
+						util.Log("Apply func rule %s", rule)
 					}
 					break
 				}
@@ -380,25 +370,25 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 		// Optimize generated trampoline-jump-ifs
 		err = rp.optimizeTJumps()
 		if err != nil {
-			return fmt.Errorf("failed to optimize trampoline jumps: %w", err)
+			return err
 		}
 		// Restore the ast to original file once all rules are applied
 		filePath, err := rp.restoreAst(file, astRoot)
 		if err != nil {
-			return fmt.Errorf("failed to restore ast: %w", err)
+			return err
 		}
 		// Wait, all above code snippets should be inlined to new line to
 		// avoid potential misbehaviors during debugging
 		err = rp.inliningTJump(filePath)
 		if err != nil {
-			return fmt.Errorf("failed to inline trampoline call: %w", err)
+			return err
 		}
 		rp.saveDebugFile(filePath)
 	}
 
 	err = rp.writeTrampoline(bundle.PackageName)
 	if err != nil {
-		return fmt.Errorf("failed to write trampoline: %w", err)
+		return err
 	}
 	return nil
 }

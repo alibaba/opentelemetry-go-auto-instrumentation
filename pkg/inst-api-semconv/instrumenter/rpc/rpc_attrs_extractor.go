@@ -35,6 +35,9 @@ func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attr
 	}, attribute.KeyValue{
 		Key:   semconv.RPCMethodKey,
 		Value: attribute.StringValue(r.Getter.GetMethod(request)),
+	}, attribute.KeyValue{
+		Key:   semconv.ServerAddressKey,
+		Value: attribute.StringValue(r.Getter.GetServerAddress(request)),
 	})
 	return attributes, parentContext
 }
