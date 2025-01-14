@@ -16,42 +16,40 @@ package verifier
 
 import (
 	"go.opentelemetry.io/otel/attribute"
-	"strings"
-
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // VerifyDbAttributes TODO: make attribute name to semconv attribute
 func VerifyDbAttributes(span tracetest.SpanStub, name, system, address, statement, operation string) {
-	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
-	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
-	actualSystem := GetAttribute(span.Attributes, "db.system").AsString()
-	Assert(actualSystem == system, "Except client db system to be %s, got %s", system, actualSystem)
-	actualConnStr := GetAttribute(span.Attributes, "server.address").AsString()
-	Assert(strings.Contains(actualConnStr, address), "Except client address str to be %s, got %s", address, actualConnStr)
-	actualStatement := GetAttribute(span.Attributes, "db.query.text").AsString()
-	Assert(strings.Contains(actualStatement, statement), "Except client db statement to be %s, got %s", statement, actualStatement)
-	actualOperation := GetAttribute(span.Attributes, "db.operation.name").AsString()
-	Assert(actualOperation == operation, "Except client db operation to be %s, got %s", operation, actualOperation)
+	NewSpanVerifier().
+		HasSpanKind(trace.SpanKindClient).
+		HasName(name).
+		HasStringAttribute("db.system", system).
+		HasStringAttributeContains("server.address", address).
+		HasStringAttributeContains("db.query.text", statement).
+		HasStringAttribute("db.operation.name", operation).
+		Verify(span)
 }
 
 func VerifyHttpClientAttributes(span tracetest.SpanStub, name, method, fullUrl, protocolName, protocolVersion, networkTransport, networkType, localAddr, peerAddr string, statusCode, localPort, peerPort int64) {
-	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
-	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
-	Assert(GetAttribute(span.Attributes, "http.request.method").AsString() == method, "Except method to be %s, got %s", method, GetAttribute(span.Attributes, "http.request.method").AsString())
-	Assert(GetAttribute(span.Attributes, "url.full").AsString() == fullUrl, "Except full url to be %s, got %s", fullUrl, GetAttribute(span.Attributes, "url.full").AsString())
-	Assert(GetAttribute(span.Attributes, "network.protocol.name").AsString() == protocolName, "Except protocol name to be %s, got %s", protocolName, GetAttribute(span.Attributes, "network.protocol.name").AsString())
-	Assert(GetAttribute(span.Attributes, "network.protocol.version").AsString() == protocolVersion, "Except protocol version to be %s, got %s", protocolVersion, GetAttribute(span.Attributes, "network.protocol.version").AsString())
-	Assert(GetAttribute(span.Attributes, "network.transport").AsString() == networkTransport, "Except network transport to be %s, got %s", networkTransport, GetAttribute(span.Attributes, "network.transport").AsString())
-	Assert(GetAttribute(span.Attributes, "network.type").AsString() == networkType, "Except network type to be %s, got %s", networkType, GetAttribute(span.Attributes, "network.type").AsString())
-	Assert(GetAttribute(span.Attributes, "network.local.address").AsString() == localAddr, "Except local addr to be %s, got %s", localAddr, GetAttribute(span.Attributes, "network.local.address").AsString())
-	Assert(GetAttribute(span.Attributes, "network.peer.address").AsString() == peerAddr, "Except peer addr to be %s, got %s", peerAddr, GetAttribute(span.Attributes, "network.peer.address").AsString())
-	Assert(GetAttribute(span.Attributes, "http.response.status_code").AsInt64() == statusCode, "Except status code to be %d, got %d", statusCode, GetAttribute(span.Attributes, "http.response.status_code").AsInt64())
-	Assert(GetAttribute(span.Attributes, "network.peer.port").AsInt64() == peerPort, "Except peer port to be %d, got %d", peerPort, GetAttribute(span.Attributes, "network.peer.port").AsInt64())
-	if localPort > 0 {
-		Assert(GetAttribute(span.Attributes, "network.local.port").AsInt64() == localPort, "Except local port to be %d, got %d", localPort, GetAttribute(span.Attributes, "network.local.port").AsInt64())
-	}
+	NewSpanVerifier().
+		HasSpanKind(trace.SpanKindClient).
+		HasName(name).
+		HasStringAttribute("http.request.method", method).
+		HasStringAttribute("url.full", fullUrl).
+		HasStringAttribute("network.protocol.name", protocolName).
+		HasStringAttribute("network.protocol.version", protocolVersion).
+		HasStringAttribute("network.transport", networkTransport).
+		HasStringAttribute("network.type", networkType).
+		HasStringAttribute("network.local.address", localAddr).
+		HasStringAttribute("network.peer.address", peerAddr).
+		HasInt64Attribute("http.response.status_code", statusCode).
+		HasInt64Attribute("network.peer.port", peerPort).
+		ConditionalVerifier(func() bool {
+			return localPort > 0
+		}, NewSpanVerifier().HasInt64Attribute("network.local.port", localPort)).
+		Verify(span)
 }
 
 func VerifyHttpClientMetricsAttributes(attrs []attribute.KeyValue, method, serverAddress, errorType, protocolName, protocolVersion string, serverPort, statusCode int) {
@@ -65,20 +63,22 @@ func VerifyHttpClientMetricsAttributes(attrs []attribute.KeyValue, method, serve
 }
 
 func VerifyHttpServerAttributes(span tracetest.SpanStub, name, method, protocolName, networkTransport, networkType, localAddr, peerAddr, agent, scheme, path, query, route string, statusCode int64) {
-	Assert(span.SpanKind == trace.SpanKindServer, "Expect to be client span, got %d", span.SpanKind)
-	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
-	Assert(GetAttribute(span.Attributes, "http.request.method").AsString() == method, "Except method to be %s, got %s", method, GetAttribute(span.Attributes, "http.request.method").AsString())
-	Assert(GetAttribute(span.Attributes, "network.protocol.name").AsString() == protocolName, "Except protocol name to be %s, got %s", protocolName, GetAttribute(span.Attributes, "network.protocol.name").AsString())
-	Assert(GetAttribute(span.Attributes, "network.transport").AsString() == networkTransport, "Except network transport to be %s, got %s", networkTransport, GetAttribute(span.Attributes, "network.transport").AsString())
-	Assert(GetAttribute(span.Attributes, "network.type").AsString() == networkType, "Except network type to be %s, got %s", networkType, GetAttribute(span.Attributes, "network.type").AsString())
-	Assert(GetAttribute(span.Attributes, "network.local.address").AsString() == localAddr, "Except local addr to be %s, got %s", localAddr, GetAttribute(span.Attributes, "network.local.address").AsString())
-	Assert(GetAttribute(span.Attributes, "network.peer.address").AsString() == peerAddr, "Except peer addr to be %s, got %s", peerAddr, GetAttribute(span.Attributes, "network.peer.address").AsString())
-	Assert(GetAttribute(span.Attributes, "user_agent.original").AsString() == agent, "Except user agent to be %s, got %s", agent, GetAttribute(span.Attributes, "user_agent.original").AsString())
-	Assert(GetAttribute(span.Attributes, "url.scheme").AsString() == scheme, "Except url scheme to be %s, got %s", scheme, GetAttribute(span.Attributes, "url.scheme").AsString())
-	Assert(GetAttribute(span.Attributes, "url.path").AsString() == path, "Except url path to be %s, got %s", path, GetAttribute(span.Attributes, "url.path").AsString())
-	Assert(GetAttribute(span.Attributes, "url.query").AsString() == query, "Except url query to be %s, got %s", query, GetAttribute(span.Attributes, "url.query").AsString())
-	Assert(GetAttribute(span.Attributes, "http.route").AsString() == route, "Except http route to be %s, got %s", route, GetAttribute(span.Attributes, "http.route").AsString())
-	Assert(GetAttribute(span.Attributes, "http.response.status_code").AsInt64() == statusCode, "Except status code to be %d, got %d", statusCode, GetAttribute(span.Attributes, "http.response.status_code").AsInt64())
+	NewSpanVerifier().
+		HasSpanKind(trace.SpanKindServer).
+		HasName(name).
+		HasStringAttribute("http.request.method", method).
+		HasStringAttribute("network.protocol.name", protocolName).
+		HasStringAttribute("network.transport", networkTransport).
+		HasStringAttribute("network.type", networkType).
+		HasStringAttribute("network.local.address", localAddr).
+		HasStringAttribute("network.peer.address", peerAddr).
+		HasStringAttribute("user_agent.original", agent).
+		HasStringAttribute("url.scheme", scheme).
+		HasStringAttribute("url.path", path).
+		HasStringAttribute("url.query", query).
+		HasStringAttribute("http.route", route).
+		HasInt64Attribute("http.response.status_code", statusCode).
+		Verify(span)
 }
 
 func VerifyHttpServerMetricsAttributes(attrs []attribute.KeyValue, method, httpRoute, errorType, protocolName, protocolVersion, urlScheme string, statusCode int) {
@@ -92,18 +92,23 @@ func VerifyHttpServerMetricsAttributes(attrs []attribute.KeyValue, method, httpR
 }
 
 func VerifyRpcServerAttributes(span tracetest.SpanStub, name, system, service, method string) {
-	Assert(span.SpanKind == trace.SpanKindServer, "Expect to be server span, got %d", span.SpanKind)
-	verifyRpcAttributes(span, name, system, service, method)
+	NewSpanVerifier().
+		HasSpanKind(trace.SpanKindServer).
+		Merge(newRpcSpanVerifier(name, system, service, method)).
+		Verify(span)
 }
 
 func VerifyRpcClientAttributes(span tracetest.SpanStub, name, system, service, method string) {
-	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
-	verifyRpcAttributes(span, name, system, service, method)
+	NewSpanVerifier().
+		HasSpanKind(trace.SpanKindServer).
+		Merge(newRpcSpanVerifier(name, system, service, method)).
+		Verify(span)
 }
 
-func verifyRpcAttributes(span tracetest.SpanStub, name, system, service, method string) {
-	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
-	Assert(GetAttribute(span.Attributes, "rpc.system").AsString() == system, "Except rpc system to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.system").AsString())
-	Assert(GetAttribute(span.Attributes, "rpc.service").AsString() == service, "Except rpc service to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.service").AsString())
-	Assert(GetAttribute(span.Attributes, "rpc.method").AsString() == method, "Except rpc method to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.method").AsString())
+func newRpcSpanVerifier(name, system, service, method string) *SpanVerifier {
+	return NewSpanVerifier().
+		HasName(name).
+		HasStringAttribute("rpc.system", system).
+		HasStringAttribute("rpc.service", service).
+		HasStringAttribute("rpc.method", method)
 }

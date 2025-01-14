@@ -35,6 +35,10 @@ func GetAttribute(attrs []attribute.KeyValue, name string) attribute.Value {
 	return attribute.Value{}
 }
 
+func IsAttributeNoop(value attribute.Value) bool {
+	return value.Type() == attribute.INVALID
+}
+
 func Assert(cond bool, format string, args ...interface{}) {
 	if !cond {
 		panic(fmt.Sprintf(format, args...))
