@@ -20,7 +20,7 @@ Use `otel` to build the binary with `config.json`:
 ```
 cd example/extension/nethttp
 ../../../otel set -rule=config.json
-../../../otel -rule=config.json go build demo/net_http.go
+../../../otel go build demo/net_http.go
 ```
 Users can get the `otel` according to [documentation](../../../README.md)
 
