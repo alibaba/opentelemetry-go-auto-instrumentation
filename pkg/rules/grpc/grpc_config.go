@@ -94,15 +94,19 @@ func (c *grpcOtelConfig) handleRPC(ctx context.Context, rs stats.RPCStats, isSer
 			}
 
 		} else {
+			methodName := ""
+			if gctx != nil {
+				methodName = gctx.methodName
+			}
 			if isServer {
 				grpcServerInstrument.End(ctx, grpcRequest{
-					methodName: gctx.methodName,
+					methodName: methodName,
 				}, grpcResponse{
 					statusCode: 200,
 				}, nil)
 			} else {
 				grpcClientInstrument.End(ctx, grpcRequest{
-					methodName: gctx.methodName,
+					methodName: methodName,
 				}, grpcResponse{
 					statusCode: 200,
 				}, nil)
