@@ -32,6 +32,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/tools/go/packages"
 )
 
 // -----------------------------------------------------------------------------
@@ -54,6 +55,7 @@ const (
 	FuncInit           = "init"
 	DryRunLog          = "dry_run.log"
 	CompileRemix       = "remix"
+	VendorDir          = "vendor"
 	ReorderLocalPrefix = "<REORDER>"
 	ReorderInitFile    = "reorder_init.go"
 	StdRulesPrefix     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
@@ -98,31 +100,160 @@ var fixedDeps = []struct {
 }
 
 type DepProcessor struct {
-	bundles          []*resource.RuleBundle // All dependent rule bundles
-	backups          map[string]string
-	localImportPath  string
-	importCandidates []string
-	rule2Dir         map[*resource.InstFuncRule]string
-	ruleCache        embed.FS
-	goBuildCmd       []string
-	vendorBuild      bool
+	bundles         []*resource.RuleBundle // All dependent rule bundles
+	backups         map[string]string
+	localImportPath string
+	sources         []string
+	moduleName      string // Module name from go.mod
+	modulePath      string // Where go.mod is located
+	rule2Dir        map[*resource.InstFuncRule]string
+	ruleCache       embed.FS
+	goBuildCmd      []string
+	vendorBuild     bool
 }
 
 func newDepProcessor() *DepProcessor {
 	dp := &DepProcessor{
-		bundles:          []*resource.RuleBundle{},
-		backups:          map[string]string{},
-		localImportPath:  "",
-		importCandidates: nil,
-		rule2Dir:         map[*resource.InstFuncRule]string{},
-		ruleCache:        pkg.ExportRuleCache(),
-		vendorBuild:      util.IsVendorBuild(),
+		bundles:         []*resource.RuleBundle{},
+		backups:         map[string]string{},
+		localImportPath: "",
+		sources:         nil,
+		rule2Dir:        map[*resource.InstFuncRule]string{},
+		ruleCache:       pkg.ExportRuleCache(),
+		vendorBuild:     false,
 	}
+	return dp
+}
+
+func (dp *DepProcessor) getGoModPath() string {
+	return dp.modulePath
+}
+
+func (dp *DepProcessor) getGoModDir() string {
+	return filepath.Dir(dp.getGoModPath())
+}
+
+func (dp *DepProcessor) getGoModName() string {
+	return dp.moduleName
+}
+
+// runCmdOutput runs the command and returns its standard output. dir specifies
+// the working directory of the command. If dir is the empty string, run runs
+// the command in the calling process's current directory.
+func runCmdOutput(dir string, args ...string) (string, error) {
+	path := args[0]
+	args = args[1:]
+	cmd := exec.Command(path, args...)
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errc.New(errc.ErrRunCmd, string(out)).
+			With("command", fmt.Sprintf("%v", args))
+	}
+	return string(out), nil
+}
+
+// Run runs the command and returns the combined standard output and standard
+// error. dir specifies the working directory of the command. If dir is the
+// empty string, run runs the command in the calling process's current directory.
+func runCmdCombinedOutput(dir string, args ...string) (string, error) {
+	path := args[0]
+	args = args[1:]
+	cmd := exec.Command(path, args...)
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", errc.New(errc.ErrRunCmd, string(out)).
+			With("command", fmt.Sprintf("%v", args))
+	}
+	return string(out), nil
+}
+
+// Find go.mod from dir and its parent recursively
+func findGoMod(dir string) (string, error) {
+	for dir != "" {
+		mod := filepath.Join(dir, util.GoModFile)
+		if util.PathExists(mod) {
+			return mod, nil
+		}
+		dir = filepath.Dir(dir)
+	}
+	return "", errc.New(errc.ErrPreprocess, "cannot find go.mod")
+}
+
+func parseGoMod(gomod string) (*modfile.File, error) {
+	data, err := util.ReadFile(gomod)
+	if err != nil {
+		return nil, err
+	}
+	modFile, err := modfile.Parse(util.GoModFile, []byte(data), nil)
+	if err != nil {
+		return nil, errc.New(errc.ErrParseCode, err.Error())
+	}
+	return modFile, nil
+}
+
+func (dp *DepProcessor) init() error {
 	// There is a tricky, all arguments after the tool itself are saved for
 	// later use, which means the subcommand "go build" are also  included
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	util.AssertGoBuild(dp.goBuildCmd)
+
+	// Find compiling module and package information from the build command
+	pkgs, err := findModule(dp.goBuildCmd)
+	if err != nil {
+		return err
+	}
+	for _, pkg := range pkgs {
+		util.Log("Find Go package %v", util.Jsonify(pkg))
+		if pkg.GoFiles == nil {
+			continue
+		}
+		dp.sources = append(dp.sources, pkg.GoFiles...)
+		if pkg.Module != nil {
+			// Best case, we find the module information from the package field
+			util.Log("Find Go module %v", util.Jsonify(pkg.Module))
+			util.Assert(pkg.Module.Path != "", "pkg.Module.Path is empty")
+			util.Assert(pkg.Module.GoMod != "", "pkg.Module.GoMod is empty")
+			dp.moduleName = pkg.Module.Path
+			dp.modulePath = pkg.Module.GoMod
+		} else {
+			// If we cannot find the module information from the package field,
+			// we try to find it from the go.mod file, where go.mod file is in
+			// the same directory as the source file.
+			util.Assert(pkg.Name != "", "pkg.Name is empty")
+			if pkg.Name == "main" {
+				gofile := pkg.GoFiles[0]
+				gomod, err := findGoMod(filepath.Dir(gofile))
+				if err != nil {
+					return err
+				}
+				util.Assert(gomod != "", "gomod is empty")
+				util.Assert(util.PathExists(gomod), "gomod does not exist")
+				dp.modulePath = gomod
+				// Get module name from go.mod file
+				modfile, err := parseGoMod(gomod)
+				if err != nil {
+					return err
+				}
+				dp.moduleName = modfile.Module.Mod.Path
+			}
+		}
+	}
+	if len(dp.sources) == 0 {
+		return errc.New(errc.ErrPreprocess, "no Go source files found")
+	}
+	if dp.moduleName == "" || dp.modulePath == "" {
+		return errc.New(errc.ErrPreprocess, "cannot find compiled module")
+	}
+
+	// Check if the build mode
+	// FIXME: vendor directory name can be anything, but we assume it's "vendor"
+	// for now
+	vendor := filepath.Join(dp.getGoModDir(), VendorDir)
+	dp.vendorBuild = util.PathExists(vendor)
+	util.Log("Vendor build: %v", dp.vendorBuild)
 
 	// Register signal handler to catch up SIGINT/SIGTERM interrupt signals and
 	// do necessary cleanup
@@ -137,7 +268,8 @@ func newDepProcessor() *DepProcessor {
 		default:
 		}
 	}()
-	return dp
+
+	return nil
 }
 
 func (dp *DepProcessor) postProcess() {
@@ -155,10 +287,7 @@ func (dp *DepProcessor) postProcess() {
 	_ = os.RemoveAll(OtelPkgDep)
 
 	// Restore everything we have modified during instrumentation
-	err := dp.restoreBackupFiles()
-	if err != nil {
-		util.LogFatal("failed to restore: %v", err)
-	}
+	_ = dp.restoreBackupFiles()
 }
 
 func (dp *DepProcessor) backupFile(origin string) error {
@@ -226,75 +355,162 @@ func getCompileCommands() ([]string, error) {
 	return compileCmds, nil
 }
 
-// assembleInitCandidate assembles the candidate files that we may add init
-// function to. The candidate files are the ones that have main or init
-// function defined.
-func (dp *DepProcessor) getImportCandidates() ([]string, error) {
-	if dp.importCandidates != nil {
-		return dp.importCandidates, nil
+// $ go help packages
+// Many commands apply to a set of packages:
+//
+//	go <action> [packages]
+//
+// Usually, [packages] is a list of import paths.
+//
+// An import path that is a rooted path or that begins with
+// a . or .. element is interpreted as a file system path and
+// denotes the package in that directory.
+//
+// Otherwise, the import path P denotes the package found in
+// the directory DIR/src/P for some DIR listed in the GOPATH
+// environment variable (For more details see: 'go help gopath').
+//
+// If no import paths are given, the action applies to the
+// package in the current directory.
+//
+// There are four reserved names for paths that should not be used
+// for packages to be built with the go tool:
+//
+// - "main" denotes the top-level package in a stand-alone executable.
+//
+// - "all" expands to all packages found in all the GOPATH
+// trees. For example, 'go list all' lists all the packages on the local
+// system. When using modules, "all" expands to all packages in
+// the main module and their dependencies, including dependencies
+// needed by tests of any of those.
+//
+// - "std" is like all but expands to just the packages in the standard
+// Go library.
+//
+// - "cmd" expands to the Go repository's commands and their
+// internal libraries.
+//
+// Import paths beginning with "cmd/" only match source code in
+// the Go repository.
+//
+// An import path is a pattern if it includes one or more "..." wildcards,
+// each of which can match any string, including the empty string and
+// strings containing slashes. Such a pattern expands to all package
+// directories found in the GOPATH trees with names matching the
+// patterns.
+//
+// To make common patterns more convenient, there are two special cases.
+// First, /... at the end of the pattern can match an empty string,
+// so that net/... matches both net and packages in its subdirectories, like net/http.
+// Second, any slash-separated pattern element containing a wildcard never
+// participates in a match of the "vendor" element in the path of a vendored
+// package, so that ./... does not match packages in subdirectories of
+// ./vendor or ./mycode/vendor, but ./vendor/... and ./mycode/vendor/... do.
+// Note, however, that a directory named vendor that itself contains code
+// is not a vendored package: cmd/vendor would be a command named vendor,
+// and the pattern cmd/... matches it.
+// See golang.org/s/go15vendor for more about vendoring.
+//
+// An import path can also name a package to be downloaded from
+// a remote repository. Run 'go help importpath' for details.
+//
+// Every package in a program must have a unique import path.
+// By convention, this is arranged by starting each path with a
+// unique prefix that belongs to you. For example, paths used
+// internally at Google all begin with 'google', and paths
+// denoting remote repositories begin with the path to the code,
+// such as 'github.com/user/repo'.
+//
+// Packages in a program need not have unique package names,
+// but there are two reserved package names with special meaning.
+// The name main indicates a command, not a library.
+// Commands are built into binaries and cannot be imported.
+// The name documentation indicates documentation for
+// a non-Go program in the directory. Files in package documentation
+// are ignored by the go command.
+//
+// As a special case, if the package list is a list of .go files from a
+// single directory, the command is applied to a single synthesized
+// package made up of exactly those files, ignoring any build constraints
+// in those files and ignoring any other files in the directory.
+//
+// Directory and file names that begin with "." or "_" are ignored
+// by the go tool, as are directories named "testdata".
+
+func tryLoadPackage(path string) ([]*packages.Package, error) {
+	cfg := &packages.Config{
+		// Change it unless you know what you are doing
+		Mode: packages.NeedModule | packages.NeedFiles | packages.NeedName,
 	}
-	candidates := make([]string, 0)
+
+	pkgs, err := packages.Load(cfg, path)
+	if err != nil {
+		return nil, errc.New(errc.ErrPreprocess, err.Error())
+	}
+	return pkgs, nil
+}
+
+func findModule(buildCmd []string) ([]*packages.Package, error) {
+	candidates := make([]*packages.Package, 0)
 	found := false
 
 	// Find from build arguments e.g. go build test.go or go build cmd/app
-	for _, buildArg := range dp.goBuildCmd {
-		// FIXME: Should we check file permission here? As we are likely to read
-		// it later, which would cause fatal error if permission is not granted.
+	for i := len(buildCmd) - 1; i >= 0; i-- {
+		buildArg := buildCmd[i]
 
-		// It's a golang file, good candidate
-		if util.IsGoFile(buildArg) {
-			candidates = append(candidates, buildArg)
-			found = true
-			continue
-		}
-		// It's likely a flag, skip it
-		if strings.HasPrefix("-", buildArg) {
-			continue
+		// Stop canary when we see a build flag or a "build" command
+		if strings.HasPrefix("-", buildArg) || buildArg == "build" {
+			break
 		}
 
-		// It's a directory, find all go files in it
-		if util.PathExists(buildArg) {
-			p2, err := util.ListFilesFlat(buildArg)
-			if err != nil {
-				// Error is tolerated here, as buildArg may be a file
+		// Trying to load package from the build argument, error is tolerated
+		// because we dont know what the build argument is. One exception is
+		// when we already found packages, in this case, we expect subsequent
+		// build arguments are packages, so we should not tolerate any error.
+		pkgs, err := tryLoadPackage(buildArg)
+		if err != nil {
+			if found {
+				// If packages are already found, we expect subsequent build
+				// arguments are packages, so we should not tolerate any error
+				break
+			}
+			util.Log("Cannot load package from %v", buildArg)
+			continue
+		}
+		for _, pkg := range pkgs {
+			if pkg.Errors != nil {
 				continue
 			}
-			for _, file := range p2 {
-				if util.IsGoFile(file) {
-					candidates = append(candidates, file)
-					found = true
-				}
-			}
+			found = true
+			candidates = append(candidates, pkg)
 		}
 	}
 
-	// Find candidates from current directory if no build arguments are provided
+	// If no import paths are given, the action applies to the package in the
+	// current directory.
 	if !found {
-		files, err := util.ListFilesFlat(".")
+		pkgs, err := tryLoadPackage(".")
 		if err != nil {
 			return nil, err
 		}
-		for _, file := range files {
-			if util.IsGoFile(file) {
-				candidates = append(candidates, file)
+		for _, pkg := range pkgs {
+			if pkg.Errors != nil {
+				continue
 			}
+			candidates = append(candidates, pkg)
 		}
 	}
-	if len(candidates) > 0 {
-		dp.importCandidates = candidates
+	if len(candidates) == 0 {
+		return nil, errc.New(errc.ErrPreprocess, "no package found")
 	}
+
 	return candidates, nil
 }
 
+// Find out where we should forcely import our init func
 func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
-	// Find out where we should forcely import our init func
-	candidate, err := dp.getImportCandidates()
-	if err != nil {
-		return err
-	}
-
 	addImport := false
-	for _, file := range candidate {
+	for _, file := range dp.sources {
 		if !util.IsGoFile(file) {
 			continue
 		}
@@ -335,39 +551,13 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 	return nil
 }
 
-// getModuleName returns the module name of the project by parsing go.mod file.
-func getModuleName(gomod string) (string, error) {
-	data, err := util.ReadFile(gomod)
-	if err != nil {
-		return "", err
-	}
-
-	modFile, err := modfile.Parse(util.GoModFile, []byte(data), nil)
-	if err != nil {
-		return "", errc.New(errc.ErrParseCode, err.Error())
-	}
-
-	moduleName := modFile.Module.Mod.Path
-	return moduleName, nil
-}
-
 func (dp *DepProcessor) findLocalImportPath() error {
 	// Get absolute path of current working directory
-	workingDir, err := filepath.Abs(".")
-	if err != nil {
-		return errc.New(errc.ErrAbsPath, err.Error())
-	}
+	workingDir := dp.getGoModDir()
 	// Get absolute path of go.mod directory
-	gomod, err := util.GetGoModPath()
-	if err != nil {
-		return err
-	}
-	projectDir := filepath.Dir(gomod)
+	projectDir := dp.getGoModDir()
 	// Replace go.mod directory with module name
-	moduleName, err := getModuleName(gomod)
-	if err != nil {
-		return err
-	}
+	moduleName := dp.getGoModName()
 	// Replace all backslashes with slashes. The import path is different from
 	// the file path, which should always use slashes.
 	workingDir = filepath.ToSlash(workingDir)
@@ -409,9 +599,8 @@ func (dp *DepProcessor) addOtelImports() error {
 // Note in this function, error is tolerated as we are best-effort to clean up
 // any obsolete materials, but it's not fatal if we fail to do so.
 func (dp *DepProcessor) preclean() {
-	candidate, _ := dp.getImportCandidates()
 	ruleImport, _ := dp.getImportPathOf(OtelRules)
-	for _, file := range candidate {
+	for _, file := range dp.sources {
 		if !util.IsGoFile(file) {
 			continue
 		}
@@ -469,6 +658,9 @@ func runDryBuild(goBuildCmd []string) error {
 	// knows the reason why.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = dryRunLog
+	// @@Note that dir should not be set, as the dry build should be run in the
+	// same directory as the original build command
+	cmd.Dir = ""
 	err = cmd.Run()
 	if err != nil {
 		return errc.New(errc.ErrRunCmd, err.Error()).
@@ -477,32 +669,37 @@ func runDryBuild(goBuildCmd []string) error {
 	return nil
 }
 
-func runModTidy() error {
-	out, err := util.RunCmdCombinedOutput("go", "mod", "tidy")
+func (dp *DepProcessor) runModTidy() error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "mod", "tidy")
 	util.Log("Run go mod tidy: %v", out)
 	return err
 }
 
-func runModVendor() error {
-	out, err := util.RunCmdCombinedOutput("go", "mod", "vendor")
+func (dp *DepProcessor) runModVendor() error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
 	return err
 }
 
-func runGoGet(dep string) error {
-	out, err := util.RunCmdCombinedOutput("go", "get", dep)
+func (dp *DepProcessor) runGoGet(dep string) error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "get", dep)
 	util.Log("Run go get %v: %v", dep, out)
 	return err
 }
 
-func runGoModDownload(path string) error {
-	out, err := util.RunCmdCombinedOutput("go", "mod", "download", path)
+func (dp *DepProcessor) runGoModDownload(path string) error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "mod", "download", path)
 	util.Log("Run go mod download %v: %v", path, out)
 	return err
 }
 
-func runGoModEdit(require string) error {
-	out, err := util.RunCmdCombinedOutput("go", "mod", "edit", "-require="+require)
+func (dp *DepProcessor) runGoModEdit(require string) error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "mod", "edit", "-require="+require)
 	util.Log("Run go mod edit %v: %v", require, out)
 	return err
 }
@@ -550,17 +747,20 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 		util.Log("Run go build with args %v in toolexec mode", args)
 	}
 	util.AssertGoBuild(args)
-	out, err := util.RunCmdCombinedOutput(args...)
+	// @@ Note that we should not set the working directory here, as the build
+	// with toolexec should be run in the same directory as the original build
+	// command
+	out, err := runCmdCombinedOutput("", args...)
 	util.Log("Run go build with toolexec: %v", out)
 	return err
 }
 
-func fetchDep(path string) error {
-	err := runGoModDownload(path)
+func (dp *DepProcessor) fetchDep(path string) error {
+	err := dp.runGoModDownload(path)
 	if err != nil {
 		return err
 	}
-	err = runGoModEdit(path)
+	err = dp.runGoModEdit(path)
 	if err != nil {
 		return err
 	}
@@ -582,7 +782,7 @@ func (dp *DepProcessor) pinDepVersion() error {
 		if config.GetConf().Verbose {
 			util.Log("Pin dependency version %v@%v", p, v)
 		}
-		err := fetchDep(p + "@" + v)
+		err := dp.fetchDep(p + "@" + v)
 		if err != nil {
 			if dep.fallible {
 				util.Log("Failed to pin dependency %v: %v", p, err)
@@ -599,13 +799,6 @@ func precheck() error {
 	go11module := os.Getenv("GO111MODULE")
 	if go11module == "off" {
 		return errc.New(errc.ErrNotModularized, "GO111MODULE is off")
-	}
-	found, err := util.IsExistGoMod()
-	if !found {
-		return err
-	}
-	if err != nil {
-		return err
 	}
 
 	// Check if the build arguments is sane
@@ -625,17 +818,14 @@ func precheck() error {
 }
 
 func (dp *DepProcessor) backupMod() error {
-	gomodDir, err := util.GetGoModDir()
-	if err != nil {
-		return err
-	}
+	gomodDir := dp.getGoModDir()
 	files := []string{}
 	files = append(files, filepath.Join(gomodDir, util.GoModFile))
 	files = append(files, filepath.Join(gomodDir, util.GoSumFile))
 	files = append(files, filepath.Join(gomodDir, util.GoWorkSumFile))
 	for _, file := range files {
 		if util.PathExists(file) {
-			err = dp.backupFile(file)
+			err := dp.backupFile(file)
 			if err != nil {
 				return err
 			}
@@ -675,13 +865,13 @@ func (dp *DepProcessor) setupDeps() error {
 	}
 
 	// Run go mod tidy first to fetch all dependencies
-	err = runModTidy()
+	err = dp.runModTidy()
 	if err != nil {
 		return err
 	}
 
 	if dp.vendorBuild {
-		err = runModVendor()
+		err = dp.runModVendor()
 		if err != nil {
 			return err
 		}
@@ -746,6 +936,12 @@ func Preprocess() error {
 	}
 
 	dp := newDepProcessor()
+
+	err = dp.init()
+	if err != nil {
+		return err
+	}
+
 	defer func() { dp.postProcess() }()
 	{
 		defer util.PhaseTimer("Preprocess")()
@@ -771,13 +967,13 @@ func Preprocess() error {
 		}
 
 		// Run go mod tidy to fetch dependencies
-		err = runModTidy()
+		err = dp.runModTidy()
 		if err != nil {
 			return err
 		}
 
 		if dp.vendorBuild {
-			err = runModVendor()
+			err = dp.runModVendor()
 			if err != nil {
 				return err
 			}
