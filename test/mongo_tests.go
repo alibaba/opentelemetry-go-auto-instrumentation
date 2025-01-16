@@ -31,6 +31,7 @@ func init() {
 	TestCases = append(TestCases, NewGeneralTestCase("mongo-1.11.1-crud-test", mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestCrudMongo),
 		NewGeneralTestCase("mongo-1.11.1-cursor-test", mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestCursor),
 		NewGeneralTestCase("mongo-1.11.1-batch-test", mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestBatch),
+		NewGeneralTestCase("mongo-1.11.1-metrics-test", mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", TestMetrics),
 		NewMuzzleTestCase("mongo-1.11.1-crud-muzzle", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", []string{"go", "build", "test_crud_mongo.go", "dsn.go"}),
 		NewMuzzleTestCase("mongo-1.11.1-cursor-muzzle", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", []string{"go", "build", "test_batch.go", "dsn.go"}),
 		NewMuzzleTestCase("mongo-1.11.1-batch-muzzle", mongo_dependency_name, mongo_module_name, "v1.11.1", "v1.15.1", "1.18", "", []string{"go", "build", "test_cursor.go", "dsn.go"}),
@@ -39,7 +40,6 @@ func init() {
 
 func TestCrudMongo(t *testing.T, env ...string) {
 	mongoC, mongoPort := initMongoContainer()
-	// defer clearMongoContainer(mongoC)
 	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
 	RunGoBuild(t, "go", "build", "test_crud_mongo.go", "dsn.go")
@@ -49,7 +49,6 @@ func TestCrudMongo(t *testing.T, env ...string) {
 
 func TestCursor(t *testing.T, env ...string) {
 	mongoC, mongoPort := initMongoContainer()
-	// defer clearMongoContainer(mongoC)
 	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
 	RunGoBuild(t, "go", "build", "test_cursor.go", "dsn.go")
@@ -59,12 +58,20 @@ func TestCursor(t *testing.T, env ...string) {
 
 func TestBatch(t *testing.T, env ...string) {
 	mongoC, mongoPort := initMongoContainer()
-	// defer clearMongoContainer(mongoC)
 	defer testcontainers.CleanupContainer(t, mongoC)
 	UseApp("mongo/v1.11.1")
 	RunGoBuild(t, "go", "build", "test_batch.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
 	RunApp(t, "test_batch", env...)
+}
+
+func TestMetrics(t *testing.T, env ...string) {
+	mongoC, mongoPort := initMongoContainer()
+	defer testcontainers.CleanupContainer(t, mongoC)
+	UseApp("mongo/v1.11.1")
+	RunGoBuild(t, "go", "build", "test_metrics_mongo.go", "dsn.go")
+	env = append(env, "MONGO_PORT="+mongoPort.Port())
+	RunApp(t, "test_metrics_mongo", env...)
 }
 
 func initMongoContainer() (testcontainers.Container, nat.Port) {

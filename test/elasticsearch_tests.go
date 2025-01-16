@@ -33,7 +33,9 @@ const defaultTCPPort = "9300"
 func init() {
 	TestCases = append(TestCases,
 		NewGeneralTestCase("es-crud-test", es_v8_module_name, "v8.4.0", "", "1.18", "", TestESCrud),
+		NewGeneralTestCase("es-metrics-test", es_v8_module_name, "v8.4.0", "", "1.18", "", TestESMetrics),
 		NewGeneralTestCase("es-typed-client-test", es_v8_module_name, "v8.4.0", "", "1.18", "", TestESTypedClient),
+		NewGeneralTestCase("es-typed-client-metrics-test", es_v8_module_name, "v8.5.0", "", "1.18", "", TestEsTypedClientMetrics),
 		NewLatestDepthTestCase("es-crud-latestdepth-test", es_v8_dependency_name, es_v8_module_name, "v8.4.0", "v8.15.0", "1.18", "", TestESCrud),
 		NewMuzzleTestCase("es-muzzle", es_v8_dependency_name, es_v8_module_name, "v8.4.0", "v8.4.0", "1.18", "", []string{"go", "build", "test_es_crud.go"}),
 		NewMuzzleTestCase("es-muzzle", es_v8_dependency_name, es_v8_module_name, "v8.5.0", "", "1.18", "", []string{"go", "build", "test_es_typedclient.go"}),
@@ -49,6 +51,15 @@ func TestESCrud(t *testing.T, env ...string) {
 	RunApp(t, "test_es_crud", env...)
 }
 
+func TestESMetrics(t *testing.T, env ...string) {
+	esC, esPort := initElasticSearchContainer()
+	defer testcontainers.CleanupContainer(t, esC)
+	UseApp("elasticsearch/v8.4.0")
+	RunGoBuild(t, "go", "build", "test_es_metrics.go")
+	env = append(env, "OTEL_ES_PORT="+esPort.Port())
+	RunApp(t, "test_es_metrics", env...)
+}
+
 func TestESTypedClient(t *testing.T, env ...string) {
 	esC, esPort := initElasticSearchContainer()
 	defer testcontainers.CleanupContainer(t, esC)
@@ -56,6 +67,15 @@ func TestESTypedClient(t *testing.T, env ...string) {
 	RunGoBuild(t, "go", "build", "test_es_typedclient.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
 	RunApp(t, "test_es_typedclient", env...)
+}
+
+func TestEsTypedClientMetrics(t *testing.T, env ...string) {
+	esC, esPort := initElasticSearchContainer()
+	defer testcontainers.CleanupContainer(t, esC)
+	UseApp("elasticsearch/v8.5.0")
+	RunGoBuild(t, "go", "build", "test_es_typedclient_metrics.go")
+	env = append(env, "OTEL_ES_PORT="+esPort.Port())
+	RunApp(t, "test_es_typedclient_metrics", env...)
 }
 
 func initElasticSearchContainer() (testcontainers.Container, nat.Port) {

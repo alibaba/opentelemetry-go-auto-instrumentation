@@ -16,6 +16,7 @@ package elasticsearch
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
@@ -49,6 +50,7 @@ func BuildElasticSearchInstrumenter() instrumenter.Instrumenter[*esRequest, inte
 	builder := instrumenter.Builder[*esRequest, any]{}
 	getter := elasticSearchGetter{}
 	return builder.Init().SetSpanNameExtractor(&db.DBSpanNameExtractor[*esRequest]{Getter: elasticSearchGetter{}}).SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[*esRequest]{}).
+		AddOperationListeners(http.HttpServerMetrics("elasticsearch.client")).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.ELASTICSEARCH_SCOPE_NAME,
 			Version: version.Tag,

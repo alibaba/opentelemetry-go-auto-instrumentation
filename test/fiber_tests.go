@@ -23,6 +23,7 @@ func init() {
 	TestCases = append(TestCases,
 		NewGeneralTestCase("basic-fiberv2-test", fiberv2_module_name, "", "", "1.18", "", TestBasicFiberv2),
 		NewGeneralTestCase("basic-fiberv2s-test", fiberv2_module_name, "", "", "1.18", "", TestBasicFiberv2Https),
+		NewGeneralTestCase("basic-fiberv2-metrics-test", fiberv2_module_name, "", "", "1.18", "", TestBasicFiberv2Metrics),
 		NewLatestDepthTestCase("fiberv2-latestdepth", fiberv2_dependency_name, fiberv2_module_name, "v2.43.0", "", "1.18", "", TestBasicFiberv2),
 		NewMuzzleTestCase("fiberv2-muzzle", fiberv2_dependency_name, fiberv2_module_name, "v2.43.0", "", "1.18", "", []string{"go", "build", "fiber_http.go"}))
 }
@@ -37,4 +38,10 @@ func TestBasicFiberv2Https(t *testing.T, env ...string) {
 	UseApp("fiberv2/v2.43.0")
 	RunGoBuild(t, "go", "build", "fiber_https.go")
 	RunApp(t, "fiber_https", env...)
+}
+
+func TestBasicFiberv2Metrics(t *testing.T, env ...string) {
+	UseApp("fiberv2/v2.43.0")
+	RunGoBuild(t, "go", "build", "fiber_http_metrics.go")
+	RunApp(t, "fiber_http_metrics", env...)
 }
