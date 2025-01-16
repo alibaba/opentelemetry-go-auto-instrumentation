@@ -32,6 +32,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/tools/go/packages"
 )
 
 // -----------------------------------------------------------------------------
@@ -155,10 +156,7 @@ func (dp *DepProcessor) postProcess() {
 	_ = os.RemoveAll(OtelPkgDep)
 
 	// Restore everything we have modified during instrumentation
-	err := dp.restoreBackupFiles()
-	if err != nil {
-		util.LogFatal("failed to restore: %v", err)
-	}
+	_ = dp.restoreBackupFiles()
 }
 
 func (dp *DepProcessor) backupFile(origin string) error {
@@ -226,69 +224,170 @@ func getCompileCommands() ([]string, error) {
 	return compileCmds, nil
 }
 
-// assembleInitCandidate assembles the candidate files that we may add init
-// function to. The candidate files are the ones that have main or init
-// function defined.
-func (dp *DepProcessor) getImportCandidates() ([]string, error) {
+// $ go help packages
+// Many commands apply to a set of packages:
+//
+//	go <action> [packages]
+//
+// Usually, [packages] is a list of import paths.
+//
+// An import path that is a rooted path or that begins with
+// a . or .. element is interpreted as a file system path and
+// denotes the package in that directory.
+//
+// Otherwise, the import path P denotes the package found in
+// the directory DIR/src/P for some DIR listed in the GOPATH
+// environment variable (For more details see: 'go help gopath').
+//
+// If no import paths are given, the action applies to the
+// package in the current directory.
+//
+// There are four reserved names for paths that should not be used
+// for packages to be built with the go tool:
+//
+// - "main" denotes the top-level package in a stand-alone executable.
+//
+// - "all" expands to all packages found in all the GOPATH
+// trees. For example, 'go list all' lists all the packages on the local
+// system. When using modules, "all" expands to all packages in
+// the main module and their dependencies, including dependencies
+// needed by tests of any of those.
+//
+// - "std" is like all but expands to just the packages in the standard
+// Go library.
+//
+// - "cmd" expands to the Go repository's commands and their
+// internal libraries.
+//
+// Import paths beginning with "cmd/" only match source code in
+// the Go repository.
+//
+// An import path is a pattern if it includes one or more "..." wildcards,
+// each of which can match any string, including the empty string and
+// strings containing slashes. Such a pattern expands to all package
+// directories found in the GOPATH trees with names matching the
+// patterns.
+//
+// To make common patterns more convenient, there are two special cases.
+// First, /... at the end of the pattern can match an empty string,
+// so that net/... matches both net and packages in its subdirectories, like net/http.
+// Second, any slash-separated pattern element containing a wildcard never
+// participates in a match of the "vendor" element in the path of a vendored
+// package, so that ./... does not match packages in subdirectories of
+// ./vendor or ./mycode/vendor, but ./vendor/... and ./mycode/vendor/... do.
+// Note, however, that a directory named vendor that itself contains code
+// is not a vendored package: cmd/vendor would be a command named vendor,
+// and the pattern cmd/... matches it.
+// See golang.org/s/go15vendor for more about vendoring.
+//
+// An import path can also name a package to be downloaded from
+// a remote repository. Run 'go help importpath' for details.
+//
+// Every package in a program must have a unique import path.
+// By convention, this is arranged by starting each path with a
+// unique prefix that belongs to you. For example, paths used
+// internally at Google all begin with 'google', and paths
+// denoting remote repositories begin with the path to the code,
+// such as 'github.com/user/repo'.
+//
+// Packages in a program need not have unique package names,
+// but there are two reserved package names with special meaning.
+// The name main indicates a command, not a library.
+// Commands are built into binaries and cannot be imported.
+// The name documentation indicates documentation for
+// a non-Go program in the directory. Files in package documentation
+// are ignored by the go command.
+//
+// As a special case, if the package list is a list of .go files from a
+// single directory, the command is applied to a single synthesized
+// package made up of exactly those files, ignoring any build constraints
+// in those files and ignoring any other files in the directory.
+//
+// Directory and file names that begin with "." or "_" are ignored
+// by the go tool, as are directories named "testdata".
+
+func tryLoadPackage(path string) ([]*packages.Package, error) {
+	cfg := &packages.Config{
+		Mode: packages.LoadAllSyntax | packages.NeedModule | packages.NeedName,
+	}
+
+	pkgs, err := packages.Load(cfg, path)
+	if err != nil {
+		return nil, errc.New(errc.ErrPreprocess, err.Error())
+	}
+	return pkgs, nil
+}
+
+func (dp *DepProcessor) findPackages() ([]string, error) {
 	if dp.importCandidates != nil {
 		return dp.importCandidates, nil
 	}
 	candidates := make([]string, 0)
 	found := false
+	projDir, err := util.GetProjRootDir()
+	if err != nil {
+		return nil, err
+	}
 
 	// Find from build arguments e.g. go build test.go or go build cmd/app
-	for _, buildArg := range dp.goBuildCmd {
-		// FIXME: Should we check file permission here? As we are likely to read
-		// it later, which would cause fatal error if permission is not granted.
+	for i := len(dp.goBuildCmd) - 1; i >= 0; i-- {
+		buildArg := dp.goBuildCmd[i]
 
-		// It's a golang file, good candidate
-		if util.IsGoFile(buildArg) {
-			candidates = append(candidates, buildArg)
-			found = true
-			continue
-		}
-		// It's likely a flag, skip it
-		if strings.HasPrefix("-", buildArg) {
-			continue
+		// Stop canary when we see a build flag or a "build" command
+		if strings.HasPrefix("-", buildArg) || buildArg == "build" {
+			break
 		}
 
-		// It's a directory, find all go files in it
-		if util.PathExists(buildArg) {
-			p2, err := util.ListFilesFlat(buildArg)
-			if err != nil {
-				// Error is tolerated here, as buildArg may be a file
-				continue
+		// Trying to load package from the build argument, error is tolerated
+		// because we dont know what the build argument is. One exception is
+		// when we already found packages, in this case, we expect subsequent
+		// build arguments are packages, so we should not tolerate any error.
+		pkgs, err := tryLoadPackage(buildArg)
+		if err != nil {
+			if found {
+				// If packages are already found, we expect subsequent build
+				// arguments are packages, so we should not tolerate any error
+				break
 			}
-			for _, file := range p2 {
-				if util.IsGoFile(file) {
-					candidates = append(candidates, file)
+			util.Log("Cannot load package from %v", buildArg)
+			continue
+		}
+		for _, pkg := range pkgs {
+			for _, goFile := range pkg.GoFiles {
+				// Check if the go file is within our project
+				if strings.HasPrefix(goFile, projDir) {
+					candidates = append(candidates, goFile)
 					found = true
 				}
 			}
 		}
 	}
 
-	// Find candidates from current directory if no build arguments are provided
+	// If no import paths are given, the action applies to the package in the
+	// current directory.
 	if !found {
-		files, err := util.ListFilesFlat(".")
+		pkgs, err := tryLoadPackage(".")
 		if err != nil {
 			return nil, err
 		}
-		for _, file := range files {
-			if util.IsGoFile(file) {
-				candidates = append(candidates, file)
+		for _, pkg := range pkgs {
+			for _, goFile := range pkg.GoFiles {
+				// Check if the go file is within our project
+				if strings.HasPrefix(goFile, projDir) {
+					candidates = append(candidates, goFile)
+				}
 			}
 		}
 	}
-	if len(candidates) > 0 {
-		dp.importCandidates = candidates
-	}
+
+	dp.importCandidates = candidates
+	util.Log("Find packages: %v", candidates)
 	return candidates, nil
 }
 
 func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 	// Find out where we should forcely import our init func
-	candidate, err := dp.getImportCandidates()
+	candidate, err := dp.findPackages()
 	if err != nil {
 		return err
 	}
@@ -409,7 +508,7 @@ func (dp *DepProcessor) addOtelImports() error {
 // Note in this function, error is tolerated as we are best-effort to clean up
 // any obsolete materials, but it's not fatal if we fail to do so.
 func (dp *DepProcessor) preclean() {
-	candidate, _ := dp.getImportCandidates()
+	candidate, _ := dp.findPackages()
 	ruleImport, _ := dp.getImportPathOf(OtelRules)
 	for _, file := range candidate {
 		if !util.IsGoFile(file) {

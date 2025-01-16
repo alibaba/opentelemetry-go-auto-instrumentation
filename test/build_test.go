@@ -36,6 +36,7 @@ func TestBuildProject2(t *testing.T) {
 
 	RunGoBuild(t, "go", "build", ".")
 	RunGoBuild(t, "go", "build", "")
+	RunGoBuild(t, "go", "build", "./...")
 }
 
 func TestBuildProject3(t *testing.T) {

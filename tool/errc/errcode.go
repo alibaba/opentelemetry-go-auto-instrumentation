@@ -43,6 +43,7 @@ const (
 	ErrNotModularized
 	ErrGetExecutable
 	ErrInstrument
+	ErrPreprocess
 )
 
 var errMessages = map[int]string{
