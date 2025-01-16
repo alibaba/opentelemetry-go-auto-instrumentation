@@ -23,23 +23,50 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 )
 
+// TestCase represents the configuration and metadata for a test case,
+// including version constraints, test logic, and specific test types.
 type TestCase struct {
-	TestName           string
-	DependencyName     string
-	ModuleName         string
-	MinVersion         *version.Version
-	MaxVersion         *version.Version
-	MinGoVersion       *version.Version
-	MaxGoVersion       *version.Version
-	TestFunc           func(t *testing.T, env ...string)
-	LatestDepthFunc    func(t *testing.T, env ...string)
-	MuzzleClasses      []string
-	IsMuzzleCheck      bool
+	// TestName is the name of the test case.
+	TestName string
+
+	// DependencyName is the name of the dependency being tested.
+	DependencyName string
+
+	// ModuleName is the name of the module under test.
+	ModuleName string
+
+	// MinVersion is the minimum supported version of the module.
+	MinVersion *version.Version
+
+	// MaxVersion is the maximum supported version of the module.
+	MaxVersion *version.Version
+
+	// MinGoVersion is the minimum Go version required for the test.
+	MinGoVersion *version.Version
+
+	// MaxGoVersion is the maximum Go version supported for the test.
+	MaxGoVersion *version.Version
+
+	// TestFunc is the function to run the general test logic.
+	TestFunc func(t *testing.T, env ...string)
+
+	// LatestDepthFunc is the function to run the latest depth compatibility test.
+	LatestDepthFunc func(t *testing.T, env ...string)
+
+	// MuzzleClasses contains the muzzle classes for the muzzle compatibility check.
+	MuzzleClasses []string
+
+	// IsMuzzleCheck indicates if the test case is for muzzle compatibility.
+	IsMuzzleCheck bool
+
+	// IsLatestDepthCheck indicates if the test case is for the latest depth check.
 	IsLatestDepthCheck bool
 }
 
 var TestCases = make([]*TestCase, 0)
 
+// NewGeneralTestCase creates a general test case to validate module compatibility
+// with specified version constraints and optional test logic.
 func NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, testFunc func(t *testing.T, env ...string)) *TestCase {
 	minVer, err := version.NewVersion(minVersion)
 	if minVersion != "" && err != nil {
@@ -59,7 +86,7 @@ func NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersi
 	}
 	goVersion, _ := version.NewGoVersion(strings.ReplaceAll(runtime.Version(), "go", ""))
 	if (minGoVer != nil && goVersion.LessThan(minGoVer)) || (maxGoVer != nil && goVersion.GreaterThan(maxGoVer)) {
-		log.Printf("This test does not suppport go " + goVersion.String())
+		log.Printf("This test does not suppport go %s", goVersion.String())
 		return nil
 	}
 	return &TestCase{
@@ -75,6 +102,8 @@ func NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersi
 	}
 }
 
+// NewMuzzleTestCase creates a test case to validate the muzzle compatibility
+// of a module with its dependencies.
 func NewMuzzleTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, muzzleClasses []string) *TestCase {
 	c := NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
 	if c == nil {
@@ -86,6 +115,8 @@ func NewMuzzleTestCase(testName, dependencyName, moduleName, minVersion, maxVers
 	return c
 }
 
+// NewLatestDepthTestCase creates a test case to validate the compatibility
+// of a module's latest depth with its dependencies.
 func NewLatestDepthTestCase(testName, dependencyName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string, latestTestFunc func(t *testing.T, env ...string)) *TestCase {
 	c := NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion, nil)
 	if c == nil {

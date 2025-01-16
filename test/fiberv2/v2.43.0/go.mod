@@ -9,6 +9,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.43.0
 	github.com/valyala/fasthttp v1.45.0
 	go.opentelemetry.io/otel/sdk v1.31.0
+	go.opentelemetry.io/otel/sdk/metric v1.30.0
 
 )
 
@@ -31,7 +32,6 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.opentelemetry.io/otel v1.31.0 // indirect
 	go.opentelemetry.io/otel/metric v1.31.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.30.0 // indirect
 	go.opentelemetry.io/otel/trace v1.31.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 )
