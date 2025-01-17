@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -31,6 +32,7 @@ func listFiles(fs embed.FS, dir string) ([]string, error) {
 	}
 	var files []string
 	for _, item := range list {
+		// embedded file path is always / rather than os.PathSeparator
 		path := dir + "/" + item.Name()
 		if item.IsDir() {
 			subFiles, err := listFiles(fs, path)
@@ -68,7 +70,7 @@ func CopyPkgTo(target string) error {
 		target := filepath.Join(target, file)
 		err = os.MkdirAll(filepath.Dir(target), os.ModePerm)
 		if err != nil {
-			return err
+			return errc.New(errc.ErrMkdirAll, err.Error())
 		}
 		text := string(t)
 		_, err = util.WriteFile(target, text)
