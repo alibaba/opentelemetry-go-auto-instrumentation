@@ -157,7 +157,7 @@ classes that need to do the muzzle check.
 Instrumentation tests are generally run against the lowest version of a library that we support to ensure a baseline
 against users with old dependency versions. Due to the nature of the agent and locations where we instrument private
 APIs, the agent may fail on a newly released version of the library. We run instrumentation tests additionally against
-the latest version of the library, as fetched from Maven, as part of a nightly build. If a new version of a library will
+the latest version of the library, as fetched from remote, as part of a nightly build. If a new version of a library will
 not work with the agent, we find out through this build and can address it by the next release of the agent.
 
 Users can add a muzzle check case by calling `NewLatestDepthTestCase`, the arguments taken by `NewLatestDepthTestCase`
