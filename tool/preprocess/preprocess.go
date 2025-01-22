@@ -248,6 +248,9 @@ func (dp *DepProcessor) init() error {
 		return errc.New(errc.ErrPreprocess, "cannot find compiled module")
 	}
 
+	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
+	util.Log("Found sources %v", dp.sources)
+
 	// Check if the build mode
 	// FIXME: vendor directory name can be anything, but we assume it's "vendor"
 	// for now
