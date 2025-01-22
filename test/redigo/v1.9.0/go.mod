@@ -1,6 +1,6 @@
 module redigo
 
-go 1.22
+go 1.22.0
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
 
