@@ -15,6 +15,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -130,30 +131,6 @@ func RunCmd(args ...string) error {
 			With("command", fmt.Sprintf("%v", args))
 	}
 	return nil
-}
-
-func RunCmdOutput(args ...string) (string, error) {
-	path := args[0]
-	args = args[1:]
-	cmd := exec.Command(path, args...)
-	out, err := cmd.Output()
-	if err != nil {
-		return "", errc.New(errc.ErrRunCmd, string(out)).
-			With("command", fmt.Sprintf("%v", args))
-	}
-	return string(out), nil
-}
-
-func RunCmdCombinedOutput(args ...string) (string, error) {
-	path := args[0]
-	args = args[1:]
-	cmd := exec.Command(path, args...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", errc.New(errc.ErrRunCmd, string(out)).
-			With("command", fmt.Sprintf("%v", args))
-	}
-	return string(out), nil
 }
 
 func CopyFile(src, dst string) error {
@@ -331,4 +308,9 @@ func GetToolName() (string, error) {
 		return "", errc.New(errc.ErrGetExecutable, err.Error())
 	}
 	return filepath.Base(ex), nil
+}
+
+func Jsonify(v interface{}) string {
+	b, _ := json.Marshal(v)
+	return string(b)
 }

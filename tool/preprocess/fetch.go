@@ -31,11 +31,12 @@ type moduleHolder struct {
 	Dir   string // absolute path to cached source root directory
 }
 
-func fetchNetwork(path string) (string, error) {
+func (dp *DepProcessor) fetchNetwork(path string) (string, error) {
 	// Note we dont use CombinedOutput here because some unexpected output may
 	// be printed to stderr, which is not what we want, we only care about the
 	// json output and handle the error when the command fails
-	text, err := util.RunCmdOutput("go", "mod", "download", "-json", path)
+	text, err := runCmdOutput(dp.getGoModDir(),
+		"go", "mod", "download", "-json", path)
 	if err != nil {
 		return "", err
 
@@ -125,7 +126,7 @@ func (dp *DepProcessor) fetchFrom(path string) (string, error) {
 		}
 
 		// Download the module to the local file system
-		dir, err := fetchNetwork(path)
+		dir, err := dp.fetchNetwork(path)
 		if err != nil {
 			return "", err
 		}
