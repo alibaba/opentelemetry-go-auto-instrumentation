@@ -126,6 +126,8 @@ func newDepProcessor() *DepProcessor {
 }
 
 func (dp *DepProcessor) getGoModPath() string {
+	util.Assert(dp.modulePath != "", "modulePath is empty")
+	util.Assert(filepath.IsAbs(dp.modulePath), "modulePath is not absolute")
 	return dp.modulePath
 }
 
@@ -135,6 +137,10 @@ func (dp *DepProcessor) getGoModDir() string {
 
 func (dp *DepProcessor) getGoModName() string {
 	return dp.moduleName
+}
+
+func (dp *DepProcessor) generatedOf(dir string) string {
+	return filepath.Join(dp.getGoModDir(), dir)
 }
 
 // runCmdOutput runs the command and returns its standard output. dir specifies
@@ -284,10 +290,10 @@ func (dp *DepProcessor) postProcess() {
 	}
 
 	// rm -rf otel_rules
-	_ = os.RemoveAll(OtelRules)
+	_ = os.RemoveAll(dp.generatedOf(OtelRules))
 
 	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(OtelPkgDep)
+	_ = os.RemoveAll(dp.generatedOf(OtelPkgDep))
 
 	// Restore everything we have modified during instrumentation
 	_ = dp.restoreBackupFiles()
@@ -623,11 +629,11 @@ func (dp *DepProcessor) preclean() {
 		}
 	}
 	// Clean otel_rules/otel_pkgdep directory
-	if util.PathExists(OtelRules) {
-		_ = os.RemoveAll(OtelRules)
+	if util.PathExists(dp.generatedOf(OtelRules)) {
+		_ = os.RemoveAll(dp.generatedOf(OtelRules))
 	}
-	if util.PathExists(OtelPkgDep) {
-		_ = os.RemoveAll(OtelPkgDep)
+	if util.PathExists(dp.generatedOf(OtelPkgDep)) {
+		_ = os.RemoveAll(dp.generatedOf(OtelPkgDep))
 	}
 }
 
@@ -841,7 +847,7 @@ func (dp *DepProcessor) saveDebugFiles() {
 	dir := filepath.Join(util.GetTempBuildDir(), OtelRules)
 	err := os.MkdirAll(dir, os.ModePerm)
 	if err == nil {
-		util.CopyDir(OtelRules, dir)
+		util.CopyDir(dp.generatedOf(OtelRules), dir)
 	}
 	dir = filepath.Join(util.GetTempBuildDir(), OtelUser)
 	err = os.MkdirAll(dir, os.ModePerm)
@@ -867,7 +873,7 @@ func (dp *DepProcessor) setupDeps() error {
 		return err
 	}
 
-	// Run go mod tidy first to fetch all dependencies
+	// Run go mod t	idy first to fetch all dependencies
 	err = dp.runModTidy()
 	if err != nil {
 		return err

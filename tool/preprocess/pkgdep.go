@@ -35,8 +35,9 @@ func (dp *DepProcessor) replaceOtelImports() error {
 	if err != nil {
 		return err
 	}
-
-	for _, dep := range []string{OtelRules, OtelPkgDep} {
+	// Replace imports in generated files
+	generated := []string{dp.generatedOf(OtelRules), dp.generatedOf(OtelPkgDep)}
+	for _, dep := range generated {
 		files, err := util.ListFiles(dep)
 		if err != nil {
 			return err
@@ -62,5 +63,5 @@ func (dp *DepProcessor) replaceOtelImports() error {
 }
 
 func (dp *DepProcessor) copyPkgDep() error {
-	return resource.CopyPkgTo(OtelPkgDep)
+	return resource.CopyPkgTo(dp.generatedOf(OtelPkgDep))
 }

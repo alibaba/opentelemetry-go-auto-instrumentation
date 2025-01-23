@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -34,26 +33,12 @@ const (
 	ApiCallContext = "CallContext"
 )
 
-func initRuleDir() (err error) {
-	if util.PathExists(OtelRules) {
-		err = os.RemoveAll(OtelRules)
-		if err != nil {
-			return errc.New(errc.ErrRemoveAll, OtelRules)
-		}
-	}
-	err = os.MkdirAll(OtelRules, os.ModePerm)
-	if err != nil {
-		return errc.New(errc.ErrMkdirAll, OtelRules)
-	}
-	return nil
-}
-
 func (dp *DepProcessor) copyRules() (err error) {
 	if len(dp.bundles) == 0 {
 		return nil
 	}
 	// Copy matched rules to ${GOMOD.DIR}/otel_rules
-	targetDir := filepath.Join(dp.getGoModDir(), OtelRules)
+	targetDir := dp.generatedOf(OtelRules)
 	// Find out which resource files we should add to project
 	for _, bundle := range dp.bundles {
 		for _, funcRules := range bundle.File2FuncRules {
@@ -204,9 +189,7 @@ func (dp *DepProcessor) copyRule(path, target string,
 	if err != nil {
 		return err
 	}
-	if config.GetConf().Verbose {
-		util.Log("Copy dependency %v to %v", path, target)
-	}
+	util.Log("Copy rule code %v to %v", path, target)
 	return nil
 }
 
@@ -310,7 +293,7 @@ func (dp *DepProcessor) initRules() (err error) {
 	c += "}\n"
 
 	// Write to ${GOMOD.DIR}/otel_rules/otel_setup_inst.go
-	initTarget := filepath.Join(dp.getGoModDir(), OtelRules, OtelSetupInst)
+	initTarget := dp.generatedOf(filepath.Join(OtelRules, OtelSetupInst))
 	_, err = util.WriteFile(initTarget, c)
 	if err != nil {
 		return err
@@ -381,7 +364,7 @@ func (dp *DepProcessor) rewriteRules() error {
 
 func (dp *DepProcessor) setupOtelSDK() error {
 	// Copy otel_setup_sdk.go to ${GOMOD.DIR}/otel_rules
-	setupTarget := filepath.Join(dp.getGoModDir(), OtelRules, OtelSetupSDK)
+	setupTarget := dp.generatedOf(filepath.Join(OtelRules, OtelSetupSDK))
 	_, err := resource.CopyOtelSetupTo(OtelRules, setupTarget)
 	if err != nil {
 		return err
@@ -391,10 +374,6 @@ func (dp *DepProcessor) setupOtelSDK() error {
 
 func (dp *DepProcessor) setupRules() (err error) {
 	defer util.PhaseTimer("Setup")()
-	err = initRuleDir()
-	if err != nil {
-		return err
-	}
 	err = dp.copyRules()
 	if err != nil {
 		return err
