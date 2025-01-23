@@ -152,8 +152,6 @@ func fatal(err error) {
 	message += fmt.Sprintf("%-11s: %s\n", "Command", strings.Join(os.Args, " "))
 	message += fmt.Sprintf("%-11s: %s\n", "ErrorLog", util.GetLoggerPath())
 	message += fmt.Sprintf("%-11s: %s\n", "WorkDir", os.Getenv("PWD"))
-	path, _ := util.GetGoModPath()
-	message += fmt.Sprintf("%-11s: %s\n", "GoMod", path)
 	message += fmt.Sprintf("%-11s: %s, %s, %s\n", "Toolchain",
 		runtime.GOOS+"/"+runtime.GOARCH,
 		runtime.Version(), config.ToolVersion)

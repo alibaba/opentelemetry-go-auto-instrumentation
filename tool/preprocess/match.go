@@ -294,12 +294,7 @@ func findFlagValue(cmd []string, flag string) string {
 	return ""
 }
 
-func parseVendorModules() (map[string]string, error) {
-	util.Assert(util.IsVendorBuild(), "why not otherwise")
-	projDir, err := util.GetProjRootDir()
-	if err != nil {
-		return nil, err
-	}
+func parseVendorModules(projDir string) (map[string]string, error) {
 	vendorFile := filepath.Join(projDir, "vendor", "modules.txt")
 	if util.PathNotExists(vendorFile) {
 		return nil, errc.New(errc.ErrNotExist, "vendor/modules.txt not found")
@@ -353,7 +348,7 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 	// If we are in vendor mode, we need to parse the vendor/modules.txt file
 	// to get the version of each module for future matching
 	if dp.vendorBuild {
-		modules, err := parseVendorModules()
+		modules, err := parseVendorModules(dp.getGoModDir())
 		if err != nil {
 			return err
 		}
