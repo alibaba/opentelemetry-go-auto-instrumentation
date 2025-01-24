@@ -3,5 +3,5 @@
   "Function": "Query",
   "ReceiverType": "*DB",
   "OnEnter": "sqlQueryOnEnter",
-  "Path": "/path/to/sqlinject/rules"
+  "Path": "rules"
 }]
