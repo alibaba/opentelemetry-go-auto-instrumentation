@@ -1,8 +1,7 @@
 module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
-go 1.22.7
+go 1.22
 
-toolchain go1.23.5
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
 
@@ -58,7 +57,6 @@ require (
 	github.com/bytedance/gopkg v0.1.0
 	github.com/kataras/iris/v12 v12.2.11
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
 )
 
 require (
@@ -204,6 +202,7 @@ require (
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/genproto v0.0.0-20231212172506-995d672761c0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect
