@@ -2,31 +2,18 @@
 
 The document demonstrates how to use extensions to print http request and response header.
 
-## Step1: Replace path in config.json
-Replace the `Path` in `config.json` with the actual absolute path of `rules` directory, for example:
-``` json
-[{
-"ImportPath":"net/http",
-"Function":"RoundTrip",
-"OnEnter":"httpClientEnterHook",
-"ReceiverType": "*Transport",
-"OnExit": "httpClientExitHook",
-"Path": "/path/opentelemetry-go-auto-instrumentation/example/extension/nethttp/rules"
-}]
-```
-
-## Step2: Compile the target binary with otel
+## Step1: Compile the target binary with otel
 Use `otel` to build the binary with `config.json`:
 ```
 cd example/extension/nethttp
 ../../../otel set -rule=config.json
-../../../otel go build demo/net_http.go
+../../../otel go build .
 ```
 Users can get the `otel` according to [documentation](../../../README.md)
 
-## Step3: Run the binary compiled by otel
+## Step2: Run the binary compiled by otel
 ```shell
-./net_http
+./demo
 ```
 And the result will be:
 ```shell
