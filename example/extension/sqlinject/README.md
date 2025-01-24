@@ -7,14 +7,14 @@ Use `otel` to build the binary with `config.json`:
 ```
 cd example/extension/sqlinject
 ../../../otel set -rule=config.json
-../../../otel go build demo/sql_inject.go
+../../../otel go build .
 ```
 Users can get the `otel` according to [documentation](../../../README.md)
 
 ## Step2: Run the binary compiled by otel
 ```shell
-docker run -d -p 3306:3306 -p 33060:33060 -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0.36
-./sql_inject
+docker run -d -p 3306:3306 -p 33060:33060 -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_DATABASE=test -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0.36   
+./sqlinjectdemo
 ```
 And the result will be:
 ```shell
