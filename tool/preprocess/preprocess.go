@@ -873,7 +873,7 @@ func (dp *DepProcessor) setupDeps() error {
 		return err
 	}
 
-	// Run go mod t	idy first to fetch all dependencies
+	// Run go mod tidy first to fetch all dependencies
 	err = dp.runModTidy()
 	if err != nil {
 		return err
