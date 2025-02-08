@@ -16,7 +16,6 @@ package main
 
 import (
 	"example/demo/pkg"
-	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -29,12 +28,8 @@ func main() {
 		pkg.InitDB()
 		pkg.SetupHttp()
 	}()
-	port := ":6060"
-	fmt.Printf("Listening and serving HTTP on %s\n", port)
-	if err := http.ListenAndServe(port, nil); err != nil {
-		fmt.Printf("Failed to start HTTP server: %s\n", err)
-		return
-	}
+
+	http.ListenAndServe("0.0.0.0:6060", nil)
 
 	signalCh := make(chan os.Signal, 1)
 
