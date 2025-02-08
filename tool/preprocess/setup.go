@@ -48,10 +48,12 @@ func initRuleDir() (err error) {
 	return nil
 }
 
-func (dp *DepProcessor) copyRules(pkgName string) (err error) {
+func (dp *DepProcessor) copyRules() (err error) {
 	if len(dp.bundles) == 0 {
 		return nil
 	}
+	// Copy matched rules to ${GOMOD.DIR}/otel_rules
+	targetDir := filepath.Join(dp.getGoModDir(), OtelRules)
 	// Find out which resource files we should add to project
 	for _, bundle := range dp.bundles {
 		for _, funcRules := range bundle.File2FuncRules {
@@ -85,7 +87,7 @@ func (dp *DepProcessor) copyRules(pkgName string) (err error) {
 							continue
 						}
 
-						ruleDir := filepath.Join(pkgName, dir)
+						ruleDir := filepath.Join(targetDir, dir)
 						err = os.MkdirAll(ruleDir, 0777)
 						if err != nil {
 							return errc.New(errc.ErrMkdirAll, err.Error())
@@ -208,8 +210,8 @@ func (dp *DepProcessor) copyRule(path, target string,
 	return nil
 }
 
-func (dp *DepProcessor) initRules(pkgName string) (err error) {
-	c := fmt.Sprintf("package %s\n", pkgName)
+func (dp *DepProcessor) initRules() (err error) {
+	c := fmt.Sprintf("package %s\n", OtelRules)
 	imports := make(map[string]string)
 
 	assigns := make([]string, 0)
@@ -307,7 +309,8 @@ func (dp *DepProcessor) initRules(pkgName string) (err error) {
 	}
 	c += "}\n"
 
-	initTarget := filepath.Join(OtelRules, OtelSetupInst)
+	// Write to ${GOMOD.DIR}/otel_rules/otel_setup_inst.go
+	initTarget := filepath.Join(dp.getGoModDir(), OtelRules, OtelSetupInst)
 	_, err = util.WriteFile(initTarget, c)
 	if err != nil {
 		return err
@@ -354,16 +357,9 @@ func (dp *DepProcessor) rewriteRules() error {
 					if basicLit.Kind == token.STRING {
 						quoted := fmt.Sprintf("%q", ReorderLocalPrefix)
 						if basicLit.Value == quoted {
-							gomod, err := util.GetGoModPath()
-							if err != nil {
-								return false
-							}
-							moduleName, err := getModuleName(gomod)
-							if err != nil {
-								return false
-							}
-							found = true
+							moduleName := dp.getGoModName()
 							basicLit.Value = fmt.Sprintf("%q", moduleName)
+							found = true
 							return false
 						}
 					}
@@ -383,9 +379,10 @@ func (dp *DepProcessor) rewriteRules() error {
 	return nil
 }
 
-func (dp *DepProcessor) setupOtelSDK(pkgName string) error {
-	setupTarget := filepath.Join(OtelRules, OtelSetupSDK)
-	_, err := resource.CopyOtelSetupTo(pkgName, setupTarget)
+func (dp *DepProcessor) setupOtelSDK() error {
+	// Copy otel_setup_sdk.go to ${GOMOD.DIR}/otel_rules
+	setupTarget := filepath.Join(dp.getGoModDir(), OtelRules, OtelSetupSDK)
+	_, err := resource.CopyOtelSetupTo(OtelRules, setupTarget)
 	if err != nil {
 		return err
 	}
@@ -398,11 +395,11 @@ func (dp *DepProcessor) setupRules() (err error) {
 	if err != nil {
 		return err
 	}
-	err = dp.copyRules(OtelRules)
+	err = dp.copyRules()
 	if err != nil {
 		return err
 	}
-	err = dp.initRules(OtelRules)
+	err = dp.initRules()
 	if err != nil {
 		return err
 	}
@@ -410,7 +407,7 @@ func (dp *DepProcessor) setupRules() (err error) {
 	if err != nil {
 		return err
 	}
-	err = dp.setupOtelSDK(OtelRules)
+	err = dp.setupOtelSDK()
 	if err != nil {
 		return err
 	}

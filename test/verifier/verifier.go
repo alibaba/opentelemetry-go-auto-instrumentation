@@ -15,8 +15,10 @@
 package verifier
 
 import (
-	"go.opentelemetry.io/otel/attribute"
 	"strings"
+
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
@@ -106,4 +108,24 @@ func verifyRpcAttributes(span tracetest.SpanStub, name, system, service, method 
 	Assert(GetAttribute(span.Attributes, "rpc.system").AsString() == system, "Except rpc system to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.system").AsString())
 	Assert(GetAttribute(span.Attributes, "rpc.service").AsString() == service, "Except rpc service to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.service").AsString())
 	Assert(GetAttribute(span.Attributes, "rpc.method").AsString() == method, "Except rpc method to be %s, got %s", method, GetAttribute(span.Attributes, "rpc.method").AsString())
+}
+
+func VerifyDbMetricsAttributes(attrs []attribute.KeyValue, dbSystem, operationName, serverAddress string) {
+	Assert(GetAttribute(attrs, string(semconv.DBSystemKey)).AsString() == dbSystem, "Expected db.system to be %s, got %s", dbSystem, GetAttribute(attrs, string(semconv.DBSystemKey)).AsString())
+	Assert(GetAttribute(attrs, string(semconv.DBOperationNameKey)).AsString() == operationName, "Expected db.operation.name to be %s, got %s", operationName, GetAttribute(attrs, string(semconv.DBOperationNameKey)).AsString())
+	Assert(GetAttribute(attrs, string(semconv.ServerAddressKey)).AsString() == serverAddress, "Expected server.address to be %s, got %s", serverAddress, GetAttribute(attrs, string(semconv.ServerAddressKey)).AsString())
+}
+
+func VerifyRpcClientMetricsAttributes(attrs []attribute.KeyValue, method, service, system, serverAddr string) {
+	Assert(GetAttribute(attrs, "rpc.method").AsString() == method, "Except rpc.method to be %s, got %s", method, GetAttribute(attrs, "rpc.method").AsString())
+	Assert(GetAttribute(attrs, "rpc.service").AsString() == service, "Except rpc.service to be %s, got %s", service, GetAttribute(attrs, "rpc.service").AsString())
+	Assert(GetAttribute(attrs, "rpc.system").AsString() == system, "Except rpc.system to be %s, got %s", system, GetAttribute(attrs, "rpc.system").AsString())
+	Assert(GetAttribute(attrs, "server.address").AsString() == serverAddr, "Except rpc.system to be %s, got %s", serverAddr, GetAttribute(attrs, "server.address").AsString())
+}
+
+func VerifyRpcServerMetricsAttributes(attrs []attribute.KeyValue, method, service, system, serverAddr string) {
+	Assert(GetAttribute(attrs, "rpc.method").AsString() == method, "Except rpc.method to be %s, got %s", method, GetAttribute(attrs, "rpc.method").AsString())
+	Assert(GetAttribute(attrs, "rpc.service").AsString() == service, "Except rpc.service to be %s, got %s", service, GetAttribute(attrs, "rpc.service").AsString())
+	Assert(GetAttribute(attrs, "rpc.system").AsString() == system, "Except rpc.system to be %s, got %s", system, GetAttribute(attrs, "rpc.system").AsString())
+	Assert(GetAttribute(attrs, "server.address").AsString() == serverAddr, "Except rpc.system to be %s, got %s", serverAddr, GetAttribute(attrs, "server.address").AsString())
 }

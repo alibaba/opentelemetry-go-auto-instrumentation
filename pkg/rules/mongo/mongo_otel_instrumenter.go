@@ -63,6 +63,7 @@ func (m *mongoSpanNameExtractor) Extract(request mongoRequest) string {
 func BuildMongoOtelInstrumenter() instrumenter.Instrumenter[mongoRequest, interface{}] {
 	builder := instrumenter.Builder[mongoRequest, interface{}]{}
 	return builder.Init().SetSpanNameExtractor(&mongoSpanNameExtractor{}).
+		AddOperationListeners(db.DbClientMetrics("nosql.mongo")).
 		SetSpanKindExtractor(&mongoSpanKindExtractor{}).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.MONGO_SCOPE_NAME,

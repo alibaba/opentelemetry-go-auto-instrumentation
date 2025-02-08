@@ -15,10 +15,11 @@
 package http
 
 import (
+	"strconv"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
-	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/net"
@@ -163,11 +164,10 @@ func (n netHttpServerAttrsGetter) GetNetworkTransport(request *netHttpRequest, r
 }
 
 func (n netHttpServerAttrsGetter) GetNetworkProtocolName(request *netHttpRequest, response *netHttpResponse) string {
-	if request.isTls == false {
+	if !request.isTls {
 		return "http"
-	} else {
-		return "https"
 	}
+	return "https"
 }
 
 func (n netHttpServerAttrsGetter) GetNetworkProtocolVersion(request *netHttpRequest, response *netHttpResponse) string {

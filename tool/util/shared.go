@@ -34,7 +34,6 @@ const (
 	GoWorkSumFile        = "go.work.sum"
 	DebugLogFile         = "debug.log"
 	TempBuildDir         = ".otel-build"
-	VendorDir            = "vendor"
 	BuildConfFile        = "build_conf.json"
 )
 
@@ -133,43 +132,6 @@ func HasGoBuildComment(text string) bool {
 	return strings.Contains(text, GoBuildIgnoreComment)
 }
 
-// GetGoModPath returns the absolute path of go.mod file, if any.
-func GetGoModPath() (string, error) {
-	// @@ As said in the comment https://github.com/golang/go/issues/26500, the
-	// expected way to get go.mod should be go list -m -f {{.GoMod}}, but it does
-	// not work well when go.work presents, we use go env GOMOD instead.
-	//
-	// go env GOMOD
-	// The absolute path to the go.mod of the main module.
-	// If module-aware mode is enabled, but there is no go.mod, GOMOD will be
-	// os.DevNull ("/dev/null" on Unix-like systems, "NUL" on Windows).
-	// If module-aware mode is disabled, GOMOD will be the empty string.
-	// The rationale on why using Output instead of CombinedOutput variant is
-	// that we only care about the output of the command, and we can handle the
-	// error when the command fails.
-	out, err := RunCmdOutput("go", "env", "GOMOD")
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(out), nil
-}
-
-// GetGoModDir returns the directory of go.mod file.
-func GetGoModDir() (string, error) {
-	gomod, err := GetGoModPath()
-	if err != nil {
-		return "", err
-	}
-	projectDir := filepath.Dir(gomod)
-	return projectDir, nil
-}
-
-// GetProjRootDir returns the root directory of the project. It's an alias of
-// GetGoModDir in the current implementation.
-func GetProjRootDir() (string, error) {
-	return GetGoModDir()
-}
-
 // IsModPath checks if the provided module path is valid.
 func IsModPath(path string) bool {
 	if strings.Contains(path, "@") {
@@ -193,17 +155,6 @@ func IsGoSumFile(path string) bool {
 
 func IsGoTestFile(path string) bool {
 	return strings.HasSuffix(path, "_test.go")
-}
-
-func IsExistGoMod() (bool, error) {
-	gomod, err := GetGoModPath()
-	if err != nil {
-		return false, err
-	}
-	if gomod == "" {
-		return false, errc.New(errc.ErrNotExist, "cannot find go.mod")
-	}
-	return strings.HasSuffix(gomod, GoModFile), nil
 }
 
 func HashStruct(st interface{}) (uint64, error) {
@@ -337,13 +288,4 @@ func SplitCmds(input string) []string {
 		}
 	}
 	return args
-}
-
-func IsVendorBuild() bool {
-	projRoot, err := GetGoModDir()
-	if err != nil {
-		return false
-	}
-	vendor := filepath.Join(projRoot, VendorDir)
-	return PathExists(vendor)
 }
