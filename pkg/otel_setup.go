@@ -135,7 +135,7 @@ func initMetrics() error {
 			)
 			go serveMetrics()
 		} else if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
-			exporter, err := otlpmetricgrpc.New(ctx)
+			exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithHeaders(map[string]string{"user-agent": "OTel OTLP Exporter Go/" + otlptrace.Version()}))
 			if err != nil {
 				log.Fatalf("new otlp metric grpc exporter failed: %v", err)
 			}

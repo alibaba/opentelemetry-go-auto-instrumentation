@@ -16,7 +16,6 @@ package grpc
 
 import (
 	"context"
-
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
@@ -49,6 +48,9 @@ func NewClientNewHandler(opts ...Option) stats.Handler {
 
 // TagRPC can attach some information to the given context.
 func (h *clientNewHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
+	if info.FullMethodName == grpcExporterPath {
+		return ctx
+	}
 	filter, _ := ctx.Value("stream_filter").(*bool)
 	if filter != nil && *filter {
 		return ctx
