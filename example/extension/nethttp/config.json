@@ -5,6 +5,6 @@
     "OnEnter":"httpClientEnterHook",
     "ReceiverType": "*Transport",
     "OnExit": "httpClientExitHook",
-    "Path": "/path/opentelemetry-go-auto-instrumentation/example/extension/nethttp/rules"
+    "Path": "rules"
   }
 ]
