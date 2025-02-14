@@ -18,6 +18,9 @@ import (
 	_ "unsafe"
 )
 
+//go:linkname ExitHook ExitHook
+var ExitHook func()
+
 //go:linkname otel_get_trace_context_from_gls otel_get_trace_context_from_gls
 var otel_get_trace_context_from_gls = _otel_gls_get_trace_context_impl
 

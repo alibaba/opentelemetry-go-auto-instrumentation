@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Copyright (c) 2024 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,13 +29,14 @@ import (
 	http2 "net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
-	"go.opentelemetry.io/contrib/instrumentation/runtime"
+	otelruntime "go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel/baggage"
@@ -69,20 +72,12 @@ var (
 
 func init() {
 	ctx := context.Background()
-	path, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	// skip when the executable is otel itself
-	if strings.HasSuffix(path, exec_name) {
-		return
-	}
-	if err = initOpenTelemetry(ctx); err != nil {
-		log.Fatalf("%s: %v", "Failed to initialize opentelemetry resource", err)
+	// graceful shutdown
+	runtime.ExitHook = func() {
+		gracefullyShutdown(ctx)
 	}
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
 	go func() {
 		sig := <-sigChan
 		switch sig {
@@ -94,6 +89,17 @@ func init() {
 			os.Exit(143)
 		}
 	}()
+	path, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	// skip when the executable is otel itself
+	if strings.HasSuffix(path, exec_name) {
+		return
+	}
+	if err = initOpenTelemetry(ctx); err != nil {
+		log.Fatalf("%s: %v", "Failed to initialize opentelemetry resource", err)
+	}
 }
 
 func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
@@ -186,7 +192,7 @@ func initMetrics() error {
 	// nacos experimental metrics
 	experimental.InitNacosExperimentalMetrics(m)
 	// DefaultMinimumReadMemStatsInterval is 15 second
-	return runtime.Start(runtime.WithMeterProvider(metricsProvider))
+	return otelruntime.Start(otelruntime.WithMeterProvider(metricsProvider))
 }
 
 func serveMetrics() {
