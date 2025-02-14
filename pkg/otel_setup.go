@@ -67,9 +67,6 @@ var (
 	batchSpanProcessor trace.SpanProcessor
 )
 
-//go:linkname runtime_addExitHook runtime.addExitHook
-func runtime_addExitHook(f func(), runOnNonZeroExit bool)
-
 func init() {
 	ctx := context.Background()
 	path, err := os.Executable()
@@ -97,9 +94,6 @@ func init() {
 			os.Exit(143)
 		}
 	}()
-	runtime_addExitHook(func() {
-		gracefullyShutdown(ctx)
-	}, true)
 }
 
 func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
