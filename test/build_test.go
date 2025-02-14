@@ -56,7 +56,7 @@ func TestBuildProject4(t *testing.T) {
 	RunGoBuildFallible(t, "go", "build", "m1") // duplicated default rules
 	RunSet(t, "-rule=../../pkg/data/default")
 	RunGoBuildFallible(t, "go", "build", "m1")
-	RunSet(t, "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json,../../pkg/data/test_runtime.json")
+	RunSet(t, "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json,../../pkg/data/test_runtime.json")
 	RunGoBuild(t, "go", "build", "m1")
@@ -68,7 +68,7 @@ func TestBuildProject5(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disabledefault=false", "-verbose", "-rule=../../pkg/data/test_fmt.json,../../pkg/data/test_runtime.json")
+	RunSet(t, "-disabledefault=false", "-verbose", "-rule=../../pkg/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 	// both test_fmt.json and default.json rules should be available
 	// because we always append new -rule to the default.json by default
