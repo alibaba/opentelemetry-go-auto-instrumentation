@@ -60,7 +60,7 @@ func TestBuildProject4(t *testing.T) {
 	RunGoBuild(t, "go", "build", "m1")
 	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/test_error.json,../../pkg/data/test_fmt.json,../../pkg/data/test_runtime.json")
 	RunGoBuild(t, "go", "build", "m1")
-	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/default.json,../../pkg/data/test_fmt.json,../../pkg/data/test_runtime.json")
+	RunSet(t, "-disabledefault=true", "-rule=../../pkg/data/default.json,../../pkg/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 }
 
