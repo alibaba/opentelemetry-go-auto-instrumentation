@@ -31,7 +31,7 @@
   },
   {
     "ImportPath": "runtime",
-    "Function": "exit",
+    "Function": "runExitHooks",
     "OnEnter": "if ExitHook != nil { ExitHook(); }",
     "UseRaw": true
   },
