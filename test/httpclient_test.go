@@ -23,7 +23,7 @@ const HttpclientAppName = "httpclient"
 func TestRunHttpclient(t *testing.T) {
 	UseApp(HttpclientAppName)
 
-	RunSet(t, "-rule=../../pkg/data/test_nethttp.json", "-verbose")
+	RunSet(t, UseTestRules("test_nethttp.json"), "-verbose")
 	RunGoBuild(t, "go", "build")
 	_, stderr := RunApp(t, HttpclientAppName)
 	ExpectContains(t, stderr, "Client.Do()")                // println writes to stderr

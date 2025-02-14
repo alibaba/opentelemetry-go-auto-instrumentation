@@ -28,17 +28,14 @@ import (
 	"log"
 	http2 "net/http"
 	"os"
-	"os/signal"
 	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	otelruntime "go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
-	_ "go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -48,8 +45,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
-	_ "go.opentelemetry.io/otel/sdk/trace"
-	_ "unsafe"
 )
 
 // set the following environment variables based on https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
@@ -76,19 +71,6 @@ func init() {
 	runtime.ExitHook = func() {
 		gracefullyShutdown(ctx)
 	}
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		sig := <-sigChan
-		switch sig {
-		case syscall.SIGINT:
-			gracefullyShutdown(ctx)
-			os.Exit(130)
-		case syscall.SIGTERM:
-			gracefullyShutdown(ctx)
-			os.Exit(143)
-		}
-	}()
 	path, err := os.Executable()
 	if err != nil {
 		panic(err)
