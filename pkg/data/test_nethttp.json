@@ -62,16 +62,5 @@
         "StructType": "Request",
         "FieldName": "Should",
         "FieldType": "string"
-    },
-    {
-        "ImportPath": "runtime",
-        "Function": "runExitHooks",
-        "OnEnter": "if ExitHook != nil { ExitHook(); }",
-        "UseRaw": true
-    },
-    {
-        "ImportPath": "runtime",
-        "FileName": "runtime_linker.go",
-        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/runtime"
     }
 ]
