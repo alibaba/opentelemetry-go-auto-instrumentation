@@ -22,6 +22,8 @@ import (
 	"google.golang.org/grpc/stats"
 )
 
+const otelExporterPrefix = "OTel OTLP Exporter Go"
+
 func grpcClientOnEnter(call api.CallContext, ctx context.Context, target string, opts ...grpc.DialOption) {
 	if !grpcEnabler.Enable() {
 		return
@@ -55,6 +57,9 @@ func NewClientHandler(opts ...Option) stats.Handler {
 
 // TagRPC can attach some information to the given context.
 func (h *clientHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
+	if info.FullMethodName == grpcExporterPath {
+		return ctx
+	}
 	nCtx := grpcClientInstrument.Start(ctx, grpcRequest{
 		methodName:    info.FullMethodName,
 		serverAddress: h.serverAddr,
