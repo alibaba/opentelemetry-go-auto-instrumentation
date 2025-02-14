@@ -106,5 +106,11 @@
         "Function": "BadDep",
         "OnExit": "onExitBadDep",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error17"
+    },
+    {
+        "ImportPath": "runtime",
+        "Function": "runExitHooks",
+        "OnEnter": "if ExitHook != nil { ExitHook(); }",
+        "UseRaw": true
     }
 ]

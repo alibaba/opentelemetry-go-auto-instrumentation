@@ -62,5 +62,11 @@
         "StructType": "Request",
         "FieldName": "Should",
         "FieldType": "string"
+    },
+    {
+        "ImportPath": "runtime",
+        "Function": "runExitHooks",
+        "OnEnter": "if ExitHook != nil { ExitHook(); }",
+        "UseRaw": true
     }
 ]
