@@ -18,6 +18,10 @@ import (
 	_ "unsafe"
 )
 
+// When the program exit, we should call the exit hook to shutdown gracefully.
+// See https://github.com/alibaba/opentelemetry-go-auto-instrumentation/blob/main/pkg/otel_setup.go
+var ExitHook func()
+
 //go:linkname otel_get_trace_context_from_gls otel_get_trace_context_from_gls
 var otel_get_trace_context_from_gls = _otel_gls_get_trace_context_impl
 
