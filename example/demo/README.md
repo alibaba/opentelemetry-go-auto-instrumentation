@@ -81,7 +81,7 @@ docker run --rm --name jaeger \
 
 ### 6. run application
 
-Set your opentelemetry endpoint according
+Set your OpenTelemetry endpoint according
 to https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
 
 if run on loacal machine:
