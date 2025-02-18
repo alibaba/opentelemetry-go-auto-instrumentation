@@ -551,7 +551,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fasthttp"
   },
   {
-    "Version": "[1.45.0,1.58.1)",
+    "Version": "[1.45.0,1.59.1)",
     "ImportPath": "github.com/valyala/fasthttp",
     "Function": "ListenAndServe",
     "ReceiverType": "*Server",
