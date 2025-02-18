@@ -48,7 +48,7 @@ func NewClientNewHandler(opts ...Option) stats.Handler {
 
 // TagRPC can attach some information to the given context.
 func (h *clientNewHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
-	if info.FullMethodName == grpcExporterPath {
+	if info.FullMethodName == grpcTraceExporterPath || info.FullMethodName == grpcMetricExporterPath {
 		return ctx
 	}
 	filter, _ := ctx.Value("stream_filter").(*bool)

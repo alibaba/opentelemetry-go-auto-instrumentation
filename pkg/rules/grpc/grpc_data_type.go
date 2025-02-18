@@ -18,7 +18,10 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
-const grpcExporterPath = "/opentelemetry.proto.collector.trace.v1.TraceService/Export"
+const (
+	grpcTraceExporterPath = "/opentelemetry.proto.collector.trace.v1.TraceService/Export"
+	grpcMetricExporterPath = "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export"
+)
 
 var grpcClientInstrument = BuildGrpcClientInstrumenter()
 
