@@ -18,7 +18,7 @@
 MAIN_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
 
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
-CURRENT_ARCH := $(shell uname -m)
+CURRENT_ARCH := $(shell uname -m | sed 's/aarch64/arm64/;s/armv7l/arm/;s/armv6l/arm/')
 
 MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
 STRIP_DEBUG := -s -w
