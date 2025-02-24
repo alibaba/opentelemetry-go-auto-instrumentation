@@ -8,6 +8,6 @@
 
 ## Settings for the nacos instrumentation
 
-| Environment Variable                                       | Type    | Default | Description                                                |
-|------------------------------------------------------------|---------|---------|------------------------------------------------------------|
-| `OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE`   | Boolean | `false` | Enable the capture of experimental NACOSmetrics attributes.|
+| Environment Variable                                       | Type    | Default | Description                                                 |
+|------------------------------------------------------------|---------|---------|-------------------------------------------------------------|
+| `OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE`   | Boolean | `false` | Enable the capture of experimental nacos metrics attributes.|
