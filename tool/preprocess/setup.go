@@ -294,6 +294,10 @@ func (dp *DepProcessor) initRules() (err error) {
 
 	// Write to ${GOMOD.DIR}/otel_rules/otel_setup_inst.go
 	initTarget := dp.generatedOf(filepath.Join(OtelRules, OtelSetupInst))
+	err = os.MkdirAll(filepath.Dir(initTarget), 0777)
+	if err != nil {
+		return err
+	}
 	_, err = util.WriteFile(initTarget, c)
 	if err != nil {
 		return err
