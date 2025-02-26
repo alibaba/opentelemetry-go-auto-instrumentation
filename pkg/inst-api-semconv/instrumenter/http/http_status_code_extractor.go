@@ -34,6 +34,8 @@ func (h HttpClientSpanStatusExtractor[REQUEST, RESPONSE]) Extract(span trace.Spa
 		} else {
 			span.SetStatus(codes.Error, invalidHttpStatusCode)
 		}
+	} else if statusCode >= 200 && statusCode < 300 {
+		span.SetStatus(codes.Ok, "success")
 	}
 }
 
@@ -50,5 +52,7 @@ func (h HttpServerSpanStatusExtractor[REQUEST, RESPONSE]) Extract(span trace.Spa
 		} else {
 			span.SetStatus(codes.Error, invalidHttpStatusCode)
 		}
+	} else if statusCode >= 200 && statusCode < 300 {
+		span.SetStatus(codes.Ok, "success")
 	}
 }

@@ -108,11 +108,23 @@ func TestHttpClientSpanStatusExtractor200(t *testing.T) {
 	u := codes.Code(0)
 	span := testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
-	if *span.status != codes.Unset {
-		panic("span status should be unset!")
+	if *span.status != codes.Ok {
+		panic("span status should be ok!")
 	}
 }
-
+func TestHttpClientSpanStatusExtractor201(t *testing.T) {
+	c := HttpClientSpanStatusExtractor[any, any]{
+		Getter: customizedNetHttpAttrsGetter{
+			code: 201,
+		},
+	}
+	u := codes.Code(0)
+	span := testSpan{status: &u}
+	c.Extract(span, nil, nil, nil)
+	if *span.status != codes.Ok {
+		panic("span status should be ok!")
+	}
+}
 func TestHttpServerSpanStatusExtractor500(t *testing.T) {
 	c := HttpServerSpanStatusExtractor[any, any]{
 		Getter: customizedNetHttpAttrsGetter{
@@ -150,7 +162,20 @@ func TestHttpServerSpanStatusExtractor200(t *testing.T) {
 	u := codes.Code(0)
 	span := testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
-	if *span.status != codes.Unset {
-		panic("span status should be unset!")
+	if *span.status != codes.Ok {
+		panic("span status should be ok!")
+	}
+}
+func TestHttpServerSpanStatusExtractor201(t *testing.T) {
+	c := HttpClientSpanStatusExtractor[any, any]{
+		Getter: customizedNetHttpAttrsGetter{
+			code: 201,
+		},
+	}
+	u := codes.Code(0)
+	span := testSpan{status: &u}
+	c.Extract(span, nil, nil, nil)
+	if *span.status != codes.Ok {
+		panic("span status should be ok!")
 	}
 }
