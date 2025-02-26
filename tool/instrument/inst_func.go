@@ -68,6 +68,7 @@ func (rp *RuleProcessor) restoreAst(filePath string, root *dst.File) (string, er
 		return arg == filePath
 	})
 	if err != nil {
+		err = errc.Adhere(err, "filePath", filePath)
 		err = errc.Adhere(err, "compileArgs", strings.Join(rp.compileArgs, " "))
 		err = errc.Adhere(err, "newArg", newFile)
 		return "", err

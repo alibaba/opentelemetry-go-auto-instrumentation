@@ -258,10 +258,23 @@ func (dp *DepProcessor) init() error {
 	util.Log("Found sources %v", dp.sources)
 
 	// Check if the build mode
-	// FIXME: vendor directory name can be anything, but we assume it's "vendor"
-	// for now
-	vendor := filepath.Join(dp.getGoModDir(), VendorDir)
-	dp.vendorBuild = util.PathExists(vendor)
+	ignoreVendor := false
+	for _, arg := range dp.goBuildCmd {
+		// -mod=mod and -mod=readonly tells the go command to ignore the vendor
+		// directory. We should not use the vendor directory in this case.
+		if strings.HasPrefix(arg, "-mod=mod") ||
+			strings.HasPrefix(arg, "-mod=readonly") {
+			dp.vendorBuild = false
+			ignoreVendor = true
+			break
+		}
+	}
+	if !ignoreVendor {
+		// FIXME: vendor directory name can be anything, but we assume it's "vendor"
+		// for now
+		vendor := filepath.Join(dp.getGoModDir(), VendorDir)
+		dp.vendorBuild = util.PathExists(vendor)
+	}
 	util.Log("Vendor build: %v", dp.vendorBuild)
 
 	// Register signal handler to catch up SIGINT/SIGTERM interrupt signals and
