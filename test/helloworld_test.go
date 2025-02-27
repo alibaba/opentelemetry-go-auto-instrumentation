@@ -19,6 +19,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 const HelloworldAppName = "helloworld"
@@ -85,4 +87,11 @@ func TestBuildHelloworldWithVendor3(t *testing.T) {
 	UseApp(HelloworldAppName)
 	runModVendor(t)
 	RunGoBuild(t, "go", "build", "-mod", "vendor")
+}
+
+func TestBuildHelloworldWithVendor4(t *testing.T) {
+	UseApp(HelloworldAppName)
+	runModVendor(t)
+	RunGoBuild(t, "go", "build", "-mod=mod")
+	ExpectPreprocessNotContains(t, util.DebugLogFile, "run go mod vendor")
 }
