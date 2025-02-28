@@ -43,6 +43,36 @@ func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attr
 }
 
 func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
+	// If failed to retrieve attrs at the start of the span, try to set them at the end.
+	// Cannot retrieve all the attrs at the entry of the `trpc-go` instrument function, so this handling is necessary.
+
+	// Perhaps we can retrieve attrs here rather than at the start of the span? 
+	// I'm not sure if this would cause compatibility issues with other RPC frameworks.
+
+	if r.Getter.GetSystem(request) != "" {
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.RPCSystemKey,
+			Value: attribute.StringValue(r.Getter.GetSystem(request)),
+		})
+	}
+	if r.Getter.GetService(request) != "" {
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.RPCServiceKey,
+			Value: attribute.StringValue(r.Getter.GetService(request)),
+		})
+	}
+	if r.Getter.GetMethod(request) != "" {
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.RPCMethodKey,
+			Value: attribute.StringValue(r.Getter.GetMethod(request)),
+		})
+	}
+	if r.Getter.GetServerAddress(request) != "" {
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.ServerAddressKey,
+			Value: attribute.StringValue(r.Getter.GetServerAddress(request)),
+		})
+	}
 	return attributes, context
 }
 
