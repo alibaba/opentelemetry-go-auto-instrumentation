@@ -172,7 +172,12 @@ func (h *RpcClientMetric) OnAfterEnd(context context.Context, endAttributes []at
 			log.Printf("failed to create clientRequestDuration, err is %v\n", err)
 		}
 	}
-	endAttributes = append(endAttributes, startAttributes...)
+	// Use actual attrs in `endAttributes` if it's trpc, because the valid attrs are generated when the span ends, refer to `rpc_attrs_extractor.go`
+	if utils.RpcSystemExtractor(startAttributes) == "trpc" {
+		endAttributes = append(startAttributes, endAttributes...)
+	} else {
+		endAttributes = append(endAttributes, startAttributes...)
+	}
 	n, metricsAttrs := utils.Shadow(endAttributes, rpcMetricsConv)
 	if h.clientRequestDuration != nil {
 		h.clientRequestDuration.Record(context, float64(endTime.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))
