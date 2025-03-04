@@ -216,6 +216,8 @@ func (dp *DepProcessor) init() error {
 		if pkg.GoFiles == nil {
 			continue
 		}
+		// Collect all source files from the package, they are good candidates
+		// for adding additional imports
 		dp.sources = append(dp.sources, pkg.GoFiles...)
 		if pkg.Module != nil {
 			// Best case, we find the module information from the package field
