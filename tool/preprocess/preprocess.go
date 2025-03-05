@@ -127,7 +127,6 @@ func newDepProcessor() *DepProcessor {
 
 func (dp *DepProcessor) getGoModPath() string {
 	util.Assert(dp.modulePath != "", "modulePath is empty")
-	util.Assert(filepath.IsAbs(dp.modulePath), "modulePath is not absolute")
 	return dp.modulePath
 }
 
@@ -205,12 +204,14 @@ func (dp *DepProcessor) init() error {
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	util.AssertGoBuild(dp.goBuildCmd)
+	util.Log("Go build command: %v", dp.goBuildCmd)
 
 	// Find compiling module and package information from the build command
 	pkgs, err := findModule(dp.goBuildCmd)
 	if err != nil {
 		return err
 	}
+	util.Log("Find Go packages %v", util.Jsonify(pkgs))
 	for _, pkg := range pkgs {
 		util.Log("Find Go package %v", util.Jsonify(pkg))
 		if pkg.GoFiles == nil {
@@ -487,6 +488,20 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 			break
 		}
 
+		// Special case. If the file named with test_ prefix, we create a fake
+		// package for it. This is a workaround for the case that the test file
+		// is compiled with other normal files.
+		if strings.HasSuffix(buildArg, ".go") &&
+			strings.HasPrefix(buildArg, "test_") {
+			artificialPkg := &packages.Package{
+				GoFiles: []string{buildArg},
+				Name:    "main",
+			}
+			candidates = append(candidates, artificialPkg)
+			found = true
+			break
+		}
+
 		// Trying to load package from the build argument, error is tolerated
 		// because we dont know what the build argument is. One exception is
 		// when we already found packages, in this case, we expect subsequent
@@ -570,7 +585,8 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		}
 	}
 	if !addImport {
-		return errc.New(errc.ErrSetupRule, "no init or main function found")
+		return errc.New(errc.ErrSetupRule,
+			fmt.Sprintf("no init or main function found from %v", dp.sources))
 	}
 	return nil
 }
