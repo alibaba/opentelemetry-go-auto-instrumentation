@@ -18,6 +18,8 @@ import (
 	"bufio"
 	"embed"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -31,6 +33,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/dave/dst"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 )
@@ -536,7 +539,8 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if !util.IsGoFile(file) {
 			continue
 		}
-		astRoot, err := util.ParseAstFromFile(file)
+		p := util.NewAstParser()
+		astRoot, err := p.ParseFile(file, parser.ParseComments)
 		if err != nil {
 			return err
 		}
@@ -547,6 +551,18 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 			if !foundMain {
 				continue
 			}
+		}
+
+		for _, decl := range astRoot.Decls {
+			decl, ok := decl.(*dst.GenDecl)
+			if !ok {
+				continue
+			}
+			if decl.Tok != token.IMPORT {
+				continue
+			}
+			decl.Decs.Before = dst.EmptyLine
+			decl.Decs.Start.Append("//wow")
 		}
 
 		// Prepend import path to the file

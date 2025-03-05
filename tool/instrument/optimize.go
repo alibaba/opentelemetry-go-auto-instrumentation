@@ -150,7 +150,8 @@ func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
 	// One line please, otherwise debugging line number will be a nightmare
 	tmpl := fmt.Sprintf("&CallContextImpl%s{Params:[]interface{}{},ReturnVals:[]interface{}{}}",
 		rp.rule2Suffix[tjump.rule])
-	astRoot, err := util.ParseAstFromSnippet(tmpl)
+	p := util.NewAstParser()
+	astRoot, err := p.ParseSnippet(tmpl)
 	if err != nil {
 		return nil, err
 	}
