@@ -16,6 +16,7 @@ package instrument
 
 import (
 	"fmt"
+	"go/parser"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -28,15 +29,7 @@ import (
 )
 
 const (
-	TrampolineJumpIfDesc                 = "/* TRAMPOLINE_JUMP_IF */"
-	TrampolineJumpIfDescRegexp           = "/\\* TRAMPOLINE_JUMP_IF \\*/"
-	TrampolineNoNewlinePlaceholder       = "/* NO_NEWWLINE_PLACEHOLDER */"
-	TrampolineNoNewlinePlaceholderRegexp = "/\\* NO_NEWWLINE_PLACEHOLDER \\*/\n"
-	TrampolineSemicolonPlaceholder       = "/* SEMICOLON_PLACEHOLDER */"
-	TrampolineSemicolonPlaceholderRegexp = "/\\* SEMICOLON_PLACEHOLDER \\*/\n"
-)
-
-const (
+	TJumpLabel         = "/* TRAMPOLINE_JUMP_IF */"
 	OtelAPIFile        = "otel_api.go"
 	OtelTrampolineFile = "otel_trampoline.go"
 )
@@ -54,10 +47,15 @@ func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
 
 func (rp *RuleProcessor) loadAst(filePath string) (*dst.File, error) {
 	file := rp.tryRelocated(filePath)
-	return util.ParseAstFromFile(file)
+	rp.parser = util.NewAstParser()
+	var err error
+	rp.target, err = rp.parser.ParseFile(file, parser.ParseComments)
+	return rp.target, err
 }
 
 func (rp *RuleProcessor) restoreAst(filePath string, root *dst.File) (string, error) {
+	rp.parser = nil
+	rp.target = nil
 	filePath = rp.tryRelocated(filePath)
 	name := filepath.Base(filePath)
 	newFile, err := util.WriteAstToFile(root, filepath.Join(rp.workDir, name))
@@ -87,7 +85,7 @@ func (rp *RuleProcessor) makeName(r *resource.InstFuncRule, onEnter bool) string
 func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
 	// Multiple func rules may apply to the same function, we need to find the
 	// appropriate jump point to insert trampoline jump.
-	if len(jumpIf.Decs.If) == 1 && jumpIf.Decs.If[0] == TrampolineJumpIfDesc {
+	if len(jumpIf.Decs.If) == 1 && jumpIf.Decs.If[0] == TJumpLabel {
 		// Insert trampoline jump within the else block
 		elseBlock := jumpIf.Else.(*dst.BlockStmt)
 		if len(elseBlock.List) > 1 {
@@ -181,32 +179,9 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 		ifStmt: tjump,
 		rule:   t,
 	})
-
-	// @@ Unfortunately, dst framework does not support fine-grained space control
-	// i.e. there is no way to generate all above AST into one line code, we have
-	// to manually format it. There we insert OtelNewlineTrampolineHolder anchor
-	// so that we aware of where we should remove trailing newline.
-	//	if .... { /* NO_NEWWLINE_PLACEHOLDER */
-	//	... /* NO_NEWWLINE_PLACEHOLDER */
-	//	} else { /* NO_NEWWLINE_PLACEHOLDER */
-	//	... /* SEMICOLON_PLACEHOLDER */
-	//	} /* NO_NEWWLINE_PLACEHOLDER */
-	//  NEW_LINE
-	{ // then block
-		callExpr := tjump.Body.List[0]
-		callExpr.Decorations().Start.Append(TrampolineNoNewlinePlaceholder)
-		callExpr.Decorations().End.Append(TrampolineSemicolonPlaceholder)
-		retStmt := tjump.Body.List[1]
-		retStmt.Decorations().End.Append(TrampolineNoNewlinePlaceholder)
-	}
-	{ // else block
-		deferStmt := tjump.Else.(*dst.BlockStmt).List[0]
-		deferStmt.Decorations().Start.Append(TrampolineNoNewlinePlaceholder)
-		deferStmt.Decorations().End.Append(TrampolineSemicolonPlaceholder)
-		tjump.Else.Decorations().End.Append(TrampolineNoNewlinePlaceholder)
-		tjump.Decs.If.Append(TrampolineJumpIfDesc) // Anchor label
-	}
-
+	// Add label for trampoline-jump-if. Note that the label will be cleared
+	// during optimization pass, to make it pretty in the generated code
+	tjump.Decs.If.Append(TJumpLabel)
 	// Find if there is already a trampoline-jump-if, insert new tjump if so,
 	// otherwise prepend to block body
 	found := false
@@ -222,10 +197,35 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 		}
 	}
 	if !found {
-		// Outmost trampoline-jump-if may follow by user code right after else
-		// block, replacing the trailing newline mandatorily breaks the code,
-		// we need to insert extra new line to make replacement possible
-		tjump.Decorations().After = dst.EmptyLine
+		// Tag the trampoline-jump-if with a special line directive so that
+		// debugger can show the correct line number
+		tjump.Decs.Before = dst.NewLine
+		tjump.Decs.Start.Append("//line <generated>:1")
+		pos := rp.parser.FindPosition(funcDecl.Body)
+		if len(funcDecl.Body.List) > 0 {
+			// It does happens because we may insert raw code snippets at the
+			// function entry. These dynamically generated nodes do not have
+			// corresponding node positions. We need to keep looking downward
+			// until we find a node that contains position information, and then
+			// annotate it with a line directive.
+			for i := 0; i < len(funcDecl.Body.List); i++ {
+				stmt := funcDecl.Body.List[i]
+				pos = rp.parser.FindPosition(stmt)
+				if !pos.IsValid() {
+					continue
+				}
+				tag := fmt.Sprintf("//line %s", pos.String())
+				stmt.Decorations().Before = dst.NewLine
+				stmt.Decorations().Start.Append(tag)
+			}
+		} else {
+			pos = rp.parser.FindPosition(funcDecl.Body)
+			tag := fmt.Sprintf("//line %s", pos.String())
+			empty := util.EmptyStmt()
+			empty.Decs.Before = dst.NewLine
+			empty.Decs.Start.Append(tag)
+			funcDecl.Body.List = append(funcDecl.Body.List, empty)
+		}
 		funcDecl.Body.List = append([]dst.Stmt{tjump}, funcDecl.Body.List...)
 	}
 
@@ -237,30 +237,12 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 	return nil
 }
 
-func (rp *RuleProcessor) inliningTJump(filePath string) error {
-	text, err := util.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-	// Remove trailing newline
-	re := regexp.MustCompile(TrampolineNoNewlinePlaceholderRegexp)
-	text = re.ReplaceAllString(text, " ")
-	// Replace with semicolon
-	re = regexp.MustCompile(TrampolineSemicolonPlaceholderRegexp)
-	text = re.ReplaceAllString(text, ";")
-	// Remove trampoline jump if ideitifiers
-	re = regexp.MustCompile(TrampolineJumpIfDescRegexp)
-	text = re.ReplaceAllString(text, "")
-	// All done, persist to file
-	_, err = util.WriteFile(filePath, text)
-	return err
-}
-
 func (rp *RuleProcessor) insertRaw(r *resource.InstFuncRule, decl *dst.FuncDecl) error {
 	util.Assert(r.OnEnter != "" || r.OnExit != "", "sanity check")
 	if r.OnEnter != "" {
 		// Prepend raw code snippet to function body for onEnter
-		onEnterSnippet, err := util.ParseAstFromSnippet(r.OnEnter)
+		p := util.NewAstParser()
+		onEnterSnippet, err := p.ParseSnippet(r.OnEnter)
 		if err != nil {
 			return err
 		}
@@ -268,7 +250,8 @@ func (rp *RuleProcessor) insertRaw(r *resource.InstFuncRule, decl *dst.FuncDecl)
 	}
 	if r.OnExit != "" {
 		// Use defer func(){ raw_code_snippet }() for onExit
-		onExitSnippet, err := util.ParseAstFromSnippet(
+		p := util.NewAstParser()
+		onExitSnippet, err := p.ParseSnippet(
 			fmt.Sprintf("defer func(){ %s }()", r.OnExit),
 		)
 		if err != nil {
@@ -301,8 +284,8 @@ func sortFuncRules(fnRules []*resource.InstFuncRule) []*resource.InstFuncRule {
 
 func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 	// Prepare trampoline code header
-	code := "package " + pkgName
-	trampoline, err := util.ParseAstFromSource(code)
+	p := util.NewAstParser()
+	trampoline, err := p.ParseSource("package " + pkgName)
 	if err != nil {
 		return err
 	}
@@ -317,6 +300,18 @@ func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 	rp.addCompileArg(trampolineFile)
 	rp.saveDebugFile(path)
 	return nil
+}
+
+func (rp *RuleProcessor) enableLineDirective(filePath string) error {
+	text, err := util.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	re := regexp.MustCompile(".*//line ")
+	text = re.ReplaceAllString(text, "//line ")
+	// All done, persist to file
+	_, err = util.WriteFile(filePath, text)
+	return err
 }
 
 func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error) {
@@ -338,7 +333,6 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 		if err != nil {
 			return err
 		}
-		rp.target = astRoot
 		rp.trampolineJumps = make([]*TJump, 0)
 		for fnName, rules := range fn2rules {
 			for _, decl := range astRoot.Decls {
@@ -378,9 +372,9 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 		if err != nil {
 			return err
 		}
-		// Wait, all above code snippets should be inlined to new line to
-		// avoid potential misbehaviors during debugging
-		err = rp.inliningTJump(filePath)
+		// Line directive must be placed at the beginning of the line, otherwise
+		// it will be ignored by the compiler
+		err = rp.enableLineDirective(filePath)
 		if err != nil {
 			return err
 		}
