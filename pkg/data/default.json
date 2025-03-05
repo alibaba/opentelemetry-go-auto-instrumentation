@@ -732,7 +732,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos2_1_1/dom"
   },
   {
-    "Version": "[2.0.0,2.2.9)",
+    "Version": "[2.0.0,)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
     "StructType": "BeatReactor",
     "FieldName": "OtelReg",
