@@ -260,7 +260,8 @@ func (rp *RuleProcessor) insertRaw(r *resource.InstFuncRule, decl *dst.FuncDecl)
 	util.Assert(r.OnEnter != "" || r.OnExit != "", "sanity check")
 	if r.OnEnter != "" {
 		// Prepend raw code snippet to function body for onEnter
-		onEnterSnippet, err := util.ParseAstFromSnippet(r.OnEnter)
+		p := util.NewAstParser()
+		onEnterSnippet, err := p.ParseSnippet(r.OnEnter)
 		if err != nil {
 			return err
 		}
@@ -268,7 +269,8 @@ func (rp *RuleProcessor) insertRaw(r *resource.InstFuncRule, decl *dst.FuncDecl)
 	}
 	if r.OnExit != "" {
 		// Use defer func(){ raw_code_snippet }() for onExit
-		onExitSnippet, err := util.ParseAstFromSnippet(
+		p := util.NewAstParser()
+		onExitSnippet, err := p.ParseSnippet(
 			fmt.Sprintf("defer func(){ %s }()", r.OnExit),
 		)
 		if err != nil {
@@ -301,8 +303,8 @@ func sortFuncRules(fnRules []*resource.InstFuncRule) []*resource.InstFuncRule {
 
 func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 	// Prepare trampoline code header
-	code := "package " + pkgName
-	trampoline, err := util.ParseAstFromSource(code)
+	p := util.NewAstParser()
+	trampoline, err := p.ParseSource("package " + pkgName)
 	if err != nil {
 		return err
 	}
