@@ -499,7 +499,7 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 			}
 			candidates = append(candidates, artificialPkg)
 			found = true
-			break
+			continue
 		}
 
 		// Trying to load package from the build argument, error is tolerated
