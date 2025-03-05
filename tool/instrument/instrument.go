@@ -37,7 +37,8 @@ import (
 type RuleProcessor struct {
 	packageName     string
 	workDir         string
-	target          *dst.File // The target file to be instrumented
+	target          *dst.File       // The target file to be instrumented
+	parser          *util.AstParser // The parser for the target file
 	compileArgs     []string
 	rule2Suffix     map[*resource.InstFuncRule]string
 	rawFunc         *dst.FuncDecl

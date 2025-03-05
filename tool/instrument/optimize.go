@@ -99,17 +99,10 @@ type TJump struct {
 	rule   *resource.InstFuncRule // Rule associated with the trampoline-jump-if
 }
 
-func newDecoratedEmptyStmt() *dst.EmptyStmt {
-	emptyStmt := util.EmptyStmt()
-	emptyStmt.Decorations().Start.Append(TrampolineNoNewlinePlaceholder)
-	emptyStmt.Decorations().End.Append(TrampolineSemicolonPlaceholder)
-	return emptyStmt
-}
-
 func mustTJump(ifStmt *dst.IfStmt) {
 	util.Assert(len(ifStmt.Decs.If) == 1, "must be a trampoline-jump-if")
 	desc := ifStmt.Decs.If[0]
-	util.Assert(desc == TrampolineJumpIfDesc, "must be a trampoline-jump-if")
+	util.Assert(desc == TJumpLabel, "must be a trampoline-jump-if")
 }
 
 func (rp *RuleProcessor) removeOnExitTrampolineCall(tjump *TJump) error {
@@ -117,9 +110,8 @@ func (rp *RuleProcessor) removeOnExitTrampolineCall(tjump *TJump) error {
 	elseBlock := ifStmt.Else.(*dst.BlockStmt)
 	for i, stmt := range elseBlock.List {
 		if _, ok := stmt.(*dst.DeferStmt); ok {
-			// Replace defer statement with an decorated empty statement to make
-			// trampoline-jump-if inlining work
-			elseBlock.List[i] = newDecoratedEmptyStmt()
+			// Replace defer statement with an empty statement
+			elseBlock.List[i] = util.EmptyStmt()
 			if config.GetConf().Verbose {
 				util.Log("Optimize tjump branch in %s",
 					tjump.target.Name.Name)
@@ -147,10 +139,13 @@ func replenishCallContextLiteral(tjump *TJump, expr dst.Expr) {
 }
 
 func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
+	// TODO: This generated structure construction can also be marked via line
+	// directive
 	// One line please, otherwise debugging line number will be a nightmare
 	tmpl := fmt.Sprintf("&CallContextImpl%s{Params:[]interface{}{},ReturnVals:[]interface{}{}}",
 		rp.rule2Suffix[tjump.rule])
-	astRoot, err := util.ParseAstFromSnippet(tmpl)
+	p := util.NewAstParser()
+	astRoot, err := p.ParseSnippet(tmpl)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +178,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	// initialization statement and then block
 	tjump.ifStmt.Init = nil
 	tjump.ifStmt.Cond = util.BoolFalse()
-	tjump.ifStmt.Body = util.Block(newDecoratedEmptyStmt())
+	tjump.ifStmt.Body = util.Block(util.EmptyStmt())
 	if config.GetConf().Verbose {
 		util.Log("Optimize tjump branch in %s", tjump.target.Name.Name)
 	}
@@ -207,7 +202,7 @@ func flattenTJump(tjump *TJump, removedOnExit bool) {
 	util.Assert(len(initStmt.Lhs) == 2, "must be")
 
 	ifStmt.Cond = util.BoolFalse()
-	ifStmt.Body = util.Block(newDecoratedEmptyStmt())
+	ifStmt.Body = util.Block(util.EmptyStmt())
 
 	if removedOnExit {
 		// We removed the last reference to call context after nulling out body
@@ -225,9 +220,17 @@ func flattenTJump(tjump *TJump, removedOnExit bool) {
 	}
 }
 
+func stripTJumpLabel(tjump *TJump) {
+	ifStmt := tjump.ifStmt
+	ifStmt.Decs.If = ifStmt.Decs.If[1:]
+}
+
 func (rp *RuleProcessor) optimizeTJumps() (err error) {
 	for _, tjump := range rp.trampolineJumps {
 		mustTJump(tjump.ifStmt)
+		// Strip the trampoline-jump-if anchor label as no longer needed
+		stripTJumpLabel(tjump)
+
 		// No onExit hook present? Simply remove defer call to onExit trampoline.
 		// Why we dont remove the whole else block of trampoline-jump-if? Well,
 		// because there might be more than one trampoline-jump-if in the same
@@ -243,6 +246,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 			}
 			removedOnExit = true
 		}
+
 		// No onEnter hook present? Construct CallContext on the fly and pass it
 		// to onExit trampoline defer call and rewrite the whole condition to
 		// always false, then null out its initialization statement.

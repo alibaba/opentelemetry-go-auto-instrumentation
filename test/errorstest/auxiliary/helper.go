@@ -21,8 +21,10 @@ func TestSkip() *int {
 func TestSkip2() int {
 	return 1024
 }
-func p1() {}
-func p2() {}
+func p1() { /*Test*/ }
+func p2() { // Test
+}
+
 func p3(arg1 int, arg2 bool, arg3 float64) (int, bool, float64) {
 	return arg1, arg2, arg3
 }
