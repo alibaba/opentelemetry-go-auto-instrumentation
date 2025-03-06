@@ -31,7 +31,7 @@ import (
 
 type ruleMatcher struct {
 	availableRules map[string][]resource.InstRule
-	moduleVersions map[string]string // vendor used only
+	moduleVersions []*vendorModule // vendor used only
 }
 
 func newRuleMatcher() *ruleMatcher {
@@ -175,8 +175,9 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 		// code file path
 		version := util.ExtractVersion(file)
 		if rm.moduleVersions != nil {
-			if v, ok := rm.moduleVersions[importPath]; ok {
-				version = v
+			recorded := findVendorModuleVersion(rm.moduleVersions, importPath)
+			if recorded != "" {
+				version = recorded
 			}
 		}
 
@@ -186,8 +187,8 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			// Check if the version is supported
 			matched, err := util.MatchVersion(version, rule.GetVersion())
 			if err != nil {
-				util.Log("Failed to match version %v between %v and %v",
-					err, file, rule)
+				util.Log("Bad match: file %s, rule %s, version %s:\n%v",
+					file, rule, version, err)
 				continue
 			}
 			if !matched {
@@ -197,8 +198,8 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			if rule.GetGoVersion() != "" {
 				matched, err = util.MatchVersion(goVersion, rule.GetGoVersion())
 				if err != nil {
-					util.Log("Failed to match Go version %v between %v and %v",
-						err, file, rule)
+					util.Log("Bad match: file %s, rule %s, go version %s:\n%v",
+						file, rule, goVersion, err)
 					continue
 				}
 				if !matched {
@@ -294,13 +295,50 @@ func findFlagValue(cmd []string, flag string) string {
 	return ""
 }
 
-func parseVendorModules(projDir string) (map[string]string, error) {
+// vendorModule represents a module in vendor/modules.txt file, it contains
+// the module name, version and all submodules of the module, which looks like
+//
+// # golang.org/x/text v0.21.0
+// ## explicit; go 1.18
+// golang.org/x/text/secure/bidirule
+// golang.org/x/text/transform
+// golang.org/x/text/unicode/bidi
+// golang.org/x/text/unicode/norm
+// # golang.org/x/time v0.5.0
+// ## explicit; go 1.18
+// golang.org/x/time/rate
+//
+// The module name is the first line of the module, the version is the second
+// part of the first line, and all submodules are listed in the following lines
+// starting with the module name.
+type vendorModule struct {
+	module     string
+	version    string
+	submodules []string
+}
+
+func findVendorModuleVersion(modules []*vendorModule, importPath string) string {
+	for _, module := range modules {
+		if module.module == importPath {
+			return module.version
+		}
+		for _, submodule := range module.submodules {
+			if submodule == importPath {
+				return module.version
+			}
+		}
+	}
+	return ""
+}
+
+func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	vendorFile := filepath.Join(projDir, "vendor", "modules.txt")
 	if util.PathNotExists(vendorFile) {
 		return nil, errc.New(errc.ErrNotExist, "vendor/modules.txt not found")
 	}
 	// Read the vendor/modules.txt file line by line and parse it in form of
-	// #ImportPath Version
+	// #ImportPath Version, all lines following this line are considered as
+	// submodules of the same module
 	file, err := os.Open(vendorFile)
 	if err != nil {
 		return nil, errc.New(errc.ErrOpenFile, err.Error())
@@ -312,20 +350,35 @@ func parseVendorModules(projDir string) (map[string]string, error) {
 		}
 	}(file)
 
-	vendorModules := make(map[string]string)
 	scanner := bufio.NewScanner(file)
 	// 10MB should be enough to accommodate most long line
 	buffer := make([]byte, 0, 10*1024*1024)
 	scanner.Buffer(buffer, cap(buffer))
+
+	vms := make([]*vendorModule, 0)
+	var vm *vendorModule
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "# ") {
 			parts := strings.Split(line, " ")
+			// In form of #ImportPath Version?
 			if len(parts) == 3 {
 				util.Assert(parts[0] == "#", "sanity check")
 				util.Assert(strings.HasPrefix(parts[2], "v"), "sanity check")
-				vendorModules[parts[1]] = parts[2]
+				vm = &vendorModule{
+					module:     parts[1],
+					version:    parts[2],
+					submodules: make([]string, 0),
+				}
+				vms = append(vms, vm)
+			} else {
+				// For other lines, we just ignore them
 			}
+		} else if !strings.HasPrefix(line, "## ") {
+			vm.submodules = append(vm.submodules, line)
+		} else {
+			util.Assert(strings.HasPrefix(line, "## "), "why not otherwise")
 		}
 	}
 	err = scanner.Err()
@@ -333,7 +386,7 @@ func parseVendorModules(projDir string) (map[string]string, error) {
 		return nil, errc.New(errc.ErrParseCode,
 			"cannot parse vendor/modules.txt")
 	}
-	return vendorModules, nil
+	return vms, nil
 }
 
 func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
