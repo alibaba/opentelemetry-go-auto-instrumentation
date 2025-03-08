@@ -129,3 +129,8 @@ func VerifyRpcServerMetricsAttributes(attrs []attribute.KeyValue, method, servic
 	Assert(GetAttribute(attrs, "rpc.system").AsString() == system, "Except rpc.system to be %s, got %s", system, GetAttribute(attrs, "rpc.system").AsString())
 	Assert(GetAttribute(attrs, "server.address").AsString() == serverAddr, "Except rpc.system to be %s, got %s", serverAddr, GetAttribute(attrs, "server.address").AsString())
 }
+
+func VerifyLLMAttributes(span tracetest.SpanStub, name string) {
+	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
+	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
+}
