@@ -106,5 +106,11 @@
         "Function": "BadDep",
         "OnExit": "onExitBadDep",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error17"
+    },
+    {
+        "ImportPath": "errorstest/auxiliary",
+        "Function": "TargetWithFuncType",
+        "OnEnter": "onEnterTargetWithFuncType",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error18"
     }
 ]
