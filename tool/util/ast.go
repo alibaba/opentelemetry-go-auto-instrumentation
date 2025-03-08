@@ -394,21 +394,31 @@ func MatchStructDecl(decl dst.Decl, structType string) bool {
 // To solve this issue, we disable DST's automatic Import management
 // and use plain AST manipulation to add imports.
 
-// ParseAstFromSnippet parses the AST from incomplete source code snippet.
-func ParseAstFromSnippet(codeSnippnet string) ([]dst.Stmt, error) {
-	fset := token.NewFileSet()
+type AstParser struct {
+	fset *token.FileSet
+}
+
+func NewAstParser() *AstParser {
+	return &AstParser{
+		fset: token.NewFileSet(),
+	}
+}
+
+// ParseSnippet parses the AST from incomplete source code snippet.
+func (ap *AstParser) ParseSnippet(codeSnippnet string) ([]dst.Stmt, error) {
+	Assert(codeSnippnet != "", "empty code snippet")
 	snippet := "package main; func _() {" + codeSnippnet + "}"
-	file, err := decorator.ParseFile(fset, "", snippet, 0)
+	file, err := decorator.ParseFile(ap.fset, "", snippet, 0)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
 	return file.Decls[0].(*dst.FuncDecl).Body.List, nil
 }
 
-// ParseAstFromSource parses the AST from complete source code.
-func ParseAstFromSource(source string) (*dst.File, error) {
+// ParseSource parses the AST from complete source code.
+func (ap *AstParser) ParseSource(source string) (*dst.File, error) {
 	Assert(source != "", "empty source")
-	dec := decorator.NewDecorator(token.NewFileSet())
+	dec := decorator.NewDecorator(ap.fset)
 	dstRoot, err := dec.Parse(source)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
@@ -416,9 +426,8 @@ func ParseAstFromSource(source string) (*dst.File, error) {
 	return dstRoot, nil
 }
 
-func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
+func (ap *AstParser) ParseFile(filePath string, mode parser.Mode) (*dst.File, error) {
 	name := filepath.Base(filePath)
-	fset := token.NewFileSet()
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, errc.New(errc.ErrOpenFile, err.Error())
@@ -429,11 +438,11 @@ func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
 			LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
-	astFile, err := parser.ParseFile(fset, name, file, mode)
+	astFile, err := parser.ParseFile(ap.fset, name, file, mode)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
-	dec := decorator.NewDecorator(fset)
+	dec := decorator.NewDecorator(ap.fset)
 	dstFile, err := dec.DecorateFile(astFile)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
@@ -442,16 +451,16 @@ func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
 }
 
 func ParseAstFromFileOnlyPackage(filePath string) (*dst.File, error) {
-	return parseAstMode(filePath, parser.PackageClauseOnly)
+	return NewAstParser().ParseFile(filePath, parser.PackageClauseOnly)
 }
 
 func ParseAstFromFileFast(filePath string) (*dst.File, error) {
-	return parseAstMode(filePath, parser.SkipObjectResolution)
+	return NewAstParser().ParseFile(filePath, parser.SkipObjectResolution)
 }
 
 // ParseAstFromFile parses the AST from complete source file.
 func ParseAstFromFile(filePath string) (*dst.File, error) {
-	return parseAstMode(filePath, parser.ParseComments)
+	return NewAstParser().ParseFile(filePath, parser.ParseComments)
 }
 
 // WriteAstToFile writes the AST to source file.
