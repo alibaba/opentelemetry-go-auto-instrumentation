@@ -39,6 +39,7 @@ func doActionOnEnter(call api.CallContext,
 	}
 	request := langChainRequest{
 		moduleName: MAgentAction,
+		system:     "langchain",
 		input: map[string]interface{}{
 			"tool":       action.Tool,
 			"tool-id":    action.ToolID,
@@ -47,7 +48,7 @@ func doActionOnEnter(call api.CallContext,
 			"AgentStep":  buf.String(),
 		},
 	}
-	langCtx := langChainInstrument.Start(ctx, request)
+	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
 	data["ctx"] = langCtx
 	call.SetData(data)
@@ -57,13 +58,14 @@ func doActionOnExit(call api.CallContext, steps []schema.AgentStep, err error) {
 	buf := new(bytes.Buffer)
 	request := langChainRequest{
 		moduleName: MAgentAction,
+		system:     "langchain",
 	}
 	ctx, ok := data["ctx"].(context.Context)
 	if !ok {
 		return
 	}
 	if err != nil {
-		langChainInstrument.End(ctx, request, nil, err)
+		langChainCommonInstrument.End(ctx, request, nil, err)
 		return
 	}
 	if json.NewEncoder(buf).Encode(steps) != nil {
@@ -71,5 +73,5 @@ func doActionOnExit(call api.CallContext, steps []schema.AgentStep, err error) {
 	} else {
 		request.output = map[string]any{"AgentStep": buf.String()}
 	}
-	langChainInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, nil)
 }

@@ -16,6 +16,7 @@ package langchain
 
 type langChainRequest struct {
 	moduleName string
+	system     string
 	input      map[string]any
 	output     map[string]any
 }

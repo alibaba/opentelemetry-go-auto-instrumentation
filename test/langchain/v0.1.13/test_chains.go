@@ -18,6 +18,6 @@ func main() {
 		panic(err)
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMAttributes(stubs[0][0], "chains")
+		verifier.VerifyLLMCommonAttributes(stubs[0][0], "chains", "langchain")
 	}, 3)
 }

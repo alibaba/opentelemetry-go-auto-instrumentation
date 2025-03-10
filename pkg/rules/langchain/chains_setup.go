@@ -29,9 +29,10 @@ func callChainOnEnter(call api.CallContext, ctx context.Context,
 	}
 	request := langChainRequest{
 		moduleName: MChains,
+		system:     "langchain",
 		input:      fullValues,
 	}
-	langCtx := langChainInstrument.Start(ctx, request)
+	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
 	data["ctx"] = langCtx
 	call.SetData(data)
@@ -47,11 +48,12 @@ func callChainOnExit(call api.CallContext, v map[string]any, err error) {
 	}
 	request := langChainRequest{
 		moduleName: MChains,
+		system:     "langchain",
 	}
 	if err != nil {
-		langChainInstrument.End(ctx, request, nil, err)
+		langChainCommonInstrument.End(ctx, request, nil, err)
 		return
 	}
 	request.output = v
-	langChainInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, nil)
 }

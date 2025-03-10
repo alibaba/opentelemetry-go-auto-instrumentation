@@ -134,3 +134,11 @@ func VerifyLLMAttributes(span tracetest.SpanStub, name string) {
 	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
 	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
 }
+func VerifyLLMCommonAttributes(span tracetest.SpanStub, name string, system string) {
+	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
+	actualSystem := GetAttribute(span.Attributes, "gen_ai.system").AsString()
+	Assert(actualSystem == system, "Except gen_ai.system to be %s, got %s", system, actualSystem)
+	optName := GetAttribute(span.Attributes, "gen_ai.operation.name").AsString()
+	Assert(optName == name, "Except gen_ai.operation.name to be %s, got %s", system, actualSystem)
+	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
+}

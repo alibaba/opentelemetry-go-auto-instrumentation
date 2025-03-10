@@ -28,11 +28,12 @@ func generateFromSinglePromptOnEnter(call api.CallContext,
 ) {
 	request := langChainRequest{
 		moduleName: MLlmGenerateSingle,
+		system:     "langchain",
 		input: map[string]any{
 			"prompt": prompt,
 		},
 	}
-	langCtx := langChainInstrument.Start(ctx, request)
+	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
 	data["ctx"] = langCtx
 	call.SetData(data)
@@ -41,6 +42,7 @@ func generateFromSinglePromptOnExit(call api.CallContext, v string, err error) {
 	data := call.GetData().(map[string]interface{})
 	request := langChainRequest{
 		moduleName: MLlmGenerateSingle,
+		system:     "langchain",
 		output:     map[string]any{"output": v},
 	}
 	ctx, ok := data["ctx"].(context.Context)
@@ -48,8 +50,8 @@ func generateFromSinglePromptOnExit(call api.CallContext, v string, err error) {
 		return
 	}
 	if err != nil {
-		langChainInstrument.End(ctx, request, nil, err)
+		langChainCommonInstrument.End(ctx, request, nil, err)
 		return
 	}
-	langChainInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, nil)
 }

@@ -28,11 +28,12 @@ func singleEmbedOnEnter(call api.CallContext,
 ) {
 	request := langChainRequest{
 		moduleName: MEmbedSingle,
+		system:     "langchain",
 		input: map[string]interface{}{
 			"text": text,
 		},
 	}
-	langCtx := langChainInstrument.Start(ctx, request)
+	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
 	data["ctx"] = langCtx
 	call.SetData(data)
@@ -44,6 +45,7 @@ func singleEmbedOnExit(
 ) {
 	request := langChainRequest{
 		moduleName: MEmbedSingle,
+		system:     "langchain",
 	}
 	data := call.GetData().(map[string]interface{})
 	ctx, ok := data["ctx"].(context.Context)
@@ -51,10 +53,10 @@ func singleEmbedOnExit(
 		return
 	}
 	if err != nil {
-		langChainInstrument.End(ctx, request, nil, err)
+		langChainCommonInstrument.End(ctx, request, nil, err)
 		return
 	}
-	langChainInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, nil)
 }
 
 // BatchedEmbed
@@ -66,11 +68,12 @@ func batchedEmbedOnEnter(call api.CallContext,
 ) {
 	request := langChainRequest{
 		moduleName: MEmbedBatch,
+		system:     "langchain",
 		input: map[string]interface{}{
 			"batchSize": batchSize,
 		},
 	}
-	langCtx := langChainInstrument.Start(ctx, request)
+	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
 	data["ctx"] = langCtx
 	call.SetData(data)
@@ -82,6 +85,7 @@ func batchedEmbedOnExit(
 ) {
 	request := langChainRequest{
 		moduleName: MEmbedBatch,
+		system:     "langchain",
 	}
 	data := call.GetData().(map[string]interface{})
 	ctx, ok := data["ctx"].(context.Context)
@@ -89,8 +93,8 @@ func batchedEmbedOnExit(
 		return
 	}
 	if err != nil {
-		langChainInstrument.End(ctx, request, nil, err)
+		langChainCommonInstrument.End(ctx, request, nil, err)
 		return
 	}
-	langChainInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, nil)
 }
