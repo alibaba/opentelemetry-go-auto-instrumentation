@@ -53,7 +53,6 @@ type AILLMAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 CommonAttrsGetter[RE
 
 func (h *AILLMAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
 	attributes, parentContext = h.Base.OnStart(attributes, parentContext, request)
-	// TODO: add resend count
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   semconv.GenAIRequestModelKey,
 		Value: attribute.StringValue(h.LLMGetter.GetAIRequestModel(request)),
