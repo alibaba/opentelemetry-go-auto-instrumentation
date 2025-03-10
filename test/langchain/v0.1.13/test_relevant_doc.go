@@ -14,6 +14,6 @@ func main() {
 		panic(err)
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMAttributes(stubs[0][0], "relevantDocuments")
+		verifier.VerifyLLMCommonAttributes(stubs[0][0], "relevantDocuments", "langchain")
 	}, 1)
 }

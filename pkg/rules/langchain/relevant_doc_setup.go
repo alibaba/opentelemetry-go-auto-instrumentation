@@ -32,11 +32,12 @@ func getRelevantDocumentsOnEnter(call api.CallContext,
 ) {
 	request := langChainRequest{
 		moduleName: MRelevantDoc,
+		system:     "langchain",
 		input: map[string]interface{}{
 			"query": query,
 		},
 	}
-	langCtx := langChainInstrument.Start(ctx, request)
+	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
 	data["ctx"] = langCtx
 	call.SetData(data)
@@ -53,6 +54,7 @@ func getRelevantDocumentsOnExit(
 	data := call.GetData().(map[string]interface{})
 	request := langChainRequest{
 		moduleName: MRelevantDoc,
+		system:     "langchain",
 		output: map[string]interface{}{
 			"schema-doc": buf.String(),
 		},
@@ -62,8 +64,8 @@ func getRelevantDocumentsOnExit(
 		return
 	}
 	if err != nil {
-		langChainInstrument.End(ctx, request, nil, err)
+		langChainCommonInstrument.End(ctx, request, nil, err)
 		return
 	}
-	langChainInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, nil)
 }

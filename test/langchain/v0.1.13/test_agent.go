@@ -27,7 +27,7 @@ func main() {
 	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMAttributes(stubs[1][0], "agentAction")
+		verifier.VerifyLLMCommonAttributes(stubs[1][0], "agentAction", "langchain")
 	}, 6)
 }
 

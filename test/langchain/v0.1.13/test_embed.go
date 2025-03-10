@@ -33,7 +33,7 @@ func main() {
 		panic(err)
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMAttributes(stubs[0][0], "singleEmbed")
-		verifier.VerifyLLMAttributes(stubs[1][0], "batchedEmbed")
+		verifier.VerifyLLMCommonAttributes(stubs[0][0], "singleEmbed", "langchain")
+		verifier.VerifyLLMCommonAttributes(stubs[1][0], "batchedEmbed", "langchain")
 	}, 3)
 }
