@@ -86,7 +86,7 @@ func NewGeneralTestCase(testName, moduleName, minVersion, maxVersion, minGoVersi
 	}
 	goVersion, _ := version.NewGoVersion(strings.ReplaceAll(runtime.Version(), "go", ""))
 	if (minGoVer != nil && goVersion.LessThan(minGoVer)) || (maxGoVer != nil && goVersion.GreaterThan(maxGoVer)) {
-		log.Printf("This test does not suppport go %s", goVersion.String())
+		log.Printf("This test does not suppport go %s, require go [%s, %s]", goVersion.String(), minGoVersion, maxGoVersion)
 		return nil
 	}
 	return &TestCase{

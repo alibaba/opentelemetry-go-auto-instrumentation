@@ -39,6 +39,9 @@ var scopeKey = map[string]attribute.Key{
 	utils.GRPC_CLIENT_SCOPE_NAME: utils.RPC_CLIENT_KEY,
 	utils.GRPC_SERVER_SCOPE_NAME: utils.RPC_SERVER_KEY,
 
+	utils.TRPCGO_CLIENT_SCOPE_NAME: utils.RPC_CLIENT_KEY,
+	utils.TRPCGO_SERVER_SCOPE_NAME: utils.RPC_SERVER_KEY,
+
 	// database
 	utils.DATABASE_SQL_SCOPE_NAME: utils.DB_CLIENT_KEY,
 	utils.GO_REDIS_V9_SCOPE_NAME:  utils.DB_CLIENT_KEY,
@@ -62,6 +65,10 @@ var kindKey = map[string]trace.SpanKind{
 	// grpc
 	utils.GRPC_CLIENT_SCOPE_NAME: trace.SpanKindClient,
 	utils.GRPC_SERVER_SCOPE_NAME: trace.SpanKindServer,
+
+	utils.TRPCGO_CLIENT_SCOPE_NAME: trace.SpanKindClient,
+	utils.TRPCGO_SERVER_SCOPE_NAME: trace.SpanKindServer,
+	
 	// kitex
 	utils.KITEX_CLIENT_SCOPE_NAME: trace.SpanKindClient,
 	utils.KITEX_SERVER_SCOPE_NAME: trace.SpanKindServer,
