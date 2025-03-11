@@ -27,8 +27,8 @@ func generateFromSinglePromptOnEnter(call api.CallContext,
 	options ...llms.CallOption,
 ) {
 	request := langChainRequest{
-		moduleName: MLlmGenerateSingle,
-		system:     "langchain",
+		operationName: MLlmGenerateSingle,
+		system:        "langchain",
 		input: map[string]any{
 			"prompt": prompt,
 		},
@@ -41,9 +41,9 @@ func generateFromSinglePromptOnEnter(call api.CallContext,
 func generateFromSinglePromptOnExit(call api.CallContext, v string, err error) {
 	data := call.GetData().(map[string]interface{})
 	request := langChainRequest{
-		moduleName: MLlmGenerateSingle,
-		system:     "langchain",
-		output:     map[string]any{"output": v},
+		operationName: MLlmGenerateSingle,
+		system:        "langchain",
+		output:        map[string]any{"output": v},
 	}
 	ctx, ok := data["ctx"].(context.Context)
 	if !ok {

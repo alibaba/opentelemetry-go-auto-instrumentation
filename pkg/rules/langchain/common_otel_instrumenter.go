@@ -15,7 +15,7 @@ type aiCommonRequest struct {
 }
 
 func (aiCommonRequest) GetAIOperationName(request langChainRequest) string {
-	return request.moduleName
+	return request.operationName
 }
 func (aiCommonRequest) GetAISystem(request langChainRequest) string {
 	return request.system

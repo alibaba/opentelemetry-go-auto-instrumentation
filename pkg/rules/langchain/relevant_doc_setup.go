@@ -31,8 +31,8 @@ func getRelevantDocumentsOnEnter(call api.CallContext,
 	query string,
 ) {
 	request := langChainRequest{
-		moduleName: MRelevantDoc,
-		system:     "langchain",
+		operationName: MRelevantDoc,
+		system:        "langchain",
 		input: map[string]interface{}{
 			"query": query,
 		},
@@ -53,8 +53,8 @@ func getRelevantDocumentsOnExit(
 	}
 	data := call.GetData().(map[string]interface{})
 	request := langChainRequest{
-		moduleName: MRelevantDoc,
-		system:     "langchain",
+		operationName: MRelevantDoc,
+		system:        "langchain",
 		output: map[string]interface{}{
 			"schema-doc": buf.String(),
 		},

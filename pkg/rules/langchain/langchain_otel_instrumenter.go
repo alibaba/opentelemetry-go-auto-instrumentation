@@ -28,10 +28,10 @@ type LcExperimentalSpanNameExtractor struct {
 }
 
 func (l LcExperimentalSpanNameExtractor) Extract(request langChainRequest) string {
-	if request.moduleName == "" {
+	if request.operationName == "" {
 		return "unknown module name"
 	}
-	return request.moduleName
+	return request.operationName
 }
 
 type LcExperimentalAttributeExtractor struct {
@@ -40,7 +40,7 @@ type LcExperimentalAttributeExtractor struct {
 func (l LcExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request langChainRequest) ([]attribute.KeyValue, context.Context) {
 	attributes = append(attributes, attribute.KeyValue{
 		Key:   "module-name",
-		Value: attribute.StringValue(request.moduleName),
+		Value: attribute.StringValue(request.operationName),
 	}, attribute.KeyValue{
 		Key:   "system",
 		Value: attribute.StringValue("langChain"),

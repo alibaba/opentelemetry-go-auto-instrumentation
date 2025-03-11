@@ -27,8 +27,8 @@ func singleEmbedOnEnter(call api.CallContext,
 	text string,
 ) {
 	request := langChainRequest{
-		moduleName: MEmbedSingle,
-		system:     "langchain",
+		operationName: MEmbedSingle,
+		system:        "langchain",
 		input: map[string]interface{}{
 			"text": text,
 		},
@@ -44,8 +44,8 @@ func singleEmbedOnExit(
 	err error,
 ) {
 	request := langChainRequest{
-		moduleName: MEmbedSingle,
-		system:     "langchain",
+		operationName: MEmbedSingle,
+		system:        "langchain",
 	}
 	data := call.GetData().(map[string]interface{})
 	ctx, ok := data["ctx"].(context.Context)
@@ -67,8 +67,8 @@ func batchedEmbedOnEnter(call api.CallContext,
 	batchSize int,
 ) {
 	request := langChainRequest{
-		moduleName: MEmbedBatch,
-		system:     "langchain",
+		operationName: MEmbedBatch,
+		system:        "langchain",
 		input: map[string]interface{}{
 			"batchSize": batchSize,
 		},
@@ -84,8 +84,8 @@ func batchedEmbedOnExit(
 	err error,
 ) {
 	request := langChainRequest{
-		moduleName: MEmbedBatch,
-		system:     "langchain",
+		operationName: MEmbedBatch,
+		system:        "langchain",
 	}
 	data := call.GetData().(map[string]interface{})
 	ctx, ok := data["ctx"].(context.Context)

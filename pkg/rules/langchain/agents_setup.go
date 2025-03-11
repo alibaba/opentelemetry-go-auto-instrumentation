@@ -38,8 +38,8 @@ func doActionOnEnter(call api.CallContext,
 		fmt.Fprintf(buf, "%#v", steps)
 	}
 	request := langChainRequest{
-		moduleName: MAgentAction,
-		system:     "langchain",
+		operationName: MAgentAction,
+		system:        "langchain",
 		input: map[string]interface{}{
 			"tool":       action.Tool,
 			"tool-id":    action.ToolID,
@@ -57,8 +57,8 @@ func doActionOnExit(call api.CallContext, steps []schema.AgentStep, err error) {
 	data := call.GetData().(map[string]interface{})
 	buf := new(bytes.Buffer)
 	request := langChainRequest{
-		moduleName: MAgentAction,
-		system:     "langchain",
+		operationName: MAgentAction,
+		system:        "langchain",
 	}
 	ctx, ok := data["ctx"].(context.Context)
 	if !ok {

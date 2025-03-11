@@ -28,9 +28,9 @@ func callChainOnEnter(call api.CallContext, ctx context.Context,
 		return
 	}
 	request := langChainRequest{
-		moduleName: MChains,
-		system:     "langchain",
-		input:      fullValues,
+		operationName: MChains,
+		system:        "langchain",
+		input:         fullValues,
 	}
 	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
@@ -47,8 +47,8 @@ func callChainOnExit(call api.CallContext, v map[string]any, err error) {
 		return
 	}
 	request := langChainRequest{
-		moduleName: MChains,
-		system:     "langchain",
+		operationName: MChains,
+		system:        "langchain",
 	}
 	if err != nil {
 		langChainCommonInstrument.End(ctx, request, nil, err)
