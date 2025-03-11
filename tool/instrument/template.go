@@ -15,6 +15,7 @@
 // limitations under the License.
 package instrument
 
+//line <generated>:1
 // Seeing is not always believing. The following template is a bit tricky, see
 // trampoline.go for more details
 

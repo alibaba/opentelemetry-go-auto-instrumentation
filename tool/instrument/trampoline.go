@@ -71,7 +71,8 @@ var trampolineTemplate string
 func (rp *RuleProcessor) materializeTemplate() error {
 	// Read trampoline template and materialize onEnter and onExit function
 	// declarations based on that
-	astRoot, err := util.ParseAstFromSource(trampolineTemplate)
+	p := util.NewAstParser()
+	astRoot, err := p.ParseSource(trampolineTemplate)
 	if err != nil {
 		return err
 	}
