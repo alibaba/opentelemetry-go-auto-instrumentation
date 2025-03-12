@@ -81,14 +81,14 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | database/sql  | https://pkg.go.dev/database/sql                | -                     | -                     |
 | echo          | https://github.com/labstack/echo               | v4.0.0                | v4.12.0               |
 | elasticsearch | https://github.com/elastic/go-elasticsearch    | v8.4.0                | v8.15.0               |
-| fasthttp      | https://github.com/valyala/fasthttp            | v1.45.0               | v1.57.0               |
+| fasthttp      | https://github.com/valyala/fasthttp            | v1.45.0               | v1.59.0               |
 | fiber         | https://github.com/gofiber/fiber               | v2.43.0               | v2.52.5               |
 | gin           | https://github.com/gin-gonic/gin               | v1.7.0                | v1.10.0               |
 | gorestful     | https://github.com/emicklei/go-restful         | v3.7.0                | v3.12.1               |
 | go-redis      | https://github.com/redis/go-redis              | v9.0.5                | v9.5.1                |
 | go-redis v8   | https://github.com/redis/go-redis              | v8.11.0               | v8.11.5               |
 | gorm          | https://github.com/go-gorm/gorm                | v1.22.0               | v1.25.9               |
-| grpc          | https://google.golang.org/grpc                 | v1.44.0               | v1.68.2               |
+| grpc          | https://google.golang.org/grpc                 | v1.44.0               | v1.71.0               |
 | hertz         | https://github.com/cloudwego/hertz             | v0.8.0                | v0.9.2                |
 | kitex         | https://github.com/cloudwego/kitex             | v0.5.1                | v0.11.3               |
 | kratos        | https://github.com/go-kratos/kratos            | v2.6.3                | v2.8.2                |
@@ -127,3 +127,19 @@ These are only part of the companies using this project, for reference only. If 
 
 - <img src="./docs/alibaba.png" width="80">
 - <img src="./docs/aliyun.png" width="100">
+
+### 贡献者
+
+<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation"/>
+</a>
+
+# Star History
+
+[![Star History](https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date)](https://star-history.com/#alibaba/opentelemetry-go-auto-instrumentation&Date)
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ 返回顶部 ↑
+    </a>
+</p>
