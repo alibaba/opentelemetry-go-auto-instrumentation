@@ -18,15 +18,22 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	redis "github.com/redis/go-redis/v9"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	redis "github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel"
 )
 
+var tracer = otel.Tracer("otel-manual-instr")
+
 func traceService(w http.ResponseWriter, r *http.Request) {
+	_, span := tracer.Start(r.Context(), "db init")
+	defer span.End()
+
 	header := r.Header
 	for key, value := range header {
 		values := strings.Join(value, ",")
