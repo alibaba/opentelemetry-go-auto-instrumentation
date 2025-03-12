@@ -241,29 +241,26 @@ func AddStructField(decl dst.Decl, name string, typ string) {
 	st.Fields.List = append(st.Fields.List, fd)
 }
 
-func addImport(root *dst.File, path string, force bool) {
-	spec := &dst.ImportSpec{
-		Path: &dst.BasicLit{
-			Kind:  token.STRING,
-			Value: fmt.Sprintf("%q", path),
-		},
+func addImport(root *dst.File, paths ...string) *dst.GenDecl {
+	importStmt := &dst.GenDecl{Tok: token.IMPORT}
+	specs := make([]dst.Spec, 0)
+	for _, path := range paths {
+		spec := &dst.ImportSpec{
+			Path: &dst.BasicLit{
+				Kind:  token.STRING,
+				Value: fmt.Sprintf("%q", path),
+			},
+			Name: &dst.Ident{Name: IdentIgnore},
+		}
+		specs = append(specs, spec)
 	}
-	if force {
-		spec.Name = &dst.Ident{Name: IdentIgnore}
-	}
-	importStmt := &dst.GenDecl{
-		Tok:   token.IMPORT,
-		Specs: []dst.Spec{spec},
-	}
+	importStmt.Specs = specs
 	root.Decls = append([]dst.Decl{importStmt}, root.Decls...)
+	return importStmt
 }
 
-func AddImportForcely(root *dst.File, path string) {
-	addImport(root, path, true)
-}
-
-func AddImport(root *dst.File, path string) {
-	addImport(root, path, false)
+func AddImportForcely(root *dst.File, paths ...string) *dst.GenDecl {
+	return addImport(root, paths...)
 }
 
 func RemoveImport(root *dst.File, path string) *dst.ImportSpec {
@@ -394,31 +391,49 @@ func MatchStructDecl(decl dst.Decl, structType string) bool {
 // To solve this issue, we disable DST's automatic Import management
 // and use plain AST manipulation to add imports.
 
-// ParseAstFromSnippet parses the AST from incomplete source code snippet.
-func ParseAstFromSnippet(codeSnippnet string) ([]dst.Stmt, error) {
-	fset := token.NewFileSet()
+type AstParser struct {
+	fset *token.FileSet
+	dec  *decorator.Decorator
+}
+
+func NewAstParser() *AstParser {
+	return &AstParser{
+		fset: token.NewFileSet(),
+	}
+}
+
+func (ap *AstParser) FindPosition(node dst.Node) token.Position {
+	astNode := ap.dec.Ast.Nodes[node]
+	if astNode == nil {
+		return token.Position{Filename: "", Line: -1, Column: -1} // Invalid
+	}
+	return ap.fset.Position(astNode.Pos())
+}
+
+// ParseSnippet parses the AST from incomplete source code snippet.
+func (ap *AstParser) ParseSnippet(codeSnippnet string) ([]dst.Stmt, error) {
+	Assert(codeSnippnet != "", "empty code snippet")
 	snippet := "package main; func _() {" + codeSnippnet + "}"
-	file, err := decorator.ParseFile(fset, "", snippet, 0)
+	file, err := decorator.ParseFile(ap.fset, "", snippet, 0)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
 	return file.Decls[0].(*dst.FuncDecl).Body.List, nil
 }
 
-// ParseAstFromSource parses the AST from complete source code.
-func ParseAstFromSource(source string) (*dst.File, error) {
+// ParseSource parses the AST from complete source code.
+func (ap *AstParser) ParseSource(source string) (*dst.File, error) {
 	Assert(source != "", "empty source")
-	dec := decorator.NewDecorator(token.NewFileSet())
-	dstRoot, err := dec.Parse(source)
+	ap.dec = decorator.NewDecorator(ap.fset)
+	dstRoot, err := ap.dec.Parse(source)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
 	return dstRoot, nil
 }
 
-func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
+func (ap *AstParser) ParseFile(filePath string, mode parser.Mode) (*dst.File, error) {
 	name := filepath.Base(filePath)
-	fset := token.NewFileSet()
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, errc.New(errc.ErrOpenFile, err.Error())
@@ -429,12 +444,12 @@ func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
 			LogFatal("failed to close file %s: %v", file.Name(), err)
 		}
 	}(file)
-	astFile, err := parser.ParseFile(fset, name, file, mode)
+	astFile, err := parser.ParseFile(ap.fset, name, file, mode)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
-	dec := decorator.NewDecorator(fset)
-	dstFile, err := dec.DecorateFile(astFile)
+	ap.dec = decorator.NewDecorator(ap.fset)
+	dstFile, err := ap.dec.DecorateFile(astFile)
 	if err != nil {
 		return nil, errc.New(errc.ErrParseCode, err.Error())
 	}
@@ -442,16 +457,16 @@ func parseAstMode(filePath string, mode parser.Mode) (*dst.File, error) {
 }
 
 func ParseAstFromFileOnlyPackage(filePath string) (*dst.File, error) {
-	return parseAstMode(filePath, parser.PackageClauseOnly)
+	return NewAstParser().ParseFile(filePath, parser.PackageClauseOnly)
 }
 
 func ParseAstFromFileFast(filePath string) (*dst.File, error) {
-	return parseAstMode(filePath, parser.SkipObjectResolution)
+	return NewAstParser().ParseFile(filePath, parser.SkipObjectResolution)
 }
 
 // ParseAstFromFile parses the AST from complete source file.
 func ParseAstFromFile(filePath string) (*dst.File, error) {
-	return parseAstMode(filePath, parser.ParseComments)
+	return NewAstParser().ParseFile(filePath, parser.ParseComments)
 }
 
 // WriteAstToFile writes the AST to source file.

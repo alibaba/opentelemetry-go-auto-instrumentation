@@ -48,12 +48,12 @@ func TestRunErrors(t *testing.T) {
 	}
 	re = regexp.MustCompile(".*OtelOnEnterTrampoline_p1.*")
 	matches = re.FindAllString(text, -1)
-	if len(matches) != 3 {
-		t.Fatalf("expecting 3 matches")
+	if len(matches) != 4 {
+		t.Fatalf("expecting 4 matches")
 	}
 	re = regexp.MustCompile(".*OtelOnExitTrampoline_p2.*")
 	matches = re.FindAllString(text, -1)
-	if len(matches) != 3 {
-		t.Fatalf("expecting 3 matches")
+	if len(matches) != 4 {
+		t.Fatalf("expecting 4 matches")
 	}
 }

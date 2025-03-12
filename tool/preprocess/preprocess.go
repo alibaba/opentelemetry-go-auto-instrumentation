@@ -18,6 +18,8 @@ import (
 	"bufio"
 	"embed"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -31,6 +33,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/dave/dst"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 )
@@ -553,7 +556,8 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 		if !util.IsGoFile(file) {
 			continue
 		}
-		astRoot, err := util.ParseAstFromFile(file)
+		p := util.NewAstParser()
+		astRoot, err := p.ParseFile(file, parser.ParseComments)
 		if err != nil {
 			return err
 		}
@@ -566,13 +570,40 @@ func (dp *DepProcessor) addExplicitImport(importPaths ...string) (err error) {
 			}
 		}
 
-		// Prepend import path to the file
-		for _, importPath := range importPaths {
-			util.AddImportForcely(astRoot, importPath)
-			if config.GetConf().Verbose {
-				util.Log("Add %s import to %v", importPath, file)
+		// Mark original line number of first import declaration
+		for _, decl := range astRoot.Decls {
+			decl, ok := decl.(*dst.GenDecl)
+			if !ok {
+				continue
 			}
+			if decl.Tok != token.IMPORT {
+				continue
+			}
+			// The node is already tagged with line directive, dont tag it again
+			generated := false
+			if len(decl.Decs.Start) > 0 {
+				for _, dec := range decl.Decs.Start {
+					if strings.Contains(dec, "<generated>:1") {
+						generated = true
+						break
+					}
+				}
+				if generated {
+					break
+				}
+			}
+			pos := p.FindPosition(decl)
+			tag := fmt.Sprintf("//line %v", pos.String())
+			decl.Decs.Before = dst.NewLine
+			decl.Decs.Start.Append(tag)
+			break
 		}
+		//  Prepend the generated import with a line directive to indicate
+		//  that the generated code is not part of the original source code.
+		util.Log("Add %v import to %v", importPaths, file)
+		importDecl := util.AddImportForcely(astRoot, importPaths...)
+		importDecl.Decs.Before = dst.NewLine
+		importDecl.Decs.Start.Append("//line <generated>:1")
 		addImport = true
 
 		err = dp.backupFile(file)

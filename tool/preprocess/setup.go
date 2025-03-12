@@ -171,7 +171,8 @@ func (dp *DepProcessor) copyRule(path, target string,
 		return err
 	}
 	text = util.RemoveGoBuildComment(text)
-	astRoot, err := util.ParseAstFromSource(text)
+	p := util.NewAstParser()
+	astRoot, err := p.ParseSource(text)
 	if err != nil {
 		return err
 	}
