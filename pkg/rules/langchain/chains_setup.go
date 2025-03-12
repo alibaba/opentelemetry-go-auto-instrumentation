@@ -49,10 +49,5 @@ func callChainOnExit(call api.CallContext, v map[string]any, err error) {
 		operationName: MChains,
 		system:        "langchain",
 	}
-	if err != nil {
-		langChainCommonInstrument.End(ctx, request, nil, err)
-		return
-	}
-	request.output = v
-	langChainCommonInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, err)
 }

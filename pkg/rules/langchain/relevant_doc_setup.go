@@ -49,9 +49,5 @@ func getRelevantDocumentsOnExit(
 	if !ok {
 		return
 	}
-	if err != nil {
-		langChainCommonInstrument.End(ctx, request, nil, err)
-		return
-	}
-	langChainCommonInstrument.End(ctx, request, nil, nil)
+	langChainCommonInstrument.End(ctx, request, nil, err)
 }

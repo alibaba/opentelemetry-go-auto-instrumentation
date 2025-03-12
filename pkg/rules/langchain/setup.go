@@ -28,5 +28,4 @@ const (
 )
 
 var langChainEnabler = instrumenter.NewDefaultInstrumentEnabler()
-var langChainInstrument = BuildLangChainInternalInstrumenter()
 var langChainCommonInstrument = BuildCommonLangchainOtelInstrumenter()

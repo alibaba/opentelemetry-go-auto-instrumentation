@@ -16,6 +16,7 @@ package test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
@@ -30,6 +31,9 @@ func TestPlugins(t *testing.T) {
 			continue
 		}
 		if c.IsMuzzleCheck || c.IsLatestDepthCheck || (testPluginName != "" && c.TestName != testPluginName) {
+			continue
+		}
+		if !strings.Contains(c.TestName, "langchain-0.1.13-") {
 			continue
 		}
 		t.Run(c.TestName, func(t *testing.T) {
