@@ -33,10 +33,9 @@ func doActionOnEnter(call api.CallContext,
 		operationName: MAgentAction,
 		system:        "langchain",
 		input: map[string]interface{}{
-			"tool":       action.Tool,
-			"tool-id":    action.ToolID,
-			"tool-input": action.ToolInput,
-			"log":        action.Log,
+			"tool":    action.Tool,
+			"tool-id": action.ToolID,
+			"log":     action.Log,
 		},
 	}
 	langCtx := langChainCommonInstrument.Start(ctx, request)

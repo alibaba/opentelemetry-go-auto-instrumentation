@@ -874,5 +874,21 @@
     "OnEnter": "batchedEmbedOnEnter",
     "OnExit":"batchedEmbedOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/langchain"
+  },
+  {
+  "ImportPath": "github.com/tmc/langchaingo/llms/ollama",
+  "ReceiverType": "*LLM",
+  "Function": "GenerateContent",
+  "OnEnter": "ollamaGenerateContentOnEnter",
+  "OnExit":"ollamaGenerateContentOnExit",
+  "Path": "/Users/zjl/Downloads/Business/ai-go/tc"
+  },
+  {
+    "ImportPath": "github.com/tmc/langchaingo/llms/openai",
+    "ReceiverType": "*LLM",
+    "Function": "GenerateContent",
+    "OnEnter": "openaiGenerateContentOnEnter",
+    "OnExit":"openaiGenerateContentOnExit",
+    "Path": "/Users/zjl/Downloads/Business/ai-go/tc"
   }
 ]

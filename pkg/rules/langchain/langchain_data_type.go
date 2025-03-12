@@ -20,3 +20,25 @@ type langChainRequest struct {
 	input         map[string]any
 	output        map[string]any
 }
+
+type langChainLLMRequest struct {
+	operationName    string
+	moduleName       string
+	encodingFormats  []string
+	frequencyPenalty float64
+	presencePenalty  float64
+	maxTokens        int64
+	usageInputTokens int64
+	stopSequences    []string
+	temperature      float64
+	topK             float64
+	topP             float64
+	serverAddress    string
+	seed             int64
+}
+type langChainLLMResponse struct {
+	responseFinishReasons []string
+	responseModel         string
+	usageOutputTokens     int64
+	responseID            string
+}
