@@ -15,10 +15,7 @@
 package langchain
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/schema"
@@ -32,11 +29,6 @@ func doActionOnEnter(call api.CallContext,
 	nameToTool map[string]tools.Tool,
 	action schema.AgentAction,
 ) {
-	buf := new(bytes.Buffer)
-	if json.NewEncoder(buf).Encode(steps) != nil {
-		buf.Reset()
-		fmt.Fprintf(buf, "%#v", steps)
-	}
 	request := langChainRequest{
 		operationName: MAgentAction,
 		system:        "langchain",
@@ -45,7 +37,6 @@ func doActionOnEnter(call api.CallContext,
 			"tool-id":    action.ToolID,
 			"tool-input": action.ToolInput,
 			"log":        action.Log,
-			"AgentStep":  buf.String(),
 		},
 	}
 	langCtx := langChainCommonInstrument.Start(ctx, request)
@@ -55,7 +46,6 @@ func doActionOnEnter(call api.CallContext,
 }
 func doActionOnExit(call api.CallContext, steps []schema.AgentStep, err error) {
 	data := call.GetData().(map[string]interface{})
-	buf := new(bytes.Buffer)
 	request := langChainRequest{
 		operationName: MAgentAction,
 		system:        "langchain",
@@ -67,11 +57,6 @@ func doActionOnExit(call api.CallContext, steps []schema.AgentStep, err error) {
 	if err != nil {
 		langChainCommonInstrument.End(ctx, request, nil, err)
 		return
-	}
-	if json.NewEncoder(buf).Encode(steps) != nil {
-		request.output = map[string]any{"AgentStep": fmt.Sprintf("%#v", steps)}
-	} else {
-		request.output = map[string]any{"AgentStep": buf.String()}
 	}
 	langChainCommonInstrument.End(ctx, request, nil, nil)
 }

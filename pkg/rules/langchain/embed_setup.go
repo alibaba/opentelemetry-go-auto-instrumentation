@@ -29,9 +29,6 @@ func singleEmbedOnEnter(call api.CallContext,
 	request := langChainRequest{
 		operationName: MEmbedSingle,
 		system:        "langchain",
-		input: map[string]interface{}{
-			"text": text,
-		},
 	}
 	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})

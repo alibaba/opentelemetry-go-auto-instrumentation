@@ -30,7 +30,6 @@ func callChainOnEnter(call api.CallContext, ctx context.Context,
 	request := langChainRequest{
 		operationName: MChains,
 		system:        "langchain",
-		input:         fullValues,
 	}
 	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})

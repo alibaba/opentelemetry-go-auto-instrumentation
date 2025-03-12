@@ -15,10 +15,7 @@
 package langchain
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
@@ -33,9 +30,6 @@ func getRelevantDocumentsOnEnter(call api.CallContext,
 	request := langChainRequest{
 		operationName: MRelevantDoc,
 		system:        "langchain",
-		input: map[string]interface{}{
-			"query": query,
-		},
 	}
 	langCtx := langChainCommonInstrument.Start(ctx, request)
 	data := make(map[string]interface{})
@@ -46,18 +40,10 @@ func getRelevantDocumentsOnExit(
 	call api.CallContext,
 	s []schema.Document, err error,
 ) {
-	buf := new(bytes.Buffer)
-	if json.NewEncoder(buf).Encode(s) != nil {
-		buf.Reset()
-		fmt.Fprintf(buf, "%#v", s)
-	}
 	data := call.GetData().(map[string]interface{})
 	request := langChainRequest{
 		operationName: MRelevantDoc,
 		system:        "langchain",
-		output: map[string]interface{}{
-			"schema-doc": buf.String(),
-		},
 	}
 	ctx, ok := data["ctx"].(context.Context)
 	if !ok {
