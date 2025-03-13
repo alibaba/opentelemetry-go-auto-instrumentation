@@ -1,6 +1,6 @@
 module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
-go 1.22
+go 1.23
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
 
@@ -27,16 +27,17 @@ require (
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/rs/zerolog v1.10.0
 	github.com/sirupsen/logrus v1.9.3
+	trpc.group/trpc-go/trpc-go v1.0.0
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.34.0
 	github.com/valyala/fasthttp v1.56.0
 	go-micro.dev/v5 v5.3.0
 	go.mongodb.org/mongo-driver v1.17.1
-	go.opentelemetry.io/otel v1.33.0
-	go.opentelemetry.io/otel/metric v1.33.0
-	go.opentelemetry.io/otel/sdk v1.33.0
-	go.opentelemetry.io/otel/sdk/metric v1.33.0
-	go.opentelemetry.io/otel/trace v1.33.0
+	go.opentelemetry.io/otel v1.35.0
+	go.opentelemetry.io/otel/metric v1.35.0
+	go.opentelemetry.io/otel/sdk v1.35.0
+	go.opentelemetry.io/otel/sdk/metric v1.35.0
+	go.opentelemetry.io/otel/trace v1.35.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/mod v0.17.0
 	google.golang.org/grpc v1.68.1
@@ -49,7 +50,6 @@ require (
 	github.com/kataras/iris/v12 v12.2.11
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
-	trpc.group/trpc-go/trpc-go v1.0.0
 )
 
 require (

@@ -21,20 +21,20 @@ This project is tested on the following systems.
 
 | OS       | Go Version | Architecture |
 |----------|------------|--------------|
+| Ubuntu   | 1.24       | amd64        |
 | Ubuntu   | 1.23       | amd64        |
-| Ubuntu   | 1.22       | amd64        |
+| Ubuntu   | 1.24       | 386          |
 | Ubuntu   | 1.23       | 386          |
-| Ubuntu   | 1.22       | 386          |
-| Linux    | 1.23       | arm64        |
-| Linux    | 1.22       | arm64        |
+| Ubuntu   | 1.24       | arm64        |
+| Ubuntu   | 1.23       | arm64        |
+| macOS 13 | 1.24       | amd64        |
 | macOS 13 | 1.23       | amd64        |
-| macOS 13 | 1.22       | amd64        |
+| macOS    | 1.24       | arm64        |
 | macOS    | 1.23       | arm64        |
-| macOS    | 1.22       | arm64        |
+| Windows  | 1.24       | amd64        |
 | Windows  | 1.23       | amd64        |
-| Windows  | 1.22       | amd64        |
+| Windows  | 1.24       | 386          |
 | Windows  | 1.23       | 386          |
-| Windows  | 1.22       | 386          |
 
 While this project should work for other systems, no compatibility guarantees
 are made for those systems currently.
@@ -55,3 +55,6 @@ mapping of the `otel` to the supported OTel versions is as follows:
 | v0.4.1       | v1.32.0      | v0.57.0              |
 | v0.5.0       | v1.32.0      | v0.57.0              |
 | v0.6.0       | v1.33.0      | v0.58.0              |
+| v0.7.0       | v1.33.0      | v0.58.0              |
+| v0.7.0       | v1.33.0      | v0.58.0              |
+| v0.8.0       | v1.35.0      | v0.60.0              |

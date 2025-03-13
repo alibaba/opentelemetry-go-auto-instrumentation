@@ -128,7 +128,7 @@ These are only part of the companies using this project, for reference only. If 
 - <img src="./docs/alibaba.png" width="80">
 - <img src="./docs/aliyun.png" width="100">
 
-### Contributors
+# Contributors
 
 <a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
   <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation"/>
