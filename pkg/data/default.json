@@ -882,7 +882,7 @@
   "Function": "GenerateContent",
   "OnEnter": "ollamaGenerateContentOnEnter",
   "OnExit":"ollamaGenerateContentOnExit",
-  "Path": "/Users/zjl/Downloads/Business/ai-go/tc"
+  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/langchain"
   },
   {
     "Version": "[0.1.13,)",
@@ -891,6 +891,6 @@
     "Function": "GenerateContent",
     "OnEnter": "openaiGenerateContentOnEnter",
     "OnExit":"openaiGenerateContentOnExit",
-    "Path": "/Users/zjl/Downloads/Business/ai-go/tc"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/langchain"
   }
 ]
