@@ -15,6 +15,8 @@
 package instrument
 
 import (
+	"fmt"
+	"go/token"
 	"path/filepath"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
@@ -22,11 +24,31 @@ import (
 	"github.com/dave/dst"
 )
 
-func addStructField(rule *resource.InstStructRule, decl dst.Decl) {
+func (rp *RuleProcessor) addStructField(rule *resource.InstStructRule, decl dst.Decl) {
 	util.Assert(rule.FieldName != "" && rule.FieldType != "",
 		"rule must have field and type")
+	// Find last field in the struct and record its position
+	st := decl.(*dst.GenDecl).Specs[0].(*dst.TypeSpec).Type.(*dst.StructType)
+	fields := st.Fields.List
+	// Find the last field containing the line number in the struct
+	var lastPos token.Position
+	for i := len(fields) - 1; i >= 0; i-- {
+		field := fields[i]
+		fieldPos := rp.parser.FindPosition(field)
+		if fieldPos.IsValid() {
+			lastPos = fieldPos
+			break
+		}
+	}
 	util.Log("Apply struct rule %v", rule)
-	util.AddStructField(decl, rule.FieldName, rule.FieldType)
+	field := util.AddStructField(decl, rule.FieldName, rule.FieldType)
+	tag := fmt.Sprintf("//line %s", lastPos.String())
+	fmt.Printf("tag: %s\n", tag)
+	// Add line directive to the new field
+	field.Decs.Before = dst.NewLine
+	field.Decs.Start.Append("//line <generated>:1")
+	field.Decs.After = dst.EmptyLine
+	field.Decs.End.Append(tag)
 }
 
 func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
@@ -41,7 +63,7 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 			for structName, rules := range struct2Rules {
 				if util.MatchStructDecl(decl, structName) {
 					for _, rule := range rules {
-						addStructField(rule, decl)
+						rp.addStructField(rule, decl)
 					}
 				}
 			}
@@ -52,6 +74,12 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		if err != nil {
 			return err
 		}
+		// Line directive must be placed at the beginning of the line, otherwise
+		// it will be ignored by the compiler
+		// err = rp.enableLineDirective(newFile)
+		// if err != nil {
+		// 	return err
+		// }
 		rp.saveDebugFile(newFile)
 	}
 	return nil

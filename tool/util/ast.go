@@ -231,7 +231,7 @@ func SwitchCase(list []dst.Expr, stmts []dst.Stmt) *dst.CaseClause {
 	}
 }
 
-func AddStructField(decl dst.Decl, name string, typ string) {
+func AddStructField(decl dst.Decl, name string, typ string) *dst.Field {
 	gen, ok := decl.(*dst.GenDecl)
 	if !ok {
 		LogFatal("decl is not a GenDecl")
@@ -239,6 +239,7 @@ func AddStructField(decl dst.Decl, name string, typ string) {
 	fd := NewField(name, Ident(typ))
 	st := gen.Specs[0].(*dst.TypeSpec).Type.(*dst.StructType)
 	st.Fields.List = append(st.Fields.List, fd)
+	return fd
 }
 
 func addImport(root *dst.File, paths ...string) *dst.GenDecl {
