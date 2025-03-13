@@ -1,8 +1,6 @@
 module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
-go 1.22.7
-
-toolchain go1.23.3
+go 1.23
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
 
@@ -29,6 +27,8 @@ require (
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/rs/zerolog v1.31.0
 	github.com/sirupsen/logrus v1.9.3
+	trpc.group/trpc-go/trpc-go v1.0.0
+	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.34.0
 	github.com/valyala/fasthttp v1.56.0
@@ -36,8 +36,8 @@ require (
 	go.mongodb.org/mongo-driver v1.17.1
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/metric v1.35.0
-	go.opentelemetry.io/otel/sdk v1.33.0
-	go.opentelemetry.io/otel/sdk/metric v1.33.0
+	go.opentelemetry.io/otel/sdk v1.35.0
+	go.opentelemetry.io/otel/sdk/metric v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/mod v0.17.0
@@ -52,7 +52,6 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tmc/langchaingo v0.1.13
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
-	trpc.group/trpc-go/trpc-go v1.0.0
 )
 
 require (

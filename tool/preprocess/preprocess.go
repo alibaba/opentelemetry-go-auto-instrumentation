@@ -84,22 +84,22 @@ var fixedDeps = []struct {
 }{
 	// otel sdk
 	{"go.opentelemetry.io/otel",
-		"v1.33.0", true, false},
+		"v1.35.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace",
-		"v1.33.0", true, false},
+		"v1.35.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
-		"v1.33.0", true, false},
+		"v1.35.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
-		"v1.33.0", true, false},
+		"v1.35.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc",
-		"v1.33.0", true, false},
+		"v1.35.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp",
-		"v1.33.0", true, false},
+		"v1.35.0", true, false},
 	{"go.opentelemetry.io/otel/exporters/prometheus",
-		"v0.42.0", true, false},
+		"v0.57.0", true, false},
 	// otel contrib
 	{"go.opentelemetry.io/contrib/instrumentation/runtime",
-		"v0.58.0", false, false},
+		"v0.60.0", false, false},
 }
 
 type DepProcessor struct {
