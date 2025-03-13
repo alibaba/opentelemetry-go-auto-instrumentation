@@ -64,6 +64,7 @@ const prometheus_exporter_port = "OTEL_EXPORTER_PROMETHEUS_PORT"
 const default_prometheus_exporter_port = "9464"
 
 var (
+	metricExporter     metric.Exporter
 	spanExporter       trace.SpanExporter
 	traceProvider      *trace.TracerProvider
 	metricsProvider    *metric.MeterProvider
@@ -102,7 +103,7 @@ func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
 		} else if os.Getenv(trace_exporter) == "console" {
 			spanExporter, err = stdouttrace.New()
 		} else if os.Getenv(trace_exporter) == "zipkin" {
-			spanExporter, err = zipkin.New(endpoint)
+			spanExporter, err = zipkin.New("")
 		} else {
 			if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
 				spanExporter, err = otlptrace.New(ctx, otlptracegrpc.NewClient())
@@ -144,23 +145,23 @@ func initMetrics() error {
 		)
 	} else {
 		if os.Getenv(metrics_exporter) == "console" {
-			exporter, err = stdoutmetric.New()
+			metricExporter, err = stdoutmetric.New()
 		} else if os.Getenv(metrics_exporter) == "prometheus" {
-			exporter, err = prometheus.New()
+			metricExporter, err = prometheus.New()
 			metricsProvider = metric.NewMeterProvider(
-				metric.WithReader(exporter),
+				metric.WithReader(metricExporter),
 			)
 			go serveMetrics()
 		} else {
 			if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
-				exporter, err = otlpmetricgrpc.New(ctx)
+				metricExporter, err = otlpmetricgrpc.New(ctx)
 				metricsProvider = metric.NewMeterProvider(
-					metric.WithReader(metric.NewPeriodicReader(exporter)),
+					metric.WithReader(metric.NewPeriodicReader(metricExporter)),
 				)
 			} else {
-				exporter, err = otlpmetrichttp.New(ctx)
+				metricExporter, err = otlpmetrichttp.New(ctx)
 				metricsProvider = metric.NewMeterProvider(
-					metric.WithReader(metric.NewPeriodicReader(exporter)),
+					metric.WithReader(metric.NewPeriodicReader(metricExporter)),
 				)
 			}
 		}
@@ -214,6 +215,11 @@ func gracefullyShutdown(ctx context.Context) {
 	if spanExporter != nil {
 		if err := spanExporter.Shutdown(ctx); err != nil {
 			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry span exporter", err)
+		}
+	}
+	if metricExporter != nil {
+		if err := metricExporter.Shutdown(ctx); err != nil {
+			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric exporter", err)
 		}
 	}
 	if batchSpanProcessor != nil {
