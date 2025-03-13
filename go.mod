@@ -27,8 +27,6 @@ require (
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/rs/zerolog v1.31.0
 	github.com/sirupsen/logrus v1.9.3
-	trpc.group/trpc-go/trpc-go v1.0.0
-	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.34.0
 	github.com/valyala/fasthttp v1.56.0
@@ -44,6 +42,7 @@ require (
 	google.golang.org/grpc v1.68.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
+	trpc.group/trpc-go/trpc-go v1.0.0
 )
 
 require (
@@ -212,7 +211,7 @@ require (
 	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20240528184218-531527333157 // indirect
