@@ -50,7 +50,7 @@ Create a `rule.json` file to specify the target function and hook code:
 - `OnEnter`: The hook code
 - `Path`: Directory containing the hook code.
 
-Additional fields like `OnExit` and `Order` can also be specified. Refer to [the documentation](rule_def.md) for details.
+Additional fields like `ReceiverType`, `OnExit` and `Order` can also be specified. Refer to [the documentation](rule_def.md) for details.
 
 ## 3. Verify the Rule
 Test the rule with a simple program:
