@@ -876,6 +876,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/langchain"
   },
   {
+  "Version": "[0.1.13,)",
   "ImportPath": "github.com/tmc/langchaingo/llms/ollama",
   "ReceiverType": "*LLM",
   "Function": "GenerateContent",
@@ -884,6 +885,7 @@
   "Path": "/Users/zjl/Downloads/Business/ai-go/tc"
   },
   {
+    "Version": "[0.1.13,)",
     "ImportPath": "github.com/tmc/langchaingo/llms/openai",
     "ReceiverType": "*LLM",
     "Function": "GenerateContent",
