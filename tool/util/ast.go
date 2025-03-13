@@ -352,11 +352,19 @@ func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
 		}
 		switch recvTypeExpr := funcDecl.Recv.List[0].Type.(type) {
 		case *dst.StarExpr:
+			if _, ok := recvTypeExpr.X.(*dst.Ident); !ok {
+				// This is a generic type, we don't support it yet
+				return false
+			}
 			return "*"+recvTypeExpr.X.(*dst.Ident).Name == receiverType
 		case *dst.Ident:
 			return recvTypeExpr.Name == receiverType
+		case *dst.IndexExpr:
+			// This is a generic type, we don't support it yet
+			return false
 		default:
-			Unimplemented()
+			msg := fmt.Sprintf("unexpected receiver type: %T", recvTypeExpr)
+			UnimplementedT(msg)
 		}
 	} else {
 		if HasReceiver(funcDecl) {

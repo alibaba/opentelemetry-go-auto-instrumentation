@@ -33,6 +33,13 @@ func TestGetSet(arg1 int, arg2, arg3 bool, arg4 float64, arg5 string,
 	return arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10
 }
 
+type GenericRecv[T any] struct{ X T }
+type GenericRecv2[T any] struct{ X T }
+
+func (t *GenericRecv[T]) TestGetSetRecv() {}
+
+func (t GenericRecv2[T]) TestGetSetRecv() {}
+
 type Recv struct{ X int }
 
 func (t *Recv) TestGetSetRecv(arg1 int, arg2 float64) (int, float64) {

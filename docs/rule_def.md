@@ -10,6 +10,8 @@
 - `Path`: The path to the directory containing the probe code. The path can be either go module url or local file system path, e.g. `github.com/foo/bar` or `/path/to/probe/code`.
 - `Version`: The version of the package that contains the function to be instrumented. e.g. `[1.0.0,1.1.0)`, the version range is `[1.0.0,1.1.0)`, which means the version is greater than or equal to `1.0.0` and less than `1.1.0`.
 
+> ![IMPORTANT]
+> We dont support generic types in the `ReceiverType` field now.
 
 ## Add a new file during compiling package
 - `ImportPath`: The import path of the package that contains the function to be instrumented.
