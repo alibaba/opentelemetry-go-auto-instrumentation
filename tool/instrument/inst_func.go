@@ -368,17 +368,17 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 			return err
 		}
 		// Restore the ast to original file once all rules are applied
-		newFile, err := rp.restoreAst(file, astRoot)
+		filePath, err := rp.restoreAst(file, astRoot)
 		if err != nil {
 			return err
 		}
 		// Line directive must be placed at the beginning of the line, otherwise
 		// it will be ignored by the compiler
-		err = rp.enableLineDirective(newFile)
+		err = rp.enableLineDirective(filePath)
 		if err != nil {
 			return err
 		}
-		rp.saveDebugFile(newFile)
+		rp.saveDebugFile(filePath)
 	}
 
 	err = rp.writeTrampoline(bundle.PackageName)
