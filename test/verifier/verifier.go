@@ -129,3 +129,22 @@ func VerifyRpcServerMetricsAttributes(attrs []attribute.KeyValue, method, servic
 	Assert(GetAttribute(attrs, "rpc.system").AsString() == system, "Except rpc.system to be %s, got %s", system, GetAttribute(attrs, "rpc.system").AsString())
 	Assert(GetAttribute(attrs, "server.address").AsString() == serverAddr, "Except rpc.system to be %s, got %s", serverAddr, GetAttribute(attrs, "server.address").AsString())
 }
+
+func VerifyLLMAttributes(span tracetest.SpanStub, name string, system string, model string) {
+	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
+	actualSystem := GetAttribute(span.Attributes, "gen_ai.system").AsString()
+	Assert(actualSystem == system, "Except gen_ai.system to be %s, got %s", system, actualSystem)
+	optName := GetAttribute(span.Attributes, "gen_ai.operation.name").AsString()
+	Assert(optName == name, "Except gen_ai.operation.name to be %s, got %s", name, optName)
+	optModel := GetAttribute(span.Attributes, "gen_ai.request.model").AsString()
+	Assert(optModel == model, "Except gen_ai.request.model to be %s, got %s", model, optModel)
+	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
+}
+func VerifyLLMCommonAttributes(span tracetest.SpanStub, name string, system string) {
+	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
+	actualSystem := GetAttribute(span.Attributes, "gen_ai.system").AsString()
+	Assert(actualSystem == system, "Except gen_ai.system to be %s, got %s", system, actualSystem)
+	optName := GetAttribute(span.Attributes, "gen_ai.operation.name").AsString()
+	Assert(optName == name, "Except gen_ai.operation.name to be %s, got %s", name, optName)
+	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
+}

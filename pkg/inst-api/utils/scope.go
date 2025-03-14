@@ -38,3 +38,4 @@ const GOMICRO_CLIENT_SCOPE_NAME = "pkg/rules/gomicro/client/gomicro_client_setup
 const GOMICRO_SERVER_SCOPE_NAME = "pkg/rules/gomicro/server/gomicro_server_setup.go"
 const TRPCGO_CLIENT_SCOPE_NAME = "pkg/rules/trpc/trpc_client_setup.go"
 const TRPCGO_SERVER_SCOPE_NAME = "pkg/rules/trpc/trpc_server_setup.go"
+const LANGCHAIN_SCOPE_NAME = "pkg/rules/langchain/setup.go"
