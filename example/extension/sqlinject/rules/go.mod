@@ -1,6 +1,8 @@
 module sqlinject
 
-go 1.22
+go 1.22.7
+
+toolchain go1.23.3
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ./../../../..
 
