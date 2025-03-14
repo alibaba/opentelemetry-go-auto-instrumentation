@@ -1,27 +1,29 @@
-angentAction模块
+## **angentAction module**
 
-github.com/tmc/langchaingo/agents下监听Executor下的doAction的方法，Executor作为agent的执行器，doAction方法为Executor调用agents下根据决策调用每个工具类的位置。所以agentAction监听的实际是agent对于每个工具使用，也就是agent的每一次动作。之所以没有监听工具模块，因为工具以接口方式实现过于细化而不可能一一监控。
+Listen to the doAction method under Executor in github.com/tmc/langchaingo/agents. As the executor of the agent, Executor calls the doAction method to invoke the corresponding tool classes under agents based on decision-making. Therefore, agentAction essentially listens to each action the agent takes when using a tool. The reason why the tool module is not monitored is that tools are implemented as interfaces, making them too granular to be individually monitored.
 
-chains模块
+## **chains module**
 
-github.com/tmc/langchaingo/chains下监听callChain方法，chains的call，run，predict最终都会到callChain处，callChain再调用对应的llm的call方法，当然这里个别会有例外，例如chains.NewConversation().Call()这个方法，就会脱离chain直接调用llms下的GenerateFromSinglePrompt直接对接模型获取消息。
+Listen to the callChain method under github.com/tmc/langchaingo/chains. The call, run, and predict methods of chains will eventually reach callChain, which then calls the corresponding LLM’s call method. However, there are exceptions, such as the chains.NewConversation().Call() method, which bypasses the chain and directly calls GenerateFromSinglePrompt under llms to interact with the model and obtain a response.
 
-Embed模块
+## **Embed module**
 
-github.com/tmc/langchaingo/embeddings下监听了EmbedQuery和batchedEmbedOnEnter两个方法，目前对于由embeddings.NewEmbedder方式创建的嵌入器可以监听，但对于如voyageai.NewVoyageAI()等创建的方式无法监听
+Listen to the EmbedQuery and batchedEmbedOnEnter methods under github.com/tmc/langchaingo/embeddings. Currently, embedding instances created using embeddings.NewEmbedder can be monitored, but instances created using methods like voyageai.NewVoyageAI() cannot be monitored.
 
-llmGenerateSingle模块
+## **llmGenerateSingle module**
 
-github.com/tmc/langchaingo/llm下监听GenerateFromSinglePrompt方法，该方法用于调用具有单个字符串提示符的LLM，期望单个字符串响应。langchain-go中大部分模型接口的call方法都调用这个方法，再通过这个方法调用GenerateContent。因为后面实现了对于具体模型接口的监听，此块监听有点多余，但模型接口众多需要一一监听且还未实现完全，所以此模块作为预留备案
+Listen to the GenerateFromSinglePrompt method under github.com/tmc/langchaingo/llm. This method is used to invoke an LLM with a single string prompt, expecting a single string response. In langchain-go, most model interface call methods invoke this method, which in turn calls GenerateContent. Since monitoring for specific model interfaces has been implemented, this monitoring is somewhat redundant. However, given the numerous model interfaces that require individual monitoring and the fact that implementation is not yet complete, this module is retained as a backup.
 
-relevantDocuments模块
+## **relevantDocuments module**
 
-github.com/tmc/langchaingo/vectorstores下监听GetRelevantDocuments方法，该方法作为Retriever 获取关联文档的方法，如果直接调用向量数据库自己本身的的SimilaritySearc方法是监听不到的。vectorstores.ToRetriever(db, 1).GetRelevantDocuments()这种方式才可以。
+Listen to the GetRelevantDocuments method under github.com/tmc/langchaingo/vectorstores. This method is used by the Retriever to fetch relevant documents. If the vector database’s own SimilaritySearch method is called directly, it cannot be monitored. Only calls made using vectorstores.ToRetriever(db, 1).GetRelevantDocuments() can be detected.
 
-llm模型接口（目前只包监听了ollama和openai接口，其他后续补充）
+## **LLM model interfaces (currently only monitoring ollama and openai interfaces).**
 
-ollama：
-监听github.com/tmc/langchaingo/llms/ollama下GenerateContent方法目前模型response结果只统计TotalTokens值，request值根据填入而定
+### ollama：
 
-openai：
-监听github.com/tmc/langchaingo/llms/openai下GenerateContent方法目前response结果只统计TotalTokens 值、ReasoningTokens值，request值根据填入而定
+Listen to the GenerateContent method under github.com/tmc/langchaingo/llms/ollama. Currently, the model response results only track the TotalTokens value, while the request values depend on the input.
+
+### openai：
+
+Listen to the GenerateContent method under github.com/tmc/langchaingo/llms/openai. Currently, the response results only track the TotalTokens and ReasoningTokens values, while the request values depend on the input.
