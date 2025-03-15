@@ -42,9 +42,13 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 // set the following environment variables based on https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
@@ -55,10 +59,12 @@ const exec_name = "otel"
 const report_protocol = "OTEL_EXPORTER_OTLP_PROTOCOL"
 const trace_report_protocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 const metrics_exporter = "OTEL_METRICS_EXPORTER"
+const trace_exporter = "OTEL_TRACES_EXPORTER"
 const prometheus_exporter_port = "OTEL_EXPORTER_PROMETHEUS_PORT"
 const default_prometheus_exporter_port = "9464"
 
 var (
+	metricExporter     metric.Exporter
 	spanExporter       trace.SpanExporter
 	traceProvider      *trace.TracerProvider
 	metricsProvider    *metric.MeterProvider
@@ -92,16 +98,21 @@ func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
 		return simpleProcessor
 	} else {
 		var err error
-		if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
-			spanExporter, err = otlptrace.New(ctx, otlptracegrpc.NewClient())
-			if err != nil {
-				log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
-			}
+		if os.Getenv(trace_exporter) == "none" {
+			spanExporter = tracetest.NewNoopExporter()
+		} else if os.Getenv(trace_exporter) == "console" {
+			spanExporter, err = stdouttrace.New()
+		} else if os.Getenv(trace_exporter) == "zipkin" {
+			spanExporter, err = zipkin.New("")
 		} else {
-			spanExporter, err = otlptrace.New(ctx, otlptracehttp.NewClient())
-			if err != nil {
-				log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
+			if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
+				spanExporter, err = otlptrace.New(ctx, otlptracegrpc.NewClient())
+			} else {
+				spanExporter, err = otlptrace.New(ctx, otlptracehttp.NewClient())
 			}
+		}
+		if err != nil {
+			log.Fatalf("%s: %v", "Failed to create the OpenTelemetry trace exporter", err)
 		}
 		batchSpanProcessor = trace.NewBatchSpanProcessor(spanExporter)
 		return batchSpanProcessor
@@ -127,37 +138,39 @@ func initOpenTelemetry(ctx context.Context) error {
 func initMetrics() error {
 	ctx := context.Background()
 	// TODO: abstract the if-else
+	var err error
 	if verifier.IsInTest() {
 		metricsProvider = metric.NewMeterProvider(
 			metric.WithReader(verifier.ManualReader),
 		)
 	} else {
-		if os.Getenv(metrics_exporter) == "prometheus" {
-			exporter, err := prometheus.New()
+		if os.Getenv(metrics_exporter) == "console" {
+			metricExporter, err = stdoutmetric.New()
+		} else if os.Getenv(metrics_exporter) == "prometheus" {
+			promExporter, err := prometheus.New()
 			if err != nil {
-				log.Fatalf("new otlp metric prometheus exporter failed: %v", err)
+				log.Fatalf("Failed to create prometheus metric exporter: %v", err)
 			}
 			metricsProvider = metric.NewMeterProvider(
-				metric.WithReader(exporter),
+				metric.WithReader(promExporter),
 			)
 			go serveMetrics()
-		} else if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
-			exporter, err := otlpmetricgrpc.New(ctx)
-			if err != nil {
-				log.Fatalf("new otlp metric grpc exporter failed: %v", err)
-			}
-			metricsProvider = metric.NewMeterProvider(
-				metric.WithReader(metric.NewPeriodicReader(exporter)),
-			)
 		} else {
-			exporter, err := otlpmetrichttp.New(ctx)
-			if err != nil {
-				log.Fatalf("new otlp metric http exporter failed: %v", err)
+			if os.Getenv(report_protocol) == "grpc" || os.Getenv(trace_report_protocol) == "grpc" {
+				metricExporter, err = otlpmetricgrpc.New(ctx)
+				metricsProvider = metric.NewMeterProvider(
+					metric.WithReader(metric.NewPeriodicReader(metricExporter)),
+				)
+			} else {
+				metricExporter, err = otlpmetrichttp.New(ctx)
+				metricsProvider = metric.NewMeterProvider(
+					metric.WithReader(metric.NewPeriodicReader(metricExporter)),
+				)
 			}
-			metricsProvider = metric.NewMeterProvider(
-				metric.WithReader(metric.NewPeriodicReader(exporter)),
-			)
 		}
+	}
+	if err != nil {
+		log.Fatalf("Failed to create metric exporter: %v", err)
 	}
 	if metricsProvider == nil {
 		return errors.New("No MeterProvider is provided")
@@ -205,6 +218,11 @@ func gracefullyShutdown(ctx context.Context) {
 	if spanExporter != nil {
 		if err := spanExporter.Shutdown(ctx); err != nil {
 			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry span exporter", err)
+		}
+	}
+	if metricExporter != nil {
+		if err := metricExporter.Shutdown(ctx); err != nil {
+			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric exporter", err)
 		}
 	}
 	if batchSpanProcessor != nil {

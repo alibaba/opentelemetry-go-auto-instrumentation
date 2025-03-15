@@ -15,6 +15,7 @@
 package instrument
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
@@ -22,9 +23,24 @@ import (
 	"github.com/dave/dst"
 )
 
-func addStructField(rule *resource.InstStructRule, decl dst.Decl) {
+func (rp *RuleProcessor) addStructField(rule *resource.InstStructRule, decl dst.Decl) {
 	util.Assert(rule.FieldName != "" && rule.FieldType != "",
 		"rule must have field and type")
+	// Find last field in the struct and record its position
+	stType := decl.(*dst.GenDecl).Specs[0].(*dst.TypeSpec).Type.(*dst.StructType)
+	fields := stType.Fields.List
+	// Find the last field containing the line number in the struct
+	for i := len(fields) - 1; i >= 0; i-- {
+		field := fields[i]
+		fieldPos := rp.parser.FindPosition(field)
+		if fieldPos.IsValid() {
+			tag := fmt.Sprintf("//line %s", fieldPos.String())
+			field.Decs.Before = dst.EmptyLine
+			field.Decs.Start.Append(tag)
+			util.Log("== Last field %v", tag)
+			break
+		}
+	}
 	util.Log("Apply struct rule %v", rule)
 	util.AddStructField(decl, rule.FieldName, rule.FieldType)
 }
@@ -41,7 +57,7 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 			for structName, rules := range struct2Rules {
 				if util.MatchStructDecl(decl, structName) {
 					for _, rule := range rules {
-						addStructField(rule, decl)
+						rp.addStructField(rule, decl)
 					}
 				}
 			}
@@ -49,6 +65,12 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		// Once all struct rules are applied, we restore AST to file and use it
 		// in future compilation
 		newFile, err := rp.restoreAst(file, astRoot)
+		if err != nil {
+			return err
+		}
+		// Line directive must be placed at the beginning of the line, otherwise
+		// it will be ignored by the compiler
+		err = rp.enableLineDirective(newFile)
 		if err != nil {
 			return err
 		}
