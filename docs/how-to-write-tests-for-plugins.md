@@ -160,6 +160,6 @@ APIs, the agent may fail on a newly released version of the library. We run inst
 the latest version of the library, as fetched from remote, as part of a nightly build. If a new version of a library will
 not work with the agent, we find out through this build and can address it by the next release of the agent.
 
-Users can add a muzzle check case by calling `NewLatestDepthTestCase`, the arguments taken by `NewLatestDepthTestCase`
+Users can add a latest-depth check case by calling `NewLatestDepthTestCase`, the arguments taken by `NewLatestDepthTestCase`
 are almost the same as `NewGeneralTestCase`. You need to additionally specify the dependency name of the plugin and the list of
 classes that need to do the latest-depth check.
