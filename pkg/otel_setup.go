@@ -146,6 +146,12 @@ func initMetrics() error {
 	} else {
 		if os.Getenv(metrics_exporter) == "console" {
 			metricExporter, err = stdoutmetric.New()
+			if err != nil {
+				log.Fatalf("Failed to create prometheus metric exporter: %v", err)
+			}
+			metricsProvider = metric.NewMeterProvider(
+				metric.WithReader(metric.NewPeriodicReader(metricExporter)),
+			)
 		} else if os.Getenv(metrics_exporter) == "prometheus" {
 			promExporter, err := prometheus.New()
 			if err != nil {
