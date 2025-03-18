@@ -6,8 +6,7 @@
 
 该项目为希望利用 OpenTelemetry 的 Golang 应用程序提供了一个自动解决方案。
 利用 OpenTelemetry 实现有效可观察性的 Golang 应用程序提供自动解决方案。目标应用程序无需更改代码
-在编译时完成。
-时完成。只需在 `go build` 中添加 `otel` 前缀即可开始 :rocket：
+在编译时完成。只需在 `go build` 中添加 `otel` 前缀即可开始 :rocket：
 
 # 安装
 
