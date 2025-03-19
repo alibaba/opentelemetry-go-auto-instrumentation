@@ -18,11 +18,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"strings"
 	"sync"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -31,6 +32,7 @@ var mongoInstrumenter = BuildMongoOtelInstrumenter()
 
 var mongoEnabler instrumenter.InstrumentEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
+//go:linkname mongoOnEnter go.mongodb.org/mongo-driver/mongo.mongoOnEnter
 func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
 	if !mongoEnabler.Enable() {
 		return

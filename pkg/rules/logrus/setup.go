@@ -15,6 +15,8 @@
 package logrus
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/sirupsen/logrus"
@@ -23,6 +25,7 @@ import (
 
 var logrusEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
+//go:linkname logNewOnEnter github.com/sirupsen/logrus.logNewOnEnter
 func logNewOnEnter(call api.CallContext, log *logrus.Logger, formatter logrus.Formatter) {
 	if !logrusEnabler.Enable() {
 		return
@@ -30,6 +33,7 @@ func logNewOnEnter(call api.CallContext, log *logrus.Logger, formatter logrus.Fo
 	call.SetData(log)
 }
 
+//go:linkname logNewOnExit github.com/sirupsen/logrus.logNewOnExit
 func logNewOnExit(call api.CallContext) {
 	if !logrusEnabler.Enable() {
 		return
