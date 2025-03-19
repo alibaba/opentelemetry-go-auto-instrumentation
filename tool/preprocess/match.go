@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/data"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -90,7 +90,7 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 }
 
 func loadDefaultRules() []resource.InstRule {
-	rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
+	rules, err := loadRuleRaw(data.UseDefaultRuleJson())
 	if err != nil {
 		util.Log("Failed to load default rules: %v", err)
 		return nil
@@ -146,7 +146,7 @@ func findAvailableRules() []resource.InstRule {
 func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 	importPath := findFlagValue(cmdArgs, util.BuildPattern)
 	util.Assert(importPath != "", "sanity check")
-	util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
+	// util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
 	availables := make([]resource.InstRule, len(rm.availableRules[importPath]))
 
 	// Okay, we are interested in these candidates, let's read it and match with
@@ -251,7 +251,8 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 				if genDecl, ok := decl.(*dst.GenDecl); ok {
 					if rl, ok := rule.(*resource.InstStructRule); ok {
 						if util.MatchStructDecl(genDecl, rl.StructType) {
-							util.Log("Match struct rule %s", rule)
+							util.Log("Match struct rule %s with %v",
+								rule, cmdArgs)
 							err = bundle.AddFile2StructRule(file, rl)
 							if err != nil {
 								util.Log("Failed to add struct rule: %v", err)
@@ -265,7 +266,8 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 					if rl, ok := rule.(*resource.InstFuncRule); ok {
 						if util.MatchFuncDecl(funcDecl, rl.Function,
 							rl.ReceiverType) {
-							util.Log("Match func rule %s", rule)
+							util.Log("Match func rule %s with %v",
+								rule, cmdArgs)
 							err = bundle.AddFile2FuncRule(file, rl)
 							if err != nil {
 								util.Log("Failed to add func rule: %v", err)

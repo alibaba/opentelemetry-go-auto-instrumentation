@@ -15,7 +15,10 @@
 package error5
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
+//go:linkname onEnterTestSkipOnly errorstest/auxiliary.onEnterTestSkipOnly
 func onEnterTestSkipOnly(call api.CallContext) {}

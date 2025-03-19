@@ -34,10 +34,33 @@ const (
 	OtelTrampolineFile = "otel_trampoline.go"
 )
 
+// Any modification should be synced with pkg/api declaration
+const APIDeclaration = `type CallContext interface {
+	SetSkipCall(bool)
+	IsSkipCall() bool
+	SetData(interface{})
+	GetData() interface{}
+	GetKeyData(key string) interface{}
+	SetKeyData(key string, val interface{})
+	HasKeyData(key string) bool
+	GetParam(idx int) interface{}
+	SetParam(idx int, val interface{})
+	GetReturnVal(idx int) interface{}
+	SetReturnVal(idx int, val interface{})
+	GetFuncName() string
+	GetPackageName() string
+}`
+
+func copyAPI(target string, pkgName string) (string, error) {
+	snippet := APIDeclaration
+	snippet = "package " + pkgName + "\n" + snippet
+	return util.WriteFile(target, snippet)
+}
+
 func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
 	// Generate  otel_api.go at working directory
 	target := filepath.Join(rp.workDir, OtelAPIFile)
-	file, err := resource.CopyAPITo(target, pkgName)
+	file, err := copyAPI(target, pkgName)
 	if err != nil {
 		return err
 	}

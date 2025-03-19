@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"os"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/cloudwego/hertz/pkg/app"
@@ -57,6 +58,7 @@ func (m *hertzOpentelemetryTracer) Finish(ctx context.Context, c *app.RequestCon
 	}
 }
 
+//go:linkname beforeHertzServerBuild github.com/cloudwego/hertz/pkg/app/server.beforeHertzServerBuild
 func beforeHertzServerBuild(call api.CallContext, opts ...config.Option) {
 	if !hertzServerEnabler.Enable() {
 		return
