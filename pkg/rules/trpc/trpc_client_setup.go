@@ -17,6 +17,7 @@ package trpc
 import (
 	"context"
 	"strings"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"trpc.group/trpc-go/trpc-go/client"
@@ -26,6 +27,8 @@ import (
 var trpcClientInstrumenter = BuildTrpcClientInstrumenter()
 
 // func (c *client) Invoke(ctx context.Context, reqBody interface{}, rspBody interface{}, opt ...Option) (err error)
+//
+//go:linkname clientTrpcOnEnter trpc.group/trpc-go/trpc-go/client.clientTrpcOnEnter
 func clientTrpcOnEnter(call api.CallContext, _ interface{}, ctx context.Context, reqBody interface{}, rspBody interface{}, opts ...client.Option) {
 	if !trpcEnabler.Enable() {
 		return
@@ -56,6 +59,8 @@ func clientTrpcOnEnter(call api.CallContext, _ interface{}, ctx context.Context,
 }
 
 // func (c *client) Invoke(ctx context.Context, reqBody interface{}, rspBody interface{}, opt ...Option) (err error)
+//
+//go:linkname clientTrpcOnExit trpc.group/trpc-go/trpc-go/client.clientTrpcOnExit
 func clientTrpcOnExit(call api.CallContext, err error) {
 	if !trpcEnabler.Enable() {
 		return

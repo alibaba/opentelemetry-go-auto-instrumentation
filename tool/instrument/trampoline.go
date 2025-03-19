@@ -126,9 +126,9 @@ func getNames(list *dst.FieldList) []string {
 
 func makeOnXName(t *resource.InstFuncRule, onEnter bool) string {
 	if onEnter {
-		return util.GetVarNameOfFunc(t.OnEnter)
+		return t.OnEnter
 	} else {
-		return util.GetVarNameOfFunc(t.OnExit)
+		return t.OnExit
 	}
 }
 
@@ -275,8 +275,17 @@ func (rp *RuleProcessor) addHookFuncVar(t *resource.InstFuncRule,
 	}
 
 	// Generate var decl
-	varDecl := util.NewVarDecl(makeOnXName(t, onEnter), paramTypes)
-	rp.addDecl(varDecl)
+	funcDecl := &dst.FuncDecl{
+		Name: &dst.Ident{
+			Name: makeOnXName(t, onEnter),
+		},
+		Type: &dst.FuncType{
+			Func:   false,
+			Params: paramTypes,
+		},
+	}
+	// varDecl := util.NewVarDecl(, paramTypes)
+	rp.addDecl(funcDecl)
 	return nil
 }
 

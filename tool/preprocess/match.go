@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/data"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -90,7 +90,7 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 }
 
 func loadDefaultRules() []resource.InstRule {
-	rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
+	rules, err := loadRuleRaw(data.UseDefaultRuleJson())
 	if err != nil {
 		util.Log("Failed to load default rules: %v", err)
 		return nil

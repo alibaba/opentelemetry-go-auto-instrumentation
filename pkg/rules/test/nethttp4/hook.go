@@ -15,10 +15,14 @@
 package nethttp4
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 // many args have interface type
+//
+//go:linkname onEnterNewRequest1 net/http.onEnterNewRequest1
 func onEnterNewRequest1(call api.CallContext, a, b interface{}, c interface{}) {
 	println("NewRequest1()")
 }

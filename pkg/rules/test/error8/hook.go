@@ -15,7 +15,10 @@
 package error8
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
+//go:linkname onExitP21 errorstest/auxiliary.onExitP21
 func onExitP21(call api.CallContext) {}
