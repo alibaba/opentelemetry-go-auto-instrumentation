@@ -1,5 +1,3 @@
-//go:build ignore
-
 // Copyright (c) 2024 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,16 +18,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.opentelemetry.io/otel/exporters/prometheus"
 	"log"
 	http2 "net/http"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
@@ -77,6 +76,7 @@ func init() {
 		metric.GetTestMetrics = testaccess.GetTestMetrics
 		trace.ResetTestSpans = testaccess.ResetTestSpans
 	}
+	println("=====> init opentelemetry")
 	ctx := context.Background()
 	// graceful shutdown
 	runtime.ExitHook = func() {

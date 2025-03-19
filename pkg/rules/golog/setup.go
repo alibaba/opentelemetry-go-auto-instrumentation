@@ -15,9 +15,11 @@
 package golog
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"log"
 	"strings"
+	_ "unsafe"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -25,6 +27,7 @@ import (
 
 var glogEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
+//go:linkname goLogWriteOnEnter log.goLogWriteOnEnter
 func goLogWriteOnEnter(call api.CallContext, ce *log.Logger, pc uintptr, calldepth int, appendOutput func([]byte) []byte) {
 	if !glogEnabler.Enable() {
 		return

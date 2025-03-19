@@ -16,10 +16,11 @@ package grpc
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"os"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	kt "github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
@@ -33,6 +34,7 @@ var kratosEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 
+//go:linkname kratosNewGRPCServiceOnEnter github.com/go-kratos/kratos/v2/transport/grpc.kratosNewGRPCServiceOnEnter
 func kratosNewGRPCServiceOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
 	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE) != "true" {
 		return
