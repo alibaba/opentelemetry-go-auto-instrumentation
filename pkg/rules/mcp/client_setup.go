@@ -19,23 +19,29 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+//go:linkname clientSseOnEnter github.com/mark3labs/mcp-go/client.clientSseOnEnter
 func clientSseOnEnter(call api.CallContext, c *client.SSEMCPClient,
 	ctx context.Context,
 	method string,
 	params interface{}) {
 	clientOnEnter(call, ctx, method, params)
 }
+
+//go:linkname clientStdioOnEnter github.com/mark3labs/mcp-go/client.clientStdioOnEnter
 func clientStdioOnEnter(call api.CallContext, c *client.StdioMCPClient,
 	ctx context.Context,
 	method string,
 	params interface{}) {
 	clientOnEnter(call, ctx, method, params)
 }
+
 func clientOnEnter(call api.CallContext,
 	ctx context.Context,
 	method string,
@@ -61,9 +67,13 @@ func clientOnEnter(call api.CallContext,
 	data["mcp_client_request"] = request
 	call.SetData(data)
 }
+
+//go:linkname clientSseOnExit github.com/mark3labs/mcp-go/client.clientSseOnExit
 func clientSseOnExit(call api.CallContext, j *json.RawMessage, err error) {
 	clientOnExit(call, j, err)
 }
+
+//go:linkname clientStdioOnExit github.com/mark3labs/mcp-go/client.clientStdioOnExit
 func clientStdioOnExit(call api.CallContext, j *json.RawMessage, err error) {
 	clientOnExit(call, j, err)
 }

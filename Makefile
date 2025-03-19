@@ -100,7 +100,7 @@ clean:
 	go clean
 
 test:
-	go test -timeout 50m -v $(MOD_NAME)/test
+	go test -a -timeout 50m -v $(MOD_NAME)/test
 
 install: build
 	@echo "Running install process..."

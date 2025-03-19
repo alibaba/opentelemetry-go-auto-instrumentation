@@ -16,6 +16,7 @@ package resource
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
@@ -132,7 +133,9 @@ func FindHookFile(rule *InstFuncRule) (string, error) {
 			return file, nil
 		}
 	}
-	return "", nil
+	return "", errc.New(errc.ErrNotExist,
+		fmt.Sprintf("no hook %s/%s found for %s from %v",
+			rule.OnEnter, rule.OnExit, rule.Function, files))
 }
 
 func FindRuleFiles(rule InstRule) ([]string, error) {

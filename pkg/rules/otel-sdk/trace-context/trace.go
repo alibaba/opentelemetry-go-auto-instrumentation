@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Copyright (c) 2024 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +17,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package otel // import "go.opentelemetry.io/otel"
+package trace_context // import "go.opentelemetry.io/otel"
 
 import (
 	"go.opentelemetry.io/otel/internal/global"

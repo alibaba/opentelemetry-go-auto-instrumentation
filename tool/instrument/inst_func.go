@@ -34,10 +34,33 @@ const (
 	OtelTrampolineFile = "otel_trampoline.go"
 )
 
+// Any modification should be synced with pkg/api declaration
+const APIDeclaration = `type CallContext interface {
+	SetSkipCall(bool)
+	IsSkipCall() bool
+	SetData(interface{})
+	GetData() interface{}
+	GetKeyData(key string) interface{}
+	SetKeyData(key string, val interface{})
+	HasKeyData(key string) bool
+	GetParam(idx int) interface{}
+	SetParam(idx int, val interface{})
+	GetReturnVal(idx int) interface{}
+	SetReturnVal(idx int, val interface{})
+	GetFuncName() string
+	GetPackageName() string
+}`
+
+func copyAPI(target string, pkgName string) (string, error) {
+	snippet := APIDeclaration
+	snippet = "package " + pkgName + "\n" + snippet
+	return util.WriteFile(target, snippet)
+}
+
 func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
 	// Generate  otel_api.go at working directory
 	target := filepath.Join(rp.workDir, OtelAPIFile)
-	file, err := resource.CopyAPITo(target, pkgName)
+	file, err := copyAPI(target, pkgName)
 	if err != nil {
 		return err
 	}
@@ -325,7 +348,6 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 	if err != nil {
 		return err
 	}
-
 	// Applied all matched func rules, either inserting raw code or inserting
 	// our trampoline calls.
 	for file, fn2rules := range bundle.File2FuncRules {
@@ -335,20 +357,20 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 			return err
 		}
 		rp.trampolineJumps = make([]*TJump, 0)
+		// Since we may genarate many functions into the same file, while we dont
+		// want to further instrument these functions, we need to make sure that
+		// the generated function are exclued from the instrumented file.
+		oldDecls := make([]dst.Decl, len(astRoot.Decls))
+		copy(oldDecls, astRoot.Decls)
 		for fnName, rules := range fn2rules {
-			for _, decl := range astRoot.Decls {
+			for _, decl := range oldDecls {
 				nameAndRecvType := strings.Split(fnName, ",")
 				name := nameAndRecvType[0]
 				recvType := nameAndRecvType[1]
 				if util.MatchFuncDecl(decl, name, recvType) {
 					fnDecl := decl.(*dst.FuncDecl)
+					util.Assert(fnDecl.Body != nil, "target func boby is empty")
 					fnName := fnDecl.Name.Name
-					// We dont want to instrument trampoline themselves
-					if strings.HasPrefix(fnName, TrampolineOnEnterName) ||
-						strings.HasPrefix(fnName, TrampolineOnExitName) {
-						continue
-					}
-
 					// Save raw function declaration
 					rp.rawFunc = fnDecl
 					// The func rule can either fully match the target function
@@ -373,7 +395,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 						if err != nil {
 							return err
 						}
-						util.Log("Apply func rule %s", rule)
+						util.Log("Apply func rule %s (%v)", rule, rp.compileArgs)
 					}
 					// break
 				}

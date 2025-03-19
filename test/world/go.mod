@@ -2,6 +2,10 @@ module world
 
 go 1.22
 
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
+
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../opentelemetry-go-auto-instrumentation/pkg
+
 require (
 	github.com/cloudwego/hertz v0.9.3
 	github.com/gin-gonic/gin v1.9.1

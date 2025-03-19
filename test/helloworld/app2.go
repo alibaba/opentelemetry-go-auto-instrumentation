@@ -19,12 +19,14 @@ import (
 	"time"
 
 	_ "go.opentelemetry.io/otel"
+	_ "golang.org/x/text"
 	"golang.org/x/time/rate"
 
 	// When building with vendor mode, we requires the following packages
 	// to be imported to ensure they are included in the vendor directory.
 	// In this way, we can build the artifact offline, i.e. without the
 	// need to download the dependencies.
+	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	_ "github.com/mohae/deepcopy"
 	_ "github.com/prometheus/client_golang/prometheus/promhttp"
 	_ "go.opentelemetry.io/contrib/instrumentation/runtime"

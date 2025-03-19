@@ -41,3 +41,7 @@ example/log/test
 test/build/cmd/cmd
 ssa.html
 otel_pkg
+ssa.html
+otel_importer.go
+test/fiberv2/v2.43.0/fiber_http
+test/redis/v9.0.5/test_redis_ring

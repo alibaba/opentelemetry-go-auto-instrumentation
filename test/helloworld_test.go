@@ -15,6 +15,7 @@
 package test
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -59,6 +60,7 @@ func TestRunHelloworld(t *testing.T) {
 }
 
 func runModVendor(t *testing.T) {
+	_ = os.RemoveAll("vendor")
 	cmd := exec.Command("go", "mod", "tidy")
 	out, err := cmd.CombinedOutput()
 	if err != nil {

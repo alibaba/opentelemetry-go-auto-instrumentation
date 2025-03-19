@@ -15,9 +15,12 @@
 package error17
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
+//go:linkname onExitBadDep errorstest/dep.onExitBadDep
 func onExitBadDep(call api.CallContext, _ string) {
 	call.SetReturnVal(0, "gooddep")
 	call.SetSkipCall(true)

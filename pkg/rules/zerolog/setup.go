@@ -15,6 +15,8 @@
 package zerolog
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -31,6 +33,7 @@ func (z zeroLogInnerEnabler) Enable() bool {
 
 var zeroLogEnabler = zeroLogInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_ZEROLOG_ENABLED") != "false"}
 
+//go:linkname zeroLogWriteOnEnter github.com/rs/zerolog.zerologWriteOnEnter
 func zeroLogWriteOnEnter(call api.CallContext, ce *zerolog.Event, msg string) {
 	if !zeroLogEnabler.Enable() {
 		return

@@ -16,11 +16,15 @@ package langchain
 
 import (
 	"context"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/tmc/langchaingo/embeddings"
 )
 
 // EmbedQuery
+//
+//go:linkname singleEmbedOnEnter github.com/tmc/langchaingo/embeddings.singleEmbedOnEnter
 func singleEmbedOnEnter(call api.CallContext,
 	e *embeddings.EmbedderImpl,
 	ctx context.Context,
@@ -35,6 +39,8 @@ func singleEmbedOnEnter(call api.CallContext,
 	data["ctx"] = langCtx
 	call.SetData(data)
 }
+
+//go:linkname singleEmbedOnExit github.com/tmc/langchaingo/embeddings.singleEmbedOnExit
 func singleEmbedOnExit(
 	call api.CallContext,
 	emb []float32,
@@ -53,6 +59,8 @@ func singleEmbedOnExit(
 }
 
 // BatchedEmbed
+//
+//go:linkname batchedEmbedOnEnter github.com/tmc/langchaingo/embeddings.batchedEmbedOnEnter
 func batchedEmbedOnEnter(call api.CallContext,
 	ctx context.Context,
 	embedder embeddings.EmbedderClient,
@@ -71,6 +79,8 @@ func batchedEmbedOnEnter(call api.CallContext,
 	data["ctx"] = langCtx
 	call.SetData(data)
 }
+
+//go:linkname batchedEmbedOnExit github.com/tmc/langchaingo/embeddings.batchedEmbedOnExit
 func batchedEmbedOnExit(
 	call api.CallContext,
 	emb [][]float32,
