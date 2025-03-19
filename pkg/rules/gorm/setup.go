@@ -16,6 +16,7 @@ package gorm
 
 import (
 	"context"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	driver "github.com/go-sql-driver/mysql"
@@ -28,6 +29,7 @@ var requestKey = "otel-request"
 
 var gormInstrumenter = BuildGormInstrumenter()
 
+//go:linkname afterGormOpen gorm.io/gorm.afterGromOpen
 func afterGormOpen(call api.CallContext, db *gorm.DB, err error) {
 	if err != nil || db == nil {
 		return

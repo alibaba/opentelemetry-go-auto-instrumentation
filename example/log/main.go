@@ -17,6 +17,7 @@ package main
 import (
 	"net/http"
 
+	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 )
