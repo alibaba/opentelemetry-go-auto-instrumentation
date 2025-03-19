@@ -15,8 +15,11 @@
 package error18
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
+//go:linkname onEnterTargetWithFuncType errorstest/auxiliary.onEnterTargetWithFuncType
 func onEnterTargetWithFuncType(call api.CallContext, _ interface{}) {
 }

@@ -28,7 +28,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
@@ -129,9 +128,7 @@ func newDepProcessor() *DepProcessor {
 		localImportPath: "",
 		sources:         nil,
 		rule2Dir:        map[*resource.InstFuncRule]string{},
-		ruleCache:       pkg.ExportRuleCache(),
 		allowVendor:     false,
-		allowTidy:       false,
 	}
 	return dp
 }
@@ -321,7 +318,6 @@ func (dp *DepProcessor) init() error {
 		switch s {
 		case syscall.SIGTERM, syscall.SIGINT:
 			util.Log("Interrupted instrumentation, cleaning up")
-			dp.postProcess()
 		default:
 		}
 	}()
@@ -337,8 +333,7 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
-	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
+	_ = os.RemoveAll(dp.generatedOf("importer.go"))
 
 	// Restore everything we have modified during instrumentation
 	_ = dp.restoreBackupFiles()
@@ -693,38 +688,6 @@ func (dp *DepProcessor) addOtelImports() error {
 	return nil
 }
 
-// Note in this function, error is tolerated as we are best-effort to clean up
-// any obsolete materials, but it's not fatal if we fail to do so.
-func (dp *DepProcessor) preclean() {
-	ruleImport, _ := dp.getImportPathOf(OtelPkgDir + "/" + OtelRules)
-	for _, file := range dp.sources {
-		if !util.IsGoFile(file) {
-			continue
-		}
-		astRoot, _ := util.ParseAstFromFile(file)
-		if astRoot == nil {
-			continue
-		}
-		if util.RemoveImport(astRoot, ruleImport) != nil {
-			if config.GetConf().Verbose {
-				util.Log("Remove obsolete import %v from %v",
-					ruleImport, file)
-			}
-			// Remove the import from the file, but before that, we need to
-			// backup the file
-			dp.backupFile(file)
-			_, err := util.WriteAstToFile(astRoot, file)
-			if err != nil {
-				util.Log("Failed to write ast to %v: %v", file, err)
-			}
-		}
-	}
-	// Clean otel_pkgdep directory
-	if util.PathExists(dp.generatedOf(OtelPkgDir)) {
-		_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
-	}
-}
-
 func (dp *DepProcessor) storeRuleBundles() error {
 	err := resource.StoreRuleBundles(dp.bundles)
 	if err != nil {
@@ -777,13 +740,6 @@ func (dp *DepProcessor) runModVendor() error {
 	out, err := runCmdCombinedOutput(dp.getGoModDir(),
 		"go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
-	return err
-}
-
-func (dp *DepProcessor) runGoGet(dep string) error {
-	out, err := runCmdCombinedOutput(dp.getGoModDir(),
-		"go", "get", dep)
-	util.Log("Run go get %v: %v", dep, out)
 	return err
 }
 
@@ -966,37 +922,8 @@ func (dp *DepProcessor) saveDebugFiles() {
 }
 
 func (dp *DepProcessor) setupDeps() error {
-	// Pre-clean before processing in case of any obsolete materials left
-	dp.preclean()
-
-	err := dp.addOtelImports()
-	if err != nil {
-		return err
-	}
-
-	// Pinning otel version in go.mod
-	err = dp.pinDepVersion()
-	if err != nil {
-		return err
-	}
-
-	// Run go mod tidy first to fetch all dependencies
-	if dp.allowTidy {
-		err = dp.runModTidy()
-		if err != nil {
-			return err
-		}
-	}
-
-	if dp.allowVendor {
-		err = dp.runModVendor()
-		if err != nil {
-			return err
-		}
-	}
-
 	// Run dry build to the build blueprint
-	err = runDryBuild(dp.goBuildCmd)
+	err := runDryBuild(dp.goBuildCmd)
 	if err != nil {
 		// Tell us more about what happened in the dry run
 		errLog, _ := util.ReadFile(util.GetLogPath(DryRunLog))
@@ -1010,29 +937,13 @@ func (dp *DepProcessor) setupDeps() error {
 		return err
 	}
 
-	err = dp.copyPkgDep()
-	if err != nil {
-		return err
-	}
-
 	// Find used rules according to compile commands
 	err = dp.matchRules(compileCmds)
 	if err != nil {
 		return err
 	}
 
-	err = dp.fetchRules()
-	if err != nil {
-		return err
-	}
-
-	// Setup rules according to compile commands
-	err = dp.setupRules()
-	if err != nil {
-		return err
-	}
-
-	err = dp.replaceOtelImports()
+	err = dp.fetchRules(compileCmds)
 	if err != nil {
 		return err
 	}
@@ -1046,6 +957,12 @@ func (dp *DepProcessor) setupDeps() error {
 	return nil
 }
 
+func (dp *DepProcessor) newImporter() {
+	content := `package main
+import _ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	`
+	util.WriteFile(dp.generatedOf("importer.go"), content)
+}
 func Preprocess() error {
 	// Make sure the project is modularized otherwise we cannot proceed
 	err := precheck()
@@ -1059,7 +976,6 @@ func Preprocess() error {
 	if err != nil {
 		return err
 	}
-
 	defer func() { dp.postProcess() }()
 	{
 		defer util.PhaseTimer("Preprocess")()
@@ -1070,33 +986,44 @@ func Preprocess() error {
 			return err
 		}
 
+		dp.newImporter()
+
+		dp.runModTidy()
+
 		// Run a dry build to get all dependencies needed for the project
 		// Match the dependencies with available rules and prepare them
 		// for the actual instrumentation
-		err = dp.setupDeps()
+		// Run dry build to the build blueprint
+		err = runDryBuild(dp.goBuildCmd)
+		if err != nil {
+			// Tell us more about what happened in the dry run
+			errLog, _ := util.ReadFile(util.GetLogPath(DryRunLog))
+			err = errc.Adhere(err, "reason", errLog)
+			return err
+		}
+
+		// Find compile commands from dry run log
+		compileCmds, err := getCompileCommands()
 		if err != nil {
 			return err
 		}
 
-		// Pinning dependencies version in go.mod
-		err = dp.pinDepVersion()
+		// Find used rules according to compile commands
+		err = dp.matchRules(compileCmds)
 		if err != nil {
 			return err
 		}
 
-		// Run go mod tidy to fetch dependencies
-		if dp.allowTidy {
-			err = dp.runModTidy()
-			if err != nil {
-				return err
-			}
+		err = dp.fetchRules(compileCmds)
+		if err != nil {
+			return err
 		}
 
-		if dp.allowVendor {
-			err = dp.runModVendor()
-			if err != nil {
-				return err
-			}
+		// Save matched rules into file, from this point on, we no longer modify
+		// the rules
+		err = dp.storeRuleBundles()
+		if err != nil {
+			return err
 		}
 
 		// 	// Retain otel rules and modified user files for debugging

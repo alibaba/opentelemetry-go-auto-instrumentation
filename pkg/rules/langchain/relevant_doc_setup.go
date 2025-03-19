@@ -16,12 +16,16 @@ package langchain
 
 import (
 	"context"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 )
 
 // GetRelevantDocuments
+//
+//go:linkname getRelevantDocumentsOnEnter github.com/tmc/langchaingo/vectorstores.getRelevantDocumentsOnEnter
 func getRelevantDocumentsOnEnter(call api.CallContext,
 	r vectorstores.Retriever,
 	ctx context.Context,
@@ -36,6 +40,8 @@ func getRelevantDocumentsOnEnter(call api.CallContext,
 	data["ctx"] = langCtx
 	call.SetData(data)
 }
+
+//go:linkname getRelevantDocumentsOnExit github.com/tmc/langchaingo/vectorstores.getRelevantDocumentsOnExit
 func getRelevantDocumentsOnExit(
 	call api.CallContext,
 	s []schema.Document, err error,

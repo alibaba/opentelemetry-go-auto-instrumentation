@@ -36,6 +36,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 			return errc.Adhere(err, "file", rule.FileName)
 		}
 		source = util.RemoveGoBuildComment(source)
+		source = util.RenamePackage(source, bundle.PackageName)
 
 		// Get last section of file path as file name
 		fileName := filepath.Base(rule.FileName)
