@@ -42,6 +42,7 @@ type RuleProcessor struct {
 	compileArgs     []string
 	rule2Suffix     map[*resource.InstFuncRule]string
 	rawFunc         *dst.FuncDecl
+	exact           bool // If the rule is exact match with target function
 	onEnterHookFunc *dst.FuncDecl
 	onExitHookFunc  *dst.FuncDecl
 	varDecls        []dst.Decl

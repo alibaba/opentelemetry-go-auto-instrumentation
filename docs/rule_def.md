@@ -2,7 +2,7 @@
 
 ## Instument a function
 - `ImportPath`: The import path of the package that contains the function to be instrumented. e.g. `net/http`.
-- `Function`: The name of the function to be instrumented.
+- `Function`: The name of the function to be instrumented, it could be a regular expression to match multiple functions. e.g. `.*` matches all functions in the package, `.*ServeHTTP` matches all functions whose name ends with `ServeHTTP`, and so on.
 - `ReceiverType`: The type of the receiver of the function to be instrumented. e.g. `*http.Server`, `http.Server`.
 - `OnEnter`: The name of the function to be called when the instrumented function is called. e.g. `clientOnEnter`.
 - `OnExit`: The name of the function to be called when the instrumented function returns. e.g. `clientOnExit`.
