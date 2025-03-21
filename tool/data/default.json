@@ -673,8 +673,8 @@
     "Version": "[2.1.0,)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache",
     "Function": "NewServiceInfoHolder",
-    "OnEnter": "beforeNewServiceInfoHolder",
-    "OnExit": "afterNewServiceInfoHolder",
+    "OnEnter": "beforeNewServiceInfoHolder210",
+    "OnExit": "afterNewServiceInfoHolder210",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos2_1_0/service_holder"
   },
   {
@@ -727,8 +727,8 @@
     "Version": "[2.1.1,)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
     "Function": "NewBeatReactor",
-    "OnEnter": "beforeNewBeatReactor",
-    "OnExit": "afterNewBeatReactor",
+    "OnEnter": "beforeNewBeatReactor211",
+    "OnExit": "afterNewBeatReactor211",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos2_1_1/dom"
   },
   {

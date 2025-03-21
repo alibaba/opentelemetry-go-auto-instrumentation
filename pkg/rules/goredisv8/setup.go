@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
@@ -17,6 +18,7 @@ var rv8Enabler = instrumenter.NewDefaultInstrumentEnabler()
 
 var redisV8StartOptions = []trace.SpanStartOption{}
 
+//go:linkname afterNewRedisV8Client github.com/go-redis/redis/v8.afterNewRedisV8Client
 func afterNewRedisV8Client(call api.CallContext, client *redis.Client) {
 	if !rv8Enabler.Enable() {
 		return
@@ -24,6 +26,7 @@ func afterNewRedisV8Client(call api.CallContext, client *redis.Client) {
 	client.AddHook(newOtRedisV8Hook(client.Options().Addr))
 }
 
+//go:linkname afterNewFailOverRedisV8Client github.com/go-redis/redis/v8.afterNewFailOverRedisV8Client
 func afterNewFailOverRedisV8Client(call api.CallContext, client *redis.Client) {
 	if !rv8Enabler.Enable() {
 		return
@@ -31,6 +34,7 @@ func afterNewFailOverRedisV8Client(call api.CallContext, client *redis.Client) {
 	client.AddHook(newOtRedisV8Hook(client.Options().Addr))
 }
 
+//go:linkname afterNewConnRedisV8Client github.com/go-redis/redis/v8.afterNewConnRedisV8Client
 func afterNewConnRedisV8Client(call api.CallContext, conn *redis.Conn) {
 	if !rv8Enabler.Enable() {
 		return
@@ -38,6 +42,7 @@ func afterNewConnRedisV8Client(call api.CallContext, conn *redis.Conn) {
 	conn.AddHook(newOtRedisV8Hook(conn.String()))
 }
 
+//go:linkname afterNewClusterV8Client github.com/go-redis/redis/v8.afterNewClusterV8Client
 func afterNewClusterV8Client(call api.CallContext, client *redis.ClusterClient) {
 	if !rv8Enabler.Enable() {
 		return
@@ -45,6 +50,7 @@ func afterNewClusterV8Client(call api.CallContext, client *redis.ClusterClient) 
 	client.AddHook(newOtRedisV8Hook(strings.Join(client.Options().Addrs, ",")))
 }
 
+//go:linkname afterNewRingV8Client github.com/go-redis/redis/v8.afterNewRingV8Client
 func afterNewRingV8Client(call api.CallContext, client *redis.Ring) {
 	if !rv8Enabler.Enable() {
 		return

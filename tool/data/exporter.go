@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package error6
+package data
 
 import (
-	_ "unsafe"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	_ "embed"
 )
 
-//go:linkname onEnterP11 errorstest/auxiliary.onEnterP11
-func onEnterP11(call api.CallContext) {}
+//go:embed default.json
+var defaultRuleJson string
+
+func UseDefaultRuleJson() string { return defaultRuleJson }
