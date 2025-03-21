@@ -186,7 +186,6 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	removed := rp.removeDeclWhen(func(d dst.Decl) bool {
 		if funcDecl, ok := d.(*dst.FuncDecl); ok {
 			return funcDecl.Name.Name == rp.makeName(tjump.rule, true)
-
 		}
 		return false
 	})
