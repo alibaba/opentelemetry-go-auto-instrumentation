@@ -112,5 +112,11 @@
         "Function": "TargetWithFuncType",
         "OnEnter": "onEnterTargetWithFuncType",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error18"
+    },
+    {
+        "ImportPath": "errorstest/auxiliary",
+        "Function": ".*",
+        "OnEnter": "onEnterGeneric",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error19"
     }
 ]

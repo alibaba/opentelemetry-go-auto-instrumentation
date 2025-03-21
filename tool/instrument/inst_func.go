@@ -79,7 +79,7 @@ func (rp *RuleProcessor) makeName(r *resource.InstFuncRule, onEnter bool) string
 	if onEnter {
 		prefix = TrampolineOnEnterName
 	}
-	return fmt.Sprintf("%s_%s%s", prefix, r.Function, rp.rule2Suffix[r])
+	return fmt.Sprintf("%s_%s%s", prefix, rp.target.Name, rp.rule2Suffix[r])
 }
 
 func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
@@ -341,6 +341,13 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 				recvType := nameAndRecvType[1]
 				if util.MatchFuncDecl(decl, name, recvType) {
 					fnDecl := decl.(*dst.FuncDecl)
+					// The func rule can either fully match the target function
+					// or use a regexp to match a batch of functions. The
+					// generation of tjump differs slightly between these two
+					// cases. In the former case, the hook function is required
+					// to have the same signature as the target function, while
+					// the latter does not have this requirement.
+					rp.exact = fnDecl.Name.Name == name
 					// Add explicit names for return values, they can be further
 					// referenced if we're willing
 					nameReturnValues(fnDecl)

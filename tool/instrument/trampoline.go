@@ -186,23 +186,27 @@ func getHookParamTraits(t *resource.InstFuncRule, onEnter bool) ([]ParamTrait, e
 }
 
 func (rp *RuleProcessor) callOnEnterHook(t *resource.InstFuncRule, traits []ParamTrait) error {
-	if len(traits) != (len(rp.onEnterHookFunc.Type.Params.List) + 1 /*CallContext*/) {
-		return errc.New(errc.ErrInternal, "mismatched param traits")
+	// The actual parameter list of hook function should be the same as the
+	// target function
+	if rp.exact {
+		util.Assert(len(traits) == (len(rp.onEnterHookFunc.Type.Params.List)+1),
+			"mismatched param traits")
 	}
 	// Hook: 	   func onEnterFoo(callContext* CallContext, p*[]int)
 	// Trampoline: func OtelOnEnterTrampoline_foo(p *[]int)
 	args := []dst.Expr{dst.NewIdent(TrampolineCallContextName)}
-	for idx, field := range rp.onEnterHookFunc.Type.Params.List {
-		trait := traits[idx+1 /*CallContext*/]
-		for _, name := range field.Names { // syntax of n1,n2 type
-			if trait.IsVaradic {
-				args = append(args, util.DereferenceOf(util.Ident(name.Name+"...")))
-			} else {
-				args = append(args, util.DereferenceOf(dst.NewIdent(name.Name)))
+	if rp.exact {
+		for idx, field := range rp.onEnterHookFunc.Type.Params.List {
+			trait := traits[idx+1 /*CallContext*/]
+			for _, name := range field.Names { // syntax of n1,n2 type
+				if trait.IsVaradic {
+					args = append(args, util.DereferenceOf(util.Ident(name.Name+"...")))
+				} else {
+					args = append(args, util.DereferenceOf(dst.NewIdent(name.Name)))
+				}
 			}
 		}
 	}
-	// Call onEnter if it exists
 	fnName := makeOnXName(t, true)
 	call := util.ExprStmt(util.CallTo(fnName, args))
 	iff := util.IfNotNilStmt(
@@ -215,8 +219,11 @@ func (rp *RuleProcessor) callOnEnterHook(t *resource.InstFuncRule, traits []Para
 }
 
 func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []ParamTrait) error {
-	if len(traits) != len(rp.onExitHookFunc.Type.Params.List) {
-		return errc.New(errc.ErrInternal, "mismatched param traits")
+	// The actual parameter list of hook function should be the same as the
+	// target function
+	if rp.exact {
+		util.Assert(len(traits) == len(rp.onExitHookFunc.Type.Params.List),
+			"mismatched param traits")
 	}
 	// Hook: 	   func onExitFoo(ctx* CallContext, p*[]int)
 	// Trampoline: func OtelOnExitTrampoline_foo(ctx* CallContext, p *[]int)
@@ -224,6 +231,10 @@ func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []Param
 	for idx, field := range rp.onExitHookFunc.Type.Params.List {
 		if idx == 0 {
 			args = append(args, dst.NewIdent(TrampolineCallContextName))
+			if !rp.exact {
+				// Generic hook function, no need to process parameters
+				break
+			}
 			continue
 		}
 		trait := traits[idx]
@@ -237,7 +248,6 @@ func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []Param
 			}
 		}
 	}
-	// Call onExit if it exists
 	fnName := makeOnXName(t, false)
 	call := util.ExprStmt(util.CallTo(fnName, args))
 	iff := util.IfNotNilStmt(
@@ -265,13 +275,18 @@ func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 
 func (rp *RuleProcessor) addHookFuncVar(t *resource.InstFuncRule,
 	traits []ParamTrait, onEnter bool) error {
-	paramTypes := rp.buildTrampolineType(onEnter)
+	paramTypes := &dst.FieldList{List: []*dst.Field{}}
+	if rp.exact {
+		paramTypes = rp.buildTrampolineType(onEnter)
+	}
 	addCallContext(paramTypes)
-	// Hook functions may uses interface{} as parameter type, as some types of
-	// raw function is not exposed
-	err := rectifyAnyType(paramTypes, traits)
-	if err != nil {
-		return err
+	if rp.exact {
+		// Hook functions may uses interface{} as parameter type, as some types of
+		// raw function is not exposed
+		err := rectifyAnyType(paramTypes, traits)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Generate var decl
@@ -588,6 +603,7 @@ func (rp *RuleProcessor) callHookFunc(t *resource.InstFuncRule,
 
 func (rp *RuleProcessor) generateTrampoline(t *resource.InstFuncRule,
 	funcDecl *dst.FuncDecl) error {
+	// Save raw function declaration
 	rp.rawFunc = funcDecl
 	// Materialize various declarations from template file, no one wants to see
 	// a bunch of manual AST code generation, isn't it?
