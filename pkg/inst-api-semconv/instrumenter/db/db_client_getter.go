@@ -23,6 +23,7 @@ type DbClientAttrsGetter[REQUEST any] interface {
 	DbClientCommonAttrsGetter[REQUEST]
 	GetStatement(REQUEST) string
 	GetOperation(REQUEST) string
+	GetCollection(REQUEST) string
 	GetParameters(REQUEST) []any
 }
 

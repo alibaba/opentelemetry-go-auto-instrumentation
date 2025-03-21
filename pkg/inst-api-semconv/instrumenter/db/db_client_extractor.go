@@ -17,11 +17,20 @@ package db
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"strconv"
+)
+
+const (
+	// `db.collection.name` is only available in semconv/v1.29.0 and above.
+	// Considering the compatibility, we cannot upgrade to that version at this time,
+	// so define a transitional constant here instead.
+	// ref: https://github.com/open-telemetry/semantic-conventions/releases/tag/v1.29.0
+	DBCollectionNameKey = attribute.Key("db.collection.name")
 )
 
 type DbExperimentalAttributesEnabler interface {
@@ -84,13 +93,16 @@ func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attrib
 	}, attribute.KeyValue{
 		Key:   semconv.ServerAddressKey,
 		Value: attribute.StringValue(d.Base.Getter.GetServerAddress(request)),
+	}, attribute.KeyValue{
+		Key:   DBCollectionNameKey,
+		Value: attribute.StringValue(d.Base.Getter.GetCollection(request)),
 	})
 	if d.Base.AttributesFilter != nil {
 		attrs = d.Base.AttributesFilter(attrs)
 	}
 	if experimentalAttributesEnabler.Enable() {
 		params := d.Base.Getter.GetParameters(request)
-		if params != nil && len(params) > 0 {
+		if len(params) > 0 {
 			for i, param := range params {
 				attrs = append(attrs, attribute.String("db.query.parameter."+strconv.Itoa(i), fmt.Sprintf("%v", param)))
 			}

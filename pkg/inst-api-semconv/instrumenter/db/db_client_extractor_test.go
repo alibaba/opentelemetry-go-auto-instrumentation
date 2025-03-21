@@ -16,16 +16,18 @@ package db
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"log"
-	"testing"
 )
 
 type testRequest struct {
 	Name      string
 	Operation string
+	Target    string
 }
 
 type testResponse struct {
@@ -54,6 +56,10 @@ func (m mongoAttrsGetter) GetOperation(request testRequest) string {
 		return request.Operation
 	}
 	return ""
+}
+
+func (m mongoAttrsGetter) GetCollection(request testRequest) string {
+	return request.Target
 }
 
 func (m mongoAttrsGetter) GetParameters(request testRequest) []any {
