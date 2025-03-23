@@ -41,7 +41,7 @@ func (m messageAttrsGetter) IsTemporaryDestination(request testRequest) bool {
 	return request.IsTemporaryDestination
 }
 
-func (m messageAttrsGetter) isAnonymousDestination(request testRequest) bool {
+func (m messageAttrsGetter) IsAnonymousDestination(request testRequest) bool {
 	return request.IsAnonymousDestination
 }
 
@@ -74,22 +74,22 @@ func (m messageAttrsGetter) GetMessageHeader(request testRequest, name string) [
 }
 
 func TestMessageGetSpanKey(t *testing.T) {
-	messageExtractor := &MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{operation: PUBLISH}
+	messageExtractor := &MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{Operation: PUBLISH}
 	if messageExtractor.GetSpanKey() != utils.PRODUCER_KEY {
 		t.Fatalf("Should have returned producer key")
 	}
-	messageExtractor.operation = RECEIVE
+	messageExtractor.Operation = RECEIVE
 	if messageExtractor.GetSpanKey() != utils.CONSUMER_RECEIVE_KEY {
 		t.Fatalf("Should have returned consumer receive key")
 	}
-	messageExtractor.operation = PROCESS
+	messageExtractor.Operation = PROCESS
 	if messageExtractor.GetSpanKey() != utils.CONSUMER_PROCESS_KEY {
 		t.Fatalf("Should have returned consumer process key")
 	}
 }
 
 func TestMessageClientExtractorStartWithTemporaryDestination(t *testing.T) {
-	messageExtractor := MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{operation: PUBLISH}
+	messageExtractor := MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{Operation: PUBLISH}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
 	attrs, _ = messageExtractor.OnStart(attrs, parentContext, testRequest{IsTemporaryDestination: true, IsAnonymousDestination: true})
@@ -123,7 +123,7 @@ func TestMessageClientExtractorStartWithTemporaryDestination(t *testing.T) {
 }
 
 func TestMessageClientExtractorStartWithoutTemporaryDestination(t *testing.T) {
-	messageExtractor := MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{operation: PUBLISH}
+	messageExtractor := MessageAttrsExtractor[testRequest, testResponse, messageAttrsGetter]{Operation: PUBLISH}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
 	attrs, _ = messageExtractor.OnStart(attrs, parentContext, testRequest{IsTemporaryDestination: false, IsAnonymousDestination: true})
