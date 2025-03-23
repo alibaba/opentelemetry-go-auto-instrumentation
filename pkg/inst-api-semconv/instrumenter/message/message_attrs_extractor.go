@@ -64,7 +64,7 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []
 			Value: attribute.StringValue(m.getter.GetDestinationTemplate(request)),
 		})
 	}
-	isAnonymousDestination := m.getter.isAnonymousDestination(request)
+	isAnonymousDestination := m.getter.IsAnonymousDestination(request)
 	if isAnonymousDestination {
 		attributes = append(attributes, attribute.KeyValue{
 			Key:   semconv.MessagingDestinationAnonymousKey,

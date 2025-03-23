@@ -19,7 +19,7 @@ type MessageAttrsGetter[REQUEST any, RESPONSE any] interface {
 	GetDestination(request REQUEST) string
 	GetDestinationTemplate(request REQUEST) string
 	IsTemporaryDestination(request REQUEST) bool
-	isAnonymousDestination(request REQUEST) bool
+	IsAnonymousDestination(request REQUEST) bool
 	GetConversationId(request REQUEST) string
 	GetMessageBodySize(request REQUEST) int64
 	GetMessageEnvelopSize(request REQUEST) int64
