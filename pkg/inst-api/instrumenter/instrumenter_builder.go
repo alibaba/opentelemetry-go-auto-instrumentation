@@ -119,8 +119,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *InternalInstrumenter[R
 	}
 }
 
-// BuildPropagatingToDownstreamInstrumenter TODO: remoce second param
-func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
 	tracer := otel.GetTracerProvider().
 		Tracer(b.Scope.Name,
 			trace.WithInstrumentationVersion(b.Scope.Version),
@@ -139,7 +138,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 			instVersion:          b.InstVersion,
 		},
 		carrierGetter: carrierGetter,
-		prop:          prop,
+		prop:          otel.GetTextMapPropagator(),
 	}
 }
 

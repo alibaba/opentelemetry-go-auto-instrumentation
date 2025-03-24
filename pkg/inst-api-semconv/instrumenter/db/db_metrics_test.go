@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"testing"
 	"time"
 )
@@ -55,7 +55,7 @@ func TestDbClientMetrics(t *testing.T) {
 func TestDbMetricAttributesShadower(t *testing.T) {
 	attrs := make([]attribute.KeyValue, 0)
 	attrs = append(attrs, attribute.KeyValue{
-		Key:   semconv.DBSystemKey,
+		Key:   semconv.DBSystemNameKey,
 		Value: attribute.StringValue("mysql"),
 	}, attribute.KeyValue{
 		Key:   "unknown",

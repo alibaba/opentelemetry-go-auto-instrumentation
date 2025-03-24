@@ -20,7 +20,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"strconv"
 )
 
@@ -52,7 +52,7 @@ func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrib
 
 func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
 	attrs = append(attrs, attribute.KeyValue{
-		Key:   semconv.DBSystemKey,
+		Key:   semconv.DBSystemNameKey,
 		Value: attribute.StringValue(d.Getter.GetSystem(request)),
 	})
 	if d.AttributesFilter != nil {
@@ -104,4 +104,4 @@ func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribu
 }
 
 // TODO: sanitize sql
-// TODO: request size & response size
+// TODO: batch sql

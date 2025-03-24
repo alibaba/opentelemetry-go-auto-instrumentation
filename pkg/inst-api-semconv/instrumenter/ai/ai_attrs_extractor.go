@@ -17,11 +17,10 @@ package ai
 import (
 	"context"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
-//待semconv统一更新到v1.30.0后更新OnStart中键值使用方式
-
+// 待semconv统一更新到v1.30.0后更新OnStart中键值使用方式
 type AICommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 CommonAttrsGetter[REQUEST, RESPONSE]] struct {
 	CommonGetter     GETTER1
 	AttributesFilter func(attrs []attribute.KeyValue) []attribute.KeyValue
