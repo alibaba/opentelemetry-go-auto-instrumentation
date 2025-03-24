@@ -55,7 +55,7 @@ func (h *HttpCommonAttrsExtractor[REQUEST, RESPONSE, GETTER, GETTER2]) OnEnd(att
 	})
 	errorType := h.HttpGetter.GetErrorType(request, response, err)
 	if errorType != "" {
-		attributes = append(attributes, attribute.KeyValue{})
+		attributes = append(attributes, attribute.KeyValue{Key: semconv.ErrorTypeKey, Value: attribute.StringValue(errorType)})
 	}
 	return attributes, context
 }
