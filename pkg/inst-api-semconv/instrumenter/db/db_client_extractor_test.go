@@ -55,6 +55,12 @@ func (m mongoAttrsGetter) GetOperation(request testRequest) string {
 	}
 	return ""
 }
+func (m mongoAttrsGetter) GetDbNamespace(request testRequest) string {
+	return ""
+}
+func (m mongoAttrsGetter) GetBatchSize(request testRequest) int {
+	return 0
+}
 
 func (m mongoAttrsGetter) GetParameters(request testRequest) []any {
 	return nil
