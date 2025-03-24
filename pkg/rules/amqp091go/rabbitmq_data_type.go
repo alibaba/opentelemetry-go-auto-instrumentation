@@ -14,10 +14,6 @@
 
 package amqp091go
 
-import (
-	"strings"
-)
-
 type RabbitRequest struct {
 	exchange        string
 	routingKey      string
@@ -26,35 +22,4 @@ type RabbitRequest struct {
 	messageId       string
 	bodySize        int64
 	conversationID  string
-}
-
-func (r *RabbitRequest) Get(key string) string {
-	if r == nil || r.conversationID == "" {
-		return ""
-	}
-	vs := strings.Split(r.conversationID, ":")
-	if len(vs) < 2 {
-		return ""
-	}
-	if vs[0] == key {
-		return vs[1]
-	}
-	return ""
-}
-func (r *RabbitRequest) Set(key string, value string) {
-	if r == nil || r.conversationID != "" {
-		return
-	}
-	vs := key + ":" + value
-	r.conversationID = vs
-}
-func (r *RabbitRequest) Keys() []string {
-	if r == nil || r.conversationID == "" {
-		return []string{}
-	}
-	vs := strings.Split(r.conversationID, ":")
-	if len(vs) < 2 {
-		return []string{}
-	}
-	return []string{vs[0]}
 }

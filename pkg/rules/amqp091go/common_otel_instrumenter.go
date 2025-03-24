@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
+	"strings"
 )
 
 type RabbitMQGetter struct {
@@ -77,6 +78,41 @@ func (RabbitMQGetter) GetMessageHeader(request *RabbitRequest, name string) []st
 	return []string{}
 }
 
+type carrierGetter struct {
+	req *RabbitRequest
+}
+
+func (r *carrierGetter) Get(key string) string {
+	if r.req == nil || r.req.conversationID == "" {
+		return ""
+	}
+	vs := strings.Split(r.req.conversationID, ":")
+	if len(vs) < 2 {
+		return ""
+	}
+	if vs[0] == key {
+		return vs[1]
+	}
+	return ""
+}
+func (r *carrierGetter) Set(key string, value string) {
+	if r.req == nil || r.req.conversationID != "" {
+		return
+	}
+	vs := key + ":" + value
+	r.req.conversationID = vs
+}
+func (r *carrierGetter) Keys() []string {
+	if r.req == nil || r.req.conversationID == "" {
+		return []string{}
+	}
+	vs := strings.Split(r.req.conversationID, ":")
+	if len(vs) < 2 {
+		return []string{}
+	}
+	return []string{vs[0]}
+}
+
 func BuildRabbitMQConsumeOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[*RabbitRequest, any] {
 	builder := instrumenter.Builder[*RabbitRequest, any]{}
 	return builder.Init().SetSpanNameExtractor(&message.MessageSpanNameExtractor[*RabbitRequest, any]{Getter: RabbitMQGetter{}, OperationName: message.RECEIVE}).
@@ -87,7 +123,7 @@ func BuildRabbitMQConsumeOtelInstrumenter() *instrumenter.PropagatingFromUpstrea
 			Version: version.Tag,
 		}).
 		BuildPropagatingFromUpstreamInstrumenter(func(n *RabbitRequest) propagation.TextMapCarrier {
-			return n
+			return &carrierGetter{req: n}
 		}, otel.GetTextMapPropagator())
 }
 func BuildRabbitMQPublishOtelInstrumenter() *instrumenter.PropagatingToDownstreamInstrumenter[*RabbitRequest, any] {
@@ -100,7 +136,7 @@ func BuildRabbitMQPublishOtelInstrumenter() *instrumenter.PropagatingToDownstrea
 		}).
 		AddAttributesExtractor(&message.MessageAttrsExtractor[*RabbitRequest, any, RabbitMQGetter]{Operation: message.PUBLISH}).
 		BuildPropagatingToDownstreamInstrumenter(func(n *RabbitRequest) propagation.TextMapCarrier {
-			return n
+			return &carrierGetter{req: n}
 		}, otel.GetTextMapPropagator())
 
 }
