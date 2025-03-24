@@ -28,10 +28,10 @@ type AICommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 CommonAttrsGetter
 
 func (h *AICommonAttrsExtractor[REQUEST, RESPONSE, GETTER1]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   "gen_ai.operation.name", //semconv.GenAIOperationNameKey
+		Key:   semconv.GenAIOperationNameKey,
 		Value: attribute.StringValue(h.CommonGetter.GetAIOperationName(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.system", //semconv.GenAISystemKey
+		Key:   semconv.GenAISystemKey,
 		Value: attribute.StringValue(h.CommonGetter.GetAISystem(request)),
 	})
 	return attributes, parentContext
@@ -55,40 +55,40 @@ type AILLMAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 CommonAttrsGetter[RE
 func (h *AILLMAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request REQUEST) ([]attribute.KeyValue, context.Context) {
 	attributes, parentContext = h.Base.OnStart(attributes, parentContext, request)
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   "gen_ai.request.model", //semconv.GenAIRequestModelKey
+		Key:   semconv.GenAIRequestModelKey,
 		Value: attribute.StringValue(h.LLMGetter.GetAIRequestModel(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.encoding_formats", //semconv.GenAIRequestEncodingFormatsKey
+		Key:   semconv.GenAIRequestEncodingFormatsKey,
 		Value: attribute.StringSliceValue(h.LLMGetter.GetAIRequestEncodingFormats(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.max_tokens", //semconv.GenAIRequestMaxTokensKey
+		Key:   semconv.GenAIRequestMaxTokensKey,
 		Value: attribute.Int64Value(h.LLMGetter.GetAIRequestMaxTokens(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.frequency_penalty", //semconv.GenAIRequestFrequencyPenaltyKey,
+		Key:   semconv.GenAIRequestFrequencyPenaltyKey,
 		Value: attribute.Float64Value(h.LLMGetter.GetAIRequestFrequencyPenalty(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.presence_penalty", //semconv.GenAIRequestPresencePenaltyKey,
+		Key:   semconv.GenAIRequestPresencePenaltyKey,
 		Value: attribute.Float64Value(h.LLMGetter.GetAIRequestPresencePenalty(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.stop_sequences", //semconv.GenAIRequestStopSequencesKey,
+		Key:   semconv.GenAIRequestStopSequencesKey,
 		Value: attribute.StringSliceValue(h.LLMGetter.GetAIRequestStopSequences(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.temperature", //semconv.GenAIRequestTemperatureKey,
+		Key:   semconv.GenAIRequestTemperatureKey,
 		Value: attribute.Float64Value(h.LLMGetter.GetAIRequestTemperature(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.top_k", //semconv.GenAIRequestTopKKey,
+		Key:   semconv.GenAIRequestTopKKey,
 		Value: attribute.Float64Value(h.LLMGetter.GetAIRequestTopK(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.top_p", //semconv.GenAIRequestTopPKey,
+		Key:   semconv.GenAIRequestTopPKey,
 		Value: attribute.Float64Value(h.LLMGetter.GetAIRequestTopP(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.usage.input_tokens", //semconv.GenAIUsageInputTokensKey,
+		Key:   semconv.GenAIUsageInputTokensKey,
 		Value: attribute.Int64Value(h.LLMGetter.GetAIUsageInputTokens(request)),
 	}, attribute.KeyValue{
 		Key:   semconv.ServerAddressKey,
 		Value: attribute.StringValue(h.LLMGetter.GetAIServerAddress(request)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.request.seed", //semconv.GenAIRequestSeedKey,
+		Key:   semconv.GenAIRequestSeedKey,
 		Value: attribute.Int64Value(h.LLMGetter.GetAIRequestSeed(request)),
 	})
 	if h.Base.AttributesFilter != nil {
@@ -100,19 +100,19 @@ func (h *AILLMAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2]) OnEnd(attribu
 	attributes, context = h.Base.OnEnd(attributes, context, request, response, err)
 
 	attributes = append(attributes, attribute.KeyValue{
-		Key:   "gen_ai.response.finish_reasons", //semconv.GenAIResponseFinishReasonsKey,
+		Key:   semconv.GenAIResponseFinishReasonsKey,
 		Value: attribute.StringSliceValue(h.LLMGetter.GetAIResponseFinishReasons(request, response)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.response.id", //semconv.GenAIResponseIDKey,
+		Key:   semconv.GenAIResponseIDKey,
 		Value: attribute.StringValue(h.LLMGetter.GetAIResponseID(request, response)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.response.model", //semconv.GenAIResponseModelKey,
+		Key:   semconv.GenAIResponseModelKey,
 		Value: attribute.StringValue(h.LLMGetter.GetAIResponseModel(request, response)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.usage.output_tokens", //semconv.GenAIUsageOutputTokensKey,
+		Key:   semconv.GenAIUsageOutputTokensKey,
 		Value: attribute.Int64Value(h.LLMGetter.GetAIUsageOutputTokens(request, response)),
 	}, attribute.KeyValue{
-		Key:   "gen_ai.response.id", //semconv.GenAIResponseIDKey,
+		Key:   semconv.GenAIResponseIDKey,
 		Value: attribute.StringValue(h.LLMGetter.GetAIResponseID(request, response)),
 	})
 	return attributes, context
