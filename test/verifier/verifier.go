@@ -148,3 +148,31 @@ func VerifyLLMCommonAttributes(span tracetest.SpanStub, name string, system stri
 	Assert(optName == name, "Except gen_ai.operation.name to be %s, got %s", name, optName)
 	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
 }
+func VerifyMQPublishAttributes(span tracetest.SpanStub, exchange, routing, queue, operationName, destination string, system string) {
+	Assert(span.Name == destination+" "+operationName, "Except client span name to be %s, got %s", destination+" "+string(operationName), span.Name)
+	actualDestination := GetAttribute(span.Attributes, "messaging.destination.name").AsString()
+	Assert(actualDestination == destination, "Except messaging.destination.name to be %s, got %s", destination, actualDestination)
+	optName := GetAttribute(span.Attributes, "messaging.operation.name").AsString()
+	Assert(optName == operationName, "Except messaging.operation.name to be %s, got %s", operationName, optName)
+	if routing != "" {
+		routingKey := GetAttribute(span.Attributes, "messaging.rabbitmq.destination.routing_key").AsString()
+		Assert(routingKey == routing, "Except messaging.rabbitmq.destination.routing_key to be %s, got %s", routing, routingKey)
+	}
+	actualSystem := GetAttribute(span.Attributes, "messaging.system").AsString()
+	Assert(actualSystem == system, "Except messaging.system to be %s, got %s", system, actualSystem)
+	Assert(span.SpanKind == trace.SpanKindProducer, "Expect to be producer span, got %d", span.SpanKind)
+}
+func VerifyMQConsumeAttributes(span tracetest.SpanStub, exchange, routing, queue, operationName, destination string, system string) {
+	Assert(span.Name == destination+" "+operationName, "Except client span name to be %s, got %s", destination+" "+string(operationName), span.Name)
+	actualDestination := GetAttribute(span.Attributes, "messaging.destination.name").AsString()
+	Assert(actualDestination == destination, "Except messaging.destination.name to be %s, got %s", destination, actualDestination)
+	optName := GetAttribute(span.Attributes, "messaging.operation.name").AsString()
+	Assert(optName == operationName, "Except messaging.operation.name to be %s, got %s", operationName, optName)
+	if routing != "" {
+		routingKey := GetAttribute(span.Attributes, "messaging.rabbitmq.destination.routing_key").AsString()
+		Assert(routingKey == routing, "Except messaging.rabbitmq.destination.routing_key to be %s, got %s", routing, routingKey)
+	}
+	actualSystem := GetAttribute(span.Attributes, "messaging.system").AsString()
+	Assert(actualSystem == system, "Except messaging.system to be %s, got %s", system, actualSystem)
+	Assert(span.SpanKind == trace.SpanKindConsumer, "Expect to be consumer span, got %d", span.SpanKind)
+}
