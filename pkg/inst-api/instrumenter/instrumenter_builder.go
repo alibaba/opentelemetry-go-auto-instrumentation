@@ -119,7 +119,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildInstrumenter() *InternalInstrumenter[R
 	}
 }
 
-func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
+func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(carrierGetter func(REQUEST) propagation.TextMapCarrier, prop propagation.TextMapPropagator) *PropagatingToDownstreamInstrumenter[REQUEST, RESPONSE] {
 	tracer := otel.GetTracerProvider().
 		Tracer(b.Scope.Name,
 			trace.WithInstrumentationVersion(b.Scope.Version),
@@ -138,7 +138,7 @@ func (b *Builder[REQUEST, RESPONSE]) BuildPropagatingToDownstreamInstrumenter(ca
 			instVersion:          b.InstVersion,
 		},
 		carrierGetter: carrierGetter,
-		prop:          otel.GetTextMapPropagator(),
+		prop:          prop,
 	}
 }
 
