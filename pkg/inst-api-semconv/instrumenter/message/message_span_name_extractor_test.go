@@ -91,6 +91,10 @@ func (t testGetter) GetMessageHeader(request testRequest, name string) []string 
 	panic("implement me")
 }
 
+func (m testGetter) GetDestinationPartitionId(request testRequest) string {
+	return "partition-id"
+}
+
 func TestExtractSpanName(t *testing.T) {
 	r := MessageSpanNameExtractor[testRequest, testResponse]{getter: testGetter{}}
 	spanName := r.Extract(testRequest{IsTemporaryDestination: true, Destination: "Destination"})

@@ -40,6 +40,7 @@ var dbMetricsConv = map[attribute.Key]bool{
 	semconv.DBSystemNameKey:    true,
 	semconv.DBOperationNameKey: true,
 	semconv.ServerAddressKey:   true,
+	semconv.DBNamespaceKey:     true,
 }
 
 var globalMeter metric.Meter

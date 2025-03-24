@@ -21,6 +21,8 @@ import (
 	"strings"
 )
 
+// TODO: remove server.address and put it into NetworkAttributesExtractor
+
 type NetworkAttrsExtractor[REQUEST any, RESPONSE any, GETTER NetworkAttrsGetter[REQUEST, RESPONSE]] struct {
 	Getter GETTER
 }

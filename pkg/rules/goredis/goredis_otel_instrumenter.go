@@ -70,6 +70,14 @@ func (d goRedisAttrsGetter) GetParameters(request goRedisRequest) []any {
 	return nil
 }
 
+func (d goRedisAttrsGetter) GetDbNamespace(request goRedisRequest) string {
+	return ""
+}
+
+func (d goRedisAttrsGetter) GetBatchSize(request goRedisRequest) int {
+	return 0
+}
+
 func BuildGoRedisOtelInstrumenter() instrumenter.Instrumenter[goRedisRequest, any] {
 	builder := instrumenter.Builder[goRedisRequest, any]{}
 	getter := goRedisAttrsGetter{}

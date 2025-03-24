@@ -24,6 +24,8 @@ import (
 	"strconv"
 )
 
+// TODO: remove server.address and put it into NetworkAttributesExtractor
+
 type DbExperimentalAttributesEnabler interface {
 	Enable() bool
 }
@@ -85,6 +87,15 @@ func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attrib
 		Key:   semconv.ServerAddressKey,
 		Value: attribute.StringValue(d.Base.Getter.GetServerAddress(request)),
 	})
+	batchSize := d.Base.Getter.GetBatchSize(request)
+	if batchSize > 0 {
+		attrs = append(attrs, attribute.KeyValue{Key: semconv.DBOperationBatchSizeKey, Value: attribute.IntValue(batchSize)})
+	}
+	dbNameSpace := d.Base.Getter.GetDbNamespace(request)
+	if dbNameSpace != "" {
+		attrs = append(attrs, attribute.KeyValue{Key: semconv.DBNamespaceKey, Value: attribute.StringValue(dbNameSpace)})
+	}
+	// TODO: add db.collection.name after doing sanitizing
 	if d.Base.AttributesFilter != nil {
 		attrs = d.Base.AttributesFilter(attrs)
 	}

@@ -46,6 +46,14 @@ func (e elasticSearchGetter) GetParameters(request *esRequest) []any {
 	return request.params
 }
 
+func (e elasticSearchGetter) GetDbNamespace(request *esRequest) string {
+	return ""
+}
+
+func (e elasticSearchGetter) GetBatchSize(request *esRequest) int {
+	return 0
+}
+
 func BuildElasticSearchInstrumenter() instrumenter.Instrumenter[*esRequest, interface{}] {
 	builder := instrumenter.Builder[*esRequest, any]{}
 	getter := elasticSearchGetter{}

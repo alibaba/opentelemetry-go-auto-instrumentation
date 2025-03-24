@@ -25,6 +25,8 @@ import (
 	"strings"
 )
 
+// TODO: remove server.address and put it into NetworkAttributesExtractor
+
 type HttpCommonAttrsExtractor[REQUEST any, RESPONSE any, GETTER1 HttpCommonAttrsGetter[REQUEST, RESPONSE], GETTER2 net.NetworkAttrsGetter[REQUEST, RESPONSE]] struct {
 	HttpGetter       GETTER1
 	NetGetter        GETTER2

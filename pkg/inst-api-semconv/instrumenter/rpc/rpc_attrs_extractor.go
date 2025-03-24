@@ -21,6 +21,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
+// TODO: remove server.address and put it into NetworkAttributesExtractor
+
 type RpcAttrsExtractor[REQUEST any, RESPONSE any, GETTER RpcAttrsGetter[REQUEST]] struct {
 	Getter GETTER
 }

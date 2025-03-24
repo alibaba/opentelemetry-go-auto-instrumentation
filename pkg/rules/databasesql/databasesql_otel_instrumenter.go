@@ -53,6 +53,14 @@ func (d databaseSqlAttrsGetter) GetParameters(request databaseSqlRequest) []any 
 	return request.params
 }
 
+func (d databaseSqlAttrsGetter) GetDbNamespace(request databaseSqlRequest) string {
+	return ""
+}
+
+func (d databaseSqlAttrsGetter) GetBatchSize(request databaseSqlRequest) int {
+	return 0
+}
+
 func BuildDatabaseSqlOtelInstrumenter() instrumenter.Instrumenter[databaseSqlRequest, any] {
 	builder := instrumenter.Builder[databaseSqlRequest, any]{}
 	getter := databaseSqlAttrsGetter{}

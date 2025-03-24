@@ -64,6 +64,13 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []
 			Value: attribute.StringValue(m.getter.GetDestinationTemplate(request)),
 		})
 	}
+	partitionId := m.getter.GetDestinationPartitionId(request)
+	if partitionId != "" {
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.MessagingDestinationPartitionIDKey,
+			Value: attribute.StringValue(partitionId),
+		})
+	}
 	isAnonymousDestination := m.getter.isAnonymousDestination(request)
 	if isAnonymousDestination {
 		attributes = append(attributes, attribute.KeyValue{
