@@ -1,12 +1,12 @@
 ![](anim-logo.svg)
 
-[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md)
+[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](../README.md)
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./README_CN.md)
 [![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)
 
 该项目为希望利用 OpenTelemetry 的 Golang 应用程序提供了一个自动解决方案。
 利用 OpenTelemetry 实现有效可观察性的 Golang 应用程序提供自动解决方案。目标应用程序无需更改代码
-在编译时完成。只需在 `go build` 中添加 `otel` 前缀即可开始 :rocket：
+在编译时完成。只需在 `go build` 中添加 `otel` 前缀即可开始 :rocket:
 
 # 安装
 
@@ -20,7 +20,7 @@ $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-inst
 ### 预编译二进制文件
 
 请从
-Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
+[Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
 页面下载最新的预编译版本。
 
 ### 从源代码编译
@@ -28,10 +28,27 @@ Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releas
 通过运行以下命令查看源代码并构建工具：
 
 ```bash
-$ make build
+$ make         # 只构建
+$ make install # 构建并安装
 ```
 
-### 开始
+# 开始
+
+通过运行以下命令检查版本：
+```bash
+$ otel version
+```
+
+通过以下命令配置工具参数：
+```bash
+$ otel set -verbose                          # 打印详细日志
+$ otel set -log=/path/to/file.log            # 设置日志文件路径
+$ otel set -debug                            # 启用调试模式
+$ otel set -debug -verbose -rule=custom.json # 组合配置参数
+$ otel set -disabledefault -rule=custom.json # 禁用默认规则，仅使用自定义规则
+$ otel set -rule=custom.json                 # 同时使用默认和自定义规则
+$ otel set -rule=a.json,b.json               # 使用默认规则及 a 和 b 自定义规则
+```
 
 在 `go build` 中添加 `otel` 前缀，以构建项目：
 
@@ -49,15 +66,19 @@ $ otel -verbose go build # 打印详细日志
 $ otel -rule=custom.json go build # 使用自定义规则
 ```
 
+您可以在 [**使用指南**](./usage.md)中找到 `otel` 工具的详细用法。
+
+> [!NOTE] 
+> 如果您发现任何编译失败，而 `go build` 却能正常工作，这很可能是一个 bug。
+> 请随时在
+> [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+> 提交问题报告以帮助我们改进本项目。
+
+# 示例
+
 您还可以探索 [**这些示例**](../example/) 以获得实践经验。
 
 此外，还有一些 [**文档**](../docs)，您可能会发现它们对了解项目或为项目做出贡献非常有用。
-
-> 注意
-> 如果你发现任何编译失败，而 `go build` 却能正常工作，这很可能是一个 bug。
-> 请随时在
-> 请随时在 [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
-> 以帮助我们改进本项目。
 
 # 支持的库
 
@@ -94,10 +115,23 @@ $ otel -rule=custom.json go build # 使用自定义规则
 
 我们正在逐步开源我们支持的库，非常欢迎您的贡献💖！
 
-> 重要事项
-> 您期望的框架不在列表中？别担心，你可以轻松地将代码注入到任何官方不支持的框架/库中。
+> [!IMPORTANT]
+> 您期望的框架不在列表中？别担心，您可以轻松地将代码注入到任何官方不支持的框架/库中。
 >
-> 请参考 [this document](./how-to-add-a-new-rule.md) 开始使用。
+> 请参考 [这个文档](./how-to-add-a-new-rule.md) 开始使用。
+
+# 文档
+
+- [如何添加新规则](./how-to-add-a-new-rule.md)
+- [如何编写插件测试](./how-to-write-tests-for-plugins.md)
+- [兼容性说明](./compatibility.md)
+- [实现原理](./how-it-works.md)
+- [如何调试](./how-to-debug.md)
+- [上下文传播机制](./context-propagation.md)
+- [支持的库](./supported-libraries.md)
+- [基准测试](../example/benchmark/benchmark.md)
+- [OpenTelemetry社区讨论主题](https://github.com/open-telemetry/community/issues/1961)
+- [面向OpenTelemetry的Golang应用无侵入插桩技术](https://mp.weixin.qq.com/s/FKCwzRB5Ujhe1stOH2ibXg)
 
 # 社区
 
@@ -105,3 +139,26 @@ $ otel -rule=custom.json go build # 使用自定义规则
 与我们交流。
 
 <img src="dingtalk.png" height="200">
+
+# 应用案例
+
+以下为部分采用本项目的企业列表，仅供参考。如果您正在使用此项目，请[在此处添加您的公司](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225)告诉我们您的使用场景，让这个项目变得更好。
+
+- <img src="./alibaba.png" width="80">
+- <img src="./aliyun.png" width="100">
+
+# Contributors
+
+<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation"/>
+</a>
+
+# Star History
+
+[![Star History](https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date)](https://star-history.com/#alibaba/opentelemetry-go-auto-instrumentation&Date)
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#安装" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ 返回顶部 ↑
+    </a>
+</p>
