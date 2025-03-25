@@ -15,6 +15,7 @@
 package http
 
 import (
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
@@ -24,10 +25,15 @@ import (
 type testSpan struct {
 	trace.Span
 	status *codes.Code
+	Kvs    []attribute.KeyValue
 }
 
-func (ts testSpan) SetStatus(status codes.Code, desc string) {
+func (ts *testSpan) SetStatus(status codes.Code, desc string) {
 	*ts.status = status
+}
+
+func (ts *testSpan) SetAttributes(kv ...attribute.KeyValue) {
+	ts.Kvs = kv
 }
 
 type testReadOnlySpan struct {
@@ -78,7 +84,7 @@ func TestHttpClientSpanStatusExtractor500(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Error {
 		panic("span status should be error!")
@@ -92,10 +98,13 @@ func TestHttpClientSpanStatusExtractor400(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Error {
 		panic("span status should be error!")
+	}
+	if span.Kvs == nil {
+		panic("kv should not be nil")
 	}
 }
 
@@ -106,7 +115,7 @@ func TestHttpClientSpanStatusExtractor200(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Ok {
 		panic("span status should be ok!")
@@ -119,7 +128,7 @@ func TestHttpClientSpanStatusExtractor201(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Ok {
 		panic("span status should be ok!")
@@ -132,10 +141,13 @@ func TestHttpServerSpanStatusExtractor500(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Error {
 		panic("span status should be error!")
+	}
+	if span.Kvs == nil {
+		panic("kv should not be nil")
 	}
 }
 
@@ -146,7 +158,7 @@ func TestHttpServerSpanStatusExtractor400(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Unset {
 		panic("span status should be error!")
@@ -160,7 +172,7 @@ func TestHttpServerSpanStatusExtractor200(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Ok {
 		panic("span status should be ok!")
@@ -173,7 +185,7 @@ func TestHttpServerSpanStatusExtractor201(t *testing.T) {
 		},
 	}
 	u := codes.Code(0)
-	span := testSpan{status: &u}
+	span := &testSpan{status: &u}
 	c.Extract(span, nil, nil, nil)
 	if *span.status != codes.Ok {
 		panic("span status should be ok!")

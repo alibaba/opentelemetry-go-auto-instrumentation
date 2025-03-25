@@ -20,6 +20,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/dave/dst"
@@ -338,12 +339,20 @@ func FindFuncDecl(root *dst.File, name string) *dst.FuncDecl {
 	return nil
 }
 
+func isValidRegex(pattern string) bool {
+	_, err := regexp.Compile(pattern)
+	return err == nil
+}
+
 func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
+	Assert(isValidRegex(function), "invalid function name pattern")
+
 	funcDecl, ok := decl.(*dst.FuncDecl)
 	if !ok {
 		return false
 	}
-	if funcDecl.Name.Name != function {
+	re := regexp.MustCompile("^" + function + "$") // strict match
+	if !re.MatchString(funcDecl.Name.Name) {
 		return false
 	}
 	if receiverType != "" {
@@ -371,7 +380,6 @@ func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
 			return false
 		}
 	}
-
 	return true
 }
 

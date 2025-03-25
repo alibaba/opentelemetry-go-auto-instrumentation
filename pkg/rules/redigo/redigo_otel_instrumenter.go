@@ -67,6 +67,14 @@ func (m redigoAttrsGetter) GetParameters(request *redigoRequest) []any {
 	return nil
 }
 
+func (m redigoAttrsGetter) GetDbNamespace(request *redigoRequest) string {
+	return ""
+}
+
+func (m redigoAttrsGetter) GetBatchSize(request *redigoRequest) int {
+	return 0
+}
+
 func BuildRedigoInstrumenter() instrumenter.Instrumenter[*redigoRequest, interface{}] {
 	builder := instrumenter.Builder[*redigoRequest, any]{}
 	getter := redigoAttrsGetter{}

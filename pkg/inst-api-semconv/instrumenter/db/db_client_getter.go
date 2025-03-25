@@ -17,6 +17,8 @@ package db
 type DbClientCommonAttrsGetter[REQUEST any] interface {
 	GetSystem(REQUEST) string
 	GetServerAddress(REQUEST) string
+	GetDbNamespace(REQUEST) string
+	GetBatchSize(REQUEST) int
 }
 
 type DbClientAttrsGetter[REQUEST any] interface {

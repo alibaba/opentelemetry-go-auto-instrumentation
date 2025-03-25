@@ -1,6 +1,6 @@
 module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
-go 1.23
+go 1.23.0
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
 
@@ -120,6 +120,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/henrylee2cn/ameda v1.4.10 // indirect
 	github.com/henrylee2cn/goutil v0.0.0-20210127050712-89660552f6f8 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect

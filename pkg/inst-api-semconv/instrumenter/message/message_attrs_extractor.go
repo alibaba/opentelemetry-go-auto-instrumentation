@@ -18,7 +18,7 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
 type MessageOperation string
@@ -62,6 +62,13 @@ func (m *MessageAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []
 		}, attribute.KeyValue{
 			Key:   semconv.MessagingDestinationTemplateKey,
 			Value: attribute.StringValue(m.getter.GetDestinationTemplate(request)),
+		})
+	}
+	partitionId := m.getter.GetDestinationPartitionId(request)
+	if partitionId != "" {
+		attributes = append(attributes, attribute.KeyValue{
+			Key:   semconv.MessagingDestinationPartitionIDKey,
+			Value: attribute.StringValue(partitionId),
 		})
 	}
 	isAnonymousDestination := m.getter.isAnonymousDestination(request)

@@ -56,4 +56,16 @@ func TestRunErrors(t *testing.T) {
 	if len(matches) != 4 {
 		t.Fatalf("expecting 4 matches")
 	}
+
+	// Test for generic hook
+	re = regexp.MustCompile(".*xian.*")
+	matches = re.FindAllString(stderr, -1)
+	if len(matches) != 4 { // f1 + f2 + f4 + init
+		t.Fatalf("expecting 4 matches")
+	}
+	re = regexp.MustCompile(".*shanxi.*") // f1 + f2
+	matches = re.FindAllString(stderr, -1)
+	if len(matches) != 2 {
+		t.Fatalf("expecting 2 matches")
+	}
 }

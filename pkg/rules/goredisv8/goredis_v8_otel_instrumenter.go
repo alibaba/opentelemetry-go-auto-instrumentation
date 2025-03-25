@@ -34,6 +34,14 @@ func (d goRedisV8AttrsGetter) GetServerAddress(request redisv8Data) string {
 	return request.Host
 }
 
+func (d goRedisV8AttrsGetter) GetDbNamespace(request redisv8Data) string {
+	return ""
+}
+
+func (d goRedisV8AttrsGetter) GetBatchSize(request redisv8Data) int {
+	return 0
+}
+
 func (d goRedisV8AttrsGetter) GetStatement(request redisv8Data) string {
 	b := make([]byte, 0, 64)
 
