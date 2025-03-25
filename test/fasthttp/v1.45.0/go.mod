@@ -1,6 +1,6 @@
 module fasthttp/v1.45.0
 
-go 1.22.7
+go 1.23
 
 toolchain go1.23.3
 
@@ -12,7 +12,7 @@ require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation v0.0.0-00010101000000-000000000000
 	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/valyala/fasthttp v1.56.0
-	go.opentelemetry.io/otel/sdk v1.33.0
+	go.opentelemetry.io/otel/sdk v1.35.0
 	google.golang.org/grpc v1.68.1
 )
 
@@ -43,7 +43,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.31.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.31.0
 	go.opentelemetry.io/otel/metric v1.35.0
-	go.opentelemetry.io/otel/sdk/metric v1.33.0
+	go.opentelemetry.io/otel/sdk/metric v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 )

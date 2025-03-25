@@ -18,7 +18,7 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"log"
 	"testing"
 )
@@ -55,6 +55,12 @@ func (m mongoAttrsGetter) GetOperation(request testRequest) string {
 	}
 	return ""
 }
+func (m mongoAttrsGetter) GetDbNamespace(request testRequest) string {
+	return ""
+}
+func (m mongoAttrsGetter) GetBatchSize(request testRequest) int {
+	return 0
+}
 
 func (m mongoAttrsGetter) GetParameters(request testRequest) []any {
 	return nil
@@ -89,7 +95,7 @@ func TestDbClientExtractorEnd(t *testing.T) {
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
 	attrs, _ = dbExtractor.OnEnd(attrs, parentContext, testRequest{Name: "test"}, testResponse{}, nil)
-	if attrs[0].Key != semconv.DBSystemKey || attrs[0].Value.AsString() != "test" {
+	if attrs[0].Key != semconv.DBSystemNameKey || attrs[0].Value.AsString() != "test" {
 		t.Fatalf("db system should be test")
 	}
 	if attrs[1].Key != semconv.DBQueryTextKey || attrs[1].Value.AsString() != "test" {

@@ -21,7 +21,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/utils"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"log"
 	"sync"
 	"time"
@@ -173,7 +173,7 @@ func (h *RpcClientMetric) OnAfterEnd(context context.Context, endAttributes []at
 		}
 	}
 	endAttributes = append(endAttributes, startAttributes...)
-	
+
 	n, metricsAttrs := utils.Shadow(endAttributes, rpcMetricsConv)
 	if h.clientRequestDuration != nil {
 		h.clientRequestDuration.Record(context, float64(endTime.Sub(startTime)), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))

@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
@@ -28,7 +28,7 @@ import (
 func VerifyDbAttributes(span tracetest.SpanStub, name, system, address, statement, operation string) {
 	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
 	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
-	actualSystem := GetAttribute(span.Attributes, "db.system").AsString()
+	actualSystem := GetAttribute(span.Attributes, "db.system.name").AsString()
 	Assert(actualSystem == system, "Except client db system to be %s, got %s", system, actualSystem)
 	actualConnStr := GetAttribute(span.Attributes, "server.address").AsString()
 	Assert(strings.Contains(actualConnStr, address), "Except client address str to be %s, got %s", address, actualConnStr)
@@ -111,7 +111,7 @@ func verifyRpcAttributes(span tracetest.SpanStub, name, system, service, method 
 }
 
 func VerifyDbMetricsAttributes(attrs []attribute.KeyValue, dbSystem, operationName, serverAddress string) {
-	Assert(GetAttribute(attrs, string(semconv.DBSystemKey)).AsString() == dbSystem, "Expected db.system to be %s, got %s", dbSystem, GetAttribute(attrs, string(semconv.DBSystemKey)).AsString())
+	Assert(GetAttribute(attrs, string(semconv.DBSystemNameKey)).AsString() == dbSystem, "Expected db.system.name to be %s, got %s", dbSystem, GetAttribute(attrs, string(semconv.DBSystemNameKey)).AsString())
 	Assert(GetAttribute(attrs, string(semconv.DBOperationNameKey)).AsString() == operationName, "Expected db.operation.name to be %s, got %s", operationName, GetAttribute(attrs, string(semconv.DBOperationNameKey)).AsString())
 	Assert(GetAttribute(attrs, string(semconv.ServerAddressKey)).AsString() == serverAddress, "Expected server.address to be %s, got %s", serverAddress, GetAttribute(attrs, string(semconv.ServerAddressKey)).AsString())
 }
