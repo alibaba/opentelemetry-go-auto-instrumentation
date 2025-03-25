@@ -3,6 +3,7 @@
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md)
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)
 [![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)
+[![](https://shields.io/badge/Commercial-Aliyun-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications)
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -44,15 +45,12 @@ The configuration for the tool can be set by the following command:
 
 ```bash
 $ otel set -verbose                          # print verbose logs
-$ otel set -log=/path/to/file.log            # set log file
 $ otel set -debug                            # enable debug mode
-$ otel set -debug -verbose -rule=custom.json # set multiple configs
-$ otel set -disabledefault -rule=custom.json # disable default rules, use custom rules only
 $ otel set -rule=custom.json                 # use default and custom rules
-$ otel set -rule=a.json,b.json               # use default, a and b rules
+$ otel set -debug -verbose -rule=custom.json # set multiple configs
 ```
 
-Once all set up, add `otel` prefix to `go build` to build your project:
+Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:
 
 ```bash
 $ otel go build
@@ -60,14 +58,7 @@ $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
 ```
 
-The arguments of the tool itself should be placed before `go build`:
-
-```bash
-$ otel -help # print help document
-$ otel -debug go build # enable debug mode
-$ otel -verbose go build # print verbose logs
-$ otel -rule=custom.json go build # use custom rules
-```
+That's the whole process! The tool will automatically instrument your code with OpenTelemetry, and you can start to observe your application. :telescope:
 
 The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 
