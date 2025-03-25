@@ -74,12 +74,13 @@ func (rp *RuleProcessor) restoreAst(filePath string, root *dst.File) (string, er
 	return newFile, nil
 }
 
-func (rp *RuleProcessor) makeName(r *resource.InstFuncRule, onEnter bool) string {
+func (rp *RuleProcessor) makeName(r *resource.InstFuncRule,
+	funcDecl *dst.FuncDecl, onEnter bool) string {
 	prefix := TrampolineOnExitName
 	if onEnter {
 		prefix = TrampolineOnEnterName
 	}
-	return fmt.Sprintf("%s_%s%s", prefix, r.Function, rp.rule2Suffix[r])
+	return fmt.Sprintf("%s_%s%s", prefix, funcDecl.Name.Name, rp.rule2Suffix[r])
 }
 
 func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
@@ -147,8 +148,8 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 	// Generate the trampoline-jump-if. N.B. Note that future optimization pass
 	// heavily depends on the structure of trampoline-jump-if. Any change in it
 	// should be carefully examined.
-	onEnterCall := util.CallTo(rp.makeName(t, true), args)
-	onExitCall := util.CallTo(rp.makeName(t, false), func() []dst.Expr {
+	onEnterCall := util.CallTo(rp.makeName(t, rp.rawFunc, true), args)
+	onExitCall := util.CallTo(rp.makeName(t, rp.rawFunc, false), func() []dst.Expr {
 		// NB. DST framework disallows duplicated node in the
 		// AST tree, we need to replicate the return values
 		// as they are already used in return statement above
@@ -230,7 +231,7 @@ func (rp *RuleProcessor) insertTJump(t *resource.InstFuncRule,
 	}
 
 	// Generate corresponding trampoline code
-	err := rp.generateTrampoline(t, funcDecl)
+	err := rp.generateTrampoline(t)
 	if err != nil {
 		return err
 	}
@@ -341,6 +342,22 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 				recvType := nameAndRecvType[1]
 				if util.MatchFuncDecl(decl, name, recvType) {
 					fnDecl := decl.(*dst.FuncDecl)
+					fnName := fnDecl.Name.Name
+					// We dont want to instrument trampoline themselves
+					if strings.HasPrefix(fnName, TrampolineOnEnterName) ||
+						strings.HasPrefix(fnName, TrampolineOnExitName) {
+						continue
+					}
+
+					// Save raw function declaration
+					rp.rawFunc = fnDecl
+					// The func rule can either fully match the target function
+					// or use a regexp to match a batch of functions. The
+					// generation of tjump differs slightly between these two
+					// cases. In the former case, the hook function is required
+					// to have the same signature as the target function, while
+					// the latter does not have this requirement.
+					rp.exact = fnName == name
 					// Add explicit names for return values, they can be further
 					// referenced if we're willing
 					nameReturnValues(fnDecl)
@@ -358,7 +375,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 						}
 						util.Log("Apply func rule %s", rule)
 					}
-					break
+					// break
 				}
 			}
 		}

@@ -1,8 +1,9 @@
 ![](docs/anim-logo.svg)
 
-[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./docs/README.md)
+[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md)
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)
 [![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)
+[![](https://shields.io/badge/Commercial-Aliyun-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications)
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -44,15 +45,12 @@ The configuration for the tool can be set by the following command:
 
 ```bash
 $ otel set -verbose                          # print verbose logs
-$ otel set -log=/path/to/file.log            # set log file
 $ otel set -debug                            # enable debug mode
-$ otel set -debug -verbose -rule=custom.json # set multiple configs
-$ otel set -disabledefault -rule=custom.json # disable default rules, use custom rules only
 $ otel set -rule=custom.json                 # use default and custom rules
-$ otel set -rule=a.json,b.json               # use default, a and b rules
+$ otel set -debug -verbose -rule=custom.json # set multiple configs
 ```
 
-Once all set up, add `otel` prefix to `go build` to build your project:
+Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:
 
 ```bash
 $ otel go build
@@ -60,7 +58,9 @@ $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
 ```
 
-The detailed usage of otel tool can be found in [**Usage**](./docs/usage.md).
+That's the whole process! The tool will automatically instrument your code with OpenTelemetry, and you can start to observe your application. :telescope:
+
+The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 
 > [!NOTE]
 > If you find any compilation failures while `go build` works, it's likely a bug.
@@ -114,6 +114,19 @@ We are progressively open-sourcing the libraries we have supported, and your con
 >
 > Please refer to [this document](./docs/how-to-add-a-new-rule.md) to get started.
 
+# Documentation
+
+- [How to add a new rule](./docs/how-to-add-a-new-rule.md)
+- [How to write tests for plugins](./docs/how-to-write-tests-for-plugins.md)
+- [Compatibility](./docs/compatibility.md)
+- [How it works](./docs/how-it-works.md)
+- [How to debug](./docs/how-to-debug.md)
+- [Context Propagation](./docs/context-propagation.md)
+- [Supported Libraries](./docs/supported-libraries.md)
+- [Benchmark](./example/benchmark/benchmark.md)
+- [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)
+- [面向OpenTelemetry的Golang应用无侵入插桩技术](https://mp.weixin.qq.com/s/FKCwzRB5Ujhe1stOH2ibXg)
+
 # Community
 
 We are looking forward to your feedback and suggestions. You can join
@@ -140,7 +153,7 @@ These are only part of the companies using this project, for reference only. If 
 [![Star History](https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date)](https://star-history.com/#alibaba/opentelemetry-go-auto-instrumentation&Date)
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ 返回顶部 ↑
+    <a href="#Installation" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ TOP ↑
     </a>
 </p>

@@ -19,17 +19,10 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
-const (
-	// `db.collection.name` is only available in semconv/v1.29.0 and above.
-	// Considering the compatibility, we cannot upgrade to that version at this time,
-	// so define a transitional constant here instead.
-	// ref: https://github.com/open-telemetry/semantic-conventions/releases/tag/v1.29.0
-	DBCollectionNameKey = attribute.Key("db.collection.name")
-)
 func TestNoSqlAttributesPass(t *testing.T) {
 	VerifyDbAttributes(tracetest.SpanStub{SpanKind: trace.SpanKindClient, Name: "name", Attributes: []attribute.KeyValue{
 		{Key: semconv.DBNameKey, Value: attribute.StringValue("dbname")},
@@ -38,8 +31,8 @@ func TestNoSqlAttributesPass(t *testing.T) {
 		{Key: semconv.DBConnectionStringKey, Value: attribute.StringValue("connString")},
 		{Key: semconv.DBStatementKey, Value: attribute.StringValue("statement")},
 		{Key: semconv.DBOperationKey, Value: attribute.StringValue("operation")},
-		{Key: DBCollectionNameKey, Value: attribute.StringValue("collection")},
-	}}, "name", "dbname", "system", "user", "connString", "statement", "operation", "collection")
+		{Key: semconv.DBCollectionNameKey, Value: attribute.StringValue("collection")},
+	}}, "name", "system", "connString", "statement", "operation", "collection")
 }
 
 func TestNoSqlAttributesFail(t *testing.T) {
@@ -59,5 +52,6 @@ func TestNoSqlAttributesFail(t *testing.T) {
 		{Key: semconv.DBConnectionStringKey, Value: attribute.StringValue("connString")},
 		{Key: semconv.DBStatementKey, Value: attribute.StringValue("wrong statement")},
 		{Key: semconv.DBOperationKey, Value: attribute.StringValue("operation")},
-	}}, "name", "dbname", "system", "user", "connString", "statement", "operation", "collection")
+		{Key: semconv.DBCollectionNameKey, Value: attribute.StringValue("collection")},
+	}}, "name", "system", "connString", "statement", "operation", "collection")
 }

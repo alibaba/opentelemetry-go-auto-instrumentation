@@ -22,16 +22,10 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
-const (
-	// `db.collection.name` is only available in semconv/v1.29.0 and above.
-	// Considering the compatibility, we cannot upgrade to that version at this time,
-	// so define a transitional constant here instead.
-	// ref: https://github.com/open-telemetry/semantic-conventions/releases/tag/v1.29.0
-	DBCollectionNameKey = attribute.Key("db.collection.name")
-)
+// TODO: remove server.address and put it into NetworkAttributesExtractor
 
 type DbExperimentalAttributesEnabler interface {
 	Enable() bool
@@ -61,7 +55,7 @@ func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attrib
 
 func (d *DbClientCommonAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
 	attrs = append(attrs, attribute.KeyValue{
-		Key:   semconv.DBSystemKey,
+		Key:   semconv.DBSystemNameKey,
 		Value: attribute.StringValue(d.Getter.GetSystem(request)),
 	})
 	if d.AttributesFilter != nil {
@@ -94,9 +88,17 @@ func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attrs []attrib
 		Key:   semconv.ServerAddressKey,
 		Value: attribute.StringValue(d.Base.Getter.GetServerAddress(request)),
 	}, attribute.KeyValue{
-		Key:   DBCollectionNameKey,
+		Key:   semconv.DBCollectionNameKey,
 		Value: attribute.StringValue(d.Base.Getter.GetCollection(request)),
 	})
+	batchSize := d.Base.Getter.GetBatchSize(request)
+	if batchSize > 0 {
+		attrs = append(attrs, attribute.KeyValue{Key: semconv.DBOperationBatchSizeKey, Value: attribute.IntValue(batchSize)})
+	}
+	dbNameSpace := d.Base.Getter.GetDbNamespace(request)
+	if dbNameSpace != "" {
+		attrs = append(attrs, attribute.KeyValue{Key: semconv.DBNamespaceKey, Value: attribute.StringValue(dbNameSpace)})
+	}
 	if d.Base.AttributesFilter != nil {
 		attrs = d.Base.AttributesFilter(attrs)
 	}
@@ -116,4 +118,4 @@ func (d *DbClientAttrsExtractor[REQUEST, RESPONSE, GETTER]) GetSpanKey() attribu
 }
 
 // TODO: sanitize sql
-// TODO: request size & response size
+// TODO: batch sql
