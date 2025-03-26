@@ -232,6 +232,14 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Strip -complete flag as we may insert some hook points that are not ready
+	// yet, i.e. they dont have function body
+	for i, arg := range rp.compileArgs {
+		if arg == "-complete" {
+			rp.compileArgs = append(rp.compileArgs[:i], rp.compileArgs[i+1:]...)
+			break
+		}
+	}
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
 	util.Log("RunCmd: %v (%v)", bundle.ImportPath, rp.compileArgs)

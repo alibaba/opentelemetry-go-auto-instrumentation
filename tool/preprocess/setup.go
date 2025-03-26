@@ -366,39 +366,3 @@ func (dp *DepProcessor) rewriteRules() error {
 	}
 	return nil
 }
-
-func (dp *DepProcessor) setupOtelSDK() error {
-	// Copy otel_setup_sdk.go to ${GOMOD.DIR}/otel_rules
-	setupTarget := dp.generatedOf(filepath.Join(OtelRules, OtelSetupSDK))
-	_, err := resource.CopyOtelSetupTo(OtelRules, setupTarget)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (dp *DepProcessor) setupRules() (err error) {
-	defer util.PhaseTimer("Setup")()
-	err = dp.copyRules()
-	if err != nil {
-		return err
-	}
-	err = dp.initRules()
-	if err != nil {
-		return err
-	}
-	err = dp.rewriteRules()
-	if err != nil {
-		return err
-	}
-	err = dp.setupOtelSDK()
-	if err != nil {
-		return err
-	}
-	// Add rule import to all candidates
-	err = dp.addRuleImport()
-	if err != nil {
-		return err
-	}
-	return nil
-}

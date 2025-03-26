@@ -16,13 +16,16 @@ package langchain
 
 import (
 	"context"
+	"reflect"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/ollama"
 	"github.com/tmc/langchaingo/llms/openai"
-	"reflect"
 )
 
+//go:linkname openaiGenerateContentOnEnter github.com/tmc/langchaingo/llms/openai.openaiGenerateContentOnEnter
 func openaiGenerateContentOnEnter(call api.CallContext, llm *openai.LLM,
 	ctx context.Context, messages []llms.MessageContent, options ...llms.CallOption,
 ) {
@@ -41,6 +44,8 @@ func openaiGenerateContentOnEnter(call api.CallContext, llm *openai.LLM,
 	}
 	LLMBaseOnEnter(call, ctx, request, messages, options...)
 }
+
+//go:linkname openaiGenerateContentOnExit github.com/tmc/langchaingo/llms/openai.openaiGenerateContentOnExit
 func openaiGenerateContentOnExit(call api.CallContext, resp *llms.ContentResponse, err error) {
 	data := call.GetData().(map[string]interface{})
 	request := langChainLLMRequest{}
@@ -75,6 +80,8 @@ func openaiGenerateContentOnExit(call api.CallContext, resp *llms.ContentRespons
 
 	langChainLLMInstrument.End(ctx, request, response, nil)
 }
+
+//go:linkname ollamaGenerateContentOnEnter github.com/tmc/langchaingo/llms/ollama.ollamaGenerateContentOnEnter
 func ollamaGenerateContentOnEnter(call api.CallContext, llm *ollama.LLM,
 	ctx context.Context, messages []llms.MessageContent, options ...llms.CallOption,
 ) {
@@ -90,6 +97,8 @@ func ollamaGenerateContentOnEnter(call api.CallContext, llm *ollama.LLM,
 	}
 	LLMBaseOnEnter(call, ctx, request, messages, options...)
 }
+
+//go:linkname ollamaGenerateContentOnExit github.com/tmc/langchaingo/llms/ollama.ollamaGenerateContentOnExit
 func ollamaGenerateContentOnExit(call api.CallContext, resp *llms.ContentResponse, err error) {
 	data := call.GetData().(map[string]interface{})
 	request := langChainLLMRequest{}
@@ -111,6 +120,7 @@ func ollamaGenerateContentOnExit(call api.CallContext, resp *llms.ContentRespons
 	}
 	langChainLLMInstrument.End(ctx, request, response, nil)
 }
+
 func LLMBaseOnEnter(call api.CallContext,
 	ctx context.Context, req *langChainLLMRequest, messages []llms.MessageContent, options ...llms.CallOption,
 ) {
