@@ -100,6 +100,9 @@ var fixedDeps = []struct {
 	// otel contrib
 	{"go.opentelemetry.io/contrib/instrumentation/runtime",
 		"v0.60.0", false, false},
+	// commonly used by either hook or pkg
+	{"google.golang.org/protobuf", "v1.35.2",
+		false, false},
 }
 
 type DepProcessor struct {
@@ -113,6 +116,7 @@ type DepProcessor struct {
 	ruleCache       embed.FS
 	goBuildCmd      []string
 	vendorBuild     bool
+	modfile         *modfile.File
 }
 
 func newDepProcessor() *DepProcessor {
@@ -262,6 +266,13 @@ func (dp *DepProcessor) init() error {
 
 	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
 	util.Log("Found sources %v", dp.sources)
+
+	gomod := dp.getGoModPath()
+	dp.modfile, err = parseGoMod(gomod)
+	if err != nil {
+		return err
+	}
+	util.Log("Analyze %v", gomod)
 
 	// Check if the build mode
 	ignoreVendor := false
@@ -846,13 +857,28 @@ func (dp *DepProcessor) fetchDep(path string) error {
 // dependency while using otel to use the inst-api and inst-semconv package
 // We also need to pin its version to let the users use the fixed version
 func (dp *DepProcessor) pinDepVersion() error {
-	// otel related sdk dependencies
+	// Find if the dependency is already in the go.mod file
+	exist := map[string]bool{}
+	for _, dep := range fixedDeps {
+		for _, mod := range dp.modfile.Require {
+			if mod.Mod.Path == dep.dep {
+				exist[dep.dep] = true
+				break
+			}
+		}
+	}
+
+	// Only pin the dependencies if they dont exist in the go.mod file
+	// If the dependency is already in the go.mod file, we should use the
+	// existing version instead of the fixed version
 	for _, dep := range fixedDeps {
 		p := dep.dep
 		v := dep.version
-		if config.GetConf().Verbose {
-			util.Log("Pin dependency version %v@%v", p, v)
+		if exist[p] {
+			util.Log("Skip pinning dependency %v", p)
+			continue
 		}
+		util.Log("Pin dependency version %v@%v", p, v)
 		err := dp.fetchDep(p + "@" + v)
 		if err != nil {
 			if dep.fallible {

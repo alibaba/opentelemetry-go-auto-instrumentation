@@ -1,9 +1,10 @@
 ![](docs/anim-logo.svg)
 
-[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md)
-[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)
-[![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)
-[![](https://shields.io/badge/Commercial-Aliyun-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications)
+[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md) &nbsp;
+[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
+[![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)  &nbsp;
+[![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
+[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) &nbsp;
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -114,19 +115,6 @@ We are progressively open-sourcing the libraries we have supported, and your con
 >
 > Please refer to [this document](./docs/how-to-add-a-new-rule.md) to get started.
 
-# Documentation
-
-- [How to add a new rule](./docs/how-to-add-a-new-rule.md)
-- [How to write tests for plugins](./docs/how-to-write-tests-for-plugins.md)
-- [Compatibility](./docs/compatibility.md)
-- [How it works](./docs/how-it-works.md)
-- [How to debug](./docs/how-to-debug.md)
-- [Context Propagation](./docs/context-propagation.md)
-- [Supported Libraries](./docs/supported-libraries.md)
-- [Benchmark](./example/benchmark/benchmark.md)
-- [Discussion on this topic at OpenTelemetry community](https://github.com/open-telemetry/community/issues/1961)
-- [面向OpenTelemetry的Golang应用无侵入插桩技术](https://mp.weixin.qq.com/s/FKCwzRB5Ujhe1stOH2ibXg)
-
 # Community
 
 We are looking forward to your feedback and suggestions. You can join
@@ -134,13 +122,6 @@ our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fU
 to engage with us.
 
 <img src="docs/dingtalk.png" height="200">
-
-# Adopters
-
-These are only part of the companies using this project, for reference only. If you are using this project, please [add your company here](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) to tell us your scenario to make this project better.
-
-- <img src="./docs/alibaba.png" width="80">
-- <img src="./docs/aliyun.png" width="100">
 
 # Contributors
 
@@ -151,9 +132,3 @@ These are only part of the companies using this project, for reference only. If 
 # Star History
 
 [![Star History](https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date)](https://star-history.com/#alibaba/opentelemetry-go-auto-instrumentation&Date)
-
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#Installation" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ TOP ↑
-    </a>
-</p>
