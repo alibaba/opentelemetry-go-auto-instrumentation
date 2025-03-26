@@ -4,4 +4,4 @@
 
 ## **pulish module**
 
-监听github.com/rabbitmq/amqp091-go下Channel类的send方法。CorrelationId作为传递traceparent用于关联pulish和consume。当使用者自己填写了CorrelationId时，CorrelationId不会被覆盖，此时pulish和consume不会关联
+监听github.com/rabbitmq/amqp091-go下Channel类的PublishWithDeferredConfirm方法。Headers作为传递traceparent的媒介用于关联pulish和consume。当使用者需要使pulish和consume的追踪关联时，在调用pulish时要保证所传参数amqp.Publishing的Headers不能为nil。

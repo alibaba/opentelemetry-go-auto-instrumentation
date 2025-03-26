@@ -903,12 +903,11 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091go"
   },
     {
-      "Version": "[1.10.0,)",
-      "ImportPath": "github.com/rabbitmq/amqp091-go",
-      "ReceiverType": "*Channel",
-      "Function": "send",
-      "OnEnter": "publishOnEnter",
-      "OnExit":"publishOnExit",
+    "ImportPath": "github.com/rabbitmq/amqp091-go",
+    "ReceiverType": "*Channel",
+    "Function": "PublishWithDeferredConfirm",
+    "OnEnter": "publishWithDeferredConfirmOnEnter",
+    "OnExit":"publishWithDeferredConfirmOnExit",
       "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091go"
-    }
+  }
 ]

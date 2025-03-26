@@ -32,7 +32,7 @@ func main() {
 	channel.NotifyConfirm(ack, nack)
 
 	_, err = channel.PublishWithDeferredConfirm(exchange, routingKey, true, false,
-		amqp091.Publishing{Body: []byte("aabbcc"), DeliveryMode: 2})
+		amqp091.Publishing{Body: []byte("aabbcc"), DeliveryMode: 2, Headers: map[string]interface{}{}})
 	if err != nil {
 		panic(err)
 	}

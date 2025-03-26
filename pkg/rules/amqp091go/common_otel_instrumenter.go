@@ -22,120 +22,115 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
-	"strings"
 )
 
 type RabbitMQGetter struct {
 }
 
-var _ message.MessageAttrsGetter[*RabbitRequest, any] = RabbitMQGetter{}
+var _ message.MessageAttrsGetter[RabbitRequest, any] = RabbitMQGetter{}
 
-func (RabbitMQGetter) GetSystem(request *RabbitRequest) string {
+func (RabbitMQGetter) GetSystem(request RabbitRequest) string {
 	return "rabbitmq"
 }
 
-func (RabbitMQGetter) GetDestination(request *RabbitRequest) string {
+func (RabbitMQGetter) GetDestination(request RabbitRequest) string {
 	return request.destinationName
 }
 
-func (RabbitMQGetter) GetDestinationTemplate(request *RabbitRequest) string {
+func (RabbitMQGetter) GetDestinationTemplate(request RabbitRequest) string {
 	return ""
 }
 
-func (RabbitMQGetter) IsTemporaryDestination(request *RabbitRequest) bool {
+func (RabbitMQGetter) IsTemporaryDestination(request RabbitRequest) bool {
 	return false
 }
 
-func (RabbitMQGetter) IsAnonymousDestination(request *RabbitRequest) bool {
+func (RabbitMQGetter) IsAnonymousDestination(request RabbitRequest) bool {
 	return false
 }
 
-func (RabbitMQGetter) GetConversationId(request *RabbitRequest) string {
+func (RabbitMQGetter) GetConversationId(request RabbitRequest) string {
 	return request.conversationID
 }
 
-func (RabbitMQGetter) GetMessageBodySize(request *RabbitRequest) int64 {
+func (RabbitMQGetter) GetMessageBodySize(request RabbitRequest) int64 {
 	return request.bodySize
 }
 
-func (RabbitMQGetter) GetMessageEnvelopSize(request *RabbitRequest) int64 {
+func (RabbitMQGetter) GetMessageEnvelopSize(request RabbitRequest) int64 {
 	return 0
 }
 
-func (RabbitMQGetter) GetMessageId(request *RabbitRequest, response any) string {
+func (RabbitMQGetter) GetMessageId(request RabbitRequest, response any) string {
 	return request.messageId
 }
 
-func (RabbitMQGetter) GetClientId(request *RabbitRequest) string {
+func (RabbitMQGetter) GetClientId(request RabbitRequest) string {
 	return ""
 }
 
-func (RabbitMQGetter) GetBatchMessageCount(request *RabbitRequest, response any) int64 {
+func (RabbitMQGetter) GetBatchMessageCount(request RabbitRequest, response any) int64 {
 	return 0
 }
 
-func (RabbitMQGetter) GetMessageHeader(request *RabbitRequest, name string) []string {
+func (RabbitMQGetter) GetMessageHeader(request RabbitRequest, name string) []string {
 	return []string{}
 }
 
 type carrierGetter struct {
-	req *RabbitRequest
+	req RabbitRequest
 }
 
 func (r *carrierGetter) Get(key string) string {
-	if r.req == nil || r.req.conversationID == "" {
+	vInf, ok := r.req.headers[key]
+	if !ok {
 		return ""
 	}
-	vs := strings.Split(r.req.conversationID, ":")
-	if len(vs) < 2 {
-		return ""
-	}
-	if vs[0] == key {
-		return vs[1]
+	if v, ok := vInf.(string); ok {
+		return v
 	}
 	return ""
 }
 func (r *carrierGetter) Set(key string, value string) {
-	if r.req == nil || r.req.conversationID != "" {
+	if r.req.headers == nil {
 		return
 	}
-	vs := key + ":" + value
-	r.req.conversationID = vs
+	r.req.headers[key] = value
 }
 func (r *carrierGetter) Keys() []string {
-	if r.req == nil || r.req.conversationID == "" {
+	if r.req.headers == nil {
 		return []string{}
 	}
-	vs := strings.Split(r.req.conversationID, ":")
-	if len(vs) < 2 {
-		return []string{}
+	keys := make([]string, 0, len(r.req.headers))
+	for k, _ := range r.req.headers {
+		keys = append(keys, k)
 	}
-	return []string{vs[0]}
+	return keys
 }
 
-func BuildRabbitMQConsumeOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[*RabbitRequest, any] {
-	builder := instrumenter.Builder[*RabbitRequest, any]{}
-	return builder.Init().SetSpanNameExtractor(&message.MessageSpanNameExtractor[*RabbitRequest, any]{Getter: RabbitMQGetter{}, OperationName: message.RECEIVE}).
-		SetSpanKindExtractor(&instrumenter.AlwaysConsumerExtractor[*RabbitRequest]{}).
-		AddAttributesExtractor(&message.MessageAttrsExtractor[*RabbitRequest, any, RabbitMQGetter]{Operation: message.RECEIVE}).
+func BuildRabbitMQConsumeOtelInstrumenter() *instrumenter.PropagatingFromUpstreamInstrumenter[RabbitRequest, any] {
+	builder := instrumenter.Builder[RabbitRequest, any]{}
+	return builder.Init().SetSpanNameExtractor(&message.MessageSpanNameExtractor[RabbitRequest, any]{Getter: RabbitMQGetter{}, OperationName: message.RECEIVE}).
+		SetSpanKindExtractor(&instrumenter.AlwaysConsumerExtractor[RabbitRequest]{}).
+		AddAttributesExtractor(&message.MessageAttrsExtractor[RabbitRequest, any, RabbitMQGetter]{Operation: message.RECEIVE}).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.AMQP091GO_SCOPE_NAME,
 			Version: version.Tag,
 		}).
-		BuildPropagatingFromUpstreamInstrumenter(func(n *RabbitRequest) propagation.TextMapCarrier {
+		BuildPropagatingFromUpstreamInstrumenter(func(n RabbitRequest) propagation.TextMapCarrier {
 			return &carrierGetter{req: n}
 		}, otel.GetTextMapPropagator())
 }
-func BuildRabbitMQPublishOtelInstrumenter() *instrumenter.PropagatingToDownstreamInstrumenter[*RabbitRequest, any] {
-	builder := instrumenter.Builder[*RabbitRequest, any]{}
-	return builder.Init().SetSpanNameExtractor(&message.MessageSpanNameExtractor[*RabbitRequest, any]{Getter: RabbitMQGetter{}, OperationName: message.PUBLISH}).
-		SetSpanKindExtractor(&instrumenter.AlwaysProducerExtractor[*RabbitRequest]{}).
+func BuildRabbitMQPublishOtelInstrumenter() *instrumenter.PropagatingToDownstreamInstrumenter[RabbitRequest, any] {
+	builder := instrumenter.Builder[RabbitRequest, any]{}
+	return builder.Init().SetSpanNameExtractor(&message.MessageSpanNameExtractor[RabbitRequest, any]{Getter: RabbitMQGetter{}, OperationName: message.PUBLISH}).
+		SetSpanKindExtractor(&instrumenter.AlwaysProducerExtractor[RabbitRequest]{}).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.AMQP091GO_SCOPE_NAME,
 			Version: version.Tag,
 		}).
-		AddAttributesExtractor(&message.MessageAttrsExtractor[*RabbitRequest, any, RabbitMQGetter]{Operation: message.PUBLISH}).
-		BuildPropagatingToDownstreamInstrumenter(func(n *RabbitRequest) propagation.TextMapCarrier {
+		AddAttributesExtractor(&message.MessageAttrsExtractor[RabbitRequest, any, RabbitMQGetter]{Operation: message.PUBLISH}).
+		BuildPropagatingToDownstreamInstrumenter(func(n RabbitRequest) propagation.TextMapCarrier {
 			return &carrierGetter{req: n}
 		}, otel.GetTextMapPropagator())
 

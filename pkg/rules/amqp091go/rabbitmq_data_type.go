@@ -22,4 +22,5 @@ type RabbitRequest struct {
 	messageId       string
 	bodySize        int64
 	conversationID  string
+	headers         map[string]interface{}
 }
