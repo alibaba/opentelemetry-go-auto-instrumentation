@@ -36,11 +36,8 @@ func consumeOnEnter(call api.CallContext,
 		bodySize:        int64(len(msg.Body)),
 		conversationID:  msg.CorrelationId,
 		headers:         msg.Headers,
-		exchange:        msg.Exchange,
-		routingKey:      msg.RoutingKey,
 	}
 	ctx := context.Background()
-
 	var attributes []attribute.KeyValue
 	attributes = append(attributes,
 		semconv.MessagingRabbitmqDestinationRoutingKey(msg.RoutingKey),

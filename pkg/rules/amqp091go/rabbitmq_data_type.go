@@ -15,8 +15,6 @@
 package amqp091go
 
 type RabbitRequest struct {
-	exchange        string
-	routingKey      string
 	operationName   string
 	destinationName string
 	messageId       string

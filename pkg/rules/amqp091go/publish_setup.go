@@ -34,12 +34,9 @@ func publishWithDeferredConfirmOnEnter(call api.CallContext,
 		messageId:       msg.MessageId,
 		bodySize:        int64(len(msg.Body)),
 		headers:         msg.Headers,
-		exchange:        exchange,
-		routingKey:      key,
 		conversationID:  msg.MessageId,
 	}
 	ctx := context.Background()
-
 	var attributes []attribute.KeyValue
 	attributes = append(attributes,
 		semconv.MessagingRabbitmqDestinationRoutingKey(key), attribute.KeyValue{
@@ -52,7 +49,6 @@ func publishWithDeferredConfirmOnEnter(call api.CallContext,
 	)
 
 	ctx = RabbitMQPublishInstrumenter.Start(ctx, request, trace.WithAttributes(attributes...))
-
 	data := make(map[string]interface{})
 	data["ctx"] = ctx
 	data["rabbitMQ_request"] = request
