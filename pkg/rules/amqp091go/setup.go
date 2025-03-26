@@ -14,5 +14,5 @@
 
 package amqp091go
 
-var RabbitMQEnabler = BuildRabbitMQConsumeOtelInstrumenter()
-var RabbitMQPublishEnabler = BuildRabbitMQPublishOtelInstrumenter()
+var RabbitMQConsumeInstrumenter = BuildRabbitMQConsumeOtelInstrumenter()
+var RabbitMQPublishInstrumenter = BuildRabbitMQPublishOtelInstrumenter()

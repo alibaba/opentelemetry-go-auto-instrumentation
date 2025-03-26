@@ -52,9 +52,9 @@ func consumeOnEnter(call api.CallContext,
 			Value: attribute.StringValue(msg.ConsumerTag),
 		},
 	)
-	Ctx := RabbitMQEnabler.Start(ctx, request, trace.WithAttributes(attributes...))
+	ctx = RabbitMQConsumeInstrumenter.Start(ctx, request, trace.WithAttributes(attributes...))
 	data := make(map[string]interface{})
-	data["ctx"] = Ctx
+	data["ctx"] = ctx
 	data["rabbitMQ_consume_request"] = request
 	call.SetData(data)
 }
@@ -71,5 +71,5 @@ func consumeOnExit(call api.CallContext, b bool) {
 	if !ok {
 		return
 	}
-	RabbitMQEnabler.End(ctx, request, nil, nil)
+	RabbitMQConsumeInstrumenter.End(ctx, request, nil, nil)
 }

@@ -51,10 +51,10 @@ func publishWithDeferredConfirmOnEnter(call api.CallContext,
 		},
 	)
 
-	langCtx := RabbitMQPublishEnabler.Start(ctx, request, trace.WithAttributes(attributes...))
+	ctx = RabbitMQPublishInstrumenter.Start(ctx, request, trace.WithAttributes(attributes...))
 
 	data := make(map[string]interface{})
-	data["ctx"] = langCtx
+	data["ctx"] = ctx
 	data["rabbitMQ_request"] = request
 	call.SetData(data)
 }
@@ -71,5 +71,5 @@ func publishWithDeferredConfirmOnExit(call api.CallContext, confirm *amqp.Deferr
 	if !ok {
 		return
 	}
-	RabbitMQPublishEnabler.End(ctx, request, nil, err)
+	RabbitMQPublishInstrumenter.End(ctx, request, nil, err)
 }
