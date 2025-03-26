@@ -362,8 +362,9 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "# ") {
 			parts := strings.Split(line, " ")
-			// In form of #ImportPath Version?
-			if len(parts) == 3 {
+			// In form of # ImportPath Version or # ImportPath Version => Replace
+			// In any case, there must be at least 3 parts
+			if len(parts) == 3 || len(parts) == 5 {
 				util.Assert(parts[0] == "#", "sanity check")
 				util.Assert(strings.HasPrefix(parts[2], "v"), "sanity check")
 				vm = &vendorModule{
@@ -372,8 +373,10 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 					submodules: make([]string, 0),
 				}
 				vms = append(vms, vm)
+			} else if len(parts) == 4 {
+				// In form of # ImportPath => Replace, skip it
 			} else {
-				// For other lines, we just ignore them
+				util.ShouldNotReachHereT(line)
 			}
 		} else if !strings.HasPrefix(line, "## ") {
 			vm.submodules = append(vm.submodules, line)

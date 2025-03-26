@@ -45,6 +45,14 @@ func (g gormAttrsGetter) GetParameters(gormRequest gormRequest) []any {
 	return nil
 }
 
+func (g gormAttrsGetter) GetDbNamespace(gormRequest gormRequest) string {
+	return ""
+}
+
+func (g gormAttrsGetter) GetBatchSize(gormRequest gormRequest) int {
+	return 0
+}
+
 func BuildGormInstrumenter() instrumenter.Instrumenter[gormRequest, interface{}] {
 	builder := instrumenter.Builder[gormRequest, interface{}]{}
 	getter := gormAttrsGetter{}
