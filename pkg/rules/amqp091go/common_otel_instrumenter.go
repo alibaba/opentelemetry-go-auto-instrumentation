@@ -76,6 +76,9 @@ func (RabbitMQGetter) GetBatchMessageCount(request RabbitRequest, response any) 
 func (RabbitMQGetter) GetMessageHeader(request RabbitRequest, name string) []string {
 	return []string{}
 }
+func (RabbitMQGetter) GetDestinationPartitionId(request RabbitRequest) string {
+	return ""
+}
 
 type carrierGetter struct {
 	req RabbitRequest
