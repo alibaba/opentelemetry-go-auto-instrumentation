@@ -14,8 +14,7 @@
 
 #-------------------------------------------------------------------------------
 # General build options
-# Change this parameter while releasing
-MAIN_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
+MAIN_VERSION := $(shell git describe --tags --abbrev=0 | sed 's/^v//')
 
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 CURRENT_ARCH := $(shell uname -m | sed 's/aarch64/arm64/;s/armv7l/arm/;s/armv6l/arm/')

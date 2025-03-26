@@ -103,7 +103,21 @@ func (rp *RuleProcessor) addCompileArg(newArg string) {
 	rp.compileArgs = append(rp.compileArgs, newArg)
 }
 
+func haveSameSuffix(s1, s2 string) bool {
+	minLength := len(s1)
+	if len(s2) < minLength {
+		minLength = len(s2)
+	}
+	for i := 1; i <= minLength; i++ {
+		if s1[len(s1)-i] != s2[len(s2)-i] {
+			return false
+		}
+	}
+	return true
+}
+
 func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool) error {
+	variant := ""
 	for i, arg := range rp.compileArgs {
 		// Use absolute file path of the compile argument to compare with the
 		// instrumented file(path), which is also an absolute path
@@ -118,8 +132,15 @@ func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool
 			rp.setRelocated(arg, newArg)
 			return nil
 		}
+		if haveSameSuffix(arg, newArg) {
+			variant = arg
+		}
 	}
-	return errc.New(errc.ErrInstrument, "can not innstrument the file "+newArg)
+	if variant == "" {
+		variant = fmt.Sprintf("%v", rp.compileArgs)
+	}
+	msg := fmt.Sprintf("expect %s, actual %s", newArg, variant)
+	return errc.New(errc.ErrInstrument, msg)
 }
 
 func (rp *RuleProcessor) saveDebugFile(path string) {
@@ -175,58 +196,7 @@ func matchImportPath(importPath string, args []string) bool {
 	return false
 }
 
-// guaranteeVersion makes sure the rule bundle is still valid
-func guaranteeVersion(bundle *resource.RuleBundle, candidates []string) error {
-	for _, candidate := range candidates {
-		// It's not a go file, ignore silently
-		if !util.IsGoFile(candidate) {
-			continue
-		}
-		version := util.ExtractVersion(candidate)
-		for _, funcRules := range bundle.File2FuncRules {
-			for _, rules := range funcRules {
-				for _, rule := range rules {
-					matched, err := util.MatchVersion(version, rule.GetVersion())
-					if err != nil || !matched {
-						err = errc.Adhere(err, "rule", rule.String())
-						err = errc.Adhere(err, "candidate", candidate)
-						err = errc.Adhere(err, "version", version)
-						return err
-					}
-				}
-			}
-		}
-		for _, fileRule := range bundle.FileRules {
-			matched, err := util.MatchVersion(version, fileRule.GetVersion())
-			if err != nil || !matched {
-				err = errc.Adhere(err, "rule", fileRule.String())
-				err = errc.Adhere(err, "candidate", candidate)
-				err = errc.Adhere(err, "version", version)
-				return err
-			}
-		}
-		for _, structRules := range bundle.File2StructRules {
-			for _, rules := range structRules {
-				for _, rule := range rules {
-					matched, err := util.MatchVersion(version, rule.GetVersion())
-					if err != nil || !matched {
-						err = errc.Adhere(err, "rule", rule.String())
-						err = errc.Adhere(err, "candidate", candidate)
-						err = errc.Adhere(err, "version", version)
-						return err
-					}
-				}
-			}
-		}
-		// Good, the bundle is still valid, we not need to check all files
-		// in the package as they are mostly the same version
-		break
-	}
-	return nil
-}
-
 func compileRemix(bundle *resource.RuleBundle, args []string) error {
-	guaranteeVersion(bundle, args)
 	rp := newRuleProcessor(args, bundle.PackageName)
 	err := rp.applyRules(bundle)
 	if err != nil {
