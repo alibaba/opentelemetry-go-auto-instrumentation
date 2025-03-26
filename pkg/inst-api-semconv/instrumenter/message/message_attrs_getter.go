@@ -27,4 +27,5 @@ type MessageAttrsGetter[REQUEST any, RESPONSE any] interface {
 	GetClientId(request REQUEST) string
 	GetBatchMessageCount(request REQUEST, response RESPONSE) int64
 	GetMessageHeader(request REQUEST, name string) []string
+	GetDestinationPartitionId(request REQUEST) string
 }

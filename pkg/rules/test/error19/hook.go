@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Alibaba Group Holding Ltd.
+// Copyright (c) 2025 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package db
+package error19
 
-type DbClientCommonAttrsGetter[REQUEST any] interface {
-	GetSystem(REQUEST) string
-	GetServerAddress(REQUEST) string
-	GetDbNamespace(REQUEST) string
-	GetBatchSize(REQUEST) int
+import (
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+)
+
+// onEnterGeneric is a generic hook function that can be used to handle all
+// entry points of a function. The only parameter is a CallContext, which
+// contains all the information about the function call.
+func onEnterGeneric(call api.CallContext) {
+	println("xian")
 }
 
-type DbClientAttrsGetter[REQUEST any] interface {
-	DbClientCommonAttrsGetter[REQUEST]
-	GetStatement(REQUEST) string
-	GetOperation(REQUEST) string
-	GetParameters(REQUEST) []any
-}
-
-type SqlClientAttributesGetter[REQUEST any] interface {
-	DbClientCommonAttrsGetter[REQUEST]
-	GetRawStatement(REQUEST) string
+func onEnterGeneric2(call api.CallContext) {
+	println("shanxi")
 }

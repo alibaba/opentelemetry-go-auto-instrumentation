@@ -46,6 +46,14 @@ func (m mongoAttrsGetter) GetParameters(request mongoRequest) []any {
 	return nil
 }
 
+func (m mongoAttrsGetter) GetBatchSize(request mongoRequest) int {
+	return 0
+}
+
+func (m mongoAttrsGetter) GetDbNamespace(request mongoRequest) string {
+	return ""
+}
+
 type mongoSpanNameExtractor struct {
 }
 
