@@ -17,7 +17,9 @@ package test
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"testing"
 	"time"
 
@@ -74,6 +76,13 @@ func (s testSpan) InstrumentationLibrary() instrumentation.Library {
 }
 
 func TestResetSpan(t *testing.T) {
+	spans := GetTestSpans()
+	if spans == nil {
+		t.Fatal("spans should not be nil")
+	}
+	if len(*spans.(*tracetest.SpanStubs)) > 0 {
+		t.Fatal("spans should be empty")
+	}
 	err := spanExporter.ExportSpans(context.Background(), []sdktrace.ReadOnlySpan{
 		testSpan{ID: "1"},
 		testSpan{ID: "2"},
@@ -116,10 +125,26 @@ func TestIsInTest(t *testing.T) {
 
 func TestDeepCopyMetric(t *testing.T) {
 	original := metricdata.ResourceMetrics{
-		Resource:     &resource.Resource{},
-		ScopeMetrics: []metricdata.ScopeMetrics{{}},
+		Resource: &resource.Resource{},
+		ScopeMetrics: []metricdata.ScopeMetrics{
+			{Metrics: []metricdata.Metrics{{}, {}}},
+		},
 	}
 	copied := DeepCopyMetric(original)
 	assert.NotSame(t, &original, &copied)
 	assert.Equal(t, original, copied)
+}
+
+func TestGetTestMetrics(t *testing.T) {
+	_, err := GetTestMetrics()
+	if err == nil {
+		t.Fatal("error should not be nil")
+	}
+	_ = metric.NewMeterProvider(
+		metric.WithReader(ManualReader),
+	)
+	_, err = GetTestMetrics()
+	if err != nil {
+		t.Fatal("error should be nil")
+	}
 }

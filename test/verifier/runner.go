@@ -17,6 +17,7 @@ package verifier
 import (
 	"errors"
 	"fmt"
+	"github.com/mohae/deepcopy"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -53,7 +54,8 @@ func WaitAndAssertMetrics(metricVerifiers map[string]func(metricdata.ResourceMet
 		log.Fatalf("Failed to wait for metric: %v", err)
 	}
 	for k, v := range metricVerifiers {
-		d, err := filterMetricByName(mrs, k)
+		mrsCpy := DeepCopyMetric(mrs)
+		d, err := filterMetricByName(mrsCpy, k)
 		if err != nil {
 			log.Fatalf("Failed to wait for metric: %v", err)
 		}
@@ -225,4 +227,17 @@ func traversePreOrder(n *node, acc *[]tracetest.SpanStub) {
 	for _, child := range n.childNodes {
 		traversePreOrder(child, acc)
 	}
+}
+
+func DeepCopyMetric(mrs metricdata.ResourceMetrics) metricdata.ResourceMetrics {
+	// do a deep copy in before each metric verifier executed
+	mrsCpy := deepcopy.Copy(mrs).(metricdata.ResourceMetrics)
+	// The deepcopy can not copy the attributes
+	// so we just copy the data again to retain the attributes
+	for i, s := range mrs.ScopeMetrics {
+		for j, m := range s.Metrics {
+			mrsCpy.ScopeMetrics[i].Metrics[j].Data = m.Data
+		}
+	}
+	return mrsCpy
 }
