@@ -17,13 +17,12 @@ package verifier
 import (
 	"errors"
 	"fmt"
-	"github.com/mohae/deepcopy"
+	testaccess "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/test"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"sort"
 	"time"
-
-	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 type node struct {
@@ -53,7 +52,7 @@ func WaitAndAssertMetrics(metricVerifiers map[string]func(metricdata.ResourceMet
 		log.Fatalf("Failed to wait for metric: %v", err)
 	}
 	for k, v := range metricVerifiers {
-		mrsCpy := deepCopyMetric(mrs)
+		mrsCpy := testaccess.DeepCopyMetric(mrs)
 		d, err := filterMetricByName(mrsCpy, k)
 		if err != nil {
 			log.Fatalf("Failed to wait for metric: %v", err)
@@ -75,7 +74,7 @@ func waitForMetrics() (metricdata.ResourceMetrics, error) {
 			log.Printf("Timeout waiting for metrics!")
 			finish = true
 		default:
-			mrs, err = GetTestMetrics()
+			mrs, err = testaccess.GetTestMetrics()
 			if err == nil {
 				finish = true
 				break
@@ -110,7 +109,7 @@ func filterMetricByName(data metricdata.ResourceMetrics, name string) (metricdat
 }
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
-	defer ResetTestSpans()
+	defer testaccess.ResetTestSpans()
 	finish := false
 	var traces []tracetest.SpanStubs
 	var i int
@@ -134,7 +133,7 @@ func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 }
 
 func groupAndSortTrace() []tracetest.SpanStubs {
-	spans := GetTestSpans()
+	spans := testaccess.GetTestSpans()
 	traceMap := make(map[string][]tracetest.SpanStub)
 	for _, span := range *spans {
 		if span.SpanContext.HasTraceID() && span.SpanContext.TraceID().IsValid() {
@@ -224,17 +223,4 @@ func traversePreOrder(n *node, acc *[]tracetest.SpanStub) {
 	for _, child := range n.childNodes {
 		traversePreOrder(child, acc)
 	}
-}
-
-func deepCopyMetric(mrs metricdata.ResourceMetrics) metricdata.ResourceMetrics {
-	// do a deep copy in before each metric verifier executed
-	mrsCpy := deepcopy.Copy(mrs).(metricdata.ResourceMetrics)
-	// The deepcopy can not copy the attributes
-	// so we just copy the data again to retain the attributes
-	for i, s := range mrs.ScopeMetrics {
-		for j, m := range s.Metrics {
-			mrsCpy.ScopeMetrics[i].Metrics[j].Data = m.Data
-		}
-	}
-	return mrsCpy
 }

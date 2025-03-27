@@ -19,12 +19,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 
 	"go.opentelemetry.io/otel/attribute"
 )
-
-const IS_IN_TEST = "IN_OTEL_TEST"
 
 func GetAttribute(attrs []attribute.KeyValue, name string) attribute.Value {
 	for _, attr := range attrs {
@@ -66,8 +63,4 @@ func GetServer(ctx context.Context, url string) (string, error) {
 	}
 	defer resp.Body.Close()
 	return resp.Status, nil
-}
-
-func IsInTest() bool {
-	return os.Getenv(IS_IN_TEST) == "true"
 }
