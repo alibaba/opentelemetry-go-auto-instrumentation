@@ -156,9 +156,3 @@ $ otel -rule=custom.json go build # 使用自定义规则
 # Star History
 
 [![Star History](https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date)](https://star-history.com/#alibaba/opentelemetry-go-auto-instrumentation&Date)
-
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#安装" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ 返回顶部 ↑
-    </a>
-</p>

@@ -17,6 +17,7 @@
 - `ImportPath`: The import path of the package that contains the function to be instrumented.
 - `FileName` : The name of the file to be added.
 - `Path`: The path to the directory containing the probe code.
+- `Replace`: Replace the file if it already exists, default is `false`.
 
 ## Add a new field to a struct
 - `ImportPath`: The import path of the package that contains the struct to be instrumented.
