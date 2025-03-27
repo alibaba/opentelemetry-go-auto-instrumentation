@@ -41,7 +41,7 @@ func TestCompileTheWorld(t *testing.T) {
 		importPath := match[1]
 		importPaths[importPath] = struct{}{}
 	}
-	if len(importPaths) != 23 {
+	if len(importPaths) != 24 {
 		t.Log("Matched import paths:")
 		for path := range importPaths {
 			fmt.Println(path)
