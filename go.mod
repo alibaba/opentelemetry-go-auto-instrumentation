@@ -1,7 +1,7 @@
 module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
 go 1.23.0
-1
+
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../opentelemetry-go-auto-instrumentation
 
 require (
