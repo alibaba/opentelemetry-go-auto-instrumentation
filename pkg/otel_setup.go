@@ -72,6 +72,11 @@ var (
 )
 
 func init() {
+	if testaccess.IsInTest() {
+		trace.GetTestSpans = testaccess.GetTestSpans
+		metric.GetTestMetrics = testaccess.GetTestMetrics
+		trace.ResetTestSpans = testaccess.ResetTestSpans
+	}
 	ctx := context.Background()
 	// graceful shutdown
 	runtime.ExitHook = func() {

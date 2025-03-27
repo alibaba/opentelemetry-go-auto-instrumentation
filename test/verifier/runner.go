@@ -17,8 +17,9 @@ package verifier
 import (
 	"errors"
 	"fmt"
-	testaccess "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/test"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"sort"
@@ -52,8 +53,7 @@ func WaitAndAssertMetrics(metricVerifiers map[string]func(metricdata.ResourceMet
 		log.Fatalf("Failed to wait for metric: %v", err)
 	}
 	for k, v := range metricVerifiers {
-		mrsCpy := testaccess.DeepCopyMetric(mrs)
-		d, err := filterMetricByName(mrsCpy, k)
+		d, err := filterMetricByName(mrs, k)
 		if err != nil {
 			log.Fatalf("Failed to wait for metric: %v", err)
 		}
@@ -74,7 +74,8 @@ func waitForMetrics() (metricdata.ResourceMetrics, error) {
 			log.Printf("Timeout waiting for metrics!")
 			finish = true
 		default:
-			mrs, err = testaccess.GetTestMetrics()
+			mi, err := metric.GetTestMetrics()
+			mrs = mi.(metricdata.ResourceMetrics)
 			if err == nil {
 				finish = true
 				break
@@ -109,7 +110,7 @@ func filterMetricByName(data metricdata.ResourceMetrics, name string) (metricdat
 }
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
-	defer testaccess.ResetTestSpans()
+	defer trace.ResetTestSpans()
 	finish := false
 	var traces []tracetest.SpanStubs
 	var i int
@@ -133,7 +134,8 @@ func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 }
 
 func groupAndSortTrace() []tracetest.SpanStubs {
-	spans := testaccess.GetTestSpans()
+	spansi := trace.GetTestSpans()
+	spans := spansi.(*tracetest.SpanStubs)
 	traceMap := make(map[string][]tracetest.SpanStub)
 	for _, span := range *spans {
 		if span.SpanContext.HasTraceID() && span.SpanContext.TraceID().IsValid() {

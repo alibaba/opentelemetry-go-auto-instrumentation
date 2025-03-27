@@ -1,13 +1,10 @@
 module github.com/alibaba/opentelemetry-go-auto-instrumentation
 
 go 1.23.0
-
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ./test/verifier
-
+1
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../opentelemetry-go-auto-instrumentation
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/cloudwego/hertz v0.9.3
 	github.com/cloudwego/kitex v0.5.1
 	github.com/dave/dst v0.27.3
@@ -48,6 +45,7 @@ require (
 require (
 	github.com/bytedance/gopkg v0.1.0
 	github.com/kataras/iris/v12 v12.2.11
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tmc/langchaingo v0.1.13
@@ -156,7 +154,6 @@ require (
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/nikolalohinski/gonja v1.5.3 // indirect
 	github.com/nyaruka/phonenumbers v1.0.55 // indirect

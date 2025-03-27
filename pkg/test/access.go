@@ -35,7 +35,7 @@ func GetSpanExporter() trace.SpanExporter {
 	return spanExporter
 }
 
-func GetTestSpans() *tracetest.SpanStubs {
+func GetTestSpans() interface{} {
 	spans := spanExporter.GetSpans()
 	return &spans
 }
@@ -44,7 +44,7 @@ func ResetTestSpans() {
 	spanExporter.Reset()
 }
 
-func GetTestMetrics() (metricdata.ResourceMetrics, error) {
+func GetTestMetrics() (interface{}, error) {
 	var tmp, result metricdata.ResourceMetrics
 	err := ManualReader.Collect(context.Background(), &tmp)
 	if err != nil {
