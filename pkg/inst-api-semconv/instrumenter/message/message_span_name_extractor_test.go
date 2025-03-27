@@ -51,7 +51,7 @@ func (t testGetter) IsTemporaryDestination(request testRequest) bool {
 	return request.IsTemporaryDestination
 }
 
-func (t testGetter) isAnonymousDestination(request testRequest) bool {
+func (t testGetter) IsAnonymousDestination(request testRequest) bool {
 	//TODO implement me
 	panic("implement me")
 }
@@ -96,7 +96,7 @@ func (m testGetter) GetDestinationPartitionId(request testRequest) string {
 }
 
 func TestExtractSpanName(t *testing.T) {
-	r := MessageSpanNameExtractor[testRequest, testResponse]{getter: testGetter{}}
+	r := MessageSpanNameExtractor[testRequest, testResponse]{Getter: testGetter{}}
 	spanName := r.Extract(testRequest{IsTemporaryDestination: true, Destination: "Destination"})
 	if spanName != "(temporary)" {
 		t.Fatalf("extract span name failed: expected (temporary) but got %s", spanName)
@@ -108,7 +108,7 @@ func TestExtractSpanName(t *testing.T) {
 }
 
 func TestExtractSpanNameWithOperationName(t *testing.T) {
-	r := MessageSpanNameExtractor[testRequest, testResponse]{getter: testGetter{}, operationName: PUBLISH}
+	r := MessageSpanNameExtractor[testRequest, testResponse]{Getter: testGetter{}, OperationName: PUBLISH}
 	spanName := r.Extract(testRequest{IsTemporaryDestination: true, Destination: "Destination"})
 	if spanName != "(temporary) publish" {
 		t.Fatalf("extract span name failed: expected (temporary) publish but got %s", spanName)
