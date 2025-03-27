@@ -19,7 +19,7 @@ import (
 	_ "embed"
 )
 
-//go:embed core inst-api inst-api-semconv
+//go:embed core inst-api inst-api-semconv test
 var embedDir embed.FS
 
 func ExportPkgDirList() []string {
