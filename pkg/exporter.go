@@ -19,11 +19,11 @@ import (
 	_ "embed"
 )
 
-//go:embed core inst-api inst-api-semconv test
+//go:embed core inst-api inst-api-semconv testaccess
 var embedDir embed.FS
 
 func ExportPkgDirList() []string {
-	return []string{"core", "inst-api", "inst-api-semconv", "test"}
+	return []string{"core", "inst-api", "inst-api-semconv", "testacccess"}
 }
 func ExportPkgFS() embed.FS {
 	return embedDir
