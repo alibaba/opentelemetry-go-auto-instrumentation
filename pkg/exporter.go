@@ -23,7 +23,7 @@ import (
 var embedDir embed.FS
 
 func ExportPkgDirList() []string {
-	return []string{"core", "inst-api", "inst-api-semconv", "testacccess"}
+	return []string{"core", "inst-api", "inst-api-semconv", "testaccess"}
 }
 func ExportPkgFS() embed.FS {
 	return embedDir
