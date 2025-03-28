@@ -1,6 +1,6 @@
 module fiberTest/v2.43.0
 
-go 1.22.0
+go 1.23.0
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
 

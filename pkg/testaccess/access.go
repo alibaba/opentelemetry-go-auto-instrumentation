@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package verifier
+package test
 
 import (
 	"context"
+	"github.com/mohae/deepcopy"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"os"
 )
+
+const IS_IN_TEST = "IN_OTEL_TEST"
 
 // In memory span exporter
 var spanExporter = tracetest.NewInMemoryExporter()
@@ -31,7 +35,7 @@ func GetSpanExporter() trace.SpanExporter {
 	return spanExporter
 }
 
-func GetTestSpans() *tracetest.SpanStubs {
+func GetTestSpans() interface{} {
 	spans := spanExporter.GetSpans()
 	return &spans
 }
@@ -40,12 +44,29 @@ func ResetTestSpans() {
 	spanExporter.Reset()
 }
 
-func GetTestMetrics() (metricdata.ResourceMetrics, error) {
+func GetTestMetrics() (interface{}, error) {
 	var tmp, result metricdata.ResourceMetrics
 	err := ManualReader.Collect(context.Background(), &tmp)
 	if err != nil {
 		return metricdata.ResourceMetrics{}, err
 	}
-	result = deepCopyMetric(tmp)
+	result = DeepCopyMetric(tmp)
 	return result, nil
+}
+
+func DeepCopyMetric(mrs metricdata.ResourceMetrics) metricdata.ResourceMetrics {
+	// do a deep copy in before each metric verifier executed
+	mrsCpy := deepcopy.Copy(mrs).(metricdata.ResourceMetrics)
+	// The deepcopy can not copy the attributes
+	// so we just copy the data again to retain the attributes
+	for i, s := range mrs.ScopeMetrics {
+		for j, m := range s.Metrics {
+			mrsCpy.ScopeMetrics[i].Metrics[j].Data = m.Data
+		}
+	}
+	return mrsCpy
+}
+
+func IsInTest() bool {
+	return os.Getenv(IS_IN_TEST) == "true"
 }
