@@ -795,8 +795,14 @@ func nullDevice() string {
 
 func runOriginalCmd(originalGoCmd []string) error {
 	out, err := runCmdCombinedOutput("", originalGoCmd...)
-	_, _ = fmt.Fprintln(os.Stdout, out)
-	_, _ = fmt.Fprintln(os.Stderr, err)
+	util.SetLogger(os.Stdout)
+	if out != "" {
+		_, _ = fmt.Fprintln(os.Stdout, out)
+	}
+	util.SetLogger(os.Stderr)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err.Error())
+	}
 	return err
 }
 
