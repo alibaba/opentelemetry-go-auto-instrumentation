@@ -793,6 +793,12 @@ func nullDevice() string {
 	return "/dev/null"
 }
 
+func runOriginalCmd(originalGoCmd []string) error {
+	out, err := runCmdCombinedOutput("", originalGoCmd...)
+	util.Log("Run original go cmd: %v", out)
+	return err
+}
+
 func runBuildWithToolexec(goBuildCmd []string) error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -908,7 +914,11 @@ func precheck() error {
 		os.Exit(0)
 	}
 	if os.Args[2] != "build" {
-		config.PrintVersion()
+		// exec original go command
+		err := runOriginalCmd(os.Args[1:])
+		if err != nil {
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 	return nil
