@@ -19,7 +19,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -31,7 +31,8 @@ func TestNoSqlAttributesPass(t *testing.T) {
 		{Key: semconv.DBConnectionStringKey, Value: attribute.StringValue("connString")},
 		{Key: semconv.DBStatementKey, Value: attribute.StringValue("statement")},
 		{Key: semconv.DBOperationKey, Value: attribute.StringValue("operation")},
-	}}, "name", "dbname", "system", "user", "connString", "statement", "operation")
+		{Key: semconv.DBCollectionNameKey, Value: attribute.StringValue("collection")},
+	}}, "name", "system", "connString", "statement", "operation", "collection")
 }
 
 func TestNoSqlAttributesFail(t *testing.T) {
@@ -51,5 +52,6 @@ func TestNoSqlAttributesFail(t *testing.T) {
 		{Key: semconv.DBConnectionStringKey, Value: attribute.StringValue("connString")},
 		{Key: semconv.DBStatementKey, Value: attribute.StringValue("wrong statement")},
 		{Key: semconv.DBOperationKey, Value: attribute.StringValue("operation")},
-	}}, "name", "dbname", "system", "user", "connString", "statement", "operation")
+		{Key: semconv.DBCollectionNameKey, Value: attribute.StringValue("collection")},
+	}}, "name", "system", "connString", "statement", "operation", "collection")
 }

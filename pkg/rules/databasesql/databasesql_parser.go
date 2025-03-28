@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	nurl "net/url"
+	"github.com/xwb1989/sqlparser"
 )
 
 func parseDSN(driverName, dsn string) (addr string, err error) {
@@ -63,4 +64,43 @@ func parseMySQL(dsn string) (addr string, err error) {
 		return dsn[i+1 : j], nil
 	}
 	return "", errors.New("invalid MySQL DSN")
+}
+
+func collectionExtractor(query string) string {
+	stmt, err := sqlparser.Parse(query)
+	if err != nil {
+		return ""
+	}
+	// Only support DML currently
+	switch stmt := stmt.(type) {
+	case *sqlparser.Select:
+		return getTableName(stmt.From)
+	case *sqlparser.Update:
+		return getTableName(stmt.TableExprs)
+	case *sqlparser.Insert:
+		return stmt.Table.Name.String()
+	case *sqlparser.Delete:
+		return getTableName(stmt.TableExprs)
+	default:
+		return ""
+	}
+}
+
+func getTableName(node sqlparser.SQLNode) string {
+    switch n := node.(type) {
+    case sqlparser.TableName:
+        return n.Name.String()
+    case sqlparser.TableExprs:
+        for _, expr := range n {
+            aliasedExpr, ok := expr.(*sqlparser.AliasedTableExpr)
+            if !ok {
+                continue
+            }
+            tableName, ok := aliasedExpr.Expr.(sqlparser.TableName)
+            if ok {
+                return tableName.Name.String()
+            }
+        }
+    } 
+    return ""
 }

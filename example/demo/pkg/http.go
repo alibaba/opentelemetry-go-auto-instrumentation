@@ -101,7 +101,7 @@ func InitDB() {
 	}
 
 	// test insert
-	if _, err := db.ExecContext(context.Background(), `INSERT INTO usersx (id, name, age) VALUE ( ?, ?, ?)`, "0", "foo", 10); err != nil {
+	if _, err := db.ExecContext(context.Background(), `INSERT INTO usersx (id, name, age) VALUES ( ?, ?, ?)`, "0", "foo", 10); err != nil {
 		fmt.Printf("exec insert error: %v", err)
 	}
 }

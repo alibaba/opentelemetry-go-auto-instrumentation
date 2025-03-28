@@ -49,6 +49,10 @@ func (d databaseSqlAttrsGetter) GetOperation(request databaseSqlRequest) string 
 	return request.opType
 }
 
+func (d databaseSqlAttrsGetter) GetCollection(request databaseSqlRequest) string {
+	return collectionExtractor(request.sql)
+}
+
 func (d databaseSqlAttrsGetter) GetParameters(request databaseSqlRequest) []any {
 	return request.params
 }

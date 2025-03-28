@@ -64,6 +64,11 @@ func (d goRedisV8AttrsGetter) GetStatement(request redisv8Data) string {
 	return redisV8String(b)
 }
 
+func (d goRedisV8AttrsGetter) GetCollection(request redisv8Data) string {
+	// TBD: We need to implement retrieving the collection later.
+	return ""
+}
+
 func (d goRedisV8AttrsGetter) GetOperation(request redisv8Data) string {
 	return request.cmd.FullName()
 }
