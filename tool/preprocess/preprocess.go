@@ -795,7 +795,8 @@ func nullDevice() string {
 
 func runOriginalCmd(originalGoCmd []string) error {
 	out, err := runCmdCombinedOutput("", originalGoCmd...)
-	util.Log("Run original go cmd: %v", out)
+	_, _ = fmt.Fprintln(os.Stdout, out)
+	_, _ = fmt.Fprintln(os.Stderr, err)
 	return err
 }
 
