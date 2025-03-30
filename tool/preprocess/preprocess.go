@@ -793,19 +793,6 @@ func nullDevice() string {
 	return "/dev/null"
 }
 
-func runOriginalCmd(originalGoCmd []string) error {
-	out, err := runCmdCombinedOutput("", originalGoCmd...)
-	util.SetLogger(os.Stdout)
-	if out != "" {
-		_, _ = fmt.Fprintln(os.Stdout, out)
-	}
-	util.SetLogger(os.Stderr)
-	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err.Error())
-	}
-	return err
-}
-
 func runBuildWithToolexec(goBuildCmd []string) error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -922,7 +909,7 @@ func precheck() error {
 	}
 	if os.Args[2] != "build" {
 		// exec original go command
-		err := runOriginalCmd(os.Args[1:])
+		err := util.RunCmd(os.Args[1:]...)
 		if err != nil {
 			os.Exit(1)
 		}
