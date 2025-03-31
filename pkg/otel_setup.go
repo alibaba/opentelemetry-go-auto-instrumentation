@@ -33,7 +33,7 @@ import (
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	testaccess "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/testaccess"
 	otelruntime "go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel/baggage"
@@ -72,6 +72,11 @@ var (
 )
 
 func init() {
+	if testaccess.IsInTest() {
+		trace.GetTestSpans = testaccess.GetTestSpans
+		metric.GetTestMetrics = testaccess.GetTestMetrics
+		trace.ResetTestSpans = testaccess.ResetTestSpans
+	}
 	ctx := context.Background()
 	// graceful shutdown
 	runtime.ExitHook = func() {
@@ -91,8 +96,8 @@ func init() {
 }
 
 func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
-	if verifier.IsInTest() {
-		traceExporter := verifier.GetSpanExporter()
+	if testaccess.IsInTest() {
+		traceExporter := testaccess.GetSpanExporter()
 		// in test, we just send the span immediately
 		simpleProcessor := trace.NewSimpleSpanProcessor(traceExporter)
 		return simpleProcessor
@@ -139,9 +144,9 @@ func initMetrics() error {
 	ctx := context.Background()
 	// TODO: abstract the if-else
 	var err error
-	if verifier.IsInTest() {
+	if testaccess.IsInTest() {
 		metricsProvider = metric.NewMeterProvider(
-			metric.WithReader(verifier.ManualReader),
+			metric.WithReader(testaccess.ManualReader),
 		)
 	} else {
 		if os.Getenv(metrics_exporter) == "console" {

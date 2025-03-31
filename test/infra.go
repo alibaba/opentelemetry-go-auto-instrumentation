@@ -24,7 +24,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
@@ -172,7 +171,7 @@ func RunApp(t *testing.T, appName string, env ...string) (string, string) {
 	cmd := runCmd([]string{"./" + appName})
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, env...)
-	cmd.Env = append(cmd.Env, verifier.IS_IN_TEST+"=true")
+	cmd.Env = append(cmd.Env, "IN_OTEL_TEST=true")
 	err := cmd.Run()
 	stdoutText := readStdoutLog(t)
 	stderrText := readStderrLog(t)

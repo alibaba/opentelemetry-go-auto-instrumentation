@@ -18,12 +18,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mohae/deepcopy"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"sort"
 	"time"
-
-	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 type node struct {
@@ -53,7 +54,7 @@ func WaitAndAssertMetrics(metricVerifiers map[string]func(metricdata.ResourceMet
 		log.Fatalf("Failed to wait for metric: %v", err)
 	}
 	for k, v := range metricVerifiers {
-		mrsCpy := deepCopyMetric(mrs)
+		mrsCpy := DeepCopyMetric(mrs)
 		d, err := filterMetricByName(mrsCpy, k)
 		if err != nil {
 			log.Fatalf("Failed to wait for metric: %v", err)
@@ -75,7 +76,8 @@ func waitForMetrics() (metricdata.ResourceMetrics, error) {
 			log.Printf("Timeout waiting for metrics!")
 			finish = true
 		default:
-			mrs, err = GetTestMetrics()
+			mi, err := metric.GetTestMetrics()
+			mrs = mi.(metricdata.ResourceMetrics)
 			if err == nil {
 				finish = true
 				break
@@ -110,7 +112,7 @@ func filterMetricByName(data metricdata.ResourceMetrics, name string) (metricdat
 }
 
 func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
-	defer ResetTestSpans()
+	defer trace.ResetTestSpans()
 	finish := false
 	var traces []tracetest.SpanStubs
 	var i int
@@ -134,7 +136,8 @@ func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 }
 
 func groupAndSortTrace() []tracetest.SpanStubs {
-	spans := GetTestSpans()
+	spansi := trace.GetTestSpans()
+	spans := spansi.(*tracetest.SpanStubs)
 	traceMap := make(map[string][]tracetest.SpanStub)
 	for _, span := range *spans {
 		if span.SpanContext.HasTraceID() && span.SpanContext.TraceID().IsValid() {
@@ -226,7 +229,7 @@ func traversePreOrder(n *node, acc *[]tracetest.SpanStub) {
 	}
 }
 
-func deepCopyMetric(mrs metricdata.ResourceMetrics) metricdata.ResourceMetrics {
+func DeepCopyMetric(mrs metricdata.ResourceMetrics) metricdata.ResourceMetrics {
 	// do a deep copy in before each metric verifier executed
 	mrsCpy := deepcopy.Copy(mrs).(metricdata.ResourceMetrics)
 	// The deepcopy can not copy the attributes
