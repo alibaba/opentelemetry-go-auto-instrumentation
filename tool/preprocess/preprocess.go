@@ -908,7 +908,11 @@ func precheck() error {
 		os.Exit(0)
 	}
 	if os.Args[2] != "build" {
-		config.PrintVersion()
+		// exec original go command
+		err := util.RunCmd(os.Args[1:]...)
+		if err != nil {
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 	return nil
