@@ -44,6 +44,8 @@ const (
 	TrampolineValIdentifier          = "val"
 	TrampolineCtxIdentifier          = "c"
 	TrampolineParamsIdentifier       = "Params"
+	TrampolineFuncNameIdentifier     = "FuncName"
+	TrampolinePackageNameIdentifier  = "PackageName"
 	TrampolineReturnValsIdentifier   = "ReturnVals"
 	TrampolineSkipName               = "skip"
 	TrampolineCallContextName        = "callContext"
@@ -400,6 +402,7 @@ func (rp *RuleProcessor) rectifyTypes() {
 	addCallContext(onExitHookFunc.Type.Params)
 }
 
+// replenishCallContext replenishes the call context before hook invocation
 func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 	funcDecl := rp.onEnterHookFunc
 	if !onEnter {
@@ -407,27 +410,77 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 	}
 	for _, stmt := range funcDecl.Body.List {
 		if assignStmt, ok := stmt.(*dst.AssignStmt); ok {
-			rhs := assignStmt.Rhs
-			if len(rhs) == 1 {
-				rhsExpr := rhs[0]
-				if compositeLit, ok := rhsExpr.(*dst.CompositeLit); ok {
-					elems := compositeLit.Elts
-					names := getNames(funcDecl.Type.Params)
-					for i, name := range names {
-						if i == 0 && !onEnter {
-							// SKip first callContext parameter for onExit
-							continue
+			lhs := assignStmt.Lhs
+			if sel, ok := lhs[0].(*dst.SelectorExpr); ok {
+				switch sel.Sel.Name {
+				case TrampolineFuncNameIdentifier:
+					util.Assert(onEnter, "sanity check")
+					// callContext.FuncName = "..."
+					rhs := assignStmt.Rhs
+					if len(rhs) == 1 {
+						rhsExpr := rhs[0]
+						if basicLit, ok := rhsExpr.(*dst.BasicLit); ok {
+							if basicLit.Kind == token.STRING {
+								rawFuncName := rp.rawFunc.Name.Name
+								basicLit.Value = strconv.Quote(rawFuncName)
+							} else {
+								return false // ill-formed AST
+							}
+						} else {
+							return false // ill-formed AST
 						}
-						elems = append(elems, util.Ident(name))
+					} else {
+						return false // ill-formed AST
 					}
-					compositeLit.Elts = elems
-					return true
+					dst.Print(rhs)
+				case TrampolinePackageNameIdentifier:
+					util.Assert(onEnter, "sanity check")
+					// callContext.PackageName = "..."
+					rhs := assignStmt.Rhs
+					if len(rhs) == 1 {
+						rhsExpr := rhs[0]
+						if basicLit, ok := rhsExpr.(*dst.BasicLit); ok {
+							if basicLit.Kind == token.STRING {
+								pkgName := rp.target.Name.Name
+								basicLit.Value = strconv.Quote(pkgName)
+							} else {
+								return false // ill-formed AST
+							}
+						} else {
+							return false // ill-formed AST
+						}
+					} else {
+						return false // ill-formed AST
+					}
+				default:
+					// callContext.Params = []interface{}{...} or
+					// callContext.(*CallContextImpl).Params[0] = &int
+					rhs := assignStmt.Rhs
+					if len(rhs) == 1 {
+						rhsExpr := rhs[0]
+						if compositeLit, ok := rhsExpr.(*dst.CompositeLit); ok {
+							elems := compositeLit.Elts
+							names := getNames(funcDecl.Type.Params)
+							for i, name := range names {
+								if i == 0 && !onEnter {
+									// SKip first callContext parameter for onExit
+									continue
+								}
+								elems = append(elems, util.Ident(name))
+							}
+							compositeLit.Elts = elems
+						} else {
+							return false // ill-formed AST
+						}
+					} else {
+						return false // ill-formed AST
+					}
 				}
 			}
+
 		}
 	}
-	util.ShouldNotReachHereT("failed to replenish call context")
-	return false
+	return true
 }
 
 // -----------------------------------------------------------------------------
