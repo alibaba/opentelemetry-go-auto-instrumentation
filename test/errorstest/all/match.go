@@ -18,14 +18,22 @@ func f1() {}
 func f2(a string) {}
 
 type recv int
+type recv2 int
+type recx int
 
 func (r *recv) f3() {}
 
 func f4() int { return 7632 }
+
+func (r *recv2) f5() int { return 7632 }
+
+func (r *recx) f6() int { return 7632 }
 
 func init() {
 	f1()
 	f2("shanxi")
 	new(recv).f3()
 	f4()
+	new(recv2).f5()
+	new(recx).f6()
 }

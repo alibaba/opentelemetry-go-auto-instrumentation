@@ -122,7 +122,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "PingContext",
-    "ReceiverType": "*DB",
+    "ReceiverType": "\\*DB",
     "OnEnter": "beforePingContextInstrumentation",
     "OnExit": "afterPingContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -130,7 +130,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "PrepareContext",
-    "ReceiverType": "*DB",
+    "ReceiverType": "\\*DB",
     "OnEnter": "beforePrepareContextInstrumentation",
     "OnExit": "afterPrepareContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -138,7 +138,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "ExecContext",
-    "ReceiverType": "*DB",
+    "ReceiverType": "\\*DB",
     "OnEnter": "beforeExecContextInstrumentation",
     "OnExit": "afterExecContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -146,7 +146,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "QueryContext",
-    "ReceiverType": "*DB",
+    "ReceiverType": "\\*DB",
     "OnEnter": "beforeQueryContextInstrumentation",
     "OnExit": "afterQueryContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -154,7 +154,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "BeginTx",
-    "ReceiverType": "*DB",
+    "ReceiverType": "\\*DB",
     "OnEnter": "beforeTxInstrumentation",
     "OnExit": "afterTxInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -162,7 +162,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "Conn",
-    "ReceiverType": "*DB",
+    "ReceiverType": "\\*DB",
     "OnEnter": "beforeConnInstrumentation",
     "OnExit": "afterConnInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -170,7 +170,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "PingContext",
-    "ReceiverType": "*Conn",
+    "ReceiverType": "\\*Conn",
     "OnEnter": "beforeConnPingContextInstrumentation",
     "OnExit": "afterConnPingContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -178,7 +178,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "PrepareContext",
-    "ReceiverType": "*Conn",
+    "ReceiverType": "\\*Conn",
     "OnEnter": "beforeConnPrepareContextInstrumentation",
     "OnExit": "afterConnPrepareContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -186,7 +186,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "ExecContext",
-    "ReceiverType": "*Conn",
+    "ReceiverType": "\\*Conn",
     "OnEnter": "beforeConnExecContextInstrumentation",
     "OnExit": "afterConnExecContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -194,7 +194,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "QueryContext",
-    "ReceiverType": "*Conn",
+    "ReceiverType": "\\*Conn",
     "OnEnter": "beforeConnQueryContextInstrumentation",
     "OnExit": "afterConnQueryContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -202,7 +202,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "BeginTx",
-    "ReceiverType": "*Conn",
+    "ReceiverType": "\\*Conn",
     "OnEnter": "beforeConnTxInstrumentation",
     "OnExit": "afterConnTxInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -210,7 +210,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "StmtContext",
-    "ReceiverType": "*Tx",
+    "ReceiverType": "\\*Tx",
     "OnEnter": "beforeTxStmtContextInstrumentation",
     "OnExit": "afterTxStmtContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -218,7 +218,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "PrepareContext",
-    "ReceiverType": "*Tx",
+    "ReceiverType": "\\*Tx",
     "OnEnter": "beforeTxPrepareContextInstrumentation",
     "OnExit": "afterTxPrepareContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -226,7 +226,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "ExecContext",
-    "ReceiverType": "*Tx",
+    "ReceiverType": "\\*Tx",
     "OnEnter": "beforeTxExecContextInstrumentation",
     "OnExit": "afterTxExecContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -234,7 +234,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "QueryContext",
-    "ReceiverType": "*Tx",
+    "ReceiverType": "\\*Tx",
     "OnEnter": "beforeTxQueryContextInstrumentation",
     "OnExit": "afterTxQueryContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -242,7 +242,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "Commit",
-    "ReceiverType": "*Tx",
+    "ReceiverType": "\\*Tx",
     "OnEnter": "beforeTxCommitInstrumentation",
     "OnExit": "afterTxCommitInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -250,7 +250,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "Rollback",
-    "ReceiverType": "*Tx",
+    "ReceiverType": "\\*Tx",
     "OnEnter": "beforeTxRollbackInstrumentation",
     "OnExit": "afterTxRollbackInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -258,7 +258,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "ExecContext",
-    "ReceiverType": "*Stmt",
+    "ReceiverType": "\\*Stmt",
     "OnEnter": "beforeStmtExecContextInstrumentation",
     "OnExit": "afterStmtExecContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -266,7 +266,7 @@
   {
     "ImportPath": "database/sql",
     "Function": "QueryContext",
-    "ReceiverType": "*Stmt",
+    "ReceiverType": "\\*Stmt",
     "OnEnter": "beforeStmtQueryContextInstrumentation",
     "OnExit": "afterStmtQueryContextInstrumentation",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
@@ -282,7 +282,7 @@
     "Version": "[1.7.0,1.10.1)",
     "ImportPath": "github.com/gin-gonic/gin",
     "Function": "Next",
-    "ReceiverType": "*Context",
+    "ReceiverType": "\\*Context",
     "OnEnter": "nextOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gin"
   },
@@ -290,7 +290,7 @@
     "Version": "[1.7.0,1.10.1)",
     "ImportPath": "github.com/gin-gonic/gin",
     "Function": "HTML",
-    "ReceiverType": "*Context",
+    "ReceiverType": "\\*Context",
     "OnEnter": "htmlOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gin"
   },
@@ -318,7 +318,7 @@
     "Version": "[9.0.5,9.5.2)",
     "ImportPath": "github.com/redis/go-redis/v9",
     "Function": "Conn",
-    "ReceiverType": "*Client",
+    "ReceiverType": "\\*Client",
     "OnExit": "afterClientConn",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredis"
   },
@@ -395,7 +395,7 @@
   {
     "ImportPath": "net/http",
     "Function": "RoundTrip",
-    "ReceiverType": "*Transport",
+    "ReceiverType": "\\*Transport",
     "OnEnter": "clientOnEnter",
     "OnExit": "clientOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http"
@@ -411,7 +411,7 @@
   {
     "Version": "[1.5.0,1.9.4)",
     "ImportPath": "github.com/sirupsen/logrus",
-    "ReceiverType": "*Logger",
+    "ReceiverType": "\\*Logger",
     "Function": "SetFormatter",
     "OnEnter": "logNewOnEnter",
     "OnExit": "logNewOnExit",
@@ -502,7 +502,7 @@
     "Version": "[1.20.0,1.27.1)",
     "ImportPath": "go.uber.org/zap/zapcore",
     "Function": "Write",
-    "ReceiverType": "*CheckedEntry",
+    "ReceiverType": "\\*CheckedEntry",
     "OnEnter": "zapLogWriteOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/zap"
   },
@@ -533,7 +533,7 @@
   {
     "Version": "[1.44.0,)",
     "ImportPath": "google.golang.org/grpc",
-    "ReceiverType": "*ClientConn",
+    "ReceiverType": "\\*ClientConn",
     "Function": "NewStream",
     "OnEnter": "grpcClientNewStreamOnEnter",
     "OnExit": "grpcClientNewStreamOnExit",
@@ -555,7 +555,7 @@
     "Version": "[1.45.0,1.59.1)",
     "ImportPath": "github.com/valyala/fasthttp",
     "Function": "Do",
-    "ReceiverType": "*HostClient",
+    "ReceiverType": "\\*HostClient",
     "OnEnter": "clientFastHttpOnEnter",
     "OnExit": "clientFastHttpOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fasthttp"
@@ -564,21 +564,21 @@
     "Version": "[1.45.0,1.59.1)",
     "ImportPath": "github.com/valyala/fasthttp",
     "Function": "ListenAndServe",
-    "ReceiverType": "*Server",
+    "ReceiverType": "\\*Server",
     "OnEnter": "listenAndServeFastHttpOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fasthttp"
   },
   {
     "ImportPath": "log",
     "Function": "output",
-    "ReceiverType": "*Logger",
+    "ReceiverType": "\\*Logger",
     "OnEnter": "goLogWriteOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/golog"
   },
   {
     "ImportPath": "log/slog",
     "Function": "log",
-    "ReceiverType": "*Logger",
+    "ReceiverType": "\\*Logger",
     "OnEnter": "goSlogWriteOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goslog"
   },
@@ -600,7 +600,7 @@
     "Version": "[8.4.0,8.15.1)",
     "ImportPath": "github.com/elastic/go-elasticsearch/v8",
     "Function": "Perform",
-    "ReceiverType": "*BaseClient",
+    "ReceiverType": "\\*BaseClient",
     "OnEnter": "beforeElasticSearchPerform",
     "OnExit": "afterElasticSearchPerform",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/elasticsearch"
@@ -609,7 +609,7 @@
     "Version": "[2.43.0,2.52.7)",
     "ImportPath": "github.com/gofiber/fiber/v2",
     "Function": "handler",
-    "ReceiverType": "*App",
+    "ReceiverType": "\\*App",
     "OnEnter": "fiberHttpOnEnterv2",
     "OnExit": "fiberHttpOnExitv2",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fiberv2"
@@ -618,7 +618,7 @@
     "Version": "[3.7.0,3.12.2)",
     "ImportPath": "github.com/emicklei/go-restful/v3",
     "Function": "Add",
-    "ReceiverType": "*Container",
+    "ReceiverType": "\\*Container",
     "OnEnter": "restContainerAddOnEnter",
     "OnExit": "restContainerAddOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
@@ -627,7 +627,7 @@
     "Version": "[3.7.0,3.12.2)",
     "ImportPath": "github.com/emicklei/go-restful/v3",
     "Function": "Dispatch",
-    "ReceiverType": "*Container",
+    "ReceiverType": "\\*Container",
     "OnEnter": "restContainerDispatchOnEnter",
     "OnExit": "restContainerDispatchOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
@@ -636,7 +636,7 @@
     "Version": "[3.7.0,3.12.2)",
     "ImportPath": "github.com/emicklei/go-restful/v3",
     "Function": "HandleWithFilter",
-    "ReceiverType": "*Container",
+    "ReceiverType": "\\*Container",
     "OnEnter": "restContainerHandleOnEnter",
     "OnExit": "restContainerHandleOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorestful"
@@ -645,7 +645,7 @@
     "Version": "[1.10.0,1.33.1)",
     "ImportPath": "github.com/rs/zerolog",
     "Function": "msg",
-    "ReceiverType": "*Event",
+    "ReceiverType": "\\*Event",
     "OnEnter": "zeroLogWriteOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/zerolog"
   },
@@ -667,7 +667,7 @@
     "Version": "[2.0.0,2.3.0)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client",
     "Function": "CloseClient",
-    "ReceiverType": "*NamingClient",
+    "ReceiverType": "\\*NamingClient",
     "OnEnter": "beforeNamingClientClose",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
   },
@@ -698,7 +698,7 @@
     "Version": "[2.0.0,2.3.0)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client",
     "Function": "CloseClient",
-    "ReceiverType": "*ConfigClient",
+    "ReceiverType": "\\*ConfigClient",
     "OnEnter": "beforeConfigClientClose",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
   },
@@ -721,7 +721,7 @@
     "Version": "[2.0.0,2.3.0)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http",
     "Function": "CloseClient",
-    "ReceiverType": "*NamingHttpProxy",
+    "ReceiverType": "\\*NamingHttpProxy",
     "OnEnter": "beforeNamingHttpProxyCloseClient",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
   },
@@ -752,7 +752,7 @@
     "Version": "[2.0.0,2.3.0)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc",
     "Function": "requestToServer",
-    "ReceiverType": "*NamingGrpcProxy",
+    "ReceiverType": "\\*NamingGrpcProxy",
     "OnEnter": "beforeRequestToServer",
     "onExit": "afterRequestToServer",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
@@ -761,7 +761,7 @@
     "Version": "[2.0.0,2.3.0)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client",
     "Function": "requestProxy",
-    "ReceiverType": "*ConfigProxy",
+    "ReceiverType": "\\*ConfigProxy",
     "OnEnter": "beforeRequestProxy",
     "onExit": "afterRequestProxy",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
@@ -770,7 +770,7 @@
     "Version": "[2.0.0,2.3.0)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server",
     "Function": "callServer",
-    "ReceiverType": "*NacosServer",
+    "ReceiverType": "\\*NacosServer",
     "OnEnter": "beforeCallServer",
     "onExit": "afterCallServer",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/service"
@@ -779,7 +779,7 @@
     "Version": "[2.0.0,2.3.0)",
     "ImportPath": "github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server",
     "Function": "callConfigServer",
-    "ReceiverType": "*NacosServer",
+    "ReceiverType": "\\*NacosServer",
     "OnEnter": "beforeCallConfigServer",
     "onExit": "afterCallConfigServer",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/nacos/config"
@@ -788,7 +788,7 @@
     "Version": "[12.2.0,12.2.12)",
     "ImportPath": "github.com/kataras/iris/v12/core/router",
     "Function": "HandleRequest",
-    "ReceiverType": "*routerHandler",
+    "ReceiverType": "\\*routerHandler",
     "OnEnter": "irisHttpOnEnter",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/iris"
   },
@@ -796,7 +796,7 @@
     "Version": "[5.0.0,5.3.1)",
     "ImportPath": "go-micro.dev/v5/client",
     "Function": "next",
-    "ReceiverType": "*rpcClient",
+    "ReceiverType": "\\*rpcClient",
     "OnExit": "NextOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gomicro"
   },
@@ -811,7 +811,7 @@
     "Version": "[5.0.0,5.3.1)",
     "ImportPath": "go-micro.dev/v5/server",
     "Function": "ServeRequest",
-    "ReceiverType": "*router",
+    "ReceiverType": "\\*router",
     "OnEnter": "ServeRequestOnEnter",
     "OnExit": "ServeRequestOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gomicro"
@@ -820,7 +820,7 @@
     "Version": "[1.0.0,)",
     "ImportPath": "trpc.group/trpc-go/trpc-go/client",
     "Function": "Invoke",
-    "ReceiverType": "*client",
+    "ReceiverType": "\\*client",
     "OnEnter": "clientTrpcOnEnter",
     "OnExit": "clientTrpcOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/trpc"
@@ -829,7 +829,7 @@
     "Version": "[1.0.0,)",
     "ImportPath": "trpc.group/trpc-go/trpc-go/server",
     "Function": "handle",
-    "ReceiverType": "*service",
+    "ReceiverType": "\\*service",
     "OnEnter": "serverTrpcOnEnter",
     "OnExit": "serverTrpcOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/trpc"
@@ -845,7 +845,7 @@
   {
     "Version": "[0.1.13,)",
     "ImportPath": "github.com/tmc/langchaingo/agents",
-    "ReceiverType": "*Executor",
+    "ReceiverType": "\\*Executor",
     "Function": "doAction",
     "OnEnter": "doActionOnEnter",
     "OnExit":"doActionOnExit",
@@ -871,7 +871,7 @@
   {
     "Version": "[0.1.13,)",
     "ImportPath": "github.com/tmc/langchaingo/embeddings",
-    "ReceiverType": "*EmbedderImpl",
+    "ReceiverType": "\\*EmbedderImpl",
     "Function": "EmbedQuery",
     "OnEnter": "singleEmbedOnEnter",
     "OnExit":"singleEmbedOnExit",
@@ -888,7 +888,7 @@
   {
   "Version": "[0.1.13,)",
   "ImportPath": "github.com/tmc/langchaingo/llms/ollama",
-  "ReceiverType": "*LLM",
+  "ReceiverType": "\\*LLM",
   "Function": "GenerateContent",
   "OnEnter": "ollamaGenerateContentOnEnter",
   "OnExit":"ollamaGenerateContentOnExit",
@@ -897,7 +897,7 @@
   {
     "Version": "[0.1.13,)",
     "ImportPath": "github.com/tmc/langchaingo/llms/openai",
-    "ReceiverType": "*LLM",
+    "ReceiverType": "\\*LLM",
     "Function": "GenerateContent",
     "OnEnter": "openaiGenerateContentOnEnter",
     "OnExit":"openaiGenerateContentOnExit",
@@ -906,7 +906,7 @@
   {
     "Version": "[1.10.0,)",
     "ImportPath": "github.com/rabbitmq/amqp091-go",
-    "ReceiverType": "*consumers",
+    "ReceiverType": "\\*consumers",
     "Function": "send",
     "OnEnter": "consumeOnEnter",
     "OnExit":"consumeOnExit",
@@ -915,7 +915,7 @@
   {
     "Version": "[1.10.0,)",
     "ImportPath": "github.com/rabbitmq/amqp091-go",
-    "ReceiverType": "*Channel",
+    "ReceiverType": "\\*Channel",
     "Function": "PublishWithDeferredConfirm",
     "OnEnter": "publishWithDeferredConfirmOnEnter",
     "OnExit":"publishWithDeferredConfirmOnExit",
