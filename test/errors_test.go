@@ -68,4 +68,14 @@ func TestRunErrors(t *testing.T) {
 	if len(matches) != 2 {
 		t.Fatalf("expecting 2 matches")
 	}
+	re = regexp.MustCompile(".*zhejiang.*") // match all funcs(including init)
+	matches = re.FindAllString(stderr, -1)
+	if len(matches) != 7 {
+		t.Fatalf("expecting 7 matches")
+	}
+	re = regexp.MustCompile(".*beijing.*") // f3 + f5
+	matches = re.FindAllString(stderr, -1)
+	if len(matches) != 2 {
+		t.Fatalf("expecting 2 matches")
+	}
 }

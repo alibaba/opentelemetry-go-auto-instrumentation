@@ -2,7 +2,7 @@
     {
         "ImportPath": "net/http",
         "Function": "Do",
-        "ReceiverType": "*Client",
+        "ReceiverType": "\\*Client",
         "OnEnter": "onEnterClientDo",
         "OnExit": "onExitClientDo",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/nethttp1"
@@ -28,7 +28,7 @@
     {
         "ImportPath": "net/http",
         "Function": "Error",
-        "ReceiverType": "*MaxBytesError",
+        "ReceiverType": "\\*MaxBytesError",
         "OnEnter": "onEnterMaxBytesError",
         "OnExit": "onExitMaxBytesError",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/nethttp5"
@@ -48,7 +48,7 @@
     {
         "ImportPath": "net/http",
         "Function": "Do",
-        "ReceiverType": "*Client",
+        "ReceiverType": "\\*Client",
         "OnEnter": "onEnterClientDo2",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/nethttp9"
     },
