@@ -138,5 +138,12 @@
         "Function": ".*",
         "OnEnter": "onEnterGeneric4",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error19"
+    },
+    {
+        "ImportPath": "errorstest/all",
+        "ReceiverType": ".*",
+        "Function": ".*",
+        "OnEnter": "onEnterGeneric5",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error19"
     }
 ]

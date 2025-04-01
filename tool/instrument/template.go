@@ -21,10 +21,12 @@ package instrument
 
 // Struct Template
 type CallContextImpl struct {
-	Params     []interface{}
-	ReturnVals []interface{}
-	SkipCall   bool
-	Data       interface{}
+	Params      []interface{}
+	ReturnVals  []interface{}
+	SkipCall    bool
+	Data        interface{}
+	FuncName    string
+	PackageName string
 }
 
 func (c *CallContextImpl) SetSkipCall(skip bool)    { c.SkipCall = skip }
@@ -79,6 +81,9 @@ func (c *CallContextImpl) SetReturnVal(idx int, val interface{}) {
 	}
 }
 
+func (c *CallContextImpl) GetFuncName() string    { return c.FuncName }
+func (c *CallContextImpl) GetPackageName() string { return c.PackageName }
+
 // Variable Template
 var OtelGetStackImpl func() []byte = nil
 var OtelPrintStackImpl func([]byte) = nil
@@ -99,6 +104,8 @@ func OtelOnEnterTrampoline() (CallContext, bool) {
 	}()
 	callContext := &CallContextImpl{}
 	callContext.Params = []interface{}{}
+	callContext.FuncName = ""
+	callContext.PackageName = ""
 	return callContext, callContext.SkipCall
 }
 

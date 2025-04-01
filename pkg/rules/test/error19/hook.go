@@ -36,3 +36,8 @@ func onEnterGeneric3(call api.CallContext) {
 func onEnterGeneric4(call api.CallContext) {
 	println("beijing")
 }
+
+func onEnterGeneric5(call api.CallContext) {
+	println("entering" + call.GetFuncName())
+	println("within" + call.GetPackageName())
+}
