@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package testaccess
 
 import (
 	"context"
+	"os"
+
 	"github.com/mohae/deepcopy"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"os"
 )
 
 const IS_IN_TEST = "IN_OTEL_TEST"

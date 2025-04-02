@@ -17,6 +17,7 @@ package http
 import (
 	"context"
 	"os"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	kt "github.com/go-kratos/kratos/v2"
@@ -30,6 +31,7 @@ const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE = "OTEL_INSTRUMENTATI
 
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 
+//go:linkname kratosNewHTTPServiceOnEnter github.com/go-kratos/kratos/v2/transport/http.kratosNewHTTPServiceOnEnter
 func kratosNewHTTPServiceOnEnter(call api.CallContext, opts ...http.ServerOption) {
 	if os.Getenv(OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE) != "true" {
 		return
