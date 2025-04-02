@@ -78,7 +78,7 @@
     {
         "ImportPath": "errorstest/auxiliary",
         "Function": "TestGetSetRecv",
-        "ReceiverType": "*Recv",
+        "ReceiverType": "\\*Recv",
         "OnEnter": "onEnterTestGetSetRecv",
         "OnExit": "onExitTestGetSetRecv",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error13"
@@ -123,6 +123,27 @@
         "ImportPath": "errorstest/all",
         "Function": "f[12]",
         "OnEnter": "onEnterGeneric2",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error19"
+    },
+    {
+        "ImportPath": "errorstest/all",
+        "ReceiverType": ".*",
+        "Function": ".*",
+        "OnEnter": "onEnterGeneric3",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error19"
+    },
+    {
+        "ImportPath": "errorstest/all",
+        "ReceiverType": "\\*recv.*",
+        "Function": ".*",
+        "OnEnter": "onEnterGeneric4",
+        "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error19"
+    },
+    {
+        "ImportPath": "errorstest/all",
+        "ReceiverType": ".*",
+        "Function": ".*",
+        "OnEnter": "onEnterGeneric5",
         "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/error19"
     }
 ]

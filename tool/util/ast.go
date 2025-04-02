@@ -356,8 +356,9 @@ func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
 		return false
 	}
 	if receiverType != "" {
+		re = regexp.MustCompile("^" + receiverType + "$") // strict match
 		if !HasReceiver(funcDecl) {
-			return false
+			return re.MatchString("")
 		}
 		switch recvTypeExpr := funcDecl.Recv.List[0].Type.(type) {
 		case *dst.StarExpr:
@@ -365,9 +366,11 @@ func MatchFuncDecl(decl dst.Decl, function string, receiverType string) bool {
 				// This is a generic type, we don't support it yet
 				return false
 			}
-			return "*"+recvTypeExpr.X.(*dst.Ident).Name == receiverType
+			t := "*" + recvTypeExpr.X.(*dst.Ident).Name
+			return re.MatchString(t)
 		case *dst.Ident:
-			return recvTypeExpr.Name == receiverType
+			t := recvTypeExpr.Name
+			return re.MatchString(t)
 		case *dst.IndexExpr:
 			// This is a generic type, we don't support it yet
 			return false

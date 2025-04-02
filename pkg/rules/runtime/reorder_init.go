@@ -44,8 +44,7 @@ var counter = 0
 // otherwise we might accidentally target some unlucky one.
 const localPrefix = "<REORDER>"
 
-const OtelRules = "otel_rules"
-const OtelPkgDep = "otel_pkgdep"
+const OtelPkgDir = "otel_pkg"
 
 func isPrefixOf(s, prefix string) bool {
 	return len(s) >= len(prefix) && s[:len(prefix)] == prefix
@@ -70,8 +69,7 @@ func reorderInitTasks(ts []*initTask) {
 		f := *(*func())(unsafe.Pointer(&firstFunc))
 		pkg := funcpkgpath(findfunc(abi.FuncPCABIInternal(f)))
 		if (isPrefixOf(pkg, localPrefix) &&
-			!isPrefixOf(pkg, localPrefix+"/"+OtelRules) &&
-			!isPrefixOf(pkg, localPrefix+"/"+OtelPkgDep)) ||
+			!isPrefixOf(pkg, localPrefix+"/"+OtelPkgDir)) ||
 			isPrefixOf(pkg, "main") {
 			// Move the task to the end but keep the relative order.
 			// main should be moved as well, because we want to it to be the

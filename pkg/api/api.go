@@ -46,4 +46,8 @@ type CallContext interface {
 	GetReturnVal(idx int) interface{}
 	// Change the original function return value at index idx
 	SetReturnVal(idx int, val interface{})
+	// Get the original function name
+	GetFuncName() string
+	// Get the package name of the original function
+	GetPackageName() string
 }

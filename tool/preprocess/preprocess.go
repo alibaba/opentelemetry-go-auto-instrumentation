@@ -47,9 +47,10 @@ import (
 // for preparing these dependencies in advance.
 
 const (
+	OtelPkgDir         = "otel_pkg"
+	OtelRules          = "rules"
 	OtelSetupInst      = "otel_setup_inst.go"
 	OtelSetupSDK       = "otel_setup_sdk.go"
-	OtelRules          = "otel_rules"
 	OtelUser           = "otel_user"
 	OtelRuleCache      = "rule_cache"
 	OtelBackups        = "backups"
@@ -63,6 +64,7 @@ const (
 	ReorderInitFile    = "reorder_init.go"
 	StdRulesPrefix     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/"
 	StdRulesPath       = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules"
+	PkgDep             = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 )
 
 // @@ Change should sync with trampoline template
@@ -319,11 +321,8 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
-	// rm -rf otel_rules
-	_ = os.RemoveAll(dp.generatedOf(OtelRules))
-
 	// rm -rf otel_pkgdep
-	_ = os.RemoveAll(dp.generatedOf(OtelPkgDep))
+	_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
 
 	// Restore everything we have modified during instrumentation
 	_ = dp.restoreBackupFiles()
@@ -681,7 +680,7 @@ func (dp *DepProcessor) addOtelImports() error {
 // Note in this function, error is tolerated as we are best-effort to clean up
 // any obsolete materials, but it's not fatal if we fail to do so.
 func (dp *DepProcessor) preclean() {
-	ruleImport, _ := dp.getImportPathOf(OtelRules)
+	ruleImport, _ := dp.getImportPathOf(OtelPkgDir + "/" + OtelRules)
 	for _, file := range dp.sources {
 		if !util.IsGoFile(file) {
 			continue
@@ -701,12 +700,9 @@ func (dp *DepProcessor) preclean() {
 			util.Log("Failed to write ast to %v: %v", file, err)
 		}
 	}
-	// Clean otel_rules/otel_pkgdep directory
-	if util.PathExists(dp.generatedOf(OtelRules)) {
-		_ = os.RemoveAll(dp.generatedOf(OtelRules))
-	}
-	if util.PathExists(dp.generatedOf(OtelPkgDep)) {
-		_ = os.RemoveAll(dp.generatedOf(OtelPkgDep))
+	// Clean otel_pkgdep directory
+	if util.PathExists(dp.generatedOf(OtelPkgDir)) {
+		_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
 	}
 }
 
@@ -936,10 +932,10 @@ func (dp *DepProcessor) backupMod() error {
 }
 
 func (dp *DepProcessor) saveDebugFiles() {
-	dir := filepath.Join(util.GetTempBuildDir(), OtelRules)
+	dir := filepath.Join(util.GetTempBuildDir(), OtelPkgDir)
 	err := os.MkdirAll(dir, os.ModePerm)
 	if err == nil {
-		util.CopyDir(dp.generatedOf(OtelRules), dir)
+		util.CopyDir(dp.generatedOf(OtelPkgDir), dir)
 	}
 	dir = filepath.Join(util.GetTempBuildDir(), OtelUser)
 	err = os.MkdirAll(dir, os.ModePerm)

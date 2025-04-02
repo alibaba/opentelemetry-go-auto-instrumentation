@@ -63,6 +63,14 @@ func (c *CallContextImpl) SetReturnVal(idx int, val interface{}) {
 	c.ReturnVals[idx] = val
 }
 
+func (c *CallContextImpl) GetFuncName() string {
+	return ""
+}
+
+func (c *CallContextImpl) GetPackageName() string {
+	return ""
+}
+
 func NewCallContext() CallContext {
 	return &CallContextImpl{
 		Params:     make([]interface{}, 1024),

@@ -20,23 +20,18 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
-const (
-	PkgDep     = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
-	OtelPkgDep = "otel_pkgdep"
-)
-
 func replaceImport(importPath string, code string) string {
 	code = strings.ReplaceAll(code, PkgDep, importPath)
 	return code
 }
 
 func (dp *DepProcessor) replaceOtelImports() error {
-	moduleName, err := dp.getImportPathOf(OtelPkgDep)
+	moduleName, err := dp.getImportPathOf(OtelPkgDir)
 	if err != nil {
 		return err
 	}
 	// Replace imports in generated files
-	generated := []string{dp.generatedOf(OtelRules), dp.generatedOf(OtelPkgDep)}
+	generated := []string{dp.generatedOf(OtelPkgDir)}
 	generated = append(generated, dp.sources...)
 	for _, dep := range generated {
 		files, err := util.ListFiles(dep)
@@ -64,5 +59,5 @@ func (dp *DepProcessor) replaceOtelImports() error {
 }
 
 func (dp *DepProcessor) copyPkgDep() error {
-	return resource.CopyPkgTo(dp.generatedOf(OtelPkgDep))
+	return resource.CopyPkgTo(dp.generatedOf(OtelPkgDir))
 }

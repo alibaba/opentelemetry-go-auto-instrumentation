@@ -33,12 +33,14 @@ const (
 	ApiCallContext = "CallContext"
 )
 
+func (dp *DepProcessor) getRuleDir(path string) string {
+	return dp.generatedOf(filepath.Join(OtelPkgDir, "rules", path))
+}
+
 func (dp *DepProcessor) copyRules() (err error) {
 	if len(dp.bundles) == 0 {
 		return nil
 	}
-	// Copy matched rules to ${GOMOD.DIR}/otel_rules
-	targetDir := dp.generatedOf(OtelRules)
 	// Find out which resource files we should add to project
 	for _, bundle := range dp.bundles {
 		for _, funcRules := range bundle.File2FuncRules {
@@ -71,8 +73,8 @@ func (dp *DepProcessor) copyRules() (err error) {
 						if !util.IsGoFile(file) || util.IsGoTestFile(file) {
 							continue
 						}
-
-						ruleDir := filepath.Join(targetDir, dir)
+						// Copy matched rules to ${GOMOD.DIR}/otel_pkg/rules
+						ruleDir := filepath.Join(dp.getRuleDir(""), dir)
 						err = os.MkdirAll(ruleDir, 0777)
 						if err != nil {
 							return errc.New(errc.ErrMkdirAll, err.Error())
@@ -195,7 +197,7 @@ func (dp *DepProcessor) copyRule(path, target string,
 }
 
 func (dp *DepProcessor) initRules() (err error) {
-	c := fmt.Sprintf("package %s\n", OtelRules)
+	c := fmt.Sprintf("package rules\n")
 	imports := make(map[string]string)
 
 	assigns := make([]string, 0)
@@ -228,7 +230,8 @@ func (dp *DepProcessor) initRules() (err error) {
 						// @@Dont use filepath.Join here, because this is import
 						// path presented in Go source code, which should always
 						// use forward slash
-						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
+						rd := fmt.Sprintf("%s/%s/%s",
+							OtelPkgDir, OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
 							return err
@@ -244,7 +247,8 @@ func (dp *DepProcessor) initRules() (err error) {
 						)
 					}
 					if rule.OnExit != "" {
-						rd := fmt.Sprintf("%s/%s", OtelRules, dp.rule2Dir[rule])
+						rd := fmt.Sprintf("%s/%s/%s",
+							OtelPkgDir, OtelRules, dp.rule2Dir[rule])
 						path, err := dp.getImportPathOf(rd)
 						if err != nil {
 							return err
@@ -293,8 +297,8 @@ func (dp *DepProcessor) initRules() (err error) {
 	}
 	c += "}\n"
 
-	// Write to ${GOMOD.DIR}/otel_rules/otel_setup_inst.go
-	initTarget := dp.generatedOf(filepath.Join(OtelRules, OtelSetupInst))
+	// Write to ${GOMOD.DIR}/otel_pkg/rules/otel_setup_inst.go
+	initTarget := dp.generatedOf(filepath.Join(OtelPkgDir, "rules", OtelSetupInst))
 	err = os.MkdirAll(filepath.Dir(initTarget), 0777)
 	if err != nil {
 		return err
@@ -307,7 +311,7 @@ func (dp *DepProcessor) initRules() (err error) {
 }
 
 func (dp *DepProcessor) addRuleImport() error {
-	ruleImportPath, err := dp.getImportPathOf(OtelRules)
+	ruleImportPath, err := dp.getImportPathOf(OtelPkgDir + "/" + OtelRules)
 	if err != nil {
 		return err
 	}
@@ -368,9 +372,9 @@ func (dp *DepProcessor) rewriteRules() error {
 }
 
 func (dp *DepProcessor) setupOtelSDK() error {
-	// Copy otel_setup_sdk.go to ${GOMOD.DIR}/otel_rules
-	setupTarget := dp.generatedOf(filepath.Join(OtelRules, OtelSetupSDK))
-	_, err := resource.CopyOtelSetupTo(OtelRules, setupTarget)
+	// Copy otel_setup_sdk.go to ${GOMOD.DIR}/otel_pkg/rules/otel_setup_sdk.go
+	setupTarget := dp.getRuleDir(OtelSetupSDK)
+	err := resource.CopyOtelSetupTo("rules", setupTarget)
 	if err != nil {
 		return err
 	}

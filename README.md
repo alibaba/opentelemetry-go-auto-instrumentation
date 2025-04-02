@@ -14,7 +14,7 @@ time. Simply adding `otel` prefix to `go build` to get started :rocket:
 # Installation
 
 ### Install via Bash
-For **Linux and MacOS** users, install the tool by running the following command
+For Linux and MacOS users, install the tool by running the following command
 ```bash
 $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
 ```
@@ -51,7 +51,7 @@ $ otel set -rule=custom.json                 # use default and custom rules
 $ otel set -debug -verbose -rule=custom.json # set multiple configs
 ```
 
-Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:
+**Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:**
 
 ```bash
 $ otel go build
@@ -123,12 +123,12 @@ to engage with us.
 
 <img src="docs/dingtalk.png" height="200">
 
-# Contributors
+We would thankfully acknowledge the following contributors for their valuable contributions to this project:
 
 <a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation"/>
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation" height="100"/>
 </a>
 
-# Star History
+The star history of this project is as follows, which shows the growth of this project over time:
 
-[![Star History](https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date)](https://star-history.com/#alibaba/opentelemetry-go-auto-instrumentation&Date)
+<img src="https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date" height="200">
