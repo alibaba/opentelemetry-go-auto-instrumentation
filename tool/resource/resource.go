@@ -81,12 +81,13 @@ func CopyPkgTo(target string) error {
 	return nil
 }
 
-func CopyOtelSetupTo(pkgName, target string) (string, error) {
+func CopyOtelSetupTo(pkgName, target string) error {
 	template := pkg.ExportOtelSetupSDKTemplate()
 	snippet := strings.Replace(template,
 		"package pkg", "package "+pkgName, 1)
 	snippet = util.RemoveGoBuildComment(snippet)
-	return util.WriteFile(target, snippet)
+	_, err := util.WriteFile(target, snippet)
+	return err
 }
 
 func CopyAPITo(target string, pkgName string) (string, error) {
