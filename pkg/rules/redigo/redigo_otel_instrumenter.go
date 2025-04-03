@@ -58,6 +58,11 @@ func (m redigoAttrsGetter) GetOperation(request *redigoRequest) string {
 	return request.cmd
 }
 
+func (m redigoAttrsGetter) GetCollection(request *redigoRequest) string {
+	// TBD: We need to implement retrieving the collection later.
+	return ""
+}
+
 func (m redigoAttrsGetter) GetParameters(request *redigoRequest) []any {
 	return nil
 }

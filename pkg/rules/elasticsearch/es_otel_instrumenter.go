@@ -42,6 +42,11 @@ func (e elasticSearchGetter) GetOperation(request *esRequest) string {
 	return request.op
 }
 
+func (e elasticSearchGetter) GetCollection(request *esRequest) string {
+	// TBD: We need to implement retrieving the collection later.
+	return ""
+}
+
 func (e elasticSearchGetter) GetParameters(request *esRequest) []any {
 	return request.params
 }

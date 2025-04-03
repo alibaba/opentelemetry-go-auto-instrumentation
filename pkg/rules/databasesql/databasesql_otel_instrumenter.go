@@ -42,6 +42,8 @@ func (d databaseSqlAttrsGetter) GetServerAddress(request databaseSqlRequest) str
 }
 
 func (d databaseSqlAttrsGetter) GetStatement(request databaseSqlRequest) string {
+	// Fetch metadata along with the SQL
+	extractSQLMetadata(request)
 	return request.sql
 }
 
@@ -49,8 +51,17 @@ func (d databaseSqlAttrsGetter) GetOperation(request databaseSqlRequest) string 
 	return request.opType
 }
 
+func (d databaseSqlAttrsGetter) GetCollection(request databaseSqlRequest) string {
+	return getCollection(request.sql)
+}
+
 func (d databaseSqlAttrsGetter) GetParameters(request databaseSqlRequest) []any {
-	return request.params
+	if len(request.params) > 0 {
+		// Prepared statement with parameter binding
+		return request.params
+	}
+	
+	return getParams(request.sql)
 }
 
 func (d databaseSqlAttrsGetter) GetDbNamespace(request databaseSqlRequest) string {
