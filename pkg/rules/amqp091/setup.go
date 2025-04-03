@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package amqp091go
+package amqp091
 
 var RabbitMQConsumeInstrumenter = BuildRabbitMQConsumeOtelInstrumenter()
 var RabbitMQPublishInstrumenter = BuildRabbitMQPublishOtelInstrumenter()
