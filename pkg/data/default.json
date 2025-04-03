@@ -910,7 +910,7 @@
     "Function": "send",
     "OnEnter": "consumeOnEnter",
     "OnExit":"consumeOnExit",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091go"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
   },
   {
     "Version": "[1.10.0,)",
@@ -919,6 +919,6 @@
     "Function": "PublishWithDeferredConfirm",
     "OnEnter": "publishWithDeferredConfirmOnEnter",
     "OnExit":"publishWithDeferredConfirmOnExit",
-      "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091go"
+      "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
   }
 ]

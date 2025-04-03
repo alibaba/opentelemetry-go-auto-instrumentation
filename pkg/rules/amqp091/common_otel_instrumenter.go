@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package amqp091go
+package amqp091
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/message"
@@ -117,7 +117,7 @@ func BuildRabbitMQConsumeOtelInstrumenter() *instrumenter.PropagatingFromUpstrea
 		SetSpanKindExtractor(&instrumenter.AlwaysConsumerExtractor[RabbitRequest]{}).
 		AddAttributesExtractor(&message.MessageAttrsExtractor[RabbitRequest, any, RabbitMQGetter]{Operation: message.RECEIVE}).
 		SetInstrumentationScope(instrumentation.Scope{
-			Name:    utils.AMQP091GO_SCOPE_NAME,
+			Name:    utils.AMQP091_SCOPE_NAME,
 			Version: version.Tag,
 		}).
 		BuildPropagatingFromUpstreamInstrumenter(func(n RabbitRequest) propagation.TextMapCarrier {
@@ -129,7 +129,7 @@ func BuildRabbitMQPublishOtelInstrumenter() *instrumenter.PropagatingToDownstrea
 	return builder.Init().SetSpanNameExtractor(&message.MessageSpanNameExtractor[RabbitRequest, any]{Getter: RabbitMQGetter{}, OperationName: message.PUBLISH}).
 		SetSpanKindExtractor(&instrumenter.AlwaysProducerExtractor[RabbitRequest]{}).
 		SetInstrumentationScope(instrumentation.Scope{
-			Name:    utils.AMQP091GO_SCOPE_NAME,
+			Name:    utils.AMQP091_SCOPE_NAME,
 			Version: version.Tag,
 		}).
 		AddAttributesExtractor(&message.MessageAttrsExtractor[RabbitRequest, any, RabbitMQGetter]{Operation: message.PUBLISH}).

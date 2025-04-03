@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package amqp091go
+package amqp091
 
 import (
 	"context"
@@ -24,37 +24,38 @@ import (
 	_ "unsafe"
 )
 
-func publishWithDeferredConfirmOnEnter(call api.CallContext,
-	ch *amqp.Channel,
-	exchange, key string, mandatory, immediate bool, msg amqp.Publishing,
+func consumeOnEnter(call api.CallContext,
+	_ interface{},
+	tag string,
+	msg *amqp.Delivery,
 ) {
 	request := RabbitRequest{
-		operationName:   "publish",
-		destinationName: exchange + ":" + key,
+		operationName:   "receive",
+		destinationName: msg.Exchange + ":" + msg.RoutingKey,
 		messageId:       msg.MessageId,
 		bodySize:        int64(len(msg.Body)),
+		conversationID:  msg.CorrelationId,
 		headers:         msg.Headers,
-		conversationID:  msg.MessageId,
 	}
 	ctx := context.Background()
 	var attributes []attribute.KeyValue
 	attributes = append(attributes,
-		semconv.MessagingRabbitmqDestinationRoutingKey(key), attribute.KeyValue{
+		semconv.MessagingRabbitmqDestinationRoutingKey(msg.RoutingKey),
+		semconv.MessagingRabbitmqMessageDeliveryTag(int(msg.DeliveryTag)), attribute.KeyValue{
 			Key:   semconv.MessagingOperationTypeKey,
 			Value: attribute.StringValue(request.operationName),
 		}, attribute.KeyValue{
-			Key:   "messaging.rabbitmq.message.delivery_mode",
-			Value: attribute.IntValue(int(msg.DeliveryMode)),
+			Key:   "messaging.rabbitmq.message.consumer_tag",
+			Value: attribute.StringValue(msg.ConsumerTag),
 		},
 	)
-
-	ctx = RabbitMQPublishInstrumenter.Start(ctx, request, trace.WithAttributes(attributes...))
+	ctx = RabbitMQConsumeInstrumenter.Start(ctx, request, trace.WithAttributes(attributes...))
 	data := make(map[string]interface{})
 	data["ctx"] = ctx
-	data["rabbitMQ_request"] = request
+	data["rabbitMQ_consume_request"] = request
 	call.SetData(data)
 }
-func publishWithDeferredConfirmOnExit(call api.CallContext, confirm *amqp.DeferredConfirmation, err error) {
+func consumeOnExit(call api.CallContext, b bool) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok {
 		return
@@ -63,9 +64,9 @@ func publishWithDeferredConfirmOnExit(call api.CallContext, confirm *amqp.Deferr
 	if !ok {
 		return
 	}
-	request, ok := data["rabbitMQ_request"].(RabbitRequest)
+	request, ok := data["rabbitMQ_consume_request"].(RabbitRequest)
 	if !ok {
 		return
 	}
-	RabbitMQPublishInstrumenter.End(ctx, request, nil, err)
+	RabbitMQConsumeInstrumenter.End(ctx, request, nil, nil)
 }
