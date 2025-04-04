@@ -15,15 +15,23 @@
 package mux
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"net/http"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	mux "github.com/gorilla/mux"
 )
 
-var muxEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type muxInnerEnabler struct {
+	enabled bool
+}
+
+func (m muxInnerEnabler) Enable() bool {
+	return m.enabled
+}
+
+var muxEnabler = muxInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_MUX_ENABLED") != "false"}
 
 func muxRoute130OnEnter(call api.CallContext, req *http.Request, route interface{}) {
 	if !muxEnabler.Enable() {

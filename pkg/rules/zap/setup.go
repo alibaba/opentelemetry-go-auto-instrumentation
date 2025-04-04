@@ -16,13 +16,21 @@ package zap
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
 )
 
-var zapEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type zapInnerEnabler struct {
+	enabled bool
+}
+
+func (z zapInnerEnabler) Enable() bool {
+	return z.enabled
+}
+
+var zapEnabler = zapInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_ZAP_ENABLED") != "false"}
 
 func zapLogWriteOnEnter(call api.CallContext, ce *zapcore.CheckedEntry, fields ...zap.Field) {
 	if !zapEnabler.Enable() {

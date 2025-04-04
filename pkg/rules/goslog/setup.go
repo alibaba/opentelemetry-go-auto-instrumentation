@@ -16,14 +16,22 @@ package golog
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"log/slog"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-var goSlogEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type goSlogInnerEnabler struct {
+	enabled bool
+}
+
+func (g goSlogInnerEnabler) Enable() bool {
+	return g.enabled
+}
+
+var goSlogEnabler = goSlogInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_GOSLOG_ENABLED") != "false"}
 
 func goSlogWriteOnEnter(call api.CallContext, ce *slog.Logger, ctx context.Context, level slog.Level, msg string, args ...any) {
 	if !goSlogEnabler.Enable() {

@@ -15,14 +15,22 @@
 package echo
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	echo "github.com/labstack/echo/v4"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-var echoEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type echoInnerEnabler struct {
+	enabled bool
+}
+
+func (e echoInnerEnabler) Enable() bool {
+	return e.enabled
+}
+
+var echoEnabler = echoInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_ECHO_ENABLED") != "false"}
 
 func otelTraceMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

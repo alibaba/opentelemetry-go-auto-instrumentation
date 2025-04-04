@@ -27,6 +27,9 @@ import (
 var netHttpServerInstrumenter = BuildNetHttpServerOtelInstrumenter()
 
 func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r *http.Request) {
+	if !netHttpEnabler.Enable() {
+		return
+	}
 	if netHttpFilter.FilterUrl(r.URL) {
 		return
 	}
@@ -52,6 +55,9 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 }
 
 func serverOnExit(call api.CallContext) {
+	if !netHttpEnabler.Enable() {
+		return
+	}
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok || data == nil || data["ctx"] == nil {
 		return

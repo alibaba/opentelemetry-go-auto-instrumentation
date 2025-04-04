@@ -25,7 +25,7 @@ import (
 var fiberv2ServerInstrumenter = BuildFiberV2ServerOtelInstrumenter()
 
 func fiberHttpOnEnterv2(call api.CallContext, app *fiber.App, ctx *fasthttp.RequestCtx) {
-	if !fiberv2Enabler.Enable() {
+	if !fiberV2Enabler.Enable() {
 		return
 	}
 	u, err := url.Parse(ctx.URI().String())

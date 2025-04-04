@@ -15,7 +15,7 @@
 package langchain
 
 import (
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"os"
 )
 
 const (
@@ -27,5 +27,14 @@ const (
 	MRelevantDoc       = "relevantDocuments"
 )
 
-var langChainEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type langChainInnerEnabler struct {
+	enabled bool
+}
+
+func (l langChainInnerEnabler) Enable() bool {
+	return l.enabled
+}
+
+var langChainEnabler = langChainInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_LANGCHAIN_ENABLED") != "false"}
+
 var langChainCommonInstrument = BuildCommonLangchainOtelInstrumenter()

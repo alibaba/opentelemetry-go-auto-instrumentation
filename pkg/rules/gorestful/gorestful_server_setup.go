@@ -16,13 +16,21 @@ package gorestful
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	restful "github.com/emicklei/go-restful/v3"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"net/http"
+	"os"
 )
 
-var goRestfulEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type goRestfulInnerEnabler struct {
+	enabled bool
+}
+
+func (g goRestfulInnerEnabler) Enable() bool {
+	return g.enabled
+}
+
+var goRestfulEnabler = goRestfulInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_GORESTFUL_ENABLED") != "false"}
 
 func restContainerAddOnEnter(call api.CallContext, c *restful.Container, service *restful.WebService) {
 	c.Filter(filterRest)

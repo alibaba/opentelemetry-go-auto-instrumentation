@@ -16,6 +16,7 @@ package trpc
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
@@ -29,7 +30,15 @@ import (
 	"trpc.group/trpc-go/trpc-go/codec"
 )
 
-var trpcEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type trpcInnerEnabler struct {
+	enabled bool
+}
+
+func (t trpcInnerEnabler) Enable() bool {
+	return t.enabled
+}
+
+var trpcEnabler = trpcInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_TRPC_ENABLED") != "false"}
 
 type trpcClientAttrsGetter struct {
 }

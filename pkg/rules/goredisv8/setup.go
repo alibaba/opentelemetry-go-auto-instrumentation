@@ -3,17 +3,25 @@ package goredisv8
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	redis "github.com/go-redis/redis/v8"
 	"go.opentelemetry.io/otel/trace"
 )
 
 var redisv8Instrumenter = BuildRedisv8Instrumenter()
 
-var rv8Enabler = instrumenter.NewDefaultInstrumentEnabler()
+type redisV8InnerEnabler struct {
+	enabled bool
+}
+
+func (g redisV8InnerEnabler) Enable() bool {
+	return g.enabled
+}
+
+var rv8Enabler = redisV8InnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_REDISV8_ENABLED") != "false"}
 
 var redisV8StartOptions = []trace.SpanStartOption{}
 

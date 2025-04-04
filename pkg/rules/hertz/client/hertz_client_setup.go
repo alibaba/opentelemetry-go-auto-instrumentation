@@ -16,14 +16,22 @@ package client
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/cloudwego/hertz/pkg/app/client"
 	"github.com/cloudwego/hertz/pkg/protocol"
 )
 
-var hertzClientEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type hertzClientInnerEnabler struct {
+	enabled bool
+}
+
+func (h hertzClientInnerEnabler) Enable() bool {
+	return h.enabled
+}
+
+var hertzClientEnabler = hertzClientInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_HERTZ_ENABLED") != "false"}
 
 var hertzClientInstrumenter = BuildHertzClientInstrumenter()
 
