@@ -14,6 +14,7 @@
 package fiberv2
 
 import (
+	"os"
 	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
@@ -30,7 +31,15 @@ import (
 
 var emptyFiberv2Response = fiberv2Response{}
 
-var fiberv2Enabler = instrumenter.NewDefaultInstrumentEnabler()
+type fiberV2InnerEnabler struct {
+	enabled bool
+}
+
+func (g fiberV2InnerEnabler) Enable() bool {
+	return g.enabled
+}
+
+var fiberV2Enabler = fiberV2InnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_FIBERV2_ENABLED") != "false"}
 
 type fiberv2ServerAttrsGetter struct {
 }

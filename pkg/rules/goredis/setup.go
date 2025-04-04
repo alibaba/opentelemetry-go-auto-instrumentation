@@ -17,9 +17,9 @@ package goredis
 import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"go.opentelemetry.io/otel/trace"
 	"net"
+	"os"
 	"strings"
 
 	redis "github.com/redis/go-redis/v9"
@@ -27,7 +27,15 @@ import (
 
 var goRedisInstrumenter = BuildGoRedisOtelInstrumenter()
 
-var rv9Enabler = instrumenter.NewDefaultInstrumentEnabler()
+type redisV9InnerEnabler struct {
+	enabled bool
+}
+
+func (r redisV9InnerEnabler) Enable() bool {
+	return r.enabled
+}
+
+var rv9Enabler = redisV9InnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_REDISV9_ENABLED") != "false"}
 
 var redisV9StartOptions = []trace.SpanStartOption{}
 

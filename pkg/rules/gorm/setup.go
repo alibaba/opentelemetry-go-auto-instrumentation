@@ -16,6 +16,7 @@ package gorm
 
 import (
 	"context"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	driver "github.com/go-sql-driver/mysql"
@@ -26,9 +27,22 @@ import (
 var contextKey = "otel-context"
 var requestKey = "otel-request"
 
+type gormInnerEnabler struct {
+	enabled bool
+}
+
+func (g gormInnerEnabler) Enable() bool {
+	return g.enabled
+}
+
+var gormEnabler = gormInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_GORM_ENABLED") != "false"}
+
 var gormInstrumenter = BuildGormInstrumenter()
 
 func afterGormOpen(call api.CallContext, db *gorm.DB, err error) {
+	if !gormEnabler.Enable() {
+		return
+	}
 	if err != nil || db == nil {
 		return
 	}

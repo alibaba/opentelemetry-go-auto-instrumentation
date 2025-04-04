@@ -16,13 +16,21 @@ package redigo
 
 import (
 	"context"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/gomodule/redigo/redis"
 )
 
-var redigoEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type redigoInnerEnabler struct {
+	enabled bool
+}
+
+func (r redigoInnerEnabler) Enable() bool {
+	return r.enabled
+}
+
+var redigoEnabler = redigoInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_REDIGO_ENABLED") != "false"}
 
 func onBeforeDialContext(call api.CallContext, ctx context.Context, network, address string, options ...redis.DialOption) {
 	if !redigoEnabler.Enable() {
