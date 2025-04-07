@@ -18,14 +18,22 @@ import (
 	"context"
 	"database/sql"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"log"
+	"os"
 	"strings"
 )
 
 var databaseSqlInstrumenter = BuildDatabaseSqlOtelInstrumenter()
 
-var dbSqlEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type dbSqlInnerEnabler struct {
+	enabled bool
+}
+
+func (d dbSqlInnerEnabler) Enable() bool {
+	return d.enabled
+}
+
+var dbSqlEnabler = dbSqlInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_DATABASESQL_ENABLED") != "false"}
 
 func beforeOpenInstrumentation(call api.CallContext, driverName, dataSourceName string) {
 	if !dbSqlEnabler.Enable() {

@@ -15,6 +15,7 @@
 package http
 
 import (
+	"os"
 	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
@@ -27,6 +28,16 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 )
+
+type netHttpInnerEnabler struct {
+	enabled bool
+}
+
+func (n netHttpInnerEnabler) Enable() bool {
+	return n.enabled
+}
+
+var netHttpEnabler = netHttpInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_NETHTTP_ENABLED") != "false"}
 
 var emptyHttpResponse = netHttpResponse{}
 
