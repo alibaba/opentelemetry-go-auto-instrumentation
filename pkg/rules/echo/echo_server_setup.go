@@ -15,6 +15,8 @@
 package echo
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
@@ -39,6 +41,7 @@ func otelTraceMiddleware() echo.MiddlewareFunc {
 	}
 }
 
+//go:linkname afterNewEcho github.com/labstack/echo/v4.afterNewEcho
 func afterNewEcho(call api.CallContext, e *echo.Echo) {
 	if !echoEnabler.Enable() {
 		return

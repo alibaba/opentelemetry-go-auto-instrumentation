@@ -15,6 +15,8 @@
 package zerolog
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/rs/zerolog"
@@ -23,6 +25,7 @@ import (
 
 var zeroLogEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
+//go:linkname zeroLogWriteOnEnter github.com/rs/zerolog.zerologWriteOnEnter
 func zeroLogWriteOnEnter(call api.CallContext, ce *zerolog.Event, msg string) {
 	if !zeroLogEnabler.Enable() {
 		return

@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Copyright (c) 2024 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +18,14 @@ package nethttp7
 
 import (
 	"net/http"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 // use field added by struct rule
+//
+//go:linkname onExitNewRequest net/http.onExitNewRequest
 func onExitNewRequest(call api.CallContext, req *http.Request, _ interface{}) {
 	println(req.Should)
 }
