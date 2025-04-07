@@ -11,3 +11,9 @@
 | Environment Variable                                       | Type    | Default | Description                                                 |
 |------------------------------------------------------------|---------|---------|-------------------------------------------------------------|
 | `OTEL_INSTRUMENTATION_NACOS_EXPERIMENTAL_METRICS_ENABLE`   | Boolean | `false` | Enable the capture of experimental nacos metrics attributes.|
+
+## Settings for the DB instrumentation
+
+| Environment Variable                                       | Type    | Default | Description                                                 |
+|------------------------------------------------------------|---------|---------|-------------------------------------------------------------|
+| `OTEL_INSTRUMENTATION_DB_EXPERIMENTAL_ENABLE`              | Boolean | `false` | Enable the capture of experimental database span attributes.|

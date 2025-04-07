@@ -25,7 +25,7 @@ import (
 )
 
 // VerifyDbAttributes TODO: make attribute name to semconv attribute
-func VerifyDbAttributes(span tracetest.SpanStub, name, system, address, statement, operation string) {
+func VerifyDbAttributes(span tracetest.SpanStub, name, system, address, statement, operation, collection string, params []any) {
 	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
 	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
 	actualSystem := GetAttribute(span.Attributes, "db.system.name").AsString()
@@ -36,6 +36,10 @@ func VerifyDbAttributes(span tracetest.SpanStub, name, system, address, statemen
 	Assert(strings.Contains(actualStatement, statement), "Except client db statement to be %s, got %s", statement, actualStatement)
 	actualOperation := GetAttribute(span.Attributes, "db.operation.name").AsString()
 	Assert(actualOperation == operation, "Except client db operation to be %s, got %s", operation, actualOperation)
+	actualCollection := GetAttribute(span.Attributes, "db.collection.name").AsString()
+	Assert(actualCollection == collection, "Expect client collection to be %s, got %s", collection, actualCollection)
+	actualParams := GetAttributesWithPrefix(span.Attributes, "db.query.parameter")
+	SliceAttrsAssert(params, actualParams, "Expect client db params to be %#v, got %#v", params, actualParams)
 }
 
 func VerifyHttpClientAttributes(span tracetest.SpanStub, name, method, fullUrl, protocolName, protocolVersion, networkTransport, networkType, localAddr, peerAddr string, statusCode, localPort, peerPort int64) {

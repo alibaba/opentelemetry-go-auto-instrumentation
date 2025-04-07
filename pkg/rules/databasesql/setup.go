@@ -17,10 +17,11 @@ package databasesql
 import (
 	"context"
 	"database/sql"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 var databaseSqlInstrumenter = BuildDatabaseSqlOtelInstrumenter()
@@ -34,6 +35,20 @@ func (d dbSqlInnerEnabler) Enable() bool {
 }
 
 var dbSqlEnabler = dbSqlInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_DATABASESQL_ENABLED") != "false"}
+
+const (
+	cacheUpperBound = 1024
+)
+
+var sqlCache *SQLMetaCache
+
+func init() {
+	var err error
+	sqlCache, err = NewSQLMetaCache(cacheUpperBound)
+	if err != nil {
+		log.Printf("failed to initialize SQL metadata cache: %v", err)
+	}
+}
 
 func beforeOpenInstrumentation(call api.CallContext, driverName, dataSourceName string) {
 	if !dbSqlEnabler.Enable() {

@@ -66,6 +66,11 @@ func (d goRedisAttrsGetter) GetOperation(request goRedisRequest) string {
 	return request.cmd.FullName()
 }
 
+func (d goRedisAttrsGetter) GetCollection(request goRedisRequest) string {
+	// TBD: We need to implement retrieving the collection later.
+	return ""
+}
+
 func (d goRedisAttrsGetter) GetParameters(request goRedisRequest) []any {
 	return nil
 }
