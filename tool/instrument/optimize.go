@@ -129,6 +129,7 @@ func (rp *RuleProcessor) removeOnExitTrampolineCall(tjump *TJump) error {
 
 func replenishCallContextLiteral(tjump *TJump, expr dst.Expr) {
 	rawFunc := tjump.target
+	// Replenish call context literal with addresses of all arguments
 	names := make([]dst.Expr, 0)
 	for _, name := range getNames(rawFunc.Type.Params) {
 		names = append(names, util.AddressOf(util.Ident(name)))
@@ -136,8 +137,21 @@ func replenishCallContextLiteral(tjump *TJump, expr dst.Expr) {
 	elems := expr.(*dst.UnaryExpr).X.(*dst.CompositeLit).Elts
 	paramLiteral := elems[0].(*dst.KeyValueExpr).Value.(*dst.CompositeLit)
 	paramLiteral.Elts = names
+	// Replenish return values literal with addresses of all return values
+	if rawFunc.Type.Results != nil {
+		rets := make([]dst.Expr, 0)
+		for _, name := range getNames(rawFunc.Type.Results) {
+			rets = append(rets, util.AddressOf(util.Ident(name)))
+		}
+		elems = expr.(*dst.UnaryExpr).X.(*dst.CompositeLit).Elts
+		returnLiteral := elems[1].(*dst.KeyValueExpr).Value.(*dst.CompositeLit)
+		returnLiteral.Elts = rets
+	}
 }
 
+// newCallContextImpl constructs a new CallContextImpl structure literal and
+// replenishes its Params && ReturnValues field with addresses of all arguments.
+// The CallContextImpl structure is used to pass arguments to the exit trampoline
 func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
 	// TODO: This generated structure construction can also be marked via line
 	// directive
