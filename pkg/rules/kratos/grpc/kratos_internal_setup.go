@@ -16,7 +16,6 @@ package grpc
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
@@ -28,8 +27,6 @@ import (
 )
 
 const OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE = "OTEL_INSTRUMENTATION_KRATOS_EXPERIMENTAL_SPAN_ENABLE"
-
-var kratosEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 var kratosInternalInstrument = BuildKratosInternalInstrumenter()
 

@@ -50,8 +50,8 @@ represents for the `get` redis operation. You should use the `verifier` to verif
 import "github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 
 verifier.WaitAndAssertTraces(func (stubs []tracetest.SpanStubs) {
-	verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5 ", "set")
-	verifier.VerifyDbAttributes(stubs[1][0], "get", "", "redis", "", "localhost", "get a ", "get")
+	verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5 ", "set", "")
+	verifier.VerifyDbAttributes(stubs[1][0], "get", "", "redis", "", "localhost", "get a ", "get", "")
 })
 ```
 

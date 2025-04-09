@@ -19,7 +19,7 @@ func main() {
 	_, err = c.Do("UNKNOWN", "nononononono")
 	println(err.Error())
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "SET", "redis", "localhost", "SET foo bar", "SET")
+		verifier.VerifyDbAttributes(stubs[0][0], "SET", "redis", "localhost", "SET foo bar", "SET", "", nil)
 		if stubs[1][0].Status.Code != codes.Error {
 			panic("should have error status")
 		}

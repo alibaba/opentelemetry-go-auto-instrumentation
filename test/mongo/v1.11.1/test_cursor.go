@@ -48,6 +48,6 @@ func main() {
 	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "find", "mongodb", "127.0.0.1", "find", "find")
+		verifier.VerifyDbAttributes(stubs[0][0], "find", "mongodb", "127.0.0.1", "find", "find", "", nil)
 	}, 1)
 }

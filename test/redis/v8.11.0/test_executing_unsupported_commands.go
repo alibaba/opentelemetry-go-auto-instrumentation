@@ -39,8 +39,8 @@ func main() {
 	// get a key that does not exist
 	rdb.Do(ctx, "get", "key").Result()
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "set", "redis", "localhost", "set a b ex 5", "set")
-		verifier.VerifyDbAttributes(stubs[1][0], "get", "redis", "localhost", "get key", "get")
+		verifier.VerifyDbAttributes(stubs[0][0], "set", "redis", "localhost", "set a b ex 5", "set", "", nil)
+		verifier.VerifyDbAttributes(stubs[1][0], "get", "redis", "localhost", "get key", "get", "", nil)
 		if stubs[1][0].Status.Code != codes.Error {
 			panic("should have error status")
 		}

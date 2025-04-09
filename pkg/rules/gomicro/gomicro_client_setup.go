@@ -16,8 +16,8 @@ package gomicro
 
 import (
 	"context"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	micro "go-micro.dev/v5"
 	"go-micro.dev/v5/client"
 	"go-micro.dev/v5/metadata"
@@ -28,8 +28,6 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
-
-var goMicroClientEnabler = instrumenter.NewDefaultInstrumentEnabler()
 
 type clientV5Wrapper struct {
 	client.Client
