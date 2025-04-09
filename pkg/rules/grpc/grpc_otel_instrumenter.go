@@ -19,6 +19,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/version"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
+	"os"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
@@ -27,7 +28,15 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var grpcEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type grpcInnerEnabler struct {
+	enabled bool
+}
+
+func (g grpcInnerEnabler) Enable() bool {
+	return g.enabled
+}
+
+var grpcEnabler = grpcInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_GRPC_ENABLED") != "false"}
 
 type grpcAttrsGetter struct {
 }

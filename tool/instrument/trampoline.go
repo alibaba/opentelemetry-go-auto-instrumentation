@@ -432,7 +432,6 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 					} else {
 						return false // ill-formed AST
 					}
-					dst.Print(rhs)
 				case TrampolinePackageNameIdentifier:
 					util.Assert(onEnter, "sanity check")
 					// callContext.PackageName = "..."

@@ -16,7 +16,7 @@ package server
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"os"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/cloudwego/hertz/pkg/app"
@@ -25,7 +25,15 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/tracer/stats"
 )
 
-var hertzServerEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type hertzServerInnerEnabler struct {
+	enabled bool
+}
+
+func (h hertzServerInnerEnabler) Enable() bool {
+	return h.enabled
+}
+
+var hertzServerEnabler = hertzServerInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_HERTZ_ENABLED") != "false"}
 
 var hertzInstrumenter = BuildHertzServerInstrumenter()
 

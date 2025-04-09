@@ -16,12 +16,20 @@ package logrus
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"os"
 )
 
-var logrusEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type logrusInnerEnabler struct {
+	enabled bool
+}
+
+func (l logrusInnerEnabler) Enable() bool {
+	return l.enabled
+}
+
+var logrusEnabler = logrusInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_LOGRUS_ENABLED") != "false"}
 
 func logNewOnEnter(call api.CallContext, log *logrus.Logger, formatter logrus.Formatter) {
 	if !logrusEnabler.Enable() {

@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
+	"os"
 	"strings"
 	"sync"
 
@@ -29,7 +29,15 @@ import (
 
 var mongoInstrumenter = BuildMongoOtelInstrumenter()
 
-var mongoEnabler instrumenter.InstrumentEnabler = instrumenter.NewDefaultInstrumentEnabler()
+type mongoInnerEnabler struct {
+	enabled bool
+}
+
+func (m mongoInnerEnabler) Enable() bool {
+	return m.enabled
+}
+
+var mongoEnabler = mongoInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_MONGO_ENABLED") != "false"}
 
 func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
 	if !mongoEnabler.Enable() {

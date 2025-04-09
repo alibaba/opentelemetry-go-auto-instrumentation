@@ -19,7 +19,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 
+	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -32,9 +35,63 @@ func GetAttribute(attrs []attribute.KeyValue, name string) attribute.Value {
 	return attribute.Value{}
 }
 
+// Get all attrs with a prefix like `db.query.parameter.0` with `db.query.parameter`
+func GetAttributesWithPrefix(attrs []attribute.KeyValue, prefix string) []string {
+	var results []string
+
+	for _, attr := range attrs {
+		attrKey := string(attr.Key)
+
+		// The attr keys must conform to the format like `db.query.parameter.{idx}`.
+		if strings.HasPrefix(attrKey, prefix) {
+			remainder := attrKey[len(prefix):]
+			if len(remainder) > 0 && strings.HasPrefix(remainder, ".") {
+				indexStr := remainder[1:]
+
+				if _, err := strconv.Atoi(indexStr); err == nil {
+					results = append(results, attr.Value.AsString())
+				}
+			}
+		}
+	}
+
+	return results
+}
+
 func Assert(cond bool, format string, args ...interface{}) {
 	if !cond {
 		panic(fmt.Sprintf(format, args...))
+	}
+}
+
+type mockTestingT struct{}
+
+func (m mockTestingT) Errorf(format string, args ...interface{}) {
+
+}
+
+// Compare two attrs of slice type
+func SliceAttrsAssert(expectAttrs []any, actualAttrs []string, format string, args ...interface{}) {
+	convertedSlice := make([]string, len(expectAttrs))
+	for i, v := range expectAttrs {
+		candidate, ok := v.(string)
+		if ok {
+			convertedSlice[i] = candidate
+		} else {
+			convertedSlice[i] = fmt.Sprintf("%v", v)
+		}
+	}
+
+	mockT := &struct {
+        assert.TestingT
+    }{}
+    mockT.TestingT = mockTestingT{}
+
+	if !assert.ElementsMatch(mockT, actualAttrs, convertedSlice) {
+		errorMsg := fmt.Sprintf(format, args...)
+		errorMsg += fmt.Sprintf("\nExpected contains same elements:\nexpected: %v\nactual: %v",
+			convertedSlice, actualAttrs)
+		panic(errorMsg)
 	}
 }
 

@@ -38,6 +38,11 @@ func (m mongoAttrsGetter) GetStatement(request mongoRequest) string {
 	return request.CommandName
 }
 
+func (m mongoAttrsGetter) GetCollection(request mongoRequest) string {
+	// TBD: We need to implement retrieving the collection later.
+	return ""
+}
+
 func (m mongoAttrsGetter) GetOperation(request mongoRequest) string {
 	return request.CommandName
 }

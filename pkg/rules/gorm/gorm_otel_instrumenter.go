@@ -37,6 +37,11 @@ func (g gormAttrsGetter) GetStatement(gormRequest gormRequest) string {
 	return ""
 }
 
+func (e gormAttrsGetter) GetCollection(gormRequest gormRequest) string {
+	// TBD: We need to implement retrieving the collection later.
+	return ""
+}
+
 func (g gormAttrsGetter) GetOperation(gormRequest gormRequest) string {
 	return gormRequest.Operation
 }
