@@ -15,7 +15,6 @@
 package pkg
 
 import (
-	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091go"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/echo"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/elasticsearch"
