@@ -22,6 +22,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 	"time"
 )
 
@@ -92,10 +93,10 @@ func main() {
 	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMCommonAttributes(stubs[1][2], "execute_other:initialize", "mcp")
-		verifier.VerifyLLMCommonAttributes(stubs[3][2], "execute_other:resources/read", "mcp")
-		verifier.VerifyLLMCommonAttributes(stubs[4][2], "execute_other:resources/list", "mcp")
-		verifier.VerifyLLMCommonAttributes(stubs[5][2], "execute_other:resources/templates/list", "mcp")
+		verifier.VerifyLLMCommonAttributes(stubs[1][2], "execute_other:initialize", "mcp", trace.SpanKindServer)
+		verifier.VerifyLLMCommonAttributes(stubs[3][2], "execute_other:resources/read", "mcp", trace.SpanKindServer)
+		verifier.VerifyLLMCommonAttributes(stubs[4][2], "execute_other:resources/list", "mcp", trace.SpanKindServer)
+		verifier.VerifyLLMCommonAttributes(stubs[5][2], "execute_other:resources/templates/list", "mcp", trace.SpanKindServer)
 
 	}, 7)
 }
