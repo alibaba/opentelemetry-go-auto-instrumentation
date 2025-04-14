@@ -29,18 +29,18 @@ import (
 type aiCommonRequest struct {
 }
 
-func (aiCommonRequest) GetAIOperationName(request mcpServerRequest) string {
+func (aiCommonRequest) GetAIOperationName(request mcpRequest) string {
 	return request.operationName
 }
-func (aiCommonRequest) GetAISystem(request mcpServerRequest) string {
+func (aiCommonRequest) GetAISystem(request mcpRequest) string {
 	return request.system
 }
 
 type LExperimentalAttributeExtractor struct {
-	Base ai.AICommonAttrsExtractor[mcpServerRequest, any, aiCommonRequest]
+	Base ai.AICommonAttrsExtractor[mcpRequest, any, aiCommonRequest]
 }
 
-func (l LExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request mcpServerRequest) ([]attribute.KeyValue, context.Context) {
+func (l LExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request mcpRequest) ([]attribute.KeyValue, context.Context) {
 	attributes, parentContext = l.Base.OnStart(attributes, parentContext, request)
 	var val attribute.Value
 	if request.methodType == string(mcp.MethodToolsCall) {
@@ -81,7 +81,7 @@ func (l LExperimentalAttributeExtractor) OnStart(attributes []attribute.KeyValue
 	return attributes, parentContext
 }
 
-func (l LExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request mcpServerRequest, response any, err error) ([]attribute.KeyValue, context.Context) {
+func (l LExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request mcpRequest, response any, err error) ([]attribute.KeyValue, context.Context) {
 	attributes, context = l.Base.OnEnd(attributes, context, request, response, err)
 	if request.output != nil {
 		var val attribute.Value
@@ -113,10 +113,21 @@ func (l LExperimentalAttributeExtractor) OnEnd(attributes []attribute.KeyValue, 
 	return attributes, context
 }
 
-func BuildCommonOtelInstrumenter() instrumenter.Instrumenter[mcpServerRequest, any] {
-	builder := instrumenter.Builder[mcpServerRequest, any]{}
-	return builder.Init().SetSpanNameExtractor(&ai.AISpanNameExtractor[mcpServerRequest, any]{Getter: aiCommonRequest{}}).
-		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[mcpServerRequest]{}).
+func BuildServerCommonOtelInstrumenter() instrumenter.Instrumenter[mcpRequest, any] {
+	builder := instrumenter.Builder[mcpRequest, any]{}
+	return builder.Init().SetSpanNameExtractor(&ai.AISpanNameExtractor[mcpRequest, any]{Getter: aiCommonRequest{}}).
+		SetSpanKindExtractor(&instrumenter.AlwaysServerExtractor[mcpRequest]{}).
+		AddAttributesExtractor(&LExperimentalAttributeExtractor{}).
+		SetInstrumentationScope(instrumentation.Scope{
+			Name:    utils.MCP_SCOPE_NAME,
+			Version: version.Tag,
+		}).
+		BuildInstrumenter()
+}
+func BuildClientCommonOtelInstrumenter() instrumenter.Instrumenter[mcpRequest, any] {
+	builder := instrumenter.Builder[mcpRequest, any]{}
+	return builder.Init().SetSpanNameExtractor(&ai.AISpanNameExtractor[mcpRequest, any]{Getter: aiCommonRequest{}}).
+		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[mcpRequest]{}).
 		AddAttributesExtractor(&LExperimentalAttributeExtractor{}).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.MCP_SCOPE_NAME,

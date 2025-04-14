@@ -953,5 +953,13 @@
   "Function": "onError",
   "OnEnter": "hookOnErrorOnEnter",
   "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
+},{
+  "Version": "[0.20.0,)",
+  "ImportPath": "github.com/mark3labs/mcp-go/client",
+  "ReceiverType": "*SSEMCPClient",
+  "Function": "sendRequest",
+  "OnEnter": "clientSseOnEnter",
+  "OnExit":"clientOnExit",
+  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
 }
 ]

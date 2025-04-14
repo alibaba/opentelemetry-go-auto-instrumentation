@@ -14,7 +14,7 @@
 
 package mcp
 
-type mcpServerRequest struct {
+type mcpRequest struct {
 	operationName string
 	system        string
 	methodName    string

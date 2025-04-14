@@ -14,4 +14,5 @@
 
 package mcp
 
-var CommonInstrumenter = BuildCommonOtelInstrumenter()
+var ServerInstrumenter = BuildServerCommonOtelInstrumenter()
+var ClientInstrumenter = BuildClientCommonOtelInstrumenter()

@@ -27,7 +27,7 @@ func hookBeforeAnyOnEnter(call api.CallContext, c *server.Hooks,
 	if method == mcp.MethodPing {
 		return
 	}
-	request := mcpServerRequest{
+	request := mcpRequest{
 		operationName: "execute_other:" + string(method),
 		system:        "mcp",
 		methodType:    string(method),
@@ -40,7 +40,7 @@ func hookBeforeAnyOnEnter(call api.CallContext, c *server.Hooks,
 	if subRequest == nil {
 		return
 	}
-	Ctx := CommonInstrumenter.Start(ctx, request)
+	Ctx := ServerInstrumenter.Start(ctx, request)
 	//subRequest.OtelRequest = request
 	subRequest.OtelContext = Ctx
 }
@@ -50,7 +50,7 @@ func hookOnSuccessOnEnter(call api.CallContext, c *server.Hooks,
 	if subRequest == nil {
 		return
 	}
-	request := mcpServerRequest{}
+	request := mcpRequest{}
 	if subRequest.OtelContext == nil {
 		return
 	}
@@ -58,7 +58,7 @@ func hookOnSuccessOnEnter(call api.CallContext, c *server.Hooks,
 	if !ok {
 		return
 	}
-	CommonInstrumenter.End(ctx, request, nil, nil)
+	ServerInstrumenter.End(ctx, request, nil, nil)
 }
 func hookOnErrorOnEnter(call api.CallContext, c *server.Hooks,
 	ctx context.Context, id any, method mcp.MCPMethod, message any, err error) {
@@ -73,11 +73,11 @@ func hookOnErrorOnEnter(call api.CallContext, c *server.Hooks,
 	if !ok {
 		return
 	}
-	request := mcpServerRequest{}
-	CommonInstrumenter.End(ctx, request, nil, err)
+	request := mcpRequest{}
+	ServerInstrumenter.End(ctx, request, nil, err)
 }
 
-func getSubRequest(method mcp.MCPMethod, request *mcpServerRequest, message any) *mcp.Request {
+func getSubRequest(method mcp.MCPMethod, request *mcpRequest, message any) *mcp.Request {
 	switch method {
 	case mcp.MethodToolsCall:
 		if msg, ok := message.(*mcp.CallToolRequest); ok {

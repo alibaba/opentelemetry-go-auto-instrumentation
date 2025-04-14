@@ -84,8 +84,11 @@ func main() {
 	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMCommonAttributes(stubs[1][2], "execute_other:initialize", "mcp", trace.SpanKindServer)
-		verifier.VerifyLLMCommonAttributes(stubs[3][2], "execute_tool", "mcp", trace.SpanKindServer)
-		verifier.VerifyLLMCommonAttributes(stubs[4][2], "execute_other:tools/list", "mcp", trace.SpanKindServer)
-	}, 5)
+		verifier.VerifyLLMCommonAttributes(stubs[1][0], "execute_other:initialize", "mcp", trace.SpanKindClient)
+		verifier.VerifyLLMCommonAttributes(stubs[1][3], "execute_other:initialize", "mcp", trace.SpanKindServer)
+		verifier.VerifyLLMCommonAttributes(stubs[3][0], "execute_tool", "mcp", trace.SpanKindClient)
+		verifier.VerifyLLMCommonAttributes(stubs[3][3], "execute_tool", "mcp", trace.SpanKindServer)
+		verifier.VerifyLLMCommonAttributes(stubs[4][0], "execute_other:tools/list", "mcp", trace.SpanKindClient)
+		verifier.VerifyLLMCommonAttributes(stubs[4][3], "execute_other:tools/list", "mcp", trace.SpanKindServer)
+	}, 10)
 }
