@@ -28,6 +28,18 @@ func clientSseOnEnter(call api.CallContext, c *client.SSEMCPClient,
 	ctx context.Context,
 	method string,
 	params interface{}) {
+	clientOnEnter(call, ctx, method, params)
+}
+func clientStdioOnEnter(call api.CallContext, c *client.StdioMCPClient,
+	ctx context.Context,
+	method string,
+	params interface{}) {
+	clientOnEnter(call, ctx, method, params)
+}
+func clientOnEnter(call api.CallContext,
+	ctx context.Context,
+	method string,
+	params interface{}) {
 	if method == string(mcp.MethodPing) {
 		return
 	}
@@ -49,6 +61,12 @@ func clientSseOnEnter(call api.CallContext, c *client.SSEMCPClient,
 	data["mcp_client_request"] = request
 	call.SetData(data)
 }
+func clientSseOnExit(call api.CallContext, j *json.RawMessage, err error) {
+	clientOnExit(call, j, err)
+}
+func clientStdioOnExit(call api.CallContext, j *json.RawMessage, err error) {
+	clientOnExit(call, j, err)
+}
 func clientOnExit(call api.CallContext, j *json.RawMessage, err error) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok {
@@ -64,6 +82,7 @@ func clientOnExit(call api.CallContext, j *json.RawMessage, err error) {
 	}
 	ClientInstrumenter.End(ctx, request, nil, err)
 }
+
 func handleClientRequest(method string, request *mcpRequest, message interface{}) error {
 	switch method {
 	case string(mcp.MethodToolsCall):

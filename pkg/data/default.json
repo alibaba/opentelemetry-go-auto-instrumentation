@@ -956,10 +956,17 @@
 },{
   "Version": "[0.20.0,)",
   "ImportPath": "github.com/mark3labs/mcp-go/client",
-  "ReceiverType": "*SSEMCPClient",
+  "ReceiverType": "\\*SSEMCPClient",
   "Function": "sendRequest",
   "OnEnter": "clientSseOnEnter",
-  "OnExit":"clientOnExit",
+  "OnExit":"clientSseOnExit",
+  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
+},{
+  "ImportPath": "github.com/mark3labs/mcp-go/client",
+  "ReceiverType": "\\*StdioMCPClient",
+  "Function": "sendRequest",
+  "OnEnter": "clientStdioOnEnter",
+  "OnExit":"clientStdioOnExit",
   "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
 }
 ]
