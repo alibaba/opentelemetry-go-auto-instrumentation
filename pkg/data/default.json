@@ -938,20 +938,20 @@
   "ReceiverType": "\\*Hooks",
   "Function": "beforeAny",
   "OnEnter": "hookBeforeAnyOnEnter",
-  "Path": "/Users/zjl/Downloads/Business/ai-go/otel-trace/mcp"
+  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
 },{
   "Version": "[0.20.0,)",
   "ImportPath": "github.com/mark3labs/mcp-go/server",
   "ReceiverType": "\\*Hooks",
   "Function": "onSuccess",
   "OnEnter": "hookOnSuccessOnEnter",
-  "Path": "/Users/zjl/Downloads/Business/ai-go/otel-trace/mcp"
+  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
 },{
   "Version": "[0.20.0,)",
   "ImportPath": "github.com/mark3labs/mcp-go/server",
   "ReceiverType": "\\*Hooks",
   "Function": "onError",
   "OnEnter": "hookOnErrorOnEnter",
-  "Path": "/Users/zjl/Downloads/Business/ai-go/otel-trace/mcp"
+  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
 }
 ]
