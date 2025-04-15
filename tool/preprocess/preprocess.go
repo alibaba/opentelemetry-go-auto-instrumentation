@@ -192,7 +192,11 @@ func findGoMod(dir string) (string, error) {
 		if util.PathExists(mod) {
 			return mod, nil
 		}
-		dir = filepath.Dir(dir)
+		par := filepath.Dir(dir)
+		if par == dir {
+			break
+		}
+		dir = par
 	}
 	return "", errc.New(errc.ErrPreprocess, "cannot find go.mod")
 }
