@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package dep
 
-// @@ There is a scenario where we want users to rely on our package (alibaba/pkg/core),
+// @@ We want users to rely on our package (alibaba-otel/pkg/dep),
 // and after executing go mod vendor, all related dependencies are fetched
 // locally. The subsequent build process can then be performed offline,
 // without relying on go mod tidy/vendor to fetch any additional dependencies.
