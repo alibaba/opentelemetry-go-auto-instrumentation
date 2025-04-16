@@ -710,10 +710,13 @@ func (dp *DepProcessor) preclean() {
 				util.Log("Remove obsolete import %v from %v",
 					ruleImport, file)
 			}
-		}
-		_, err := util.WriteAstToFile(astRoot, file)
-		if err != nil {
-			util.Log("Failed to write ast to %v: %v", file, err)
+			// Remove the import from the file, but before that, we need to
+			// backup the file
+			dp.backupFile(file)
+			_, err := util.WriteAstToFile(astRoot, file)
+			if err != nil {
+				util.Log("Failed to write ast to %v: %v", file, err)
+			}
 		}
 	}
 	// Clean otel_pkgdep directory
