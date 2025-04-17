@@ -18,6 +18,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -33,6 +34,7 @@ func (g glogInnerEnabler) Enable() bool {
 
 var glogEnabler = glogInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_GLOG_ENABLED") != "false"}
 
+//go:linkname goLogWriteOnEnter log.goLogWriteOnEnter
 func goLogWriteOnEnter(call api.CallContext, ce *log.Logger, pc uintptr, calldepth int, appendOutput func([]byte) []byte) {
 	if !glogEnabler.Enable() {
 		return

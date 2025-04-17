@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"os"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/cloudwego/hertz/pkg/app/client"
@@ -48,6 +49,7 @@ func otelClientMiddleware(next client.Endpoint) client.Endpoint {
 	}
 }
 
+//go:linkname afterHertzClientBuild github.com/cloudwego/hertz/pkg/app/client.afterHertzClientBuild
 func afterHertzClientBuild(call api.CallContext, c *client.Client, err error) {
 	if !hertzClientEnabler.Enable() {
 		return

@@ -128,9 +128,9 @@ func getNames(list *dst.FieldList) []string {
 
 func makeOnXName(t *resource.InstFuncRule, onEnter bool) string {
 	if onEnter {
-		return util.GetVarNameOfFunc(t.OnEnter)
+		return t.OnEnter
 	} else {
-		return util.GetVarNameOfFunc(t.OnExit)
+		return t.OnExit
 	}
 }
 
@@ -296,26 +296,26 @@ func (rp *RuleProcessor) addHookFuncVar(t *resource.InstFuncRule,
 	// multiple hook function declarations to the same file, so we need to check
 	// if the hook function variable is already declared in the target file
 	exist := false
-	varName := makeOnXName(t, onEnter)
-	varDecl := util.NewVarDecl(varName, paramTypes)
+	fnName := makeOnXName(t, onEnter)
+	funcDecl := &dst.FuncDecl{
+		Name: &dst.Ident{
+			Name: fnName,
+		},
+		Type: &dst.FuncType{
+			Func:   false,
+			Params: paramTypes,
+		},
+	}
 	for _, decl := range rp.target.Decls {
-		if genDecl, ok := decl.(*dst.GenDecl); ok {
-			if genDecl.Tok == token.VAR {
-				for _, spec := range genDecl.Specs {
-					if varSpec, ok := spec.(*dst.ValueSpec); ok {
-						if len(varSpec.Names) == 1 {
-							if varSpec.Names[0].Name == varName {
-								exist = true
-								break
-							}
-						}
-					}
-				}
+		if fDecl, ok := decl.(*dst.FuncDecl); ok {
+			if fDecl.Name.Name == fnName {
+				exist = true
+				break
 			}
 		}
 	}
 	if !exist {
-		rp.addDecl(varDecl)
+		rp.addDecl(funcDecl)
 	}
 	return nil
 }

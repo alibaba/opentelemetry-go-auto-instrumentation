@@ -16,10 +16,13 @@ package langchain
 
 import (
 	"context"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/tmc/langchaingo/llms"
 )
 
+//go:linkname generateFromSinglePromptOnEnter github.com/tmc/langchaingo/llms.generateFromSinglePromptOnEnter
 func generateFromSinglePromptOnEnter(call api.CallContext,
 	ctx context.Context,
 	llm llms.Model,
@@ -35,6 +38,8 @@ func generateFromSinglePromptOnEnter(call api.CallContext,
 	data["ctx"] = langCtx
 	call.SetData(data)
 }
+
+//go:linkname generateFromSinglePromptOnExit github.com/tmc/langchaingo/llms.generateFromSinglePromptOnExit
 func generateFromSinglePromptOnExit(call api.CallContext, v string, err error) {
 	data := call.GetData().(map[string]interface{})
 	request := langChainRequest{
