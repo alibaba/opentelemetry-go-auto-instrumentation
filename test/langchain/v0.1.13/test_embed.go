@@ -5,6 +5,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/tmc/langchaingo/embeddings"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
@@ -33,7 +34,7 @@ func main() {
 		panic(err)
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMCommonAttributes(stubs[0][0], "singleEmbed", "langchain")
-		verifier.VerifyLLMCommonAttributes(stubs[1][0], "batchedEmbed", "langchain")
+		verifier.VerifyLLMCommonAttributes(stubs[0][0], "singleEmbed", "langchain", trace.SpanKindClient)
+		verifier.VerifyLLMCommonAttributes(stubs[1][0], "batchedEmbed", "langchain", trace.SpanKindClient)
 	}, 3)
 }
