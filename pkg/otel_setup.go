@@ -221,8 +221,11 @@ func serveMetrics() {
 
 func gracefullyShutdown(ctx context.Context) {
 	if metricsProvider != nil {
-		if err := metricsProvider.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric provider", err)
+		mp, ok := metricsProvider.(*metric.MeterProvider)
+		if ok {
+			if err := mp.Shutdown(ctx); err != nil {
+				log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric provider", err)
+			}
 		}
 	}
 	if traceProvider != nil {
