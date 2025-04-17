@@ -14,7 +14,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.10.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/kratos/v2 v2.8.0
-	github.com/go-redis/redis/v8 v8.11.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gomodule/redigo v1.9.0
@@ -43,6 +43,7 @@ require (
 )
 
 require (
+	github.com/apache/rocketmq-client-go/v2 v2.1.2
 	github.com/bytedance/gopkg v0.1.0
 	github.com/kataras/iris/v12 v12.2.11
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
@@ -65,12 +66,14 @@ require (
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	stathat.com/c/consistent v1.0.0 // indirect
 )
 
 require (
@@ -110,7 +113,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.1.1+incompatible
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
