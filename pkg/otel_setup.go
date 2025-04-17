@@ -73,9 +73,6 @@ var (
 	batchSpanProcessor trace.SpanProcessor
 )
 
-type noopMeterProvider struct {
-}
-
 func init() {
 	if testaccess.IsInTest() {
 		trace.GetTestSpans = testaccess.GetTestSpans
