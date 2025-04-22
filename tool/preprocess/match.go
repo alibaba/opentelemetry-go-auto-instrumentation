@@ -17,8 +17,10 @@ package preprocess
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
@@ -143,6 +145,83 @@ func findAvailableRules() []resource.InstRule {
 	return rules
 }
 
+var versionRegexp = regexp.MustCompile(`@v\d+\.\d+\.\d+(-.*?)?/`)
+
+func extractVersion(path string) string {
+	// Unify the path to Unix style
+	path = filepath.ToSlash(path)
+	version := versionRegexp.FindString(path)
+	if version == "" {
+		return ""
+	}
+	// Extract version number from the string
+	return version[1 : len(version)-1]
+}
+
+// splitVersionRange splits the version range into two parts, start and end.
+func splitVersionRange(vr string) (string, string) {
+	util.Assert(strings.Contains(vr, ","), "invalid version range format")
+	util.Assert(strings.Contains(vr, "["), "invalid version range format")
+	util.Assert(strings.Contains(vr, ")"), "invalid version range format")
+
+	start := vr[1:strings.Index(vr, ",")]
+	end := vr[strings.Index(vr, ",")+1 : len(vr)-1]
+	return "v" + start, "v" + end
+}
+
+// matchVersion checks if the version string matches the version range in the
+// rule. The version range is in format [start, end), where start is inclusive
+// and end is exclusive. If the rule version string is empty, it always matches.
+func matchVersion(version string, ruleVersion string) (bool, error) {
+	// Fast path, always match if the rule version is not specified
+	if ruleVersion == "" {
+		return true, nil
+	}
+	// Check if both rule version and package version are in sane
+	if !strings.Contains(version, "v") {
+		return false, errc.New(errc.ErrMatchRule,
+			fmt.Sprintf("invalid version %v", version))
+	}
+	if !strings.Contains(ruleVersion, "[") ||
+		!strings.Contains(ruleVersion, ")") ||
+		!strings.Contains(ruleVersion, ",") ||
+		strings.Contains(ruleVersion, "v") {
+		return false, errc.New(errc.ErrMatchRule,
+			fmt.Sprintf("invalid rule version %v", ruleVersion))
+	}
+	// Remove extra whitespace from the rule version string
+	ruleVersion = strings.ReplaceAll(ruleVersion, " ", "")
+
+	// Compare the version with the rule version, the rule version is in the
+	// format [start, end), where start is inclusive and end is exclusive
+	// and start or end can be omitted, which means the range is open-ended.
+	ruleVersionStart, ruleVersionEnd := splitVersionRange(ruleVersion)
+	switch {
+	case ruleVersionStart != "v" && ruleVersionEnd != "v":
+		// Full version range
+		if semver.Compare(version, ruleVersionStart) >= 0 &&
+			semver.Compare(version, ruleVersionEnd) < 0 {
+			return true, nil
+		}
+	case ruleVersionStart == "v":
+		// Only end is specified
+		util.Assert(ruleVersionEnd != "v", "sanity check")
+		if semver.Compare(version, ruleVersionEnd) < 0 {
+			return true, nil
+		}
+	case ruleVersionEnd == "v":
+		// Only start is specified
+		util.Assert(ruleVersionStart != "v", "sanity check")
+		if semver.Compare(version, ruleVersionStart) >= 0 {
+			return true, nil
+		}
+	default:
+		return false, errc.New(errc.ErrMatchRule,
+			fmt.Sprintf("invalid rule version range %v", ruleVersion))
+	}
+	return false, nil
+}
+
 // match gives compilation arguments and finds out all interested rules
 // for it.
 func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
@@ -175,7 +254,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 		// If it's a vendor build, we need to extract the version of the module
 		// from vendor/modules.txt, otherwise we find the version from source
 		// code file path
-		version := util.ExtractVersion(file)
+		version := extractVersion(file)
 		if rm.moduleVersions != nil {
 			recorded := findVendorModuleVersion(rm.moduleVersions, importPath)
 			if recorded != "" {
@@ -187,10 +266,10 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			rule := availables[i]
 
 			// Check if the version is supported
-			matched, err := util.MatchVersion(version, rule.GetVersion())
+			matched, err := matchVersion(version, rule.GetVersion())
 			if err != nil {
-				util.Log("Bad match: file %s, rule %s, version %s:\n%v",
-					file, rule, version, err)
+				util.Log("Bad match: file %s, rule %s, version %s",
+					file, rule, version)
 				continue
 			}
 			if !matched {
@@ -198,10 +277,10 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 			}
 			// Check if the rule requires a specific Go version(range)
 			if rule.GetGoVersion() != "" {
-				matched, err = util.MatchVersion(goVersion, rule.GetGoVersion())
+				matched, err = matchVersion(goVersion, rule.GetGoVersion())
 				if err != nil {
-					util.Log("Bad match: file %s, rule %s, go version %s:\n%v",
-						file, rule, goVersion, err)
+					util.Log("Bad match: file %s, rule %s, go version %s",
+						file, rule, goVersion)
 					continue
 				}
 				if !matched {
@@ -265,8 +344,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 					}
 				} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
 					if rl, ok := rule.(*resource.InstFuncRule); ok {
-						if util.MatchFuncDecl(funcDecl, rl.Function,
-							rl.ReceiverType) {
+						if util.MatchFuncDecl(funcDecl, rl.Function, rl.ReceiverType) {
 							util.Log("Match func rule %s", rule)
 							err = bundle.AddFile2FuncRule(file, rl)
 							if err != nil {
@@ -333,6 +411,14 @@ func findVendorModuleVersion(modules []*vendorModule, importPath string) string 
 	return ""
 }
 
+func cutPrefix(s, prefix string) (after string, found bool) {
+	// Compatible with go1.18 as we use this version internally
+	if !strings.HasPrefix(s, prefix) {
+		return s, false
+	}
+	return s[len(prefix):], true
+}
+
 func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	vendorFile := filepath.Join(projDir, "vendor", "modules.txt")
 	if util.PathNotExists(vendorFile) {
@@ -394,7 +480,7 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 			continue
 		}
 
-		if _, ok := strings.CutPrefix(line, "## "); ok {
+		if _, ok := cutPrefix(line, "## "); ok {
 			// Skip annotations lines
 			continue
 		}
@@ -431,7 +517,7 @@ func (dp *DepProcessor) matchRules(compileCmds []string) error {
 
 	// If we are in vendor mode, we need to parse the vendor/modules.txt file
 	// to get the version of each module for future matching
-	if dp.allowVendor {
+	if dp.vendorMode {
 		modules, err := parseVendorModules(dp.getGoModDir())
 		if err != nil {
 			return err
