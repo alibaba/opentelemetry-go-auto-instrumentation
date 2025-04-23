@@ -27,6 +27,8 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 	"github.com/dave/dst"
+	"golang.org/x/mod/module"
+	"golang.org/x/mod/semver"
 )
 
 type ruleMatcher struct {
@@ -312,14 +314,14 @@ func findFlagValue(cmd []string, flag string) string {
 // part of the first line, and all submodules are listed in the following lines
 // starting with the module name.
 type vendorModule struct {
-	module     string
+	path       string
 	version    string
 	submodules []string
 }
 
 func findVendorModuleVersion(modules []*vendorModule, importPath string) string {
 	for _, module := range modules {
-		if module.module == importPath {
+		if module.path == importPath {
 			return module.version
 		}
 		for _, submodule := range module.submodules {
@@ -336,9 +338,6 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	if util.PathNotExists(vendorFile) {
 		return nil, errc.New(errc.ErrNotExist, "vendor/modules.txt not found")
 	}
-	// Read the vendor/modules.txt file line by line and parse it in form of
-	// #ImportPath Version, all lines following this line are considered as
-	// submodules of the same module
 	file, err := os.Open(vendorFile)
 	if err != nil {
 		return nil, errc.New(errc.ErrOpenFile, err.Error())
@@ -356,32 +355,61 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	scanner.Buffer(buffer, cap(buffer))
 
 	vms := make([]*vendorModule, 0)
-	var vm *vendorModule
-
+	var mod *vendorModule
+	vendorVersion := make(map[string]string)
+	// From src/cmd/go/internal/modload/vendor.go
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "# ") {
-			parts := strings.Split(line, " ")
-			// In form of # ImportPath Version or # ImportPath Version => Replace
-			// In any case, there must be at least 3 parts
-			if len(parts) == 3 || len(parts) == 5 {
-				util.Assert(parts[0] == "#", "sanity check")
-				util.Assert(strings.HasPrefix(parts[2], "v"), "sanity check")
-				vm = &vendorModule{
-					module:     parts[1],
-					version:    parts[2],
-					submodules: make([]string, 0),
-				}
-				vms = append(vms, vm)
-			} else if len(parts) == 4 {
-				// In form of # ImportPath => Replace, skip it
-			} else {
-				util.ShouldNotReachHereT(line)
+			f := strings.Fields(line)
+
+			if len(f) < 3 {
+				continue
 			}
-		} else if !strings.HasPrefix(line, "## ") {
-			vm.submodules = append(vm.submodules, line)
-		} else {
-			util.Assert(strings.HasPrefix(line, "## "), "why not otherwise")
+			if semver.IsValid(f[2]) {
+				// A module, but we don't yet know whether it is in the build list or
+				// only included to indicate a replacement.
+				mod = &vendorModule{path: f[1], version: f[2]}
+				f = f[3:]
+			} else if f[2] == "=>" {
+				// A wildcard replacement found in the main module's go.mod file.
+				mod = &vendorModule{path: f[1]}
+				f = f[2:]
+			} else {
+				// Not a version or a wildcard replacement.
+				// We don't know how to interpret this module line, so ignore it.
+				mod = &vendorModule{}
+				continue
+			}
+
+			if len(f) >= 2 && f[0] == "=>" {
+				// Skip replacement lines
+			}
+			continue
+		}
+
+		// Not a module line. Must be a package within a module or a metadata
+		// directive, either of which requires a preceding module line.
+		if mod.path == "" {
+			continue
+		}
+
+		if _, ok := strings.CutPrefix(line, "## "); ok {
+			// Skip annotations lines
+			continue
+		}
+
+		if f := strings.Fields(line); len(f) == 1 && module.CheckImportPath(f[0]) == nil {
+			// A package within the current module.
+			mod.submodules = append(mod.submodules, f[0])
+
+			// Since this module provides a package for the build, we know that it
+			// is in the build list and is the selected version of its path.
+			// If this information is new, record it.
+			if v, ok := vendorVersion[mod.path]; !ok || semver.Compare(v, mod.version) < 0 {
+				vms = append(vms, mod)
+				vendorVersion[mod.path] = mod.version
+			}
 		}
 	}
 	err = scanner.Err()
