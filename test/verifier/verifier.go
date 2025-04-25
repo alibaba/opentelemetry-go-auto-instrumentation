@@ -144,13 +144,13 @@ func VerifyLLMAttributes(span tracetest.SpanStub, name string, system string, mo
 	Assert(optModel == model, "Except gen_ai.request.model to be %s, got %s", model, optModel)
 	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
 }
-func VerifyLLMCommonAttributes(span tracetest.SpanStub, name string, system string) {
+func VerifyLLMCommonAttributes(span tracetest.SpanStub, name string, system string, spanKind trace.SpanKind) {
 	Assert(span.Name == name, "Except client span name to be %s, got %s", name, span.Name)
 	actualSystem := GetAttribute(span.Attributes, "gen_ai.system").AsString()
 	Assert(actualSystem == system, "Except gen_ai.system to be %s, got %s", system, actualSystem)
 	optName := GetAttribute(span.Attributes, "gen_ai.operation.name").AsString()
 	Assert(optName == name, "Except gen_ai.operation.name to be %s, got %s", name, optName)
-	Assert(span.SpanKind == trace.SpanKindClient, "Expect to be client span, got %d", span.SpanKind)
+	Assert(span.SpanKind == spanKind, "Expect to be %s span, got %d", spanKind, span.SpanKind)
 }
 func VerifyMQPublishAttributes(span tracetest.SpanStub, exchange, routing, queue, operationName, destination string, system string) {
 	Assert(span.Name == destination+" "+operationName, "Except client span name to be %s, got %s", destination+" "+string(operationName), span.Name)

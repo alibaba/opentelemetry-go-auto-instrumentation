@@ -7,6 +7,7 @@ import (
 	"github.com/tmc/langchaingo/llms/fake"
 	"github.com/tmc/langchaingo/prompts"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
@@ -18,6 +19,6 @@ func main() {
 		panic(err)
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyLLMCommonAttributes(stubs[0][0], "chains", "langchain")
+		verifier.VerifyLLMCommonAttributes(stubs[0][0], "chains", "langchain", trace.SpanKindClient)
 	}, 3)
 }
