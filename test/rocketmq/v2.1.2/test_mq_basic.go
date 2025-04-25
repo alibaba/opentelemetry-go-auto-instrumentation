@@ -24,47 +24,65 @@ import (
 	"time"
 )
 
+const (
+	consumerStartupDelay = 3 * time.Second  // Time for consumer to initialize
+	testMessageContent   = "Hello RocketMQ" // Test message content
+	testTag              = "test_tag"       // Test message tag
+)
+
 func main() {
-	// 初始化生产者
+	// Initialize test environment
 	initTopic()
-	p := initRocketMQ()
+	p := initProducer()
 	defer p.Shutdown()
 
-	// 初始化消费者
 	c := initConsumer()
+	defer c.Shutdown()
 
-	// 发送消息
-	msg := primitive.NewMessage(topicName, []byte("Hello RocketMQ"))
-	msg.WithTag("test_tag")
+	// Prepare and send test message
+	msg := primitive.NewMessage(topicName, []byte(testMessageContent))
+	msg.WithTag(testTag)
 
 	result, err := p.SendSync(context.Background(), msg)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to send message: %v", err)
 	}
-	log.Printf("消息发送成功: %s\n", result.String())
+	log.Printf("Message sent successfully: %s", result.String())
 
-	// 注册消息处理函数
-	err = c.Subscribe(topicName, consumer.MessageSelector{}, func(ctx context.Context, msgs ...*primitive.MessageExt) (consumer.ConsumeResult, error) {
+	// Register message handler
+	err = c.Subscribe(topicName, consumer.MessageSelector{}, createMessageHandler())
+	if err != nil {
+		log.Fatalf("Failed to subscribe: %v", err)
+	}
+
+	// Start consumer with delay to ensure it's ready
+	if err = c.Start(); err != nil {
+		log.Fatalf("Failed to start consumer: %v", err)
+	}
+	time.Sleep(consumerStartupDelay)
+
+	// Verify OpenTelemetry traces
+	verifyBasicTraces()
+
+	log.Println("Test completed successfully")
+}
+
+// createMessageHandler creates a message handler function
+func createMessageHandler() func(ctx context.Context, msgs ...*primitive.MessageExt) (consumer.ConsumeResult, error) {
+	return func(ctx context.Context, msgs ...*primitive.MessageExt) (consumer.ConsumeResult, error) {
 		for _, msg := range msgs {
-			log.Printf("收到消息: %s\n", string(msg.Body))
+			log.Printf("Received message: %s", string(msg.Body))
 		}
 		return consumer.ConsumeSuccess, nil
-	})
-	if err != nil {
-		panic(err)
 	}
+}
 
-	// 启动消费者
-	err = c.Start()
-	if err != nil {
-		panic(err)
-	}
-	defer c.Shutdown()
-
-	time.Sleep(10 * time.Second)
-
-	// 验证OpenTelemetry跟踪
+// verifyBasicTraces verifies the OpenTelemetry traces
+func verifyBasicTraces() {
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		VerifyRocketMQAttributes(stubs[0][0], stubs[0][1], topicName, "test_tag")
+		if len(stubs) == 0 || len(stubs[0]) < 2 {
+			log.Fatal("Insufficient spans collected for verification")
+		}
+		VerifyRocketMQAttributes(stubs[0][0], stubs[0][1], topicName, testTag)
 	}, 1)
 }

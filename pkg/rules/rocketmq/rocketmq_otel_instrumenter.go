@@ -17,6 +17,8 @@ package rocketmq
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/message"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/instrumenter"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
@@ -30,29 +32,26 @@ import (
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
-	"strconv"
 )
 
-// 埋点开关控制器
-var rocketmqEnabler = instrumenter.NewDefaultInstrumentEnabler()
-
-// 缓存Instrumenter实例，避免重复创建
+// Instrumentation control
 var (
-	producerInstrumenter      = buildRocketMQProducerInstrumenter()
-	singleProcessInstrumenter = buildRocketMQConsumerInstrumenter(message.PROCESS, false)
-	batchProcessInstrumenter  = buildRocketMQConsumerInstrumenter(message.PROCESS, true)
-	receiveInstrumenter       = buildRocketMQConsumerReceiveInstrumenter()
+	enabler                   = instrumenter.NewDefaultInstrumentEnabler()
+	producerInst              = newProducerInstrumenter()
+	singleProcessConsumerInst = newConsumerInstrumenter(message.PROCESS, false)
+	batchProcessConsumerInst  = newConsumerInstrumenter(message.PROCESS, true)
+	receiveConsumerInst       = newReceiveInstrumenter()
 )
 
-// 将SendStatus转换为字符串
-func sendStatusStr(status primitive.SendStatus) string {
+// sendStatusToString converts SendStatus to readable string
+func sendStatusToString(status primitive.SendStatus) string {
 	switch status {
 	case primitive.SendOK:
 		return "SEND_OK"
 	case primitive.SendFlushDiskTimeout:
 		return "SEND_FLUSH_DISK_TIMEOUT"
 	case primitive.SendFlushSlaveTimeout:
-		return "SEND_SENDFLUSH_SLAVE_TIMEOUT"
+		return "SEND_FLUSH_SLAVE_TIMEOUT"
 	case primitive.SendSlaveNotAvailable:
 		return "SEND_SLAVE_NOT_AVAILABLE"
 	default:
@@ -60,61 +59,60 @@ func sendStatusStr(status primitive.SendStatus) string {
 	}
 }
 
-// OpenTelemetry传播器载体
-type rocketmqProducerCarrier struct {
-	msg *primitive.Message
+// ProducerCarrier implements propagation.TextMapCarrier for producer messages
+type ProducerCarrier struct {
+	Msg *primitive.Message
 }
 
-func (c rocketmqProducerCarrier) Get(key string) string {
-	return c.msg.GetProperty(key)
+func (c ProducerCarrier) Get(key string) string {
+	return c.Msg.GetProperty(key)
 }
 
-func (c rocketmqProducerCarrier) Set(key, value string) {
-	c.msg.WithProperty(key, value)
+func (c ProducerCarrier) Set(key, value string) {
+	c.Msg.WithProperty(key, value)
 }
 
-func (c rocketmqProducerCarrier) Keys() []string {
-	if c.msg.GetProperties() == nil {
+func (c ProducerCarrier) Keys() []string {
+	props := c.Msg.GetProperties()
+	if props == nil {
 		return nil
 	}
-	keys := make([]string, 0, len(c.msg.GetProperties()))
-	for k := range c.msg.GetProperties() {
+	keys := make([]string, 0, len(props))
+	for k := range props {
 		keys = append(keys, k)
 	}
-
 	return keys
 }
 
-// OpenTelemetry传播器载体
-type rocketmqConsumerCarrier struct {
-	msg *primitive.MessageExt
+// ConsumerCarrier implements propagation.TextMapCarrier for consumer messages
+type ConsumerCarrier struct {
+	Msg *primitive.MessageExt
 }
 
-func (c rocketmqConsumerCarrier) Get(key string) string {
-	return c.msg.GetProperty(key)
+func (c ConsumerCarrier) Get(key string) string {
+	return c.Msg.GetProperty(key)
 }
 
-func (c rocketmqConsumerCarrier) Set(key, value string) {
-	c.msg.WithProperty(key, value)
+func (c ConsumerCarrier) Set(key, value string) {
+	c.Msg.WithProperty(key, value)
 }
 
-func (c rocketmqConsumerCarrier) Keys() []string {
-	if c.msg.GetProperties() == nil {
+func (c ConsumerCarrier) Keys() []string {
+	props := c.Msg.GetProperties()
+	if props == nil {
 		return nil
 	}
-	keys := make([]string, 0, len(c.msg.GetProperties()))
-	for k := range c.msg.GetProperties() {
+	keys := make([]string, 0, len(props))
+	for k := range props {
 		keys = append(keys, k)
 	}
-
 	return keys
 }
 
-// 状态提取器
-type rocketmqProducerStatusExtractor struct {
-}
+// ProducerStatusExtractor extracts status for producer spans
+type ProducerStatusExtractor struct{}
 
-func (e *rocketmqProducerStatusExtractor) Extract(span trace.Span, req rocketmqProducerReq, res rocketmqProducerRes, err error) {
+func (e *ProducerStatusExtractor) Extract(span trace.Span, req ProducerRequest, res ProducerResponse, err error) {
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 	} else {
@@ -122,350 +120,322 @@ func (e *rocketmqProducerStatusExtractor) Extract(span trace.Span, req rocketmqP
 	}
 }
 
-type rocketmqConsumerStatusExtractor struct{}
+// ConsumerStatusExtractor extracts status for consumer spans
+type ConsumerStatusExtractor struct{}
 
-func (e *rocketmqConsumerStatusExtractor) Extract(span trace.Span, req rocketmqConsumerReq, res rocketmqConsumerRes, err error) {
-	if err != nil {
+func (e *ConsumerStatusExtractor) Extract(span trace.Span, req ConsumerRequest, res ConsumerResponse, err error) {
+	switch {
+	case err != nil:
 		span.SetStatus(codes.Error, err.Error())
-	} else if res.consumeResult != consumer.ConsumeSuccess {
-		span.SetStatus(codes.Error, fmt.Sprintf("Consume failed with result: %v", res.consumeResult))
-	} else {
+	case res.Result != consumer.ConsumeSuccess:
+		span.SetStatus(codes.Error, fmt.Sprintf("consume result: %v", res.Result))
+	default:
 		span.SetStatus(codes.Ok, "")
 	}
 }
 
-// rocketMQMessageProducerAttrsGetter 实现RocketMQ消息的属性获取接口
-type rocketMQMessageProducerAttrsGetter struct{}
+// ProducerAttrsGetter implements message attribute getter for producers
+type ProducerAttrsGetter struct{}
 
-func (r rocketMQMessageProducerAttrsGetter) IsAnonymousDestination(request rocketmqProducerReq) bool {
+func (r ProducerAttrsGetter) GetDestination(req ProducerRequest) string {
+	if req.Message == nil {
+		return ""
+	}
+	return req.Message.Topic
+}
+
+func (r ProducerAttrsGetter) GetMessageBodySize(req ProducerRequest) int64 {
+	if req.Message == nil {
+		return 0
+	}
+	if req.Message.Batch && req.Message.Compress {
+		return int64(len(req.Message.CompressedBody))
+	}
+	return int64(len(req.Message.Body))
+}
+
+func (r ProducerAttrsGetter) IsAnonymousDestination(req ProducerRequest) bool {
 	return false
 }
 
-func (r rocketMQMessageProducerAttrsGetter) GetDestinationPartitionId(request rocketmqProducerReq) string {
-	if request.message == nil {
-		return ""
-	}
-	return request.message.GetShardingKey()
+func (r ProducerAttrsGetter) GetDestinationPartitionId(req ProducerRequest) string {
+	return ""
 }
 
-// GetSystem 获取消息系统名称
-func (r rocketMQMessageProducerAttrsGetter) GetSystem(request rocketmqProducerReq) string {
+func (r ProducerAttrsGetter) GetSystem(req ProducerRequest) string {
 	return "rocketmq"
 }
 
-// GetDestination 获取目标主题
-func (r rocketMQMessageProducerAttrsGetter) GetDestination(request rocketmqProducerReq) string {
-	if request.message == nil {
-		return ""
-	}
-	return request.message.Topic
-}
-
-// GetDestinationTemplate 获取目标主题模板
-func (r rocketMQMessageProducerAttrsGetter) GetDestinationTemplate(request rocketmqProducerReq) string {
+func (r ProducerAttrsGetter) GetDestinationTemplate(req ProducerRequest) string {
 	return ""
 }
 
-// IsTemporaryDestination 判断是否是临时目标
-func (r rocketMQMessageProducerAttrsGetter) IsTemporaryDestination(request rocketmqProducerReq) bool {
+func (r ProducerAttrsGetter) IsTemporaryDestination(req ProducerRequest) bool {
 	return false
 }
 
-// isAnonymousDestination 判断是否是匿名目标
-func (r rocketMQMessageProducerAttrsGetter) isAnonymousDestination(request rocketmqProducerReq) bool {
+func (r ProducerAttrsGetter) isAnonymousDestination(req ProducerRequest) bool {
 	return false
 }
 
-// GetConversationId 获取对话ID
-func (r rocketMQMessageProducerAttrsGetter) GetConversationId(request rocketmqProducerReq) string {
+func (r ProducerAttrsGetter) GetConversationId(req ProducerRequest) string {
 	return ""
 }
 
-// GetMessageBodySize 获取消息体大小
-func (r rocketMQMessageProducerAttrsGetter) GetMessageBodySize(request rocketmqProducerReq) int64 {
-	if request.message == nil {
-		return 0
-	}
-	if request.message.Batch && request.message.Compress {
-		return int64(len(request.message.CompressedBody))
-	}
-	return int64(len(request.message.Body))
-}
-
-// GetMessageEnvelopSize 获取消息信封大小
-func (r rocketMQMessageProducerAttrsGetter) GetMessageEnvelopSize(request rocketmqProducerReq) int64 {
+func (r ProducerAttrsGetter) GetMessageEnvelopSize(req ProducerRequest) int64 {
 	return 0
 }
 
-// GetMessageId 获取消息ID
-func (r rocketMQMessageProducerAttrsGetter) GetMessageId(request rocketmqProducerReq, response rocketmqProducerRes) string {
-	if response.result != nil {
-		return response.result.MsgID
+func (r ProducerAttrsGetter) GetMessageId(req ProducerRequest, res ProducerResponse) string {
+	if res.Result != nil {
+		return res.Result.MsgID
 	}
 	return ""
 }
 
-// GetClientId 获取客户端ID
-func (r rocketMQMessageProducerAttrsGetter) GetClientId(request rocketmqProducerReq) string {
-	return request.clientID
-}
-
-// GetBatchMessageCount 获取批处理消息数量
-func (r rocketMQMessageProducerAttrsGetter) GetBatchMessageCount(request rocketmqProducerReq, response rocketmqProducerRes) int64 {
-	return 1 // RocketMQ默认每次发送单条消息
-}
-
-// GetMessageHeader 获取消息头
-func (r rocketMQMessageProducerAttrsGetter) GetMessageHeader(request rocketmqProducerReq, name string) []string {
-	if request.message == nil {
-		return nil
-	}
-	value := request.message.GetProperty(name)
-	if value == "" {
-		return nil
-	}
-	return []string{value}
-}
-
-// rocketMQMessageConsumerAttrsGetter 实现RocketMQ消费者的属性获取接口
-type rocketMQMessageConsumerAttrsGetter struct{}
-
-func (r rocketMQMessageConsumerAttrsGetter) IsAnonymousDestination(request rocketmqConsumerReq) bool {
-	return false
-}
-
-func (r rocketMQMessageConsumerAttrsGetter) GetDestinationPartitionId(request rocketmqConsumerReq) string {
+func (r ProducerAttrsGetter) GetClientId(req ProducerRequest) string {
 	return ""
 }
 
-// GetSystem 获取消息系统名称
-func (r rocketMQMessageConsumerAttrsGetter) GetSystem(request rocketmqConsumerReq) string {
-	return "rocketmq"
-}
-
-// GetDestination 获取目标主题
-func (r rocketMQMessageConsumerAttrsGetter) GetDestination(request rocketmqConsumerReq) string {
-	if request.messages == nil {
-		return ""
-	}
-	return request.messages.Topic
-}
-
-// GetDestinationTemplate 获取目标主题模板
-func (r rocketMQMessageConsumerAttrsGetter) GetDestinationTemplate(request rocketmqConsumerReq) string {
-	return ""
-}
-
-// IsTemporaryDestination 判断是否是临时目标
-func (r rocketMQMessageConsumerAttrsGetter) IsTemporaryDestination(request rocketmqConsumerReq) bool {
-	return false
-}
-
-// isAnonymousDestination 判断是否是匿名目标
-func (r rocketMQMessageConsumerAttrsGetter) isAnonymousDestination(request rocketmqConsumerReq) bool {
-	return false
-}
-
-// GetConversationId 获取对话ID
-func (r rocketMQMessageConsumerAttrsGetter) GetConversationId(request rocketmqConsumerReq) string {
-	return ""
-}
-
-// GetMessageBodySize 获取消息体大小
-func (r rocketMQMessageConsumerAttrsGetter) GetMessageBodySize(request rocketmqConsumerReq) int64 {
-	if request.messages == nil {
-		return 0
-	}
-	return int64(len(request.messages.Body))
-}
-
-// GetMessageEnvelopSize 获取消息信封大小
-func (r rocketMQMessageConsumerAttrsGetter) GetMessageEnvelopSize(request rocketmqConsumerReq) int64 {
-	return 0
-}
-
-// GetMessageId 获取消息ID
-func (r rocketMQMessageConsumerAttrsGetter) GetMessageId(request rocketmqConsumerReq, response rocketmqConsumerRes) string {
-	if request.messages == nil {
-		return ""
-	}
-	return request.messages.MsgId
-}
-
-// GetClientId 获取客户端ID
-func (r rocketMQMessageConsumerAttrsGetter) GetClientId(request rocketmqConsumerReq) string {
-	return ""
-}
-
-// GetBatchMessageCount 获取批处理消息数量
-func (r rocketMQMessageConsumerAttrsGetter) GetBatchMessageCount(request rocketmqConsumerReq, response rocketmqConsumerRes) int64 {
+func (r ProducerAttrsGetter) GetBatchMessageCount(req ProducerRequest, res ProducerResponse) int64 {
 	return 1
 }
 
-// GetMessageHeader 获取消息头
-func (r rocketMQMessageConsumerAttrsGetter) GetMessageHeader(request rocketmqConsumerReq, name string) []string {
-	if request.messages == nil {
+func (r ProducerAttrsGetter) GetMessageHeader(req ProducerRequest, name string) []string {
+	if req.Message == nil {
 		return nil
 	}
-	value := request.messages.GetProperty(name)
+	value := req.Message.GetProperty(name)
 	if value == "" {
 		return nil
 	}
 	return []string{value}
 }
 
-type rocketmqConsumerProcessAttributesExtractor struct{}
+// ConsumerAttrsGetter implements message attribute getter for consumers
+type ConsumerAttrsGetter struct{}
 
-func (e *rocketmqConsumerProcessAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, req rocketmqConsumerReq) ([]attribute.KeyValue, context.Context) {
-	if req.messages == nil {
-		return attributes, parentContext
+func (r ConsumerAttrsGetter) GetDestination(req ConsumerRequest) string {
+	if req.Message == nil {
+		return ""
 	}
-
-	attrs := []attribute.KeyValue{
-		semconv.MessagingRocketmqMessageTagKey.String(req.messages.GetTags()),
-		semconv.MessagingRocketmqMessageKeysKey.String(req.messages.GetKeys()),
-	}
-	return append(attributes, attrs...), parentContext
+	return req.Message.Topic
 }
 
-func (e *rocketmqConsumerProcessAttributesExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, req rocketmqConsumerReq, res rocketmqConsumerRes, err error) ([]attribute.KeyValue, context.Context) {
+func (r ConsumerAttrsGetter) GetMessageBodySize(req ConsumerRequest) int64 {
+	if req.Message == nil {
+		return 0
+	}
+	return int64(len(req.Message.Body))
+}
+
+func (r ConsumerAttrsGetter) IsAnonymousDestination(req ConsumerRequest) bool {
+	return false
+}
+
+func (r ConsumerAttrsGetter) GetDestinationPartitionId(req ConsumerRequest) string {
+	return ""
+}
+
+func (r ConsumerAttrsGetter) GetSystem(req ConsumerRequest) string {
+	return "rocketmq"
+}
+
+func (r ConsumerAttrsGetter) GetDestinationTemplate(req ConsumerRequest) string {
+	return ""
+}
+
+func (r ConsumerAttrsGetter) IsTemporaryDestination(req ConsumerRequest) bool {
+	return false
+}
+
+func (r ConsumerAttrsGetter) isAnonymousDestination(req ConsumerRequest) bool {
+	return false
+}
+
+func (r ConsumerAttrsGetter) GetConversationId(req ConsumerRequest) string {
+	return ""
+}
+
+func (r ConsumerAttrsGetter) GetMessageEnvelopSize(req ConsumerRequest) int64 {
+	return 0
+}
+
+func (r ConsumerAttrsGetter) GetMessageId(req ConsumerRequest, response ConsumerResponse) string {
+	if req.Message == nil {
+		return ""
+	}
+	return req.Message.MsgId
+}
+
+func (r ConsumerAttrsGetter) GetClientId(req ConsumerRequest) string {
+	return ""
+}
+
+func (r ConsumerAttrsGetter) GetBatchMessageCount(req ConsumerRequest, res ConsumerResponse) int64 {
+	return 1
+}
+
+func (r ConsumerAttrsGetter) GetMessageHeader(req ConsumerRequest, name string) []string {
+	if req.Message == nil {
+		return nil
+	}
+	value := req.Message.GetProperty(name)
+	if value == "" {
+		return nil
+	}
+	return []string{value}
+}
+
+// ConsumerProcessAttrsExtractor extracts additional attributes for consumer spans
+type ConsumerProcessAttrsExtractor struct{}
+
+func (e *ConsumerProcessAttrsExtractor) OnStart(attrs []attribute.KeyValue, ctx context.Context, req ConsumerRequest) ([]attribute.KeyValue, context.Context) {
+	if req.Message == nil {
+		return attrs, ctx
+	}
+
+	return append(attrs,
+		semconv.MessagingRocketmqMessageTagKey.String(req.Message.GetTags()),
+		semconv.MessagingRocketmqMessageKeysKey.String(req.Message.GetKeys()),
+	), ctx
+}
+
+func (e *ConsumerProcessAttrsExtractor) OnEnd(attrs []attribute.KeyValue, ctx context.Context, req ConsumerRequest, res ConsumerResponse, err error) ([]attribute.KeyValue, context.Context) {
 	if err != nil {
-		attributes = append(attributes, attribute.String("error", err.Error()))
+		attrs = append(attrs, attribute.String("error", err.Error()))
 	}
 
-	if req.addr != "" {
-		attributes = append(attributes, attribute.String("messaging.rocketmq.broker_address", req.addr))
+	if req.BrokerAddr != "" {
+		attrs = append(attrs, attribute.String("messaging.rocketmq.broker_address", req.BrokerAddr))
 	}
 
-	if req.messages == nil {
-		return attributes, ctx
+	if req.Message == nil {
+		return attrs, ctx
 	}
 
-	attributes = append(attributes,
-		attribute.String("messaging.rocketmq.queue_offset", strconv.FormatInt(req.messages.QueueOffset, 10)),
+	attrs = append(attrs,
+		attribute.String("messaging.rocketmq.queue_offset", strconv.FormatInt(req.Message.QueueOffset, 10)),
 	)
-	if req.messages.TransactionId != "" {
-		attributes = append(attributes, attribute.String("messaging.rocketmq.transaction_id", req.messages.TransactionId))
+	if req.Message.TransactionId != "" {
+		attrs = append(attrs, attribute.String("messaging.rocketmq.transaction_id", req.Message.TransactionId))
 	}
-	if req.messages.Queue != nil {
-		attributes = append(attributes,
-			attribute.Int("messaging.rocketmq.queue_id", req.messages.Queue.QueueId),
-			attribute.String("messaging.rocketmq.broker_name", req.messages.Queue.BrokerName),
+	if req.Message.Queue != nil {
+		attrs = append(attrs,
+			attribute.Int("messaging.rocketmq.queue_id", req.Message.Queue.QueueId),
+			attribute.String("messaging.rocketmq.broker_name", req.Message.Queue.BrokerName),
 		)
 	}
 
-	return attributes, ctx
+	return attrs, ctx
 }
 
-// 属性提取器
-type rocketmqProducerAttributesExtractor struct {
-}
+// ProducerAttrsExtractor extracts additional attributes for producer spans
+type ProducerAttrsExtractor struct{}
 
-func (m *rocketmqProducerAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, req rocketmqProducerReq) ([]attribute.KeyValue, context.Context) {
-	attrs := []attribute.KeyValue{
+func (m *ProducerAttrsExtractor) OnStart(attrs []attribute.KeyValue, ctx context.Context, req ProducerRequest) ([]attribute.KeyValue, context.Context) {
+	if req.Message == nil {
+		return attrs, ctx
+	}
+
+	return append(attrs,
 		semconv.MessagingSystemRocketmq,
-		semconv.MessagingDestinationNameKey.String(req.message.Topic),
-		semconv.MessagingRocketmqMessageTagKey.String(req.message.GetTags()),
-		semconv.MessagingRocketmqMessageKeysKey.String(req.message.GetKeys()),
-	}
-
-	return append(attributes, attrs...), parentContext
+		semconv.MessagingDestinationNameKey.String(req.Message.Topic),
+		semconv.MessagingRocketmqMessageTagKey.String(req.Message.GetTags()),
+		semconv.MessagingRocketmqMessageKeysKey.String(req.Message.GetKeys()),
+	), ctx
 }
 
-type rocketmqConsumerSpanNameExtractor struct {
-}
-
-func (e *rocketmqConsumerSpanNameExtractor) Extract(req any) string {
-	return "multiple_sources receive"
-}
-
-func (e *rocketmqProducerAttributesExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, req rocketmqProducerReq, res rocketmqProducerRes, err error) ([]attribute.KeyValue, context.Context) {
+func (e *ProducerAttrsExtractor) OnEnd(attrs []attribute.KeyValue, ctx context.Context, req ProducerRequest, res ProducerResponse, err error) ([]attribute.KeyValue, context.Context) {
 	if err != nil {
-		attributes = append(attributes, attribute.String("error", err.Error()))
+		attrs = append(attrs, attribute.String("error", err.Error()))
 	}
-	if res.addr != "" {
-		attributes = append(attributes, attribute.String("messaging.rocketmq.broker_address", res.addr))
+	if res.BrokerAddr != "" {
+		attrs = append(attrs, attribute.String("messaging.rocketmq.broker_address", res.BrokerAddr))
 	}
 
-	if res.result != nil {
-		attributes = append(attributes,
-			attribute.String("messaging.rocketmq.queue_offset", strconv.FormatInt(res.result.QueueOffset, 10)),
-			attribute.String("messaging.rocketmq.send_result", sendStatusStr(res.result.Status)),
-			semconv.MessagingClientID(req.clientID),
+	if res.Result != nil {
+		attrs = append(attrs,
+			attribute.String("messaging.rocketmq.queue_offset", strconv.FormatInt(res.Result.QueueOffset, 10)),
+			attribute.String("messaging.rocketmq.send_result", sendStatusToString(res.Result.Status)),
 		)
-		if res.result.TransactionID != "" {
-			attributes = append(attributes, attribute.String("messaging.rocketmq.transaction_id", res.result.TransactionID))
+		if res.Result.TransactionID != "" {
+			attrs = append(attrs, attribute.String("messaging.rocketmq.transaction_id", res.Result.TransactionID))
 		}
-		if res.result.MessageQueue != nil {
-			attributes = append(attributes,
-				attribute.Int("messaging.rocketmq.queue_id", res.result.MessageQueue.QueueId),
-				attribute.String("messaging.rocketmq.broker_name", res.result.MessageQueue.BrokerName),
+		if res.Result.MessageQueue != nil {
+			attrs = append(attrs,
+				attribute.Int("messaging.rocketmq.queue_id", res.Result.MessageQueue.QueueId),
+				attribute.String("messaging.rocketmq.broker_name", res.Result.MessageQueue.BrokerName),
 			)
 		}
 	}
-	attributes = append(attributes,
-		semconv.MessagingClientID(req.clientID),
-	)
-	return attributes, ctx
+	return attrs, ctx
 }
 
-// 构建Producer埋点器
-func buildRocketMQProducerInstrumenter() instrumenter.Instrumenter[rocketmqProducerReq, rocketmqProducerRes] {
-	builder := instrumenter.Builder[rocketmqProducerReq, rocketmqProducerRes]{}
+// ConsumerSpanNameExtractor extracts span names for consumers
+type ConsumerSpanNameExtractor struct{}
+
+func (e *ConsumerSpanNameExtractor) Extract(req any) string {
+	return "multiple_sources receive"
+}
+
+// newProducerInstrumenter constructs the producer instrumentation
+func newProducerInstrumenter() instrumenter.Instrumenter[ProducerRequest, ProducerResponse] {
+	builder := instrumenter.Builder[ProducerRequest, ProducerResponse]{}
 	return builder.Init().
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.ROCKETMQGO_PRODUCER_SCOPE_NAME,
 			Version: version.Tag,
 		}).
-		SetSpanNameExtractor(&message.MessageSpanNameExtractor[rocketmqProducerReq, rocketmqProducerRes]{Getter: rocketMQMessageProducerAttrsGetter{}, OperationName: message.PUBLISH}).
-		SetSpanKindExtractor(&instrumenter.AlwaysProducerExtractor[rocketmqProducerReq]{}).
-		AddAttributesExtractor(&rocketmqProducerAttributesExtractor{}).
-		AddAttributesExtractor(&message.MessageAttrsExtractor[rocketmqProducerReq, rocketmqProducerRes, rocketMQMessageProducerAttrsGetter]{Operation: message.PUBLISH}).
-		SetSpanStatusExtractor(&rocketmqProducerStatusExtractor{}).
+		SetSpanNameExtractor(&message.MessageSpanNameExtractor[ProducerRequest, ProducerResponse]{Getter: ProducerAttrsGetter{}, OperationName: message.PUBLISH}).
+		SetSpanKindExtractor(&instrumenter.AlwaysProducerExtractor[ProducerRequest]{}).
+		AddAttributesExtractor(&ProducerAttrsExtractor{}).
+		AddAttributesExtractor(&message.MessageAttrsExtractor[ProducerRequest, ProducerResponse, ProducerAttrsGetter]{Operation: message.PUBLISH}).
+		SetSpanStatusExtractor(&ProducerStatusExtractor{}).
 		BuildPropagatingToDownstreamInstrumenter(
-			func(req rocketmqProducerReq) propagation.TextMapCarrier {
-				return rocketmqProducerCarrier{msg: req.message}
+			func(req ProducerRequest) propagation.TextMapCarrier {
+				return ProducerCarrier{Msg: req.Message}
 			},
 			otel.GetTextMapPropagator(),
 		)
 }
 
-// 构建消费埋点器
-func buildRocketMQConsumerReceiveInstrumenter() instrumenter.Instrumenter[any, any] {
+// newReceiveInstrumenter constructs the receive instrumentation
+func newReceiveInstrumenter() instrumenter.Instrumenter[any, any] {
 	builder := instrumenter.Builder[any, any]{}
 	return builder.Init().
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.ROCKETMQGO_CONSUMER_SCOPE_NAME,
 			Version: version.Tag,
 		}).
-		SetSpanNameExtractor(&rocketmqConsumerSpanNameExtractor{}).
+		SetSpanNameExtractor(&ConsumerSpanNameExtractor{}).
 		SetSpanKindExtractor(&instrumenter.AlwaysConsumerExtractor[any]{}).
 		BuildInstrumenter()
 }
 
-// 统一构建RocketMQ消费者Instrumenter的方法
-func buildRocketMQConsumerInstrumenter(operationName message.MessageOperation, isBatch bool) instrumenter.Instrumenter[rocketmqConsumerReq, rocketmqConsumerRes] {
-	builder := instrumenter.Builder[rocketmqConsumerReq, rocketmqConsumerRes]{}
+// newConsumerInstrumenter constructs consumer instrumentation
+func newConsumerInstrumenter(operation message.MessageOperation, isBatch bool) instrumenter.Instrumenter[ConsumerRequest, ConsumerResponse] {
+	builder := instrumenter.Builder[ConsumerRequest, ConsumerResponse]{}
 	buildInstrumenter := builder.Init().
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    utils.ROCKETMQGO_CONSUMER_SCOPE_NAME,
 			Version: version.Tag,
 		}).
-		SetSpanNameExtractor(&message.MessageSpanNameExtractor[rocketmqConsumerReq, rocketmqConsumerRes]{
-			Getter:        rocketMQMessageConsumerAttrsGetter{},
-			OperationName: operationName,
+		SetSpanNameExtractor(&message.MessageSpanNameExtractor[ConsumerRequest, ConsumerResponse]{
+			Getter:        ConsumerAttrsGetter{},
+			OperationName: operation,
 		}).
-		SetSpanKindExtractor(&instrumenter.AlwaysConsumerExtractor[rocketmqConsumerReq]{}).
-		AddAttributesExtractor(&rocketmqConsumerProcessAttributesExtractor{}).
-		AddAttributesExtractor(&message.MessageAttrsExtractor[rocketmqConsumerReq, rocketmqConsumerRes, rocketMQMessageConsumerAttrsGetter]{
-			Operation: operationName,
+		SetSpanKindExtractor(&instrumenter.AlwaysConsumerExtractor[ConsumerRequest]{}).
+		AddAttributesExtractor(&ConsumerProcessAttrsExtractor{}).
+		AddAttributesExtractor(&message.MessageAttrsExtractor[ConsumerRequest, ConsumerResponse, ConsumerAttrsGetter]{
+			Operation: operation,
 		})
 
 	if !isBatch {
-		return buildInstrumenter.SetSpanStatusExtractor(&rocketmqConsumerStatusExtractor{}).
+		return buildInstrumenter.SetSpanStatusExtractor(&ConsumerStatusExtractor{}).
 			BuildPropagatingFromUpstreamInstrumenter(
-				func(req rocketmqConsumerReq) propagation.TextMapCarrier {
-					return rocketmqConsumerCarrier{msg: req.messages}
+				func(req ConsumerRequest) propagation.TextMapCarrier {
+					return ConsumerCarrier{Msg: req.Message}
 				},
 				otel.GetTextMapPropagator(),
 			)
@@ -474,43 +444,55 @@ func buildRocketMQConsumerInstrumenter(operationName message.MessageOperation, i
 	}
 }
 
+// Start begins instrumentation for message processing
 func Start(parentContext context.Context, msgs []*primitive.MessageExt, addr string) context.Context {
 	if len(msgs) == 1 {
-		var messages *primitive.MessageExt
-		if len(msgs) != 0 || msgs[0] != nil {
-			messages = msgs[0]
-		}
-		return singleProcessInstrumenter.Start(parentContext, rocketmqConsumerReq{addr: addr, messages: messages})
-	} else {
-		var attributes []attribute.KeyValue
-		attributes = append(attributes,
-			semconv.MessagingSystemRocketmq,
-			attribute.KeyValue{
-				Key:   semconv.MessagingOperationTypeKey,
-				Value: attribute.StringValue(string(message.RECEIVE)),
-			},
-		)
-		rootContext := receiveInstrumenter.Start(parentContext, nil, trace.WithAttributes(attributes...))
-		for _, msg := range msgs {
-			createChildSpan(rootContext, msg, addr)
-		}
-		return rootContext
+		msg := msgs[0]
+		return singleProcessConsumerInst.Start(parentContext, ConsumerRequest{
+			BrokerAddr: addr,
+			Message:    msg,
+		})
 	}
+
+	rootContext := receiveConsumerInst.Start(parentContext, nil, trace.WithAttributes(
+		semconv.MessagingSystemRocketmq,
+		attribute.String(string(semconv.MessagingOperationTypeKey), string(message.RECEIVE)),
+	))
+
+	for _, msg := range msgs {
+		createChildSpan(rootContext, msg, addr)
+	}
+	return rootContext
 }
 
 func createChildSpan(ctx context.Context, msg *primitive.MessageExt, addr string) {
-	context := batchProcessInstrumenter.Start(ctx, rocketmqConsumerReq{addr: addr, messages: msg}, trace.WithLinks(trace.Link{SpanContext: trace.SpanContextFromContext(otel.GetTextMapPropagator().Extract(ctx, rocketmqConsumerCarrier{msg: msg}))}))
-	batchProcessInstrumenter.End(context, rocketmqConsumerReq{addr: addr, messages: msg}, rocketmqConsumerRes{}, nil)
+	childCtx := batchProcessConsumerInst.Start(ctx,
+		ConsumerRequest{
+			BrokerAddr: addr,
+			Message:    msg,
+		},
+		trace.WithLinks(trace.Link{
+			SpanContext: trace.SpanContextFromContext(
+				otel.GetTextMapPropagator().Extract(ctx, ConsumerCarrier{Msg: msg})),
+		}),
+	)
+	batchProcessConsumerInst.End(childCtx,
+		ConsumerRequest{Message: msg},
+		ConsumerResponse{},
+		nil,
+	)
 }
 
-func End(ctx context.Context, request []*primitive.MessageExt, response consumer.ConsumeResult, err error) {
-	if len(request) == 1 {
-		var messages *primitive.MessageExt
-		if len(request) != 0 || request[0] != nil {
-			messages = request[0]
-		}
-		singleProcessInstrumenter.End(ctx, rocketmqConsumerReq{messages: messages}, rocketmqConsumerRes{response}, err)
-	} else {
-		receiveInstrumenter.End(ctx, request, response, err)
+// End completes instrumentation for message processing
+func End(ctx context.Context, msgs []*primitive.MessageExt, result consumer.ConsumeResult, err error) {
+	if len(msgs) == 1 {
+		msg := msgs[0]
+		singleProcessConsumerInst.End(ctx,
+			ConsumerRequest{Message: msg},
+			ConsumerResponse{Result: result},
+			err,
+		)
+		return
 	}
+	receiveConsumerInst.End(ctx, msgs, result, err)
 }

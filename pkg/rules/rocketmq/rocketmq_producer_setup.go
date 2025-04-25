@@ -16,224 +16,193 @@ package rocketmq
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"reflect"
 	"unsafe"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
-// SendSync埋点入口函数
+// producerSendSyncOnEnter instrumentation entry point for SendSync
 func producerSendSyncOnEnter(call api.CallContext, _ interface{}, ctx context.Context, msg *primitive.Message, res *primitive.SendResult) {
-	if !rocketmqEnabler.Enable() {
+	if !enabler.Enable() {
 		return
 	}
-	//client := reflect.ValueOf(producer).Elem().FieldByName("client")
-	req := rocketmqProducerReq{
-		message: msg,
+
+	req := ProducerRequest{
+		Message: msg,
 	}
-	newCtx := producerInstrumenter.Start(ctx, req)
-	data := make(map[string]interface{}, 3)
-	data["ctx"] = newCtx
-	data["res"] = res
-	call.SetData(data)
+	newCtx := producerInst.Start(ctx, req)
+
+	call.SetData(map[string]interface{}{
+		"ctx": newCtx,
+		"res": res,
+	})
 }
 
-// SendSync埋点出口函数
+// producerSendSyncOnExit instrumentation exit point for SendSync
 func producerSendSyncOnExit(call api.CallContext, err error) {
-	if !rocketmqEnabler.Enable() {
+	if !enabler.Enable() {
 		return
 	}
 
-	data := call.GetData().(map[string]interface{})
-	ctx := data["ctx"].(context.Context)
-
-	// 构建请求对象
-	req := rocketmqProducerReq{
-		message: call.GetParam(2).(*primitive.Message),
+	data, ok := call.GetData().(map[string]interface{})
+	if !ok {
+		return
 	}
 
-	// 提前检查响应是否为空
+	ctx, ok := data["ctx"].(context.Context)
+	if !ok {
+		return
+	}
+
+	req := ProducerRequest{
+		Message: call.GetParam(2).(*primitive.Message),
+	}
+
 	resObj, ok := data["res"]
-	if !ok || resObj == nil {
-		producerInstrumenter.End(ctx, req, rocketmqProducerRes{}, err)
+	if !ok {
+		producerInst.End(ctx, req, ProducerResponse{}, err)
 		return
 	}
 
-	res, ok := resObj.(*primitive.SendResult)
-	if !ok || res == nil || res.MessageQueue == nil || err != nil {
-		producerInstrumenter.End(ctx, req, rocketmqProducerRes{result: res}, err)
+	res, _ := resObj.(*primitive.SendResult)
+	clientValue := getClientValue(call.GetParam(0))
+	if !clientValue.IsValid() {
+		producerInst.End(ctx, req, ProducerResponse{Result: res}, err)
 		return
 	}
 
-	// 获取客户端对象
-	clientValue := reflect.ValueOf(call.GetParam(0)).Elem().FieldByName("client")
-	clientValue = reflect.NewAt(clientValue.Type(), unsafe.Pointer(clientValue.UnsafeAddr())).Elem()
-
-	// 如果客户端对象无效，直接结束埋点
-	if !clientValue.IsValid() || !clientValue.CanAddr() {
-		producerInstrumenter.End(ctx, req, rocketmqProducerRes{result: res}, err)
-		return
-	}
-
-	// 获取broker地址
 	addr := getBrokerAddr(clientValue, res)
 
-	// 获取客户端ID
-	req.clientID = getClientID(clientValue)
-
-	// 结束埋点
-	producerInstrumenter.End(ctx, req, rocketmqProducerRes{result: res, addr: addr}, err)
+	producerInst.End(ctx, req, ProducerResponse{
+		Result:     res,
+		BrokerAddr: addr,
+	}, err)
 }
 
-// SendAsync埋点入口函数
+// producerSendAsyncOnEnter instrumentation entry point for SendAsync
 func producerSendAsyncOnEnter(call api.CallContext, _ interface{}, ctx context.Context, msg *primitive.Message, originalCallback func(context.Context, *primitive.SendResult, error)) {
-	if !rocketmqEnabler.Enable() {
+	if !enabler.Enable() {
 		return
 	}
-	req := rocketmqProducerReq{
-		message: msg,
-	}
 
-	// 启动埋点
-	newCtx := producerInstrumenter.Start(ctx, req)
-	// 包装回调函数
+	req := ProducerRequest{
+		Message: msg,
+	}
+	newCtx := producerInst.Start(ctx, req)
+
 	wrappedCallback := func(callbackCtx context.Context, result *primitive.SendResult, callbackErr error) {
-		// 调用原始回调
 		originalCallback(callbackCtx, result, callbackErr)
 
-		// 获取客户端对象
-		clientValue := reflect.ValueOf(call.GetParam(0)).Elem().FieldByName("client")
-		clientValue = reflect.NewAt(clientValue.Type(), unsafe.Pointer(clientValue.UnsafeAddr())).Elem()
-
-		// 如果客户端对象无效或结果为空，直接结束埋点
-		if !clientValue.IsValid() || !clientValue.CanAddr() || result == nil || result.MessageQueue == nil {
-			producerInstrumenter.End(ctx, req, rocketmqProducerRes{result: result}, callbackErr)
+		clientValue := getClientValue(call.GetParam(0))
+		if !clientValue.IsValid() || result == nil || result.MessageQueue == nil {
+			producerInst.End(ctx, req, ProducerResponse{Result: result}, callbackErr)
 			return
 		}
 
-		// 获取broker地址
 		addr := getBrokerAddr(clientValue, result)
 
-		// 获取客户端ID
-		req.clientID = getClientID(clientValue)
-		res := rocketmqProducerRes{
-			result: result,
-			addr:   addr,
-		}
-		// 结束埋点
-		producerInstrumenter.End(newCtx, req, res, callbackErr)
+		producerInst.End(newCtx, req, ProducerResponse{
+			Result:     result,
+			BrokerAddr: addr,
+		}, callbackErr)
 	}
-	// 替换原始回调为包装后的回调
-	call.SetParam(3, wrappedCallback)
 
+	call.SetParam(3, wrappedCallback)
 }
 
-// SendOneWay 埋点入口函数
+// producerSendOneWayOnEnter instrumentation entry point for SendOneWay
 func producerSendOneWayOnEnter(call api.CallContext, _ interface{}, ctx context.Context, msg *primitive.Message) {
-	if !rocketmqEnabler.Enable() {
+	if !enabler.Enable() {
 		return
 	}
 
-	// 创建请求信息
-	req := rocketmqProducerReq{
-		message: msg,
+	req := ProducerRequest{
+		Message: msg,
 	}
+	newCtx := producerInst.Start(ctx, req)
 
-	// 开始埋点
-	newCtx := producerInstrumenter.Start(ctx, req)
-
-	// 保存上下文和请求信息
-	data := map[string]interface{}{
+	call.SetData(map[string]interface{}{
 		"ctx": newCtx,
 		"req": req,
-	}
-	call.SetData(data)
+	})
 }
 
-// SendOneWay 埋点出口函数
+// producerSendOneWayOnExit instrumentation exit point for SendOneWay
 func producerSendOneWayOnExit(call api.CallContext, err error) {
-	if !rocketmqEnabler.Enable() {
-		return
-	}
-	// 获取入口函数保存的上下文和请求
-	data := call.GetData().(map[string]interface{})
-	ctx := data["ctx"].(context.Context)
-	req := data["req"].(rocketmqProducerReq)
-
-	// 客户端值检查
-	clientValue := reflect.ValueOf(call.GetParam(0)).Elem().FieldByName("client")
-	clientValue = reflect.NewAt(clientValue.Type(), unsafe.Pointer(clientValue.UnsafeAddr())).Elem()
-
-	// 如果客户端对象无效或消息队列为空，直接结束埋点
-	if !clientValue.IsValid() || !clientValue.CanAddr() ||
-		req.message == nil || req.message.Queue == nil {
-		producerInstrumenter.End(ctx, req, rocketmqProducerRes{}, err)
+	if !enabler.Enable() {
 		return
 	}
 
-	// 获取broker地址
-	addr := getOneWayBrokerAddr(clientValue, req.message)
+	data, ok := call.GetData().(map[string]interface{})
+	if !ok {
+		return
+	}
 
-	// 获取客户端ID
-	req.clientID = getClientID(clientValue)
+	ctx, ok := data["ctx"].(context.Context)
+	if !ok {
+		return
+	}
 
-	// 结束埋点
-	producerInstrumenter.End(ctx, req, rocketmqProducerRes{addr: addr}, err)
+	req, ok := data["req"].(ProducerRequest)
+	if !ok {
+		return
+	}
+
+	clientValue := getClientValue(call.GetParam(0))
+	if !clientValue.IsValid() || req.Message == nil || req.Message.Queue == nil {
+		producerInst.End(ctx, req, ProducerResponse{}, err)
+		return
+	}
+
+	addr := getBrokerAddrFromMessage(clientValue, req.Message)
+
+	producerInst.End(ctx, req, ProducerResponse{
+		BrokerAddr: addr,
+	}, err)
 }
 
-// 从客户端获取broker地址
+// getClientValue safely extracts the client value from producer
+func getClientValue(producer interface{}) reflect.Value {
+	if producer == nil {
+		return reflect.Value{}
+	}
+
+	val := reflect.ValueOf(producer).Elem()
+	if !val.IsValid() {
+		return reflect.Value{}
+	}
+
+	clientField := val.FieldByName("client")
+	if !clientField.IsValid() {
+		return reflect.Value{}
+	}
+
+	return reflect.NewAt(clientField.Type(), unsafe.Pointer(clientField.UnsafeAddr())).Elem()
+}
+
+// getBrokerAddr gets broker address from SendResult
 func getBrokerAddr(clientValue reflect.Value, res *primitive.SendResult) string {
 	if res == nil || res.MessageQueue == nil || res.MessageQueue.BrokerName == "" {
 		return ""
 	}
-
-	getNameSrvMethod := clientValue.MethodByName("GetNameSrv")
-	if !getNameSrvMethod.IsValid() {
-		return ""
-	}
-
-	nameSrvResults := getNameSrvMethod.Call(nil)
-	if len(nameSrvResults) == 0 || !nameSrvResults[0].IsValid() {
-		return ""
-	}
-
-	nameSrv := nameSrvResults[0]
-	findMethod := nameSrv.MethodByName("FindBrokerAddrByName")
-	if !findMethod.IsValid() {
-		return ""
-	}
-
-	findResults := findMethod.Call([]reflect.Value{
-		reflect.ValueOf(res.MessageQueue.BrokerName),
-	})
-
-	if len(findResults) == 0 || !findResults[0].IsValid() {
-		return ""
-	}
-
-	return findResults[0].String()
+	return callMethod(clientValue, res.MessageQueue.BrokerName)
 }
 
-// 获取客户端ID
-func getClientID(clientValue reflect.Value) string {
-	getClientIDMethod := clientValue.MethodByName("ClientID")
-	if !getClientIDMethod.IsValid() {
-		return ""
-	}
-
-	clientIDResults := getClientIDMethod.Call(nil)
-	if len(clientIDResults) == 0 || !clientIDResults[0].IsValid() {
-		return ""
-	}
-
-	return clientIDResults[0].String()
-}
-
-// 从客户端获取SendOneWay模式下的broker地址
-func getOneWayBrokerAddr(clientValue reflect.Value, msg *primitive.Message) string {
+// getBrokerAddrFromMessage gets broker address from Message
+func getBrokerAddrFromMessage(clientValue reflect.Value, msg *primitive.Message) string {
 	if msg == nil || msg.Queue == nil || msg.Queue.BrokerName == "" {
 		return ""
 	}
+	return callMethod(clientValue, msg.Queue.BrokerName)
+}
+
+// callMethod calls a method chain on clientValue
+func callMethod(clientValue reflect.Value, brokerName string) string {
+	if !clientValue.IsValid() {
+		return ""
+	}
 
 	getNameSrvMethod := clientValue.MethodByName("GetNameSrv")
 	if !getNameSrvMethod.IsValid() {
@@ -252,7 +221,7 @@ func getOneWayBrokerAddr(clientValue reflect.Value, msg *primitive.Message) stri
 	}
 
 	findResults := findMethod.Call([]reflect.Value{
-		reflect.ValueOf(msg.Queue.BrokerName),
+		reflect.ValueOf(brokerName),
 	})
 
 	if len(findResults) == 0 || !findResults[0].IsValid() {

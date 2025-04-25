@@ -18,79 +18,90 @@ import (
 	"context"
 	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/apache/rocketmq-client-go/v2"
 	"github.com/apache/rocketmq-client-go/v2/consumer"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
-	_ "go.opentelemetry.io/otel"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	_ "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"time"
 )
 
-// 自定义不同的消费组常量
 const (
-	msgCount = 2
+	messageCount       = 2
+	consumerReadyDelay = 5 * time.Second
 )
 
 func main() {
-	// 初始化生产者
+	// Initialize test environment
 	initTopic()
-	p := initRocketMQ()
-	defer p.Shutdown()
+	producer := initProducer()
+	defer producer.Shutdown()
 
-	// 测试集群消费模式
-	clusterConsumer := initConsumer()
+	// Initialize cluster consumer
+	clusterConsumer := initClusterConsumer()
+	defer clusterConsumer.Shutdown()
 
-	err := clusterConsumer.Subscribe(topicName, consumer.MessageSelector{},
+	// Prepare and send test messages
+	messages := prepareTestMessages()
+	sendMessages(producer, messages)
+
+	// Start the cluster consumer
+	clusterConsumer.Start()
+	time.Sleep(consumerReadyDelay)
+	// Verify OpenTelemetry traces
+	verifyConsumerTraces()
+}
+
+// initClusterConsumer initializes and configures a cluster consumer
+func initClusterConsumer() rocketmq.PushConsumer {
+	c := initConsumer()
+
+	err := c.Subscribe(topicName, consumer.MessageSelector{},
 		func(ctx context.Context, msgs ...*primitive.MessageExt) (consumer.ConsumeResult, error) {
+			log.Printf("msg count: %d\n", len(msgs))
 			for _, msg := range msgs {
-				log.Printf("集群模式消费: %s, Tags: %s\n", string(msg.Body), msg.GetTags())
+				log.Printf("Cluster mode consumption: %s, Tags: %s\n",
+					string(msg.Body), msg.GetTags())
 			}
 			return consumer.ConsumeSuccess, nil
 		})
 	if err != nil {
-		panic(fmt.Errorf("订阅主题失败(集群模式)：%v", err))
+		log.Fatalf("Failed to subscribe topic (cluster mode): %v", err)
+		panic(err)
 	}
 
-	// 等待消费者准备就绪
-	time.Sleep(2 * time.Second)
+	return c
+}
 
-	// 批量发送 处理模式为receive
-	msgs := make([]*primitive.Message, msgCount)
-	for i := 0; i < msgCount; i++ {
+// prepareTestMessages creates test messages with unique tags
+func prepareTestMessages() []*primitive.Message {
+	messages := make([]*primitive.Message, messageCount)
+	for i := 0; i < messageCount; i++ {
 		msg := &primitive.Message{
 			Topic: topicName,
-			Body:  []byte(fmt.Sprintf("消费模式测试消息 %d", i)),
+			Body:  []byte(fmt.Sprintf("Consumption mode test message %d", i)),
 		}
 		msg.WithTag(fmt.Sprintf("Tag%d", i))
-		msgs[i] = msg
+		messages[i] = msg
 	}
-	// 同步发送消息
-	result, err := p.SendSync(context.Background(), msgs...)
+	return messages
+}
+
+// sendMessages sends messages and handles errors
+func sendMessages(p rocketmq.Producer, messages []*primitive.Message) {
+	result, err := p.SendSync(context.Background(), messages...)
 	if err != nil {
-		panic(fmt.Errorf("发送消息失败：%v", err))
+		log.Fatalf("Failed to send messages: %v", err)
+		panic(err)
 	}
-	fmt.Printf("消息发送成功: %s\n", result.MsgID)
+	log.Printf("Messages sent successfully: %s\n", result.MsgID)
+}
 
-	// 启动消费者
-	err = clusterConsumer.Start()
-	if err != nil {
-		panic(fmt.Errorf("启动消费者失败(集群模式)：%v", err))
-	}
-	defer clusterConsumer.Shutdown()
-
-	// 等待消费
-	time.Sleep(10 * time.Second)
-
-	//验证OpenTelemetry跟踪
+// verifyConsumerTraces verifies the OpenTelemetry traces
+func verifyConsumerTraces() {
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		VerifyRocketMQReceive(stubs[0][0], stubs[1][0], stubs[1][1])
 		VerifyRocketMQConsumeAttributes(stubs[1][1], topicName, "Tag0", "", "process", false)
 		VerifyRocketMQConsumeAttributes(stubs[1][2], topicName, "Tag1", "", "process", false)
-	}, 1)
+	}, 2)
 }

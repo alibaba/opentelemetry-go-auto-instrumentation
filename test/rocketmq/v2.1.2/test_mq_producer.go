@@ -16,199 +16,120 @@ package main
 
 import (
 	"context"
-	"github.com/apache/rocketmq-client-go/v2"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/apache/rocketmq-client-go/v2"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
-func main() {
-	// 初始化生产者
-	initTopic()
-	p := initRocketMQ()
-	defer p.Shutdown()
-	err := p.Start()
-	if err != nil {
-		panic(err)
-	}
+const (
+	testTimeout   = 1 * time.Microsecond
+	timeoutBuffer = 10 * time.Millisecond
+)
 
-	log.Println("===== 测试同步发送成功 =====")
-	testSyncSendSuccess(p)
-
-	log.Println("\n===== 测试同步发送失败 =====")
-	testSyncSendFailure(p)
-
-	log.Println("\n===== 测试异步发送成功 =====")
-	testAsyncSendSuccess(p)
-
-	log.Println("\n===== 测试单向发送成功 =====")
-	testOneWaySendSuccess(p)
-
+type TestCase struct {
+	name     string
+	testFunc func(p rocketmq.Producer)
 }
 
-// 测试同步发送成功场景
-func testSyncSendSuccess(p rocketmq.Producer) {
-	// 创建并发送消息
-	msg := primitive.NewMessage(topicName, []byte("测试同步发送"))
-	msg.WithTag("test_sync")
+func main() {
+	// Initialize test environment
+	initTopic()
+	producer := initProducer()
+	defer producer.Shutdown()
 
+	if err := producer.Start(); err != nil {
+		log.Fatalf("Failed to start producer: %v", err)
+	}
+
+	// Define test cases
+	testCases := []TestCase{
+		{"Sync Send Success", testSyncSendSuccess},
+		{"Sync Send Failure", testSyncSendFailure},
+		{"Async Send Success", testAsyncSendSuccess},
+		{"OneWay Send Success", testOneWaySendSuccess},
+	}
+
+	// Execute test cases
+	for _, tc := range testCases {
+		log.Printf("\n===== Testing %s =====\n", tc.name)
+		tc.testFunc(producer)
+	}
+}
+
+func testSyncSendSuccess(p rocketmq.Producer) {
+	msg := createMessage("测试同步发送", "test_sync")
 	result, err := p.SendSync(context.Background(), msg)
 	if err != nil {
-		log.Printf("同步发送失败: %v\n", err)
+		log.Printf("Sync send failed: %v\n", err)
 		return
 	}
-
-	log.Printf("同步发送成功: %s\n", result.String())
-
-	// 验证Span
-	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		span := stubs[0][0]
-		VerifyRocketMQProduceAttributes(span, topicName, "test_sync", "", "publish", false)
-	}, 1)
+	log.Printf("Sync send succeeded: %s\n", result.String())
+	verifyProdcuerTraces(topicName, "test_sync", false)
 }
 
-// 测试同步发送失败场景
 func testSyncSendFailure(p rocketmq.Producer) {
-	// 使用超短超时触发错误
-	msg := primitive.NewMessage(topicName, []byte("测试同步发送失败"))
-	msg.WithTag("test_sync_failure")
-
-	// 创建1微秒超时的上下文，确保超时发生
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Microsecond)
+	msg := createMessage("测试同步发送失败", "test_sync_failure")
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
-
-	// 等待一小段时间确保超时已触发
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(timeoutBuffer)
 
 	_, err := p.SendSync(ctx, msg)
 	if err == nil {
-		log.Println("错误: 期望发送失败但实际成功")
+		log.Println("Error: Expected sync send to fail but it succeeded")
 		return
 	}
-
-	log.Printf("预期的同步发送失败: %v\n", err)
-
-	// 验证错误Span
-	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		span := stubs[0][0]
-		VerifyRocketMQProduceAttributes(span, topicName, "test_sync_failure", "", "publish", true)
-	}, 1)
+	log.Printf("Expected sync send failure: %v\n", err)
+	verifyProdcuerTraces(topicName, "test_sync_failure", true)
 }
 
-// 测试异步发送成功场景
 func testAsyncSendSuccess(p rocketmq.Producer) {
-	// 创建并异步发送消息
-	msg := primitive.NewMessage(topicName, []byte("测试异步发送"))
-	msg.WithTag("test_async")
-
+	msg := createMessage("测试异步发送", "test_async")
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	err := p.SendAsync(context.Background(), func(ctx context.Context, result *primitive.SendResult, err error) {
 		defer wg.Done()
 		if err != nil {
-			log.Printf("异步发送回调返回错误: %v\n", err)
+			log.Printf("Async callback error: %v\n", err)
+			panic(err)
 		} else {
-			log.Printf("异步发送成功: %s\n", result.String())
+			log.Printf("Async send succeeded: %s\n", result.String())
 		}
 	}, msg)
 
 	if err != nil {
-		log.Printf("异步发送请求失败: %v\n", err)
-		return
+		log.Printf("Async send request failed: %v\n", err)
+		panic(err)
 	}
-
-	wg.Wait() // 等待回调完成
-
-	// 验证Span
-	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		span := stubs[0][0]
-		VerifyRocketMQProduceAttributes(span, topicName, "test_async", "", "publish", false)
-	}, 1)
+	wg.Wait()
+	time.Sleep(timeoutBuffer)
+	verifyProdcuerTraces(topicName, "test_async", false)
 }
 
-// 测试异步发送失败场景
-/*func testAsyncSendFailure(p rocketmq.Producer) {
-
-	msg := primitive.NewMessage("test_async_failure", []byte("测试异步发送失败"))
-	msg.WithTag("test_async_failure")
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	err := p.SendAsync(context.Background(), func(ctx context.Context, result *primitive.SendResult, err error) {
-		defer wg.Done()
-		result = nil
-		err = errors.New("模拟异步发送失败")
-		if err == nil {
-			log.Println("错误: 期望异步回调返回错误但实际成功")
-		} else {
-			log.Printf("预期的异步回调错误: %v\n", err)
-		}
-
-	}, msg)
-
-	if err != nil {
-		// 注意：有些实现可能在发起请求时就返回错误，这也是可接受的
-		log.Printf("异步发送请求失败: %v\n", err)
-	}
-
-	wg.Wait() // 等待回调完成
-
-	// 验证Span
-	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		span := stubs[0][0]
-		VerifyRocketMQAttributes(span, "test_async_failure", "test_async_failure", "", "publish", true)
-	}, 1)
-}*/
-
-// 测试单向发送成功场景
 func testOneWaySendSuccess(p rocketmq.Producer) {
-	// 创建并单向发送消息
-	msg := primitive.NewMessage(topicName, []byte("测试单向发送"))
-	msg.WithTag("test_oneway")
-
-	err := p.SendOneWay(context.Background(), msg)
-	if err != nil {
-		log.Printf("单向发送失败: %v\n", err)
-		return
+	msg := createMessage("测试单向发送", "test_oneway")
+	if err := p.SendOneWay(context.Background(), msg); err != nil {
+		log.Printf("OneWay send failed: %v\n", err)
+		panic(err)
 	}
-
-	log.Println("单向发送完成")
-
-	// 验证Span
-	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		span := stubs[0][0]
-		VerifyRocketMQProduceAttributes(span, topicName, "test_oneway", "", "publish", false)
-	}, 3)
+	log.Println("OneWay send completed")
+	verifyProdcuerTraces(topicName, "test_oneway", false)
 }
 
-// 测试单向发送失败场景
-/*func testOneWaySendFailure(p rocketmq.Producer) {
+func createMessage(body, tag string) *primitive.Message {
+	msg := primitive.NewMessage(topicName, []byte(body))
+	msg.WithTag(tag)
+	return msg
+}
 
-	msg := primitive.NewMessage(topicName, []byte("测试单向发送失败"))
-	msg.WithTag("test_oneway_failure")
-	// 创建1微秒超时的上下文，确保超时发生
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Microsecond)
-	defer cancel()
-
-	// 等待一小段时间确保超时已触发
-	time.Sleep(10 * time.Millisecond)
-	err := p.SendOneWay(ctx, msg)
-	if err == nil {
-		// 注意：由于单向发送不关心结果，某些实现可能不会立即返回错误
-		log.Println("单向发送请求成功，但实际结果未知")
-	} else {
-		log.Printf("单向发送失败: %v\n", err)
-	}
-
-	// 验证Span
+func verifyProdcuerTraces(topic, tag string, expectError bool) {
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		span := stubs[0][0]
-		VerifyRocketMQAttributes(span, topicName, "test_oneway_failure", "", "publish", true) // 单向发送可能不会在span中标记错误
-	}, 3)
-}*/
+		VerifyRocketMQProduceAttributes(span, topic, tag, "", "publish", expectError)
+	}, 1)
+}

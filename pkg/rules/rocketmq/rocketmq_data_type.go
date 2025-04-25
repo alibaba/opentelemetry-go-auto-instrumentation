@@ -19,25 +19,24 @@ import (
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
-// 定义请求响应类型
-type rocketmqProducerReq struct {
-	//ctx     context.Context
-	clientID string
-	message  *primitive.Message
+// ProducerRequest represents a RocketMQ producer request
+type ProducerRequest struct {
+	Message *primitive.Message // The message to be sent
 }
 
-type rocketmqProducerRes struct {
-	addr   string
-	result *primitive.SendResult
+// ProducerResponse represents a RocketMQ producer response
+type ProducerResponse struct {
+	BrokerAddr string                // Address of the broker that handled the request
+	Result     *primitive.SendResult // Result of the send operation
 }
 
-// 消费处理请求类型
-type rocketmqConsumerReq struct {
-	addr     string
-	messages *primitive.MessageExt
+// ConsumerRequest represents a RocketMQ consumer request
+type ConsumerRequest struct {
+	BrokerAddr string                // Address of the broker serving the message
+	Message    *primitive.MessageExt // The received message
 }
 
-// 消费处理响应类型
-type rocketmqConsumerRes struct {
-	consumeResult consumer.ConsumeResult
+// ConsumerResponse represents a RocketMQ consumer processing result
+type ConsumerResponse struct {
+	Result consumer.ConsumeResult // Result of message consumption
 }

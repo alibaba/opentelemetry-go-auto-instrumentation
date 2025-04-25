@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/apache/rocketmq-client-go/v2"
 	"github.com/apache/rocketmq-client-go/v2/admin"
@@ -32,59 +31,64 @@ import (
 )
 
 const (
-	topicName = "test_topic"
-	GroupName = "test_group"
+	topicName            = "test_topic"
+	groupName            = "test_group"
+	defaultNamingSrvAddr = "127.0.0.1:9876"
+	defaultBrokerAddr    = "127.0.0.1:10911"
+	topicCreateTimeout   = 5 * time.Second
 )
 
-func initRocketMQ() rocketmq.Producer {
-	// 从环境变量获取NameServer地址
+// initProducer initializes and returns a RocketMQ producer
+func initProducer() rocketmq.Producer {
+	// Get NameServer address from environment variable
 	nameSrvAddr := os.Getenv("NAMESRV_ADDR")
 	if nameSrvAddr == "" {
-		nameSrvAddr = "127.0.0.1:9876"
+		nameSrvAddr = defaultNamingSrvAddr
 	}
 
-	// 创建生产者
+	// Create producer
 	p, err := rocketmq.NewProducer(
 		producer.WithNameServer([]string{nameSrvAddr}),
-		producer.WithGroupName(GroupName),
+		producer.WithGroupName(groupName),
 		producer.WithRetry(2),
 	)
 	if err != nil {
+		log.Fatalf("Failed to create producer: %v", err)
 		panic(err)
 	}
 
-	// 启动生产者
-	err = p.Start()
-	if err != nil {
+	// Start producer
+	if err = p.Start(); err != nil {
+		log.Fatalf("Failed to start producer: %v", err)
 		panic(err)
 	}
 
 	return p
 }
 
-// 创建测试主题
+// initTopic creates the test topic if it doesn't exist
 func initTopic() {
 	nameSrvAddr := os.Getenv("NAMESRV_ADDR")
 	if nameSrvAddr == "" {
-		nameSrvAddr = "127.0.0.1:9876"
+		nameSrvAddr = defaultNamingSrvAddr
 	}
 	brokerAddr := os.Getenv("BROKER_ADDR")
 	if brokerAddr == "" {
-		brokerAddr = "127.0.0.1:10911"
+		brokerAddr = defaultBrokerAddr
 	}
-	// 创建admin客户端
+
+	// Create admin client
 	adminClient, err := admin.NewAdmin(
 		admin.WithResolver(primitive.NewPassthroughResolver([]string{nameSrvAddr})),
 	)
 	if err != nil {
-		log.Printf("创建admin客户端失败: %s\n", err.Error())
-		// 如果无法创建admin客户端，依赖RocketMQ自动创建主题功能
+		log.Printf("Failed to create admin client: %v. Relying on RocketMQ auto topic creation", err)
 		return
 	}
 	defer adminClient.Close()
 
-	// 创建主题
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Create topic with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), topicCreateTimeout)
 	defer cancel()
 
 	err = adminClient.CreateTopic(
@@ -93,161 +97,157 @@ func initTopic() {
 		admin.WithBrokerAddrCreate(brokerAddr),
 	)
 	if err != nil {
-		log.Printf("创建主题失败: %s\n", err.Error())
-		log.Println("将依赖RocketMQ自动创建主题功能")
+		log.Printf("Failed to create topic: %v. Relying on RocketMQ auto topic creation", err)
+		panic(err)
 	} else {
-		log.Printf("主题 %s 创建成功\n", topicName)
+		log.Printf("Topic %s created successfully", topicName)
 	}
-
-	// 等待主题创建完成
-	waitForTopicReadyByAdmin(adminClient, topicName, 1000, time.Second)
-
 }
 
-func waitForTopicReadyByAdmin(adminClient admin.Admin, topic string, maxRetries int, interval time.Duration) error {
-	for i := 0; i < maxRetries; i++ {
-		topics, err := adminClient.FetchAllTopicList(context.Background())
-		if err != nil {
-			log.Printf("获取 Topic 列表失败: %v", err)
-		} else {
-			for _, t := range topics.TopicList {
-				if t == topic {
-					log.Printf("Topic %s 已就绪", topic)
-					return nil
-				}
-			}
-		}
-		log.Printf("第 %d 次检查: Topic %s 尚未就绪", i+1, topic)
-		time.Sleep(interval)
-	}
-	return fmt.Errorf("等待 Topic %s 就绪超时", topic)
-}
-
-// 创建并配置消费者
+// initConsumer creates and configures a RocketMQ push consumer
 func initConsumer() rocketmq.PushConsumer {
-	// 从环境变量获取NameServer地址
+	// Get NameServer address from environment variable
 	nameSrvAddr := os.Getenv("NAMESRV_ADDR")
 	if nameSrvAddr == "" {
-		nameSrvAddr = "127.0.0.1:9876"
+		nameSrvAddr = defaultNamingSrvAddr
 	}
 
-	// 创建消费者实例
+	// Create consumer instance
 	c, err := rocketmq.NewPushConsumer(
 		consumer.WithNameServer([]string{nameSrvAddr}),
-		consumer.WithGroupName(GroupName),
+		consumer.WithGroupName(groupName),
 		consumer.WithConsumerModel(consumer.Clustering),
 		consumer.WithConsumeMessageBatchMaxSize(10),
 	)
 	if err != nil {
+		log.Fatalf("Failed to create consumer: %v", err)
 		panic(err)
 	}
 
 	return c
 }
 
-// VerifyRocketMQAttributes 校验RocketMQProducer消息的Span属性
+// VerifyRocketMQAttributes verifies the span attributes for RocketMQ producer and consumer
 func VerifyRocketMQAttributes(producer tracetest.SpanStub, consumer tracetest.SpanStub, topic string, tag string) {
 	verifier.VerifyMQPublishAttributes(producer, "", "", topic, "publish", topic, "rocketmq")
 	verifier.VerifyMQConsumeAttributes(consumer, "", "", topic, "process", topic, "rocketmq")
 
-	// 验证生产端和消费端trace span
-	verifier.Assert(consumer.Parent.SpanID() == producer.SpanContext.SpanID(), "期望spanid为 %s, 实际为 %s", consumer.Parent.SpanID(), producer.SpanContext.SpanID())
-	verifier.Assert(consumer.SpanContext.TraceID() == producer.SpanContext.TraceID(), "期望traceid为 %s, 实际为 %s", consumer.SpanContext.TraceID(), producer.SpanContext.TraceID())
+	// Verify trace context between producer and consumer
+	verifier.Assert(consumer.Parent.SpanID() == producer.SpanContext.SpanID(),
+		"Expected span ID %s, got %s", producer.SpanContext.SpanID(), consumer.Parent.SpanID())
+	verifier.Assert(consumer.SpanContext.TraceID() == producer.SpanContext.TraceID(),
+		"Expected trace ID %s, got %s", producer.SpanContext.TraceID(), consumer.SpanContext.TraceID())
 }
 
-// VerifyRocketMQProduceAttributes 校验RocketMQProducer消息的Span属性
+// VerifyRocketMQProduceAttributes verifies span attributes for RocketMQ producer
 func VerifyRocketMQProduceAttributes(span tracetest.SpanStub, topic string, tag string, key string, operationName string, expectedError bool) {
-	// 验证基本的消息属性
-	verifier.Assert(span.Name == topic+" "+operationName, "期望span名称为 %s, 实际为 %s", topic+" "+operationName, span.Name)
+	// Verify basic message attributes
+	verifier.Assert(span.Name == topic+" "+operationName,
+		"Expected span name %s, got %s", topic+" "+operationName, span.Name)
 
-	// 验证标准消息属性
-	actualSystem := verifier.GetAttribute(span.Attributes, "messaging.system").AsString()
-	verifier.Assert(actualSystem == "rocketmq", "期望messaging.system为 %s, 实际为 %s", "rocketmq", actualSystem)
+	// Verify standard messaging attributes
+	verifyMessagingAttributes(span, topic, operationName)
 
-	actualDestination := verifier.GetAttribute(span.Attributes, "messaging.destination.name").AsString()
-	verifier.Assert(actualDestination == topic, "期望messaging.destination.name为 %s, 实际为 %s", topic, actualDestination)
-
-	actualOperation := verifier.GetAttribute(span.Attributes, "messaging.operation.name").AsString()
-	verifier.Assert(actualOperation == operationName, "期望messaging.operation.name为 %s, 实际为 %s", operationName, actualOperation)
-
-	// 验证消息体大小 (仅检查是否存在)
+	// Verify message body size
 	bodySize := verifier.GetAttribute(span.Attributes, "messaging.message.body.size").AsInt64()
-	verifier.Assert(bodySize > 0, "期望messaging.message.body.size大于0, 实际为 %d", bodySize)
+	verifier.Assert(bodySize > 0, "Expected message body size > 0, got %d", bodySize)
 
-	// 验证RocketMQ特有属性
+	// Verify RocketMQ specific attributes
 	if tag != "" {
-		actualTag := verifier.GetAttribute(span.Attributes, "messaging.rocketmq.message.tag").AsString()
-		verifier.Assert(actualTag == tag, "期望messaging.rocketmq.message.tag为 %s, 实际为 %s", tag, actualTag)
+		verifyAttribute(span, "messaging.rocketmq.message.tag", tag)
 	}
-
 	if key != "" {
-		actualKey := verifier.GetAttribute(span.Attributes, "messaging.rocketmq.message.keys").AsString()
-		verifier.Assert(actualKey == key, "期望messaging.rocketmq.message.keys为 %s, 实际为 %s", key, actualKey)
+		verifyAttribute(span, "messaging.rocketmq.message.keys", key)
 	}
 
-	// 验证Span种类
-	verifier.Assert(span.SpanKind == trace.SpanKindProducer, "期望为生产者Span, 实际为 %d", span.SpanKind)
+	// Verify span kind
+	verifier.Assert(span.SpanKind == trace.SpanKindProducer,
+		"Expected producer span, got %d", span.SpanKind)
 
-	// 验证错误状态
-	if expectedError {
-		verifier.Assert(span.Status.Code == codes.Error, "期望Span状态为Error, 实际为 %s", span.Status.Code)
-		verifier.Assert(span.Status.Description != "", "期望Span错误描述不为空")
-	} else {
-		verifier.Assert(span.Status.Code != codes.Error, "期望Span状态不为Error, 实际为 %s", span.Status.Code)
-	}
+	// Verify error status
+	verifyErrorStatus(span, expectedError)
 }
 
-// VerifyRocketMQConsumeAttributes 校验RocketMQ消息的Span属性
+// VerifyRocketMQConsumeAttributes verifies span attributes for RocketMQ consumer
 func VerifyRocketMQConsumeAttributes(span tracetest.SpanStub, topic string, tag string, key string, operationName string, expectedError bool) {
-	// 验证基本的消息属性
-	verifier.Assert(span.Name == topic+" "+operationName, "期望span名称为 %s, 实际为 %s", topic+" "+operationName, span.Name)
+	// Verify basic message attributes
+	verifier.Assert(span.Name == topic+" "+operationName,
+		"Expected span name %s, got %s", topic+" "+operationName, span.Name)
 
-	// 验证标准消息属性
-	actualSystem := verifier.GetAttribute(span.Attributes, "messaging.system").AsString()
-	verifier.Assert(actualSystem == "rocketmq", "期望messaging.system为 %s, 实际为 %s", "rocketmq", actualSystem)
+	// Verify standard messaging attributes
+	verifyMessagingAttributes(span, topic, operationName)
 
-	actualDestination := verifier.GetAttribute(span.Attributes, "messaging.destination.name").AsString()
-	verifier.Assert(actualDestination == topic, "期望messaging.destination.name为 %s, 实际为 %s", topic, actualDestination)
-
-	actualOperation := verifier.GetAttribute(span.Attributes, "messaging.operation.name").AsString()
-	verifier.Assert(actualOperation == operationName, "期望messaging.operation.name为 %s, 实际为 %s", operationName, actualOperation)
-
-	// 验证消息体大小 (仅检查是否存在)
+	// Verify message body size
 	bodySize := verifier.GetAttribute(span.Attributes, "messaging.message.body.size").AsInt64()
-	verifier.Assert(bodySize > 0, "期望messaging.message.body.size大于0, 实际为 %d", bodySize)
+	verifier.Assert(bodySize > 0, "Expected message body size > 0, got %d", bodySize)
 
-	// 验证RocketMQ特有属性
+	// Verify RocketMQ specific attributes
 	if tag != "" {
-		actualTag := verifier.GetAttribute(span.Attributes, "messaging.rocketmq.message.tag").AsString()
-		verifier.Assert(actualTag == tag, "期望messaging.rocketmq.message.tag为 %s, 实际为 %s", tag, actualTag)
+		verifyAttribute(span, "messaging.rocketmq.message.tag", tag)
 	}
-
 	if key != "" {
-		actualKey := verifier.GetAttribute(span.Attributes, "messaging.rocketmq.message.keys").AsString()
-		verifier.Assert(actualKey == key, "期望messaging.rocketmq.message.keys为 %s, 实际为 %s", key, actualKey)
+		verifyAttribute(span, "messaging.rocketmq.message.keys", key)
 	}
 
-	// 验证Span种类
-	verifier.Assert(span.SpanKind == trace.SpanKindConsumer, "期望为消费者Span, 实际为 %d", span.SpanKind)
+	// Verify span kind
+	verifier.Assert(span.SpanKind == trace.SpanKindConsumer,
+		"Expected consumer span, got %d", span.SpanKind)
 
-	// 验证错误状态
-	if expectedError {
-		verifier.Assert(span.Status.Code == codes.Error, "期望Span状态为Error, 实际为 %s", span.Status.Code)
-		verifier.Assert(span.Status.Description != "", "期望Span错误描述不为空")
-	} else {
-		verifier.Assert(span.Status.Code != codes.Error, "期望Span状态不为Error, 实际为 %s", span.Status.Code)
-	}
+	// Verify error status
+	verifyErrorStatus(span, expectedError)
 }
 
-// VerifyRocketMQReceive 校验RocketMQ消息的Span属性
-func VerifyRocketMQReceive(producter tracetest.SpanStub, receive tracetest.SpanStub, process tracetest.SpanStub) {
-	// 验证基本的消息属性
-	verifier.Assert(receive.Name == "multiple_sources receive", "期望span名称为 multiple_sources receive, 实际为 %s", receive.Name)
-	// 验证标准消息属性
-	actualSystem := verifier.GetAttribute(receive.Attributes, "messaging.system").AsString()
-	verifier.Assert(actualSystem == "rocketmq", "期望messaging.system为 %s, 实际为 %s", "rocketmq", actualSystem)
-	// 验证Span种类
-	verifier.Assert(receive.SpanKind == trace.SpanKindConsumer, "期望为消费者Span, 实际为 %d", receive.SpanKind)
+// VerifyRocketMQReceive verifies span attributes for RocketMQ receive operation
+func VerifyRocketMQReceive(producer tracetest.SpanStub, receive tracetest.SpanStub, process tracetest.SpanStub) {
+	// Verify basic message attributes
+	verifier.Assert(receive.Name == "multiple_sources receive",
+		"Expected span name 'multiple_sources receive', got %s", receive.Name)
 
-	verifier.Assert(process.Links[0].SpanContext.TraceID() == producter.SpanContext.TraceID(), "期望traceid为 %s, 实际为 %s", process.Links[0].SpanContext.TraceID(), producter.SpanContext.TraceID())
+	// Verify standard messaging attributes
+	actualSystem := verifier.GetAttribute(receive.Attributes, "messaging.system").AsString()
+	verifier.Assert(actualSystem == "rocketmq",
+		"Expected messaging.system 'rocketmq', got %s", actualSystem)
+
+	// Verify span kind
+	verifier.Assert(receive.SpanKind == trace.SpanKindConsumer,
+		"Expected consumer span, got %d", receive.SpanKind)
+
+	// Verify trace context
+	verifier.Assert(process.Links[0].SpanContext.TraceID() == producer.SpanContext.TraceID(),
+		"Expected trace ID %s, got %s", producer.SpanContext.TraceID(), process.Links[0].SpanContext.TraceID())
+}
+
+// verifyMessagingAttributes verifies common messaging attributes
+func verifyMessagingAttributes(span tracetest.SpanStub, topic string, operation string) {
+	actualSystem := verifier.GetAttribute(span.Attributes, "messaging.system").AsString()
+	verifier.Assert(actualSystem == "rocketmq",
+		"Expected messaging.system 'rocketmq', got %s", actualSystem)
+
+	actualDestination := verifier.GetAttribute(span.Attributes, "messaging.destination.name").AsString()
+	verifier.Assert(actualDestination == topic,
+		"Expected messaging.destination.name '%s', got %s", topic, actualDestination)
+
+	actualOperation := verifier.GetAttribute(span.Attributes, "messaging.operation.name").AsString()
+	verifier.Assert(actualOperation == operation,
+		"Expected messaging.operation.name '%s', got %s", operation, actualOperation)
+}
+
+// verifyAttribute verifies a specific attribute value
+func verifyAttribute(span tracetest.SpanStub, key string, expectedValue string) {
+	actualValue := verifier.GetAttribute(span.Attributes, key).AsString()
+	verifier.Assert(actualValue == expectedValue,
+		"Expected %s '%s', got %s", key, expectedValue, actualValue)
+}
+
+// verifyErrorStatus verifies the span error status
+func verifyErrorStatus(span tracetest.SpanStub, expectedError bool) {
+	if expectedError {
+		verifier.Assert(span.Status.Code == codes.Error,
+			"Expected error status, got %s", span.Status.Code)
+		verifier.Assert(span.Status.Description != "",
+			"Expected non-empty error description")
+	} else {
+		verifier.Assert(span.Status.Code != codes.Error,
+			"Expected non-error status, got %s", span.Status.Code)
+	}
 }
