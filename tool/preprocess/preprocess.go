@@ -117,7 +117,8 @@ type DepProcessor struct {
 	rule2Dir        map[*resource.InstFuncRule]string
 	ruleCache       embed.FS
 	goBuildCmd      []string
-	vendorBuild     bool
+	allowVendor     bool
+	allowTidy       bool
 	modfile         *modfile.File
 }
 
@@ -129,7 +130,8 @@ func newDepProcessor() *DepProcessor {
 		sources:         nil,
 		rule2Dir:        map[*resource.InstFuncRule]string{},
 		ruleCache:       pkg.ExportRuleCache(),
-		vendorBuild:     false,
+		allowVendor:     false,
+		allowTidy:       false,
 	}
 	return dp
 }
@@ -190,7 +192,11 @@ func findGoMod(dir string) (string, error) {
 		if util.PathExists(mod) {
 			return mod, nil
 		}
-		dir = filepath.Dir(dir)
+		par := filepath.Dir(dir)
+		if par == dir {
+			break
+		}
+		dir = par
 	}
 	return "", errc.New(errc.ErrPreprocess, "cannot find go.mod")
 }
@@ -283,7 +289,7 @@ func (dp *DepProcessor) init() error {
 		// directory. We should not use the vendor directory in this case.
 		if strings.HasPrefix(arg, "-mod=mod") ||
 			strings.HasPrefix(arg, "-mod=readonly") {
-			dp.vendorBuild = false
+			dp.allowVendor = false
 			ignoreVendor = true
 			break
 		}
@@ -292,9 +298,19 @@ func (dp *DepProcessor) init() error {
 		// FIXME: vendor directory name can be anything, but we assume it's "vendor"
 		// for now
 		vendor := filepath.Join(dp.getGoModDir(), VendorDir)
-		dp.vendorBuild = util.PathExists(vendor)
+		dp.allowVendor = util.PathExists(vendor)
 	}
-	util.Log("Vendor build: %v", dp.vendorBuild)
+	// Vendored flag only takes effect when the tool is built with vendored
+	// dependencies, i.e. the tool is built with -mod=vendor flag
+	config.GetConf().Vendored = dp.allowVendor && config.GetConf().Vendored
+	// allowTidy flag only takes effect when dependencies are not vendored
+	dp.allowTidy = !config.GetConf().Vendored
+	if !dp.allowTidy {
+		dp.allowVendor = false
+	}
+
+	util.Log("Vendor build: %v, Dep vendored: %v", dp.allowVendor,
+		config.GetConf().Vendored)
 
 	// Register signal handler to catch up SIGINT/SIGTERM interrupt signals and
 	// do necessary cleanup
@@ -694,10 +710,13 @@ func (dp *DepProcessor) preclean() {
 				util.Log("Remove obsolete import %v from %v",
 					ruleImport, file)
 			}
-		}
-		_, err := util.WriteAstToFile(astRoot, file)
-		if err != nil {
-			util.Log("Failed to write ast to %v: %v", file, err)
+			// Remove the import from the file, but before that, we need to
+			// backup the file
+			dp.backupFile(file)
+			_, err := util.WriteAstToFile(astRoot, file)
+			if err != nil {
+				util.Log("Failed to write ast to %v: %v", file, err)
+			}
 		}
 	}
 	// Clean otel_pkgdep directory
@@ -962,12 +981,14 @@ func (dp *DepProcessor) setupDeps() error {
 	}
 
 	// Run go mod tidy first to fetch all dependencies
-	err = dp.runModTidy()
-	if err != nil {
-		return err
+	if dp.allowTidy {
+		err = dp.runModTidy()
+		if err != nil {
+			return err
+		}
 	}
 
-	if dp.vendorBuild {
+	if dp.allowVendor {
 		err = dp.runModVendor()
 		if err != nil {
 			return err
@@ -1064,12 +1085,14 @@ func Preprocess() error {
 		}
 
 		// Run go mod tidy to fetch dependencies
-		err = dp.runModTidy()
-		if err != nil {
-			return err
+		if dp.allowTidy {
+			err = dp.runModTidy()
+			if err != nil {
+				return err
+			}
 		}
 
-		if dp.vendorBuild {
+		if dp.allowVendor {
 			err = dp.runModVendor()
 			if err != nil {
 				return err

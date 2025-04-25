@@ -39,3 +39,5 @@ test/world/world
 example/extension/nethttp/demo
 example/log/test
 test/build/cmd/cmd
+ssa.html
+otel_pkg

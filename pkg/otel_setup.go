@@ -25,6 +25,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric/noop"
 	"log"
 	http2 "net/http"
 	"os"
@@ -45,6 +46,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -67,7 +69,7 @@ var (
 	metricExporter     metric.Exporter
 	spanExporter       trace.SpanExporter
 	traceProvider      *trace.TracerProvider
-	metricsProvider    *metric.MeterProvider
+	metricsProvider    otelmetric.MeterProvider
 	batchSpanProcessor trace.SpanProcessor
 )
 
@@ -149,7 +151,9 @@ func initMetrics() error {
 			metric.WithReader(testaccess.ManualReader),
 		)
 	} else {
-		if os.Getenv(metrics_exporter) == "console" {
+		if os.Getenv(metrics_exporter) == "none" {
+			metricsProvider = noop.NewMeterProvider()
+		} else if os.Getenv(metrics_exporter) == "console" {
 			metricExporter, err = stdoutmetric.New()
 			metricsProvider = metric.NewMeterProvider(
 				metric.WithReader(metric.NewPeriodicReader(metricExporter)),
@@ -214,8 +218,11 @@ func serveMetrics() {
 
 func gracefullyShutdown(ctx context.Context) {
 	if metricsProvider != nil {
-		if err := metricsProvider.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric provider", err)
+		mp, ok := metricsProvider.(*metric.MeterProvider)
+		if ok {
+			if err := mp.Shutdown(ctx); err != nil {
+				log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric provider", err)
+			}
 		}
 	}
 	if traceProvider != nil {

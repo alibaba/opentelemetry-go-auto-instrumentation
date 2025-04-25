@@ -21,7 +21,6 @@ CURRENT_ARCH := $(shell uname -m | sed 's/aarch64/arm64/;s/armv7l/arm/;s/armv6l/
 
 MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
 STRIP_DEBUG := -s -w
-LDFLAGS := $(XVERSION) $(STRIP_DEBUG)
 # default build cmd without ldflags
 BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -o $(3) ./tool/cmd
 
@@ -44,8 +43,9 @@ endif
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
 XVERSION := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) -X=$(MOD_NAME)/pkg/inst-api/version.Tag=v$(VERSION)
-LDFLAGS := $(XVERSION) $(STRIP_DEBUG)
-BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -ldflags="$(LDFLAGS)" -o $(3) ./tool/cmd
+LDFLAGS := -ldflags="$(XVERSION) $(STRIP_DEBUG)"
+GCFLAGS := -gcflags="all=-trimpath=$(PWD)" -asmflags="all=-trimpath=$(PWD)" 
+BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a $(LDFLAGS) $(GCFLAGS) -o $(3) ./tool/cmd
 
 #-------------------------------------------------------------------------------
 # Multiple OS and ARCH support
