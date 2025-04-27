@@ -81,7 +81,7 @@ func initKafkaContainer(t *testing.T) *KafkaContainers {
 
 	// Start Zookeeper container
 	zookeeperReq := testcontainers.ContainerRequest{
-		Image:        "wurstmeister/zookeeper:3.4.6",
+		Image:        "wurstmeister/zookeeper:latest",
 		ExposedPorts: []string{"2181/tcp"},
 		Env: map[string]string{
 			"ZOOKEEPER_CLIENT_PORT": "2181",
