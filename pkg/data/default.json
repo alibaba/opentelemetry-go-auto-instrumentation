@@ -837,7 +837,7 @@
   {
   "Version": "[0.1.13,)",
   "ImportPath": "github.com/tmc/langchaingo/chains",
-  "Function": "callChain",
+  "Function": "Call",
   "OnEnter": "callChainOnEnter",
   "OnExit":"callChainOnExit",
   "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/langchain"
