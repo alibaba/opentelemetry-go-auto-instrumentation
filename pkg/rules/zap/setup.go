@@ -50,7 +50,7 @@ func zapLogWriteOnEnter(call api.CallContext, ce *zapcore.CheckedEntry, fields .
 	if traceId != "" && !traceIdOk {
 		fields = append(fields, zap.String("trace_id", traceId))
 	}
-	if spanId != "" && !spanIdOk {
+	if spanId != "" && !traceIdOk && !spanIdOk {
 		fields = append(fields, zap.String("span_id", spanId))
 	}
 	call.SetParam(1, fields)
