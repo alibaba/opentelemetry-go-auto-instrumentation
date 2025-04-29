@@ -20,6 +20,28 @@ import (
 
 	_ "go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
+
+	// When building with vendor mode, we requires the following packages
+	// to be imported to ensure they are included in the vendor directory.
+	// In this way, we can build the artifact offline, i.e. without the
+	// need to download the dependencies.
+	_ "github.com/mohae/deepcopy"
+	_ "github.com/prometheus/client_golang/prometheus/promhttp"
+	_ "go.opentelemetry.io/contrib/instrumentation/runtime"
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	_ "go.opentelemetry.io/otel/exporters/prometheus"
+	_ "go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
+	_ "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	_ "go.opentelemetry.io/otel/exporters/zipkin"
+	_ "go.opentelemetry.io/otel/sdk/trace/tracetest"
+	_ "go.opentelemetry.io/otel/semconv/v1.19.0"
+	_ "go.opentelemetry.io/otel/semconv/v1.30.0"
+	_ "google.golang.org/protobuf/proto"
+	_ "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 func main() {
