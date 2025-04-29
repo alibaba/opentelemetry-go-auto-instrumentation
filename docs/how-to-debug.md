@@ -4,7 +4,7 @@
 
 ## 1. Perform instrumentation with -debug options
 
-```bash
+```console
 $ ./otel set -debug
 ```
 

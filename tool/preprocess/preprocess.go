@@ -117,8 +117,7 @@ type DepProcessor struct {
 	rule2Dir        map[*resource.InstFuncRule]string
 	ruleCache       embed.FS
 	goBuildCmd      []string
-	allowVendor     bool
-	allowTidy       bool
+	vendorMode      bool
 	modfile         *modfile.File
 }
 
@@ -130,8 +129,7 @@ func newDepProcessor() *DepProcessor {
 		sources:         nil,
 		rule2Dir:        map[*resource.InstFuncRule]string{},
 		ruleCache:       pkg.ExportRuleCache(),
-		allowVendor:     false,
-		allowTidy:       false,
+		vendorMode:      false,
 	}
 	return dp
 }
@@ -289,7 +287,7 @@ func (dp *DepProcessor) init() error {
 		// directory. We should not use the vendor directory in this case.
 		if strings.HasPrefix(arg, "-mod=mod") ||
 			strings.HasPrefix(arg, "-mod=readonly") {
-			dp.allowVendor = false
+			dp.vendorMode = false
 			ignoreVendor = true
 			break
 		}
@@ -298,19 +296,13 @@ func (dp *DepProcessor) init() error {
 		// FIXME: vendor directory name can be anything, but we assume it's "vendor"
 		// for now
 		vendor := filepath.Join(dp.getGoModDir(), VendorDir)
-		dp.allowVendor = util.PathExists(vendor)
+		dp.vendorMode = util.PathExists(vendor)
 	}
-	// Vendored flag only takes effect when the tool is built with vendored
-	// dependencies, i.e. the tool is built with -mod=vendor flag
-	config.GetConf().Vendored = dp.allowVendor && config.GetConf().Vendored
-	// allowTidy flag only takes effect when dependencies are not vendored
-	dp.allowTidy = !config.GetConf().Vendored
-	if !dp.allowTidy {
-		dp.allowVendor = false
-	}
-
-	util.Log("Vendor build: %v, Dep vendored: %v", dp.allowVendor,
-		config.GetConf().Vendored)
+	// If we are building with vendored dependencies, we should not pull any
+	// additional dependencies online, which means all dependencies should be
+	// available in the vendor directory. This requires users to add these
+	// dependencies proactively
+	util.Log("Vendor mode: %v", dp.vendorMode)
 
 	// Register signal handler to catch up SIGINT/SIGTERM interrupt signals and
 	// do necessary cleanup
@@ -981,15 +973,8 @@ func (dp *DepProcessor) setupDeps() error {
 	}
 
 	// Run go mod tidy first to fetch all dependencies
-	if dp.allowTidy {
+	if !dp.vendorMode {
 		err = dp.runModTidy()
-		if err != nil {
-			return err
-		}
-	}
-
-	if dp.allowVendor {
-		err = dp.runModVendor()
 		if err != nil {
 			return err
 		}
@@ -1085,15 +1070,8 @@ func Preprocess() error {
 		}
 
 		// Run go mod tidy to fetch dependencies
-		if dp.allowTidy {
+		if !dp.vendorMode {
 			err = dp.runModTidy()
-			if err != nil {
-				return err
-			}
-		}
-
-		if dp.allowVendor {
-			err = dp.runModVendor()
 			if err != nil {
 				return err
 			}

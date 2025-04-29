@@ -15,7 +15,7 @@ time. Simply adding `otel` prefix to `go build` to get started :rocket:
 
 ### Install via Bash
 For Linux and MacOS users, install the tool by running the following command
-```bash
+```console
 $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
 ```
 It will be installed in `/usr/local/bin/otel` by default.
@@ -30,7 +30,7 @@ page.
 
 Checkout source code and build the tool by running one of following commands:
 
-```bash
+```console
 $ make         # build only
 $ make install # build and install
 ```
@@ -38,13 +38,13 @@ $ make install # build and install
 # Getting Started
 
 Check the version by running:
-```bash
+```console
 $ otel version
 ```
 
 The configuration for the tool can be set by the following command:
 
-```bash
+```console
 $ otel set -verbose                          # print verbose logs
 $ otel set -debug                            # enable debug mode
 $ otel set -rule=custom.json                 # use default and custom rules
@@ -53,7 +53,7 @@ $ otel set -debug -verbose -rule=custom.json # set multiple configs
 
 **Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:**
 
-```bash
+```console
 $ otel go build
 $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
