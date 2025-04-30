@@ -17,6 +17,7 @@ package instrumenter
 import (
 	"context"
 	"errors"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"testing"
 	"time"
 
@@ -294,7 +295,7 @@ func TestSpanTimestamps(t *testing.T) {
 	// The `startTime` and `endTime` of the generated span
 	// must exactly match those in the input params of inst-api entry func.
 
-	sr := NewSpanRecorder()
+	sr := tracetest.NewSpanRecorder()
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSpanProcessor(sr),
 	)
@@ -321,73 +322,4 @@ func TestSpanTimestamps(t *testing.T) {
 	recordedSpan := spans[0]
 	assert.Equal(t, startTime, recordedSpan.StartTime())
 	assert.Equal(t, endTime, recordedSpan.EndTime())
-}
-
-// SpanRecorder records started and ended spans.
-type SpanRecorder struct {
-	started []sdktrace.ReadWriteSpan
-	ended   []sdktrace.ReadOnlySpan
-}
-
-var _ sdktrace.SpanProcessor = (*SpanRecorder)(nil)
-
-// NewSpanRecorder returns a new initialized SpanRecorder.
-func NewSpanRecorder() *SpanRecorder {
-	return new(SpanRecorder)
-}
-
-// OnStart records started spans.
-//
-// This method is safe to be called concurrently.
-func (sr *SpanRecorder) OnStart(_ context.Context, s sdktrace.ReadWriteSpan) {
-	println("onStart!!!!!!!!!!!!")
-	sr.started = append(sr.started, s)
-}
-
-// OnEnd records completed spans.
-//
-// This method is safe to be called concurrently.
-func (sr *SpanRecorder) OnEnd(s sdktrace.ReadOnlySpan) {
-	println("onEnd!!!!!!!!!!!!")
-	sr.ended = append(sr.ended, s)
-}
-
-// Shutdown does nothing.
-//
-// This method is safe to be called concurrently.
-func (sr *SpanRecorder) Shutdown(context.Context) error {
-	return nil
-}
-
-// ForceFlush does nothing.
-//
-// This method is safe to be called concurrently.
-func (sr *SpanRecorder) ForceFlush(context.Context) error {
-	return nil
-}
-
-// Started returns a copy of all started spans that have been recorded.
-//
-// This method is safe to be called concurrently.
-func (sr *SpanRecorder) Started() []sdktrace.ReadWriteSpan {
-	dst := make([]sdktrace.ReadWriteSpan, len(sr.started))
-	copy(dst, sr.started)
-	return dst
-}
-
-// Reset clears the recorded spans.
-//
-// This method is safe to be called concurrently.
-func (sr *SpanRecorder) Reset() {
-	sr.started = nil
-	sr.ended = nil
-}
-
-// Ended returns a copy of all ended spans that have been recorded.
-//
-// This method is safe to be called concurrently.
-func (sr *SpanRecorder) Ended() []sdktrace.ReadOnlySpan {
-	dst := make([]sdktrace.ReadOnlySpan, len(sr.ended))
-	copy(dst, sr.ended)
-	return dst
 }
