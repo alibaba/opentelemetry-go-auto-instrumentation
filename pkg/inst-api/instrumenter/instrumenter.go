@@ -106,6 +106,7 @@ func (i *InternalInstrumenter[REQUEST, RESPONSE]) doStart(parentContext context.
 	spanName := i.spanNameExtractor.Extract(request)
 	spanKind := i.spanKindExtractor.Extract(request)
 	options = append(options, trace.WithSpanKind(spanKind), trace.WithTimestamp(timestamp))
+	fmt.Printf("%v %v\n", i.tracer, timestamp)
 	newCtx, span := i.tracer.Start(parentContext, spanName, options...)
 	attrs := make([]attribute.KeyValue, 0, 20)
 	// extract span attrs
