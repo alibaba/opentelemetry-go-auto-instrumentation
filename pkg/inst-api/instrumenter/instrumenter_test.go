@@ -309,7 +309,7 @@ func TestSpanTimestamps(t *testing.T) {
 		AddAttributesExtractor(testAttributesExtractor{}).
 		AddOperationListeners(&testOperationListener{}).
 		AddContextCustomizers(testContextCustomizer{})
-	tracer := otel.GetTracerProvider().
+	tracer := tp.
 		Tracer("test-tracer")
 	instrumenter := builder.BuildInstrumenterWithTracer(tracer)
 	ctx := context.Background()
