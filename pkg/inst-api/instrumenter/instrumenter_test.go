@@ -272,6 +272,7 @@ func TestInstrumentationScope(t *testing.T) {
 	ctx := context.Background()
 	traceProvider := sdktrace.NewTracerProvider()
 	otel.SetTracerProvider(traceProvider)
+	defer otel.SetTracerProvider(traceProvider)
 	newCtx := instrumenter.Start(ctx, testRequest{})
 	span := trace.SpanFromContext(newCtx)
 	if readOnly, ok := span.(sdktrace.ReadOnlySpan); !ok {
@@ -299,7 +300,7 @@ func TestSpanTimestamps(t *testing.T) {
 	)
 	originalTP := otel.GetTracerProvider()
 	otel.SetTracerProvider(tp)
-	defer otel.SetTracerProvider(originalTP) 
+	defer otel.SetTracerProvider(originalTP)
 
 	builder := Builder[testRequest, testResponse]{}
 	builder.Init().
@@ -312,7 +313,6 @@ func TestSpanTimestamps(t *testing.T) {
 	ctx := context.Background()
 	startTime := time.Now()
 	endTime := startTime.Add(2 * time.Second)
-
 	instrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, startTime, endTime)
 	spans := sr.Ended()
 	if len(spans) == 0 {
