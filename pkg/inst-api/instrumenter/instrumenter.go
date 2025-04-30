@@ -16,6 +16,7 @@ package instrumenter
 
 import (
 	"context"
+	"fmt"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -148,6 +149,7 @@ func (i *InternalInstrumenter[REQUEST, RESPONSE]) doEnd(ctx context.Context, req
 	span.SetAttributes(attrs...)
 	options = append(options, trace.WithTimestamp(timestamp))
 	span.End(options...)
+	fmt.Printf("%v\n", span)
 	println("end timestamp....." + timestamp.String())
 	for _, listener := range i.operationListeners {
 		listener.OnAfterEnd(ctx, attrs, timestamp)
