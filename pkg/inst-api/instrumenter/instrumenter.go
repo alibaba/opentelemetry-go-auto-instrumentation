@@ -148,7 +148,6 @@ func (i *InternalInstrumenter[REQUEST, RESPONSE]) doEnd(ctx context.Context, req
 	span.SetAttributes(attrs...)
 	options = append(options, trace.WithTimestamp(timestamp))
 	span.End(options...)
-	println("end timestamp....." + timestamp.String())
 	for _, listener := range i.operationListeners {
 		listener.OnAfterEnd(ctx, attrs, timestamp)
 	}
