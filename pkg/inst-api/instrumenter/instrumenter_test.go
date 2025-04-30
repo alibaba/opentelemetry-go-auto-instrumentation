@@ -269,9 +269,10 @@ func TestInstrumentationScope(t *testing.T) {
 		})
 	instrumenter := builder.BuildInstrumenter()
 	ctx := context.Background()
+	originalTP := otel.GetTracerProvider()
 	traceProvider := sdktrace.NewTracerProvider()
 	otel.SetTracerProvider(traceProvider)
-	defer otel.SetTracerProvider(traceProvider)
+	defer otel.SetTracerProvider(originalTP)
 	newCtx := instrumenter.Start(ctx, testRequest{})
 	span := trace.SpanFromContext(newCtx)
 	if readOnly, ok := span.(sdktrace.ReadOnlySpan); !ok {
