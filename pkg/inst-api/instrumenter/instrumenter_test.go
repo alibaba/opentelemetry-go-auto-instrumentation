@@ -315,7 +315,6 @@ func TestSpanTimestamps(t *testing.T) {
 	endTime := startTime.Add(2 * time.Second)
 	instrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, startTime, endTime)
 	spans := sr.Ended()
-	time.Sleep(3 * time.Second)
 	if len(spans) == 0 {
 		t.Fatal("no spans captured")
 	}
