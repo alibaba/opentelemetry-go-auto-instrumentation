@@ -17,6 +17,7 @@ package instrumenter
 import (
 	"context"
 	"errors"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"testing"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 type testRequest struct {
@@ -268,10 +268,12 @@ func TestInstrumentationScope(t *testing.T) {
 			Version:   "test",
 			SchemaURL: "test",
 		})
-	instrumenter := builder.BuildInstrumenter()
 	ctx := context.Background()
+	originalTP := otel.GetTracerProvider()
 	traceProvider := sdktrace.NewTracerProvider()
 	otel.SetTracerProvider(traceProvider)
+	defer otel.SetTracerProvider(originalTP)
+	instrumenter := builder.BuildInstrumenter()
 	newCtx := instrumenter.Start(ctx, testRequest{})
 	span := trace.SpanFromContext(newCtx)
 	if readOnly, ok := span.(sdktrace.ReadOnlySpan); !ok {
@@ -299,7 +301,7 @@ func TestSpanTimestamps(t *testing.T) {
 	)
 	originalTP := otel.GetTracerProvider()
 	otel.SetTracerProvider(tp)
-	defer otel.SetTracerProvider(originalTP) 
+	defer otel.SetTracerProvider(originalTP)
 
 	builder := Builder[testRequest, testResponse]{}
 	builder.Init().
@@ -308,11 +310,12 @@ func TestSpanTimestamps(t *testing.T) {
 		AddAttributesExtractor(testAttributesExtractor{}).
 		AddOperationListeners(&testOperationListener{}).
 		AddContextCustomizers(testContextCustomizer{})
-	instrumenter := builder.BuildInstrumenter()
+	tracer := tp.
+		Tracer("test-tracer")
+	instrumenter := builder.BuildInstrumenterWithTracer(tracer)
 	ctx := context.Background()
 	startTime := time.Now()
 	endTime := startTime.Add(2 * time.Second)
-
 	instrumenter.StartAndEnd(ctx, testRequest{}, testResponse{}, nil, startTime, endTime)
 	spans := sr.Ended()
 	if len(spans) == 0 {
@@ -321,4 +324,10 @@ func TestSpanTimestamps(t *testing.T) {
 	recordedSpan := spans[0]
 	assert.Equal(t, startTime, recordedSpan.StartTime())
 	assert.Equal(t, endTime, recordedSpan.EndTime())
+}
+
+// SpanRecorder records started and ended spans.
+type SpanRecorder struct {
+	started []sdktrace.ReadWriteSpan
+	ended   []sdktrace.ReadOnlySpan
 }

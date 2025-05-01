@@ -1,8 +1,10 @@
 ![](anim-logo.svg)
 
-[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](../README.md)
-[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./README_CN.md)
-[![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)
+[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md) &nbsp;
+[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./README_CN.md)  &nbsp;
+[![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)  &nbsp;
+[![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
+[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) &nbsp;
 
 该项目为希望利用 OpenTelemetry 的 Golang 应用程序提供了一个自动解决方案。
 利用 OpenTelemetry 实现有效可观察性的 Golang 应用程序提供自动解决方案。目标应用程序无需更改代码
@@ -12,7 +14,7 @@
 
 ### 通过 Bash 安装
 对于 **Linux 和 MacOS** 用户，运行以下命令即可安装该工具
-```bash
+```console
 $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
 ```
 默认情况下，它将安装在 `/usr/local/bin/otel`中。
@@ -27,7 +29,7 @@ $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-inst
 
 通过运行以下命令查看源代码并构建工具：
 
-```bash
+```console
 $ make         # 只构建
 $ make install # 构建并安装
 ```
@@ -35,12 +37,12 @@ $ make install # 构建并安装
 # 开始
 
 通过运行以下命令检查版本：
-```bash
+```console
 $ otel version
 ```
 
 通过以下命令配置工具参数：
-```bash
+```console
 $ otel set -verbose                          # 打印详细日志
 $ otel set -log=/path/to/file.log            # 设置日志文件路径
 $ otel set -debug                            # 启用调试模式
@@ -50,21 +52,15 @@ $ otel set -rule=custom.json                 # 同时使用默认和自定义规
 $ otel set -rule=a.json,b.json               # 使用默认规则及 a 和 b 自定义规则
 ```
 
-在 `go build` 中添加 `otel` 前缀，以构建项目：
+通常情况下，你无需设置任何配置。只需在 `go build` 前加上 `otel` 前缀来构建你的项目：
 
-```bash
+```console
 $ otel go build
 $ otel go build -o app cmd/app
 $ otel go build -gcflags="-m" cmd/app
 ```
-工具本身的参数应放在 `go build` 之前：
 
-```bash
-$ otel -help # 打印帮助文档
-$ otel -debug go build # 启用调试模式
-$ otel -verbose go build # 打印详细日志
-$ otel -rule=custom.json go build # 使用自定义规则
-```
+这就是整个过程！该工具将自动使用 OpenTelemetry 对你的代码进行插装，你就可以开始观测你的应用程序了。 : 望远镜:
 
 您可以在 [**使用指南**](./usage.md)中找到 `otel` 工具的详细用法。
 
@@ -78,7 +74,7 @@ $ otel -rule=custom.json go build # 使用自定义规则
 
 您还可以探索 [**这些示例**](../example/) 以获得实践经验。
 
-此外，还有一些 [**文档**](../docs)，您可能会发现它们对了解项目或为项目做出贡献非常有用。
+此外，还有一些 [**文档**](./)，您可能会发现它们对了解项目或为项目做出贡献非常有用。
 
 # 支持的库
 
@@ -119,41 +115,21 @@ $ otel -rule=custom.json go build # 使用自定义规则
 > [!IMPORTANT]
 > 您期望的框架不在列表中？别担心，您可以轻松地将代码注入到任何官方不支持的框架/库中。
 >
-> 请参考 [这个文档](./how-to-add-a-new-rule.md) 开始使用。
-
-# 文档
-
-- [如何添加新规则](./how-to-add-a-new-rule.md)
-- [如何编写插件测试](./how-to-write-tests-for-plugins.md)
-- [兼容性说明](./compatibility.md)
-- [实现原理](./how-it-works.md)
-- [如何调试](./how-to-debug.md)
-- [上下文传播机制](./context-propagation.md)
-- [支持的库](./supported-libraries.md)
-- [基准测试](../example/benchmark/benchmark.md)
-- [OpenTelemetry社区讨论主题](https://github.com/open-telemetry/community/issues/1961)
-- [面向OpenTelemetry的Golang应用无侵入插桩技术](https://mp.weixin.qq.com/s/FKCwzRB5Ujhe1stOH2ibXg)
+> 请参考 [自定义插桩文档](./how-to-add-a-new-rule.md) 开始使用。
 
 # 社区
 
-我们期待您的反馈和建议。您可以加入我们的 [DingTalk 群组](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )
+我们期待您的反馈和建议。您可以加入我们的 [钉钉群组](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )
 与我们交流。
 
 <img src="dingtalk.png" height="200">
 
-# 应用案例
-
-以下为部分采用本项目的企业列表，仅供参考。如果您正在使用此项目，请[在此处添加您的公司](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225)告诉我们您的使用场景，让这个项目变得更好。
-
-- <img src="./alibaba.png" width="80">
-- <img src="./aliyun.png" width="100">
-
-# Contributors
+我们衷心感谢以下为该项目做出宝贵贡献的贡献者：
 
 <a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation"/>
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation" height="100"/>
 </a>
 
-# Star History
+该项目的Star历史如下，它展示了这个项目随着时间推移的发展情况：
 
 [![Star History](https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date)](https://star-history.com/#alibaba/opentelemetry-go-auto-instrumentation&Date)
