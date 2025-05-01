@@ -55,13 +55,6 @@ type BuildConfig struct {
 
 	// DisableDefault true means disable default rules.
 	DisableDefault bool
-
-	// Vendored true means all dependencies are vendored so that we can build
-	// offline. This only takes effect when the tool is built with vendored
-	// dependencies, i.e. the tool is built with -mod=vendor flag, plus the
-	// dependencies are vendored in the vendor directory, which can be done
-	// by explicitly introducing the alibaba/pkg package in the code.
-	Vendored bool
 }
 
 // This is the version of the tool, which will be printed when the -version flag
@@ -74,10 +67,6 @@ func GetConf() *BuildConfig {
 	util.Assert(!util.InConfigure(), "called in configure")
 	util.Assert(conf != nil, "build config is not initialized")
 	return conf
-}
-
-func (bc *BuildConfig) IsVendored() bool {
-	return bc.Vendored
 }
 
 func (bc *BuildConfig) IsDisableDefault() bool {
@@ -273,8 +262,6 @@ func Configure() error {
 		"Use custom.json rules. Multiple rules are separated by comma.")
 	flag.BoolVar(&bc.DisableDefault, "disabledefault", bc.DisableDefault,
 		"Disable default rules")
-	flag.BoolVar(&bc.Vendored, "vendored", bc.Vendored,
-		"All dependencies are vendored, so we can build offline. This only takes effect when the tool is built with -mod=vendor")
 	flag.CommandLine.Parse(os.Args[2:])
 
 	util.Log("Configured in %s", util.GetConfigureLogPath(util.BuildConfFile))

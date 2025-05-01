@@ -7,7 +7,7 @@ Here's how to inject logging into the os.Setenv() function to track key and valu
 
 First, create and initialize a Go module in a new directory:
 
-```bash
+```console
 $ mkdir mysetenv && cd mysetenv
 $ go mod init mysetenv
 ```
@@ -55,7 +55,7 @@ Additional fields like `ReceiverType`, `OnExit` and `Order` can also be specifie
 ## 3. Verify the Rule
 Test the rule with a simple program:
 
-```bash
+```console
 $ mkdir setenv-demo && cd setenv-demo
 $ go mod init setenv-demo
 $ cat <<EOF > main.go
