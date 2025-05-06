@@ -154,6 +154,7 @@ fileReservedTime=48
 brokerRole=ASYNC_MASTER
 flushDiskType=ASYNC_FLUSH
 aclEnable=false
+diskMaxUsedSpaceRatio=97
 brokerIP1=` + host
 
 	// Start Broker container
