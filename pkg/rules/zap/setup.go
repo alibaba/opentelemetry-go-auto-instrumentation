@@ -36,17 +36,26 @@ func zapLogWriteOnEnter(call api.CallContext, ce *zapcore.CheckedEntry, fields .
 	if !zapEnabler.Enable() {
 		return
 	}
-	var fieldsTemp []zap.Field
-	traceId, spanId := trace.GetTraceAndSpanId()
-	if traceId != "" {
-		fieldsTemp = append(fieldsTemp, zap.String("trace_id", traceId))
+	var traceIdOk, spanIdOk bool
+	if fields != nil {
+		for _, v := range fields {
+			if v.Key == "trace_id" {
+				traceIdOk = true
+			} else if v.Key == "span_id" {
+				spanIdOk = true
+			}
+		}
 	}
-	if spanId != "" {
-		fieldsTemp = append(fieldsTemp, zap.String("span_id", spanId))
+	if !traceIdOk {
+		traceId, spanId := trace.GetTraceAndSpanId()
+		if traceId != "" {
+			fields = append(fields, zap.String("trace_id", traceId))
+		}
+		if spanId != "" && !spanIdOk {
+			fields = append(fields, zap.String("span_id", spanId))
+		}
+		call.SetParam(1, fields)
 	}
-	if fields == nil {
-		fields = fieldsTemp
-	}
-	call.SetParam(1, fields)
+
 	return
 }
