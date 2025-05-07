@@ -72,7 +72,7 @@ type grpcStatusCodeExtractor[REQUEST grpcRequest, RESPONSE grpcResponse] struct 
 
 func (g grpcStatusCodeExtractor[REQUEST, RESPONSE]) Extract(span trace.Span, request grpcRequest, response grpcResponse, err error) {
 	statusCode := response.statusCode
-	if statusCode != 0 {
+	if statusCode != 200 {
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
