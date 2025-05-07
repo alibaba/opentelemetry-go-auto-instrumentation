@@ -43,6 +43,7 @@ require (
 )
 
 require (
+	github.com/apache/rocketmq-client-go/v2 v2.1.2
 	github.com/bytedance/gopkg v0.1.0
 	github.com/kataras/iris/v12 v12.2.11
 	github.com/mark3labs/mcp-go v0.22.0
@@ -54,10 +55,18 @@ require (
 )
 
 require (
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/oauth2 v0.26.0 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/openzipkin/zipkin-go v0.4.3 // indirect
+	github.com/prometheus/client_model v0.6.1 // indirect
+	github.com/prometheus/common v0.62.0 // indirect
+	github.com/prometheus/procfs v0.15.1 // indirect
+	stathat.com/c/consistent v1.0.0 // indirect
 )
 
 require (
@@ -97,7 +106,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.1.1+incompatible
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
