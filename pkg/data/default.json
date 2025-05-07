@@ -926,47 +926,65 @@
   "StructType": "Request",
   "FieldName": "OtelRequest",
   "FieldType": "interface{}"
-},{
-  "Version": "[0.20.0,)",
-  "ImportPath": "github.com/mark3labs/mcp-go/mcp",
-  "StructType": "Request",
-  "FieldName": "OtelContext",
-  "FieldType": "interface{}"
-},{
-  "Version": "[0.20.0,)",
-  "ImportPath": "github.com/mark3labs/mcp-go/server",
-  "ReceiverType": "\\*Hooks",
-  "Function": "beforeAny",
-  "OnEnter": "hookBeforeAnyOnEnter",
-  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
-},{
-  "Version": "[0.20.0,)",
-  "ImportPath": "github.com/mark3labs/mcp-go/server",
-  "ReceiverType": "\\*Hooks",
-  "Function": "onSuccess",
-  "OnEnter": "hookOnSuccessOnEnter",
-  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
-},{
-  "Version": "[0.20.0,)",
-  "ImportPath": "github.com/mark3labs/mcp-go/server",
-  "ReceiverType": "\\*Hooks",
-  "Function": "onError",
-  "OnEnter": "hookOnErrorOnEnter",
-  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
-},{
-  "Version": "[0.20.0,)",
-  "ImportPath": "github.com/mark3labs/mcp-go/client",
-  "ReceiverType": "\\*SSEMCPClient",
-  "Function": "sendRequest",
-  "OnEnter": "clientSseOnEnter",
-  "OnExit":"clientSseOnExit",
-  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
-},{
-  "ImportPath": "github.com/mark3labs/mcp-go/client",
-  "ReceiverType": "\\*StdioMCPClient",
-  "Function": "sendRequest",
-  "OnEnter": "clientStdioOnEnter",
-  "OnExit":"clientStdioOnExit",
-  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
-}
+  },{
+    "Version": "[0.20.0,)",
+    "ImportPath": "github.com/mark3labs/mcp-go/mcp",
+    "StructType": "Request",
+    "FieldName": "OtelContext",
+    "FieldType": "interface{}"
+  },{
+    "Version": "[0.20.0,)",
+    "ImportPath": "github.com/mark3labs/mcp-go/server",
+    "ReceiverType": "\\*Hooks",
+    "Function": "beforeAny",
+    "OnEnter": "hookBeforeAnyOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
+  },{
+    "Version": "[0.20.0,)",
+    "ImportPath": "github.com/mark3labs/mcp-go/server",
+    "ReceiverType": "\\*Hooks",
+    "Function": "onSuccess",
+    "OnEnter": "hookOnSuccessOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
+  },{
+    "Version": "[0.20.0,)",
+    "ImportPath": "github.com/mark3labs/mcp-go/server",
+    "ReceiverType": "\\*Hooks",
+    "Function": "onError",
+    "OnEnter": "hookOnErrorOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
+  },{
+    "Version": "[0.20.0,)",
+    "ImportPath": "github.com/mark3labs/mcp-go/client",
+    "ReceiverType": "\\*SSEMCPClient",
+    "Function": "sendRequest",
+    "OnEnter": "clientSseOnEnter",
+    "OnExit":"clientSseOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
+  },{
+    "ImportPath": "github.com/mark3labs/mcp-go/client",
+    "ReceiverType": "\\*StdioMCPClient",
+    "Function": "sendRequest",
+    "OnEnter": "clientStdioOnEnter",
+    "OnExit":"clientStdioOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mcp"
+  },
+  {
+    "Version": "[0.4.0,)",
+    "ImportPath": "github.com/segmentio/kafka-go",
+    "Function": "WriteMessages",
+    "ReceiverType": "\\*Writer",
+    "OnEnter": "producerWriteMessagesOnEnter",
+    "OnExit": "producerWriteMessagesOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kafka-go"
+  },
+  {
+    "Version": "[0.4.0,)",
+    "ImportPath": "github.com/segmentio/kafka-go",
+    "Function": "ReadMessage",
+    "ReceiverType": "\\*Reader",
+    "OnEnter": "consumerReadMessageOnEnter",
+    "OnExit": "consumerReadMessageOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kafka-go"
+  }
 ]
