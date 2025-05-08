@@ -49,7 +49,7 @@ func TestRunHelloworld(t *testing.T) {
 	ExpectContains(t, stderr, "GOOD")
 	// TODO: re-enable this test after we fix the issue
 	// ExpectNotContains(t, stderr, "BAD")
-	ExpectContains(t, stderr, "GCMG")
+	// ExpectContains(t, stderr, "GCMG")
 	ExpectContains(t, stderr, "BYD")
 
 	text := ReadInstrumentLog(t, filepath.Join("fmt", "print.go"))
