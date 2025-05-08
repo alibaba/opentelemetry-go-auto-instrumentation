@@ -264,18 +264,20 @@ func (dp *DepProcessor) initRules() (err error) {
 							),
 						)
 					}
-					assigns = append(assigns, fmt.Sprintf(
-						"\t%s.%s = %s\n",
-						aliasPkg,
-						OtelGetStackDef,
-						OtelGetStackImplCode,
-					))
-					assigns = append(assigns, fmt.Sprintf(
-						"\t%s.%s = %s\n",
-						aliasPkg,
-						OtelPrintStackDef,
-						OtelPrintStackImplCode,
-					))
+					if bundle.PackageName != OtelPrintStackImportPath {
+						assigns = append(assigns, fmt.Sprintf(
+							"\t%s.%s = %s\n",
+							aliasPkg,
+							OtelGetStackDef,
+							OtelGetStackImplCode,
+						))
+						assigns = append(assigns, fmt.Sprintf(
+							"\t%s.%s = %s\n",
+							aliasPkg,
+							OtelPrintStackDef,
+							OtelPrintStackImplCode,
+						))
+					}
 				}
 			}
 		}
