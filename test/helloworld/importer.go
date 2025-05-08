@@ -21,7 +21,6 @@ import (
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/grpc"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-context"
-
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/fmt1"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/fmt4"
 	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/test/fmt5"
