@@ -116,6 +116,22 @@ $ otel go build -gcflags="-m" cmd/app
 >
 > 请参考 [自定义插桩文档](./how-to-add-a-new-rule.md) 开始使用。
 
+# 目录
+- [Otel使用指南](./usage_CN.md)
+- [兼容性](./compatibility_CN.md)
+- [编译时间](./compilation-time_CN.md)
+- [上下文传递](./context-propagation_CN.md)
+- [实验性功能](./experimental-feature_CN.md)
+- [工作原理](./how-it-works_CN.md)
+- [如何添加新规则](./how-to-add-a-new-rule_CN.md)
+- [如何调试](./how-to-debug_CN.md)
+- [如何在日志中注入 traceID](./how-to-inject-traceid-in-log_CN.md)
+- [如何为插件编写测试](./how-to-write-tests-for-plugins_CN.md)
+- [与手动插桩集成](./manual_instrumentation_CN.md)
+- [规则定义](./rule_def_CN.md)
+- [支持的库](./supported-libraries_CN.md)
+
+
 # 社区
 
 我们期待您的反馈和建议。您可以加入我们的 [钉钉群组](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )

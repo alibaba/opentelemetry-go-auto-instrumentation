@@ -115,6 +115,22 @@ We are progressively open-sourcing the libraries we have supported, and your con
 >
 > Please refer to [this document](./docs/how-to-add-a-new-rule.md) to get started.
 
+# Directory
+- [Usage](./docs/usage.md)
+- [Compatibility](./docs/compatibility.md)
+- [Compilation Time](./docs/compilation-time.md)
+- [Context Propagation](./docs/context-propagation.md)
+- [Experimental Feature](./docs/experimental-feature.md)
+- [How it works](./docs/how-it-works.md)
+- [How to add a new rule](./docs/how-to-add-a-new-rule.md)
+- [How to debug](./docs/how-to-debug.md)
+- [How to inject traceid in log](./docs/how-to-inject-traceid-in-log.md)
+- [How to write tests for plugins](./docs/how-to-write-tests-for-plugins.md)
+- [Manual instrumentation](./docs/manual_instrumentation.md)
+- [Rule def](./docs/rule_def.md)
+- [Supported libraries](./docs/supported-libraries.md)
+
+
 # Community
 
 We are looking forward to your feedback and suggestions. You can join
