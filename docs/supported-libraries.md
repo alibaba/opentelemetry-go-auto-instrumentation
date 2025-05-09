@@ -2,6 +2,7 @@
 
 | Plugin Name   | Repository Url                                 | Min Supported Version | Max Supported Version |
 |---------------| ---------------------------------------------- |-----------------------|-----------------------|
+| amqp091       | https://github.com/rabbitmq/amqp091-go         | v1.10.0               | -                     |
 | database/sql  | https://pkg.go.dev/database/sql                | -                     | -                     |
 | echo          | https://github.com/labstack/echo               | v4.0.0                | v4.12.0               |
 | elasticsearch | https://github.com/elastic/go-elasticsearch    | v8.4.0                | v8.15.0               |
@@ -22,6 +23,7 @@
 | log           | https://pkg.go.dev/log                         | -                     | -                     |
 | logrus        | https://github.com/sirupsen/logrus             | v1.5.0                | v1.9.3                |
 | mongodb       | https://github.com/mongodb/mongo-go-driver     | v1.11.1               | v1.15.1               |
+| mcp           | https://github.com/mark3labs/mcp-go/mcp        | v0.20.0               | -                     |
 | mux           | https://github.com/gorilla/mux                 | v1.3.0                | v1.8.1                |
 | nacos         | https://github.com/nacos-group/nacos-sdk-go/v2 | v2.0.0                | v2.2.7                |
 | net/http      | https://pkg.go.dev/net/http                    | -                     | -                     |
