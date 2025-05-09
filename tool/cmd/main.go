@@ -79,16 +79,6 @@ func initTempDir() error {
 			return errc.New(errc.ErrMkdirAll, err.Error())
 		}
 	}
-	// Make sub-directory of temp build directory for each phase. Specifaclly,
-	// we always recreate the preprocess and instrument directories, but only
-	// create the configure directory if it does not exist. This is because
-	// the configure directory can be used across multiple runs.
-	if util.PathNotExists(util.GetTempBuildDirWith(util.PConfigure)) {
-		err := os.MkdirAll(util.GetTempBuildDirWith(util.PConfigure), 0777)
-		if err != nil {
-			return errc.New(errc.ErrMkdirAll, err.Error())
-		}
-	}
 	for _, subdir := range []string{util.PPreprocess, util.PInstrument} {
 		if util.PathExists(util.GetTempBuildDirWith(subdir)) {
 			err := os.RemoveAll(util.GetTempBuildDirWith(subdir))
