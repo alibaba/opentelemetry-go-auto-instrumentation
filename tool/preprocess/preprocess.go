@@ -674,23 +674,32 @@ func (dp *DepProcessor) rectifyMod() error {
 	// Since we haven't published the alibaba-otel pkg module, we need to add
 	// a replace directive to tell the go tool to use the local module cache
 	// instead of the remote module. This is a workaround for the case that
-	// the remote module is not available.
+	// the remote module is not available(published).
 	gomod := dp.getGoModPath()
 	modfile, err := parseGoMod(gomod)
 	if err != nil {
 		return err
 	}
-	err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
-	if err != nil {
-		return err
+	hasReplace := false
+	for _, r := range modfile.Replace {
+		if r.Old.Path == pkgPrefix {
+			hasReplace = true
+			break
+		}
 	}
-	bs, err := modfile.Format()
-	if err != nil {
-		return err
-	}
-	_, err = util.WriteFile(gomod, string(bs))
-	if err != nil {
-		return err
+	if !hasReplace {
+		err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
+		if err != nil {
+			return err
+		}
+		bs, err := modfile.Format()
+		if err != nil {
+			return err
+		}
+		_, err = util.WriteFile(gomod, string(bs))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
