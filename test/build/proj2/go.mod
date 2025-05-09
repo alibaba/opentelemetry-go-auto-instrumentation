@@ -2,8 +2,6 @@ module proj2
 
 go 1.22
 
-
-
 require github.com/zeromicro/go-zero v1.7.2
 
 require (
@@ -52,5 +50,3 @@ require (
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
-
-
