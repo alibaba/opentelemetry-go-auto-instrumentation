@@ -1,8 +1,8 @@
-## 如何调试已仪表化的程序
+## 如何调试已插桩的程序
 
-`opentelemetry-go-auto-instrumentation` 提供了一些方便的方式供用户调试已仪表化的程序。
+`opentelemetry-go-auto-instrumentation` 提供了一些方便的方式供用户调试已插桩的程序。
 
-## 1. 使用 -debug 选项进行仪表化
+## 1. 使用 -debug 选项进行插桩
 ```console
 $ ./otel set -debug
 ```
