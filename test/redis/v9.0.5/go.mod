@@ -6,7 +6,7 @@ replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../../opentelemetry-go-auto-instrumentation/pkg
+
 
 require (
 	// import this dependency to use verifier

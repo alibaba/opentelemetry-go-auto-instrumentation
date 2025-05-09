@@ -8,7 +8,7 @@ replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier =
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../opentelemetry-go-auto-instrumentation/pkg
+
 
 require go.opentelemetry.io/otel/trace v1.35.0
 

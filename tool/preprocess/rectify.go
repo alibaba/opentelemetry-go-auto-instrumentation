@@ -55,14 +55,6 @@ func (dp *DepProcessor) findModCacheDir(modulePath string) (string, error) {
 func (dp *DepProcessor) rectifyRule() error {
 	util.GuaranteeInPreprocess()
 	defer util.PhaseTimer("Fetch")()
-	modCacheDir, err := dp.findModCacheDir("github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@2da1f02")
-	if err != nil {
-		return err
-	}
-	if modCacheDir == "" {
-		return errc.New(errc.ErrPreprocess, "cannot find rule cache dir")
-	}
-	util.Log("Local module cache: %s", modCacheDir)
 	rectified := map[string]bool{}
 	for _, bundle := range dp.bundles {
 		for _, funcRules := range bundle.File2FuncRules {
@@ -75,7 +67,7 @@ func (dp *DepProcessor) rectifyRule() error {
 						continue
 					}
 					p := strings.TrimPrefix(rule.Path, pkgPrefix)
-					p = filepath.Join(modCacheDir, p)
+					p = filepath.Join(dp.pkgLocalCache, p)
 					rule.SetPath(p)
 					rectified[p] = true
 				}
@@ -86,7 +78,7 @@ func (dp *DepProcessor) rectifyRule() error {
 				continue
 			}
 			p := strings.TrimPrefix(fileRule.Path, pkgPrefix)
-			p = filepath.Join(modCacheDir, p)
+			p = filepath.Join(dp.pkgLocalCache, p)
 			fileRule.SetPath(p)
 			fileRule.FileName = filepath.Join(p, fileRule.FileName)
 			rectified[p] = true

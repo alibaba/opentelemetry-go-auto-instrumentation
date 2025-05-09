@@ -55,24 +55,25 @@ const (
 )
 
 type DepProcessor struct {
-	bundles    []*resource.RuleBundle // All dependent rule bundles
-	backups    map[string]string
-	sources    []string
-	moduleName string // Module name from go.mod
-	modulePath string // Where go.mod is located
-	rule2Dir   map[*resource.InstFuncRule]string
-	goBuildCmd []string
-	vendorMode bool
-	modfile    *modfile.File
+	bundles       []*resource.RuleBundle // All dependent rule bundles
+	backups       map[string]string
+	sources       []string
+	moduleName    string // Module name from go.mod
+	modulePath    string // Where go.mod is located
+	rule2Dir      map[*resource.InstFuncRule]string
+	goBuildCmd    []string
+	vendorMode    bool
+	pkgLocalCache string // Local module cache path of alibaba-otel pkg module
 }
 
 func newDepProcessor() *DepProcessor {
 	dp := &DepProcessor{
-		bundles:    []*resource.RuleBundle{},
-		backups:    map[string]string{},
-		sources:    nil,
-		rule2Dir:   map[*resource.InstFuncRule]string{},
-		vendorMode: false,
+		bundles:       []*resource.RuleBundle{},
+		backups:       map[string]string{},
+		sources:       nil,
+		rule2Dir:      map[*resource.InstFuncRule]string{},
+		vendorMode:    false,
+		pkgLocalCache: "",
 	}
 	return dp
 }
@@ -133,15 +134,16 @@ func parseGoMod(gomod string) (*modfile.File, error) {
 	}
 	return modFile, nil
 }
-
-func (dp *DepProcessor) init() error {
+func (dp *DepProcessor) initCmd() {
 	// There is a tricky, all arguments after the tool itself are saved for
 	// later use, which means the subcommand "go build" are also  included
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	util.AssertGoBuild(dp.goBuildCmd)
 	util.Log("Go build command: %v", dp.goBuildCmd)
+}
 
+func (dp *DepProcessor) initMod() (err error) {
 	// Find compiling module and package information from the build command
 	pkgs, err := findModule(dp.goBuildCmd)
 	if err != nil {
@@ -210,13 +212,19 @@ func (dp *DepProcessor) init() error {
 	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
 	util.Log("Found sources %v", dp.sources)
 
-	gomod := dp.getGoModPath()
-	dp.modfile, err = parseGoMod(gomod)
+	// Download alibaba-otel pkg module to local module cache
+	dp.pkgLocalCache, err = dp.findModCacheDir("github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@2da1f02")
 	if err != nil {
 		return err
 	}
-	util.Log("Analyze %v", gomod)
+	if dp.pkgLocalCache == "" {
+		return errc.New(errc.ErrPreprocess, "cannot find rule cache dir")
+	}
+	util.Log("Local module cache: %s", dp.pkgLocalCache)
+	return nil
+}
 
+func (dp *DepProcessor) initBuildMode() {
 	// Check if the build mode
 	ignoreVendor := false
 	for _, arg := range dp.goBuildCmd {
@@ -240,7 +248,9 @@ func (dp *DepProcessor) init() error {
 	// available in the vendor directory. This requires users to add these
 	// dependencies proactively
 	util.Log("Vendor mode: %v", dp.vendorMode)
+}
 
+func (dp *DepProcessor) initSignalHandler() {
 	// Register signal handler to catch up SIGINT/SIGTERM interrupt signals and
 	// do necessary cleanup
 	sigc := make(chan os.Signal, 1)
@@ -253,6 +263,16 @@ func (dp *DepProcessor) init() error {
 		default:
 		}
 	}()
+}
+
+func (dp *DepProcessor) init() error {
+	dp.initCmd()
+	err := dp.initMod()
+	if err != nil {
+		return err
+	}
+	dp.initBuildMode()
+	dp.initSignalHandler()
 
 	return nil
 }
@@ -636,7 +656,8 @@ func precheck() error {
 	return nil
 }
 
-func (dp *DepProcessor) backupMod() error {
+func (dp *DepProcessor) rectifyMod() error {
+	// Backup go.mod and go.sum files
 	gomodDir := dp.getGoModDir()
 	files := []string{}
 	files = append(files, filepath.Join(gomodDir, util.GoModFile))
@@ -649,6 +670,27 @@ func (dp *DepProcessor) backupMod() error {
 				return err
 			}
 		}
+	}
+	// Since we haven't published the alibaba-otel pkg module, we need to add
+	// a replace directive to tell the go tool to use the local module cache
+	// instead of the remote module. This is a workaround for the case that
+	// the remote module is not available.
+	gomod := dp.getGoModPath()
+	modfile, err := parseGoMod(gomod)
+	if err != nil {
+		return err
+	}
+	err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
+	if err != nil {
+		return err
+	}
+	bs, err := modfile.Format()
+	if err != nil {
+		return err
+	}
+	_, err = util.WriteFile(gomod, string(bs))
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -729,8 +771,9 @@ func Preprocess() error {
 	{
 		defer util.PhaseTimer("Preprocess")()
 
-		// Backup go.mod as we are likely modifing it later
-		err = dp.backupMod()
+		// Backup go.mod and add additional repalce directives for the
+		// alibaba-otel pkg module
+		err = dp.rectifyMod()
 		if err != nil {
 			return err
 		}
