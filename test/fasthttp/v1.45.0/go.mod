@@ -2,8 +2,6 @@ module fasthttp/v1.45.0
 
 go 1.23
 
-toolchain go1.23.3
-
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../../opentelemetry-go-auto-instrumentation/pkg

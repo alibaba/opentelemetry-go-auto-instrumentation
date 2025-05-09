@@ -15,12 +15,22 @@
 package rules
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
-//go:linkname onEnterGeneric demo.onEnterGeneric
-func onEnterGeneric(call api.CallContext) {
-	println("==", call.GetFuncName(), "==")
+//go:linkname httpClientEnterHook demo.httpClientEnterHook
+func httpClientEnterHook(call api.CallContext, t *http.Transport, req *http.Request) {
+	header, _ := json.Marshal(req.Header)
+	fmt.Println("request header is ", string(header))
+}
+
+//go:linkname httpClientExitHook demo.httpClientExitHook
+func httpClientExitHook(call api.CallContext, res *http.Response, err error) {
+	header, _ := json.Marshal(res.Header)
+	fmt.Println("response header is ", string(header))
 }

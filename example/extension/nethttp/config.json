@@ -1,8 +1,10 @@
 [
   {
-    "ImportPath":"main",
-    "Function":".*",
-    "OnEnter":"onEnterGeneric",
+    "ImportPath":"net/http",
+    "Function":"RoundTrip",
+    "OnEnter":"httpClientEnterHook",
+    "ReceiverType": "*Transport",
+    "OnExit": "httpClientExitHook",
     "Path": "netHttp"
   }
 ]
