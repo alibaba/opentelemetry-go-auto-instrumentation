@@ -57,10 +57,8 @@ const (
 type DepProcessor struct {
 	bundles       []*resource.RuleBundle // All dependent rule bundles
 	backups       map[string]string
-	sources       []string
 	moduleName    string // Module name from go.mod
 	modulePath    string // Where go.mod is located
-	rule2Dir      map[*resource.InstFuncRule]string
 	goBuildCmd    []string
 	vendorMode    bool
 	pkgLocalCache string // Local module cache path of alibaba-otel pkg module
@@ -70,8 +68,6 @@ func newDepProcessor() *DepProcessor {
 	dp := &DepProcessor{
 		bundles:       []*resource.RuleBundle{},
 		backups:       map[string]string{},
-		sources:       nil,
-		rule2Dir:      map[*resource.InstFuncRule]string{},
 		vendorMode:    false,
 		pkgLocalCache: "",
 	}
@@ -155,9 +151,6 @@ func (dp *DepProcessor) initMod() (err error) {
 		if pkg.GoFiles == nil {
 			continue
 		}
-		// Collect all source files from the package, they are good candidates
-		// for adding additional imports
-		dp.sources = append(dp.sources, pkg.GoFiles...)
 		if pkg.Module != nil {
 			// Best case, we find the module information from the package field
 			util.Log("Find Go module %v", util.Jsonify(pkg.Module))
@@ -202,18 +195,15 @@ func (dp *DepProcessor) initMod() (err error) {
 			}
 		}
 	}
-	if len(dp.sources) == 0 {
-		return errc.New(errc.ErrPreprocess, "no Go source files found")
-	}
 	if dp.moduleName == "" || dp.modulePath == "" {
 		return errc.New(errc.ErrPreprocess, "cannot find compiled module")
 	}
 
 	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
-	util.Log("Found sources %v", dp.sources)
 
 	// Download alibaba-otel pkg module to local module cache
-	dp.pkgLocalCache, err = dp.findModCacheDir("github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@f55e1e8")
+	pkgUrl := "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@f55e1e8"
+	dp.pkgLocalCache, err = dp.findModCacheDir(pkgUrl)
 	if err != nil {
 		return err
 	}
