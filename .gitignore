@@ -35,7 +35,7 @@ test/grpc/v1.44.0/test_grpc_basic
 test/fasthttp/v1.45.0/test_basic_http
 test/hertz/v0.9.0/test_hertz_basic
 test/world/world
-
+coverage.txt
 example/extension/nethttp/demo
 example/log/test
 test/build/cmd/cmd
