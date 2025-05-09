@@ -213,7 +213,7 @@ func (dp *DepProcessor) initMod() (err error) {
 	util.Log("Found sources %v", dp.sources)
 
 	// Download alibaba-otel pkg module to local module cache
-	dp.pkgLocalCache, err = dp.findModCacheDir("github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@2da1f02")
+	dp.pkgLocalCache, err = dp.findModCacheDir("github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@f55e1e8")
 	if err != nil {
 		return err
 	}

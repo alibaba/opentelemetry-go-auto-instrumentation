@@ -4,8 +4,6 @@ go 1.22
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
 
-
-
 require (
 	github.com/cloudwego/hertz v0.9.3
 	github.com/gin-gonic/gin v1.9.1
