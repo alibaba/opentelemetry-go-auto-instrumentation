@@ -15,7 +15,10 @@
 package error7
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
+//go:linkname onEnterP12 errorstest/auxiliary.onEnterP12
 func onEnterP12(call api.CallContext) {}

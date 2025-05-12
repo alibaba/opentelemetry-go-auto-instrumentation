@@ -16,6 +16,10 @@ package dom
 
 import (
 	"context"
+	"log"
+	"reflect"
+	"unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
@@ -24,12 +28,10 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"log"
-	"reflect"
-	"unsafe"
 )
 
-func beforeNewBeatReactor(call api.CallContext, ctx context.Context, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) {
+//go:linkname beforeNewBeatReactor211 github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http.beforeNewBeatReactor211
+func beforeNewBeatReactor211(call api.CallContext, ctx context.Context, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) {
 	if !experimental.NacosEnabler.Enable() {
 		return
 	}
@@ -40,7 +42,8 @@ func beforeNewBeatReactor(call api.CallContext, ctx context.Context, clientCfg c
 	call.SetKeyData("userName", clientCfg.Username)
 }
 
-func afterNewBeatReactor(call api.CallContext, b naming_http.BeatReactor) {
+//go:linkname afterNewBeatReactor211 github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http.afterNewBeatReactor211
+func afterNewBeatReactor211(call api.CallContext, b naming_http.BeatReactor) {
 	if !experimental.NacosEnabler.Enable() {
 		return
 	}

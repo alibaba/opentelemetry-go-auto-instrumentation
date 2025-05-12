@@ -35,21 +35,36 @@ import (
 // applies the rules to the dependencies one by one.
 
 type RuleProcessor struct {
-	packageName     string
-	workDir         string
-	target          *dst.File       // The target file to be instrumented
-	parser          *util.AstParser // The parser for the target file
-	compileArgs     []string
-	rule2Suffix     map[*resource.InstFuncRule]string
-	rawFunc         *dst.FuncDecl
-	exact           bool // If the rule is exact match with target function
+	// The package name of the target file
+	packageName string
+	// The working directory during compilation
+	workDir string
+	// The target file to be instrumented
+	target *dst.File
+	// The parser for the target file
+	parser *util.AstParser
+	// The compiling arguments for the target file
+	compileArgs []string
+	// Randomly generated suffix for the rule, used to avoid name collision
+	rule2Suffix map[*resource.InstFuncRule]string
+	// The target function to be instrumented
+	rawFunc *dst.FuncDecl
+	// Whether the rule is exact match with target functio, or it's a regexp match
+	exact bool
+	// The enter hook function, it should be inserted into the target source file
 	onEnterHookFunc *dst.FuncDecl
-	onExitHookFunc  *dst.FuncDecl
-	varDecls        []dst.Decl
-	relocated       map[string]string
-	trampolineJumps []*TJump // Optimization candidates
-	callCtxDecl     *dst.GenDecl
-	callCtxMethods  []*dst.FuncDecl
+	// The exit hook function, it should be inserted into the target source file
+	onExitHookFunc *dst.FuncDecl
+	// Variable declarations waiting to be inserted into target source file
+	varDecls []dst.Decl
+	// Relocated files
+	relocated map[string]string
+	// Optimization candidates for the trampoline function
+	trampolineJumps []*TJump
+	// The declaration of the call context, it should be replenished later
+	callCtxDecl *dst.GenDecl
+	// The methods of the call context
+	callCtxMethods []*dst.FuncDecl
 }
 
 func newRuleProcessor(args []string, pkgName string) *RuleProcessor {
@@ -202,9 +217,16 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Strip -complete flag as we may insert some hook points that are not ready
+	// yet, i.e. they dont have function body
+	for i, arg := range rp.compileArgs {
+		if arg == "-complete" {
+			rp.compileArgs = append(rp.compileArgs[:i], rp.compileArgs[i+1:]...)
+			break
+		}
+	}
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
-	util.Log("RunCmd: %v (%v)", bundle.ImportPath, rp.compileArgs)
 	return err
 }
 

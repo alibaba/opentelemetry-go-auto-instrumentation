@@ -33,7 +33,6 @@ const (
 	GoWorkSumFile        = "go.work.sum"
 	DebugLogFile         = "debug.log"
 	TempBuildDir         = ".otel-build"
-	BuildConfFile        = "build_conf.json"
 )
 
 const (
@@ -102,10 +101,6 @@ func GetInstrumentLogPath(name string) string {
 
 func GetPreprocessLogPath(name string) string {
 	return filepath.Join(TempBuildDir, PPreprocess, name)
-}
-
-func GetConfigureLogPath(name string) string {
-	return filepath.Join(TempBuildDir, PConfigure, name)
 }
 
 func GetVarNameOfFunc(fn string) string {

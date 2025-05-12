@@ -17,6 +17,7 @@ package fasthttp
 import (
 	"context"
 	"net/url"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/valyala/fasthttp"
@@ -24,6 +25,7 @@ import (
 
 var fastHttpClientInstrumenter = BuildFastHttpClientOtelInstrumenter()
 
+//go:linkname clientFastHttpOnEnter github.com/valyala/fasthttp.clientFastHttpOnEnter
 func clientFastHttpOnEnter(call api.CallContext, c *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) {
 	if !fastHttpEnabler.Enable() {
 		return
@@ -51,6 +53,7 @@ func clientFastHttpOnEnter(call api.CallContext, c *fasthttp.HostClient, req *fa
 	call.SetData(data)
 }
 
+//go:linkname clientFastHttpOnExit github.com/valyala/fasthttp.clientFastHttpOnExit
 func clientFastHttpOnExit(call api.CallContext, err error) {
 	if !fastHttpEnabler.Enable() {
 		return

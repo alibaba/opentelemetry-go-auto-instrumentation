@@ -25,7 +25,7 @@ import (
 func (rp *RuleProcessor) addStructField(rule *resource.InstStructRule, decl dst.Decl) {
 	util.Assert(rule.FieldName != "" && rule.FieldType != "",
 		"rule must have field and type")
-	util.Log("Apply struct rule %v", rule)
+	util.Log("Apply struct rule %v (%v)", rule, rp.compileArgs)
 	util.AddStructField(decl, rule.FieldName, rule.FieldType)
 }
 

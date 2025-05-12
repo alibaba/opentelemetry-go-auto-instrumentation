@@ -29,7 +29,8 @@ import (
 )
 
 const (
-	EnvPrefix = "OTELTOOL_"
+	EnvPrefix     = "OTELTOOL_"
+	BuildConfFile = "conf.json"
 )
 
 type BuildConfig struct {
@@ -64,7 +65,6 @@ var ToolVersion = "1.0.0"
 var conf *BuildConfig
 
 func GetConf() *BuildConfig {
-	util.Assert(!util.InConfigure(), "called in configure")
 	util.Assert(conf != nil, "build config is not initialized")
 	return conf
 }
@@ -114,11 +114,14 @@ func (bc *BuildConfig) parseRuleFiles() error {
 	return nil
 }
 
+func getConfPath(name string) string {
+	return util.GetTempBuildDirWith(name)
+}
+
 func storeConfig(bc *BuildConfig) error {
 	util.Assert(bc != nil, "build config is not initialized")
-	util.Assert(util.InConfigure(), "sanity check")
 
-	file := util.GetConfigureLogPath(util.BuildConfFile)
+	file := getConfPath(BuildConfFile)
 	bs, err := json.Marshal(bc)
 	if err != nil {
 		return errc.New(errc.ErrInvalidJSON, err.Error())
@@ -133,12 +136,12 @@ func storeConfig(bc *BuildConfig) error {
 func loadConfig() (*BuildConfig, error) {
 	util.Assert(conf == nil, "build config is already initialized")
 	// If the build config file does not exist, return a default build config
-	confFile := util.GetConfigureLogPath(util.BuildConfFile)
+	confFile := getConfPath(BuildConfFile)
 	if util.PathNotExists(confFile) {
 		return &BuildConfig{}, nil
 	}
 	// Load build config from json file
-	file := util.GetConfigureLogPath(util.BuildConfFile)
+	file := getConfPath(BuildConfFile)
 	data, err := util.ReadFile(file)
 	if err != nil {
 		return &BuildConfig{}, err
@@ -243,8 +246,6 @@ func PrintVersion() error {
 }
 
 func Configure() error {
-	util.GuaranteeInConfigure()
-
 	// Parse command line flags to get build config
 	bc, err := loadConfig()
 	if err != nil {
@@ -264,7 +265,7 @@ func Configure() error {
 		"Disable default rules")
 	flag.CommandLine.Parse(os.Args[2:])
 
-	util.Log("Configured in %s", util.GetConfigureLogPath(util.BuildConfFile))
+	util.Log("Configured in %s", getConfPath(BuildConfFile))
 
 	// Store build config for future phases
 	err = storeConfig(bc)

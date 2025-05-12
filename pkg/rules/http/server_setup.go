@@ -20,12 +20,14 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
 var netHttpServerInstrumenter = BuildNetHttpServerOtelInstrumenter()
 
+//go:linkname serverOnEnter net/http.serverOnEnter
 func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r *http.Request) {
 	if !netHttpEnabler.Enable() {
 		return
@@ -54,6 +56,7 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 	return
 }
 
+//go:linkname serverOnExit net/http.serverOnExit
 func serverOnExit(call api.CallContext) {
 	if !netHttpEnabler.Enable() {
 		return

@@ -35,9 +35,13 @@ test/grpc/v1.44.0/test_grpc_basic
 test/fasthttp/v1.45.0/test_basic_http
 test/hertz/v0.9.0/test_hertz_basic
 test/world/world
-
+coverage.txt
 example/extension/nethttp/demo
 example/log/test
 test/build/cmd/cmd
 ssa.html
 otel_pkg
+ssa.html
+otel_importer.go
+test/fiberv2/v2.43.0/fiber_http
+test/redis/v9.0.5/test_redis_ring
