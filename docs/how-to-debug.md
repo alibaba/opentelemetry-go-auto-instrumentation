@@ -71,12 +71,12 @@ Even without using the `-debug` option, the tool will retain the necessary modif
     │   ├── app2.go
     │   ├── go.mod
     │   └── go.sum
-    ├── rule_bundle.json
+    ├── matched_rules.json
     └── rule_cache
         └── ...
 ```
 
-The terms "preprocess" and "instrument" represent files generated during two different stages. Please refer to [this document](how-it-works.md) for information about the two stages. For example, `instrument/grpc/clientconn.go` indicates the `clientconn.go` file after code injection. `rule_bundle.json` contains the matched rules, and nearly all important files relevant to debugging will be retained in this directory.
+The terms "preprocess" and "instrument" represent files generated during two different stages. Please refer to [this document](how-it-works.md) for information about the two stages. For example, `instrument/grpc/clientconn.go` indicates the `clientconn.go` file after code injection. `matched_rules.json` contains the matched rules, and nearly all important files relevant to debugging will be retained in this directory.
 
 ## 3. Use delve to debug binary
 

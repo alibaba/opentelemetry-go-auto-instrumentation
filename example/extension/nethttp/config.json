@@ -5,6 +5,6 @@
     "OnEnter":"httpClientEnterHook",
     "ReceiverType": "*Transport",
     "OnExit": "httpClientExitHook",
-    "Path": "rules"
+    "Path": "netHttp"
   }
 ]

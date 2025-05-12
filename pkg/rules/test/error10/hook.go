@@ -15,8 +15,13 @@
 package error10
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
+//go:linkname onEnterP31 errorstest/auxiliary.onEnterP31
 func onEnterP31(call api.CallContext, arg1 int, arg2 bool, arg3 float64) {}
-func onExitP31(call api.CallContext, arg1 int, arg2 bool, arg3 float64)  {}
+
+//go:linkname onExitP31 errorstest/auxiliary.onExitP31
+func onExitP31(call api.CallContext, arg1 int, arg2 bool, arg3 float64) {}

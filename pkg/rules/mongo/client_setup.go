@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"go.mongodb.org/mongo-driver/event"
@@ -39,6 +40,7 @@ func (m mongoInnerEnabler) Enable() bool {
 
 var mongoEnabler = mongoInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_MONGO_ENABLED") != "false"}
 
+//go:linkname mongoOnEnter go.mongodb.org/mongo-driver/mongo.mongoOnEnter
 func mongoOnEnter(call api.CallContext, opts ...*options.ClientOptions) {
 	if !mongoEnabler.Enable() {
 		return

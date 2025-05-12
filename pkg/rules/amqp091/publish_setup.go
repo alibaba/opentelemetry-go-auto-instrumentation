@@ -16,14 +16,16 @@ package amqp091
 
 import (
 	"context"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
-	_ "unsafe"
 )
 
+//go:linkname publishWithDeferredConfirmOnEnter github.com/rabbitmq/amqp091-go.publishWithDeferredConfirmOnEnter
 func publishWithDeferredConfirmOnEnter(call api.CallContext,
 	ch *amqp.Channel,
 	exchange, key string, mandatory, immediate bool, msg amqp.Publishing,
@@ -54,6 +56,8 @@ func publishWithDeferredConfirmOnEnter(call api.CallContext,
 	data["rabbitMQ_request"] = request
 	call.SetData(data)
 }
+
+//go:linkname publishWithDeferredConfirmOnExit github.com/rabbitmq/amqp091-go.publishWithDeferredConfirmOnExit
 func publishWithDeferredConfirmOnExit(call api.CallContext, confirm *amqp.DeferredConfirmation, err error) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok {

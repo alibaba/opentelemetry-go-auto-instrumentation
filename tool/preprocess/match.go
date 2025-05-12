@@ -23,8 +23,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/data"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -94,7 +94,7 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 }
 
 func loadDefaultRules() []resource.InstRule {
-	rules, err := loadRuleRaw(pkg.ExportDefaultRuleJson())
+	rules, err := loadRuleRaw(data.UseDefaultRuleJson())
 	if err != nil {
 		util.Log("Failed to load default rules: %v", err)
 		return nil
@@ -227,7 +227,9 @@ func matchVersion(version string, ruleVersion string) (bool, error) {
 func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 	importPath := findFlagValue(cmdArgs, util.BuildPattern)
 	util.Assert(importPath != "", "sanity check")
-	util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
+	if config.GetConf().Verbose {
+		util.Log("RunMatch: %v (%v)", importPath, cmdArgs)
+	}
 	availables := make([]resource.InstRule, len(rm.availableRules[importPath]))
 
 	// Okay, we are interested in these candidates, let's read it and match with
@@ -332,7 +334,8 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 				if genDecl, ok := decl.(*dst.GenDecl); ok {
 					if rl, ok := rule.(*resource.InstStructRule); ok {
 						if util.MatchStructDecl(genDecl, rl.StructType) {
-							util.Log("Match struct rule %s", rule)
+							util.Log("Match struct rule %s with %v",
+								rule, cmdArgs)
 							err = bundle.AddFile2StructRule(file, rl)
 							if err != nil {
 								util.Log("Failed to add struct rule: %v", err)
@@ -345,7 +348,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *resource.RuleBundle {
 				} else if funcDecl, ok := decl.(*dst.FuncDecl); ok {
 					if rl, ok := rule.(*resource.InstFuncRule); ok {
 						if util.MatchFuncDecl(funcDecl, rl.Function, rl.ReceiverType) {
-							util.Log("Match func rule %s", rule)
+							util.Log("Match func rule %s with %v", rule, cmdArgs)
 							err = bundle.AddFile2FuncRule(file, rl)
 							if err != nil {
 								util.Log("Failed to add func rule: %v", err)
@@ -511,8 +514,20 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 	ch <- bundle
 }
 
-func (dp *DepProcessor) matchRules(compileCmds []string) error {
+func (dp *DepProcessor) matchRules() error {
 	defer util.PhaseTimer("Match")()
+	// Run a dry build to get all dependencies needed for the project
+	// Match the dependencies with available rules and prepare them
+	// for the actual instrumentation
+	// Run dry build to the build blueprint
+	compileCmds, err := runDryBuild(dp.goBuildCmd)
+	if err != nil {
+		// Tell us more about what happened in the dry run
+		errLog, _ := util.ReadFile(util.GetLogPath(DryRunLog))
+		err = errc.Adhere(err, "reason", errLog)
+		return err
+	}
+
 	matcher := newRuleMatcher()
 
 	// If we are in vendor mode, we need to parse the vendor/modules.txt file

@@ -1,0 +1,41 @@
+[
+  {
+    "ImportPath": "runtime",
+    "StructType": "g",
+    "FieldName": "otel_trace_context",
+    "FieldType": "interface{}"
+  },
+  {
+    "ImportPath": "runtime",
+    "StructType": "g",
+    "FieldName": "otel_baggage_container",
+    "FieldType": "interface{}"
+  },
+  {
+    "ImportPath": "runtime",
+    "Function": "newproc1",
+    "OnEnter": "defer func(){ retVal0.otel_trace_context = contextPropagate(callergp.otel_trace_context); retVal0.otel_baggage_container = contextPropagate(callergp.otel_baggage_container); }()",
+    "UseRaw": true
+  },
+  {
+    "ImportPath": "runtime",
+    "Function": "runExitHooks",
+    "OnEnter": "if ExitHook != nil { ExitHook(); }",
+    "UseRaw": true
+  },
+  {
+    "ImportPath": "runtime",
+    "FileName": "runtime_linker.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/runtime"
+  },
+  {
+    "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
+    "FileName": "trace-context/otel_trace_test_func_holder.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+  },
+  {
+    "ImportPath": "go.opentelemetry.io/otel/sdk/metric",
+    "FileName": "metric/otel_metric_test_func_holder.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+  }
+]

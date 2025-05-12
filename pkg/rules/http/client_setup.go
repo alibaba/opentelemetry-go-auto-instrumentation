@@ -16,10 +16,12 @@ package http
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"net/http"
 	"strings"
+	_ "unsafe"
+
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 )
 
 // TODO: use a interface to filter
@@ -29,6 +31,7 @@ var netHttpClientInstrumenter = BuildNetHttpClientOtelInstrumenter()
 
 const otelExporterPrefix = "OTel OTLP Exporter Go"
 
+//go:linkname clientOnEnter net/http.clientOnEnter
 func clientOnEnter(call api.CallContext, t *http.Transport, req *http.Request) {
 	if !netHttpEnabler.Enable() {
 		return
@@ -57,6 +60,7 @@ func clientOnEnter(call api.CallContext, t *http.Transport, req *http.Request) {
 	return
 }
 
+//go:linkname clientOnExit net/http.clientOnExit
 func clientOnExit(call api.CallContext, res *http.Response, err error) {
 	if !netHttpEnabler.Enable() {
 		return
