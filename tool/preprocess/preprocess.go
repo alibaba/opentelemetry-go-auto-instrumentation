@@ -77,6 +77,75 @@ const (
 	OtelPrintStackImportPath = "log"
 	OtelPrintStackPkgAlias   = "otel_log"
 	OtelPrintStackImplCode   = "func(bt []byte){ otel_log.Printf(string(bt)) }"
+	OtelLumberjackImportPath = "github.com/natefinch/lumberjack"
+	OtelLumberjackPkgAlias   = "otel_lumberjack"
+	OtelOSImportPath         = "os"
+	OtelStrconvImportPath    = "strconv"
+	OtelFilepathImportPath   = "path/filepath"
+	OtelFilepathPkgAlias     = "filepath"
+	OtelSlogDef              = "OtelSlogImpl"
+	OtelSlogImportPath       = "golang.org/x/exp/slog"
+	OtelSlogAliasPkg         = "otel_slog"
+	OtelSlogImplCode         = "func(msg string, args ...any) { otel_slog_logger.Error(msg, args...) }"
+	OtelSlogInit             = `
+	var otel_slog_logger *otel_slog.Logger
+
+	if os.Getenv("LOG_ROTATE_ENABLED") == "true" {
+		logFileName := "goagent/fi-otel-goagent.log"
+		baseLogDirOnPlatform := "/applogs"
+		baseLogDirOnLocal := filepath.Join(os.Getenv("HOME"), "applogs")
+		baseLogDirOnCurrent := filepath.Join(".", "applogs")
+		baseDir := baseLogDirOnPlatform
+		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+			baseDir = baseLogDirOnLocal
+			if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+				baseDir = baseLogDirOnCurrent
+			}
+		}
+		appId := os.Getenv("APP_ID")
+		var logFilePath string
+		if appId == "" {
+			logFilePath = filepath.Join(baseDir, logFileName)
+		} else {
+			logFilePath = filepath.Join(baseDir, appId, logFileName)
+		}
+	
+		maxSize := 10
+		if v := os.Getenv("LOG_MAX_SIZE_MB"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxSize = n
+			}
+		}
+	
+		maxBackups := 5
+		if v := os.Getenv("LOG_MAX_BACKUPS"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxBackups = n
+			}
+		}
+	
+		maxAge := 30
+		if v := os.Getenv("LOG_MAX_AGE_DAYS"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxAge = n
+			}
+		}
+	
+		compress := os.Getenv("LOG_COMPRESS") == "true"
+	
+		logFile := &otel_lumberjack.Logger{
+			Filename:   logFilePath,
+			MaxSize:    maxSize,
+			MaxBackups: maxBackups,
+			MaxAge:     maxAge,
+			Compress:   compress,
+		}
+	
+		otel_slog_logger = otel_slog.New(
+			otel_slog.NewJSONHandler(logFile, &otel_slog.HandlerOptions{Level: otel_slog.LevelDebug}),
+		)
+	}
+`
 )
 
 var fixedDeps = []struct {
@@ -104,6 +173,10 @@ var fixedDeps = []struct {
 		"v0.60.0", false, false},
 	// commonly used by either hook or pkg
 	{"google.golang.org/protobuf", "v1.35.2",
+		false, false},
+	{"golang.org/x/exp", "v0.0.0-20250506013437-ce4c2cf36ca6",
+		false, false},
+	{"gopkg.in/natefinch/lumberjack.v2", "v2.2.1",
 		false, false},
 }
 

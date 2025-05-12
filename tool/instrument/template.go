@@ -87,6 +87,7 @@ func (c *CallContextImpl) GetPackageName() string { return c.PackageName }
 // Variable Template
 var OtelGetStackImpl func() []byte = nil
 var OtelPrintStackImpl func([]byte) = nil
+var OtelSlogImpl func(msg string, args ...any) = nil
 
 // Trampoline Template
 func OtelOnEnterTrampoline() (CallContext, bool) {
@@ -96,9 +97,14 @@ func OtelOnEnterTrampoline() (CallContext, bool) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
-			if fetchStack != nil && printStack != nil {
-				printStack(fetchStack())
+			slog := OtelSlogImpl
+			if slog == nil {
+				fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
+				if fetchStack != nil && printStack != nil {
+					printStack(fetchStack())
+				}
+			} else {
+				slog("failed to exec onEnter hook", "onEnter", "OtelOnEnterNamePlaceholder", "error", err)
 			}
 		}
 	}()
@@ -116,9 +122,14 @@ func OtelOnExitTrampoline(callContext CallContext) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
-			if fetchStack != nil && printStack != nil {
-				printStack(fetchStack())
+			slog := OtelSlogImpl
+			if slog == nil {
+				fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
+				if fetchStack != nil && printStack != nil {
+					printStack(fetchStack())
+				}
+			} else {
+				slog("failed to exec onExit hook", "onEnter", "OtelOnExitNamePlaceholder", "error", err)
 			}
 		}
 	}()

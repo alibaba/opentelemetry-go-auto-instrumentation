@@ -278,6 +278,13 @@ func (dp *DepProcessor) initRules() (err error) {
 							OtelPrintStackImplCode,
 						))
 					}
+
+					assigns = append(assigns, fmt.Sprintf(
+						"\t%s.%s = %s\n",
+						aliasPkg,
+						OtelSlogDef,
+						OtelSlogImplCode,
+					))
 				}
 			}
 		}
@@ -287,6 +294,11 @@ func (dp *DepProcessor) initRules() (err error) {
 	if len(assigns) > 0 {
 		imports[OtelPrintStackImportPath] = OtelPrintStackPkgAlias
 		imports[OtelGetStackImportPath] = OtelGetStackAliasPkg
+		imports[OtelSlogImportPath] = OtelSlogAliasPkg
+		imports[OtelStrconvImportPath] = OtelStrconvImportPath
+		imports[OtelOSImportPath] = OtelOSImportPath
+		imports[OtelFilepathImportPath] = OtelFilepathPkgAlias
+		imports[OtelLumberjackImportPath] = OtelLumberjackPkgAlias
 	}
 	for k, v := range imports {
 		c += fmt.Sprintf("import %s %q\n", v, k)
@@ -294,6 +306,7 @@ func (dp *DepProcessor) initRules() (err error) {
 
 	// Assignments
 	c += " func init() { \n"
+	c += fmt.Sprintf("%s", OtelSlogInit)
 	for _, assign := range assigns {
 		c += assign
 	}
