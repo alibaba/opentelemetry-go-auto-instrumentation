@@ -100,9 +100,6 @@ func initEnv() error {
 
 	// Determine the run phase
 	switch {
-	case os.Args[1] == SubcommandSet:
-		// otel set?
-		util.SetRunPhase(util.PConfigure)
 	case strings.HasSuffix(os.Args[1], SubcommandGo):
 		// otel go build?
 		util.SetRunPhase(util.PPreprocess)

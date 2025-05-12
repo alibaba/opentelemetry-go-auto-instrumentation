@@ -30,7 +30,7 @@ import (
 
 const (
 	EnvPrefix     = "OTELTOOL_"
-	BuildConfFile = "build_conf.json"
+	BuildConfFile = "conf.json"
 )
 
 type BuildConfig struct {
@@ -65,7 +65,6 @@ var ToolVersion = "1.0.0"
 var conf *BuildConfig
 
 func GetConf() *BuildConfig {
-	util.Assert(!util.InConfigure(), "called in configure")
 	util.Assert(conf != nil, "build config is not initialized")
 	return conf
 }
@@ -121,7 +120,6 @@ func getConfPath(name string) string {
 
 func storeConfig(bc *BuildConfig) error {
 	util.Assert(bc != nil, "build config is not initialized")
-	util.Assert(util.InConfigure(), "sanity check")
 
 	file := getConfPath(BuildConfFile)
 	bs, err := json.Marshal(bc)
@@ -248,8 +246,6 @@ func PrintVersion() error {
 }
 
 func Configure() error {
-	util.GuaranteeInConfigure()
-
 	// Parse command line flags to get build config
 	bc, err := loadConfig()
 	if err != nil {

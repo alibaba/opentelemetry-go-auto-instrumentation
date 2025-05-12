@@ -201,7 +201,12 @@ func (dp *DepProcessor) initMod() (err error) {
 
 	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
 
-	// Download alibaba-otel pkg module to local module cache
+	// We will import alibaba-otel/pkg module in generated code, which is not
+	// published yet, so we also need to add a replace directive to the go.mod file
+	// to tell the go tool to use the local module cache instead of the remote
+	// module, that's why we do this here.
+	// TODO: Once we publish the alibaba-otel/pkg module, we can remove this code
+	// along with the replace directive in the go.mod file.
 	pkgUrl := "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@f55e1e8"
 	dp.pkgLocalCache, err = dp.findModCacheDir(pkgUrl)
 	if err != nil {
