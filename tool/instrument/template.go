@@ -97,14 +97,14 @@ func OtelOnEnterTrampoline() (CallContext, bool) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			slog := OtelSlogImpl
-			if slog == nil {
+			slogLogger := OtelSlogImpl
+			if slogLogger == nil {
 				fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
 				if fetchStack != nil && printStack != nil {
 					printStack(fetchStack())
 				}
 			} else {
-				slog("failed to exec onEnter hook", "onEnter", "OtelOnEnterNamePlaceholder", "error", err)
+				slogLogger("failed to exec onEnter hook", "onEnter", "OtelOnEnterNamePlaceholder", "error", err)
 			}
 		}
 	}()
@@ -122,14 +122,14 @@ func OtelOnExitTrampoline(callContext CallContext) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			slog := OtelSlogImpl
-			if slog == nil {
+			slogLogger := OtelSlogImpl
+			if slogLogger == nil {
 				fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
 				if fetchStack != nil && printStack != nil {
 					printStack(fetchStack())
 				}
 			} else {
-				slog("failed to exec onExit hook", "onEnter", "OtelOnExitNamePlaceholder", "error", err)
+				slogLogger("failed to exec onExit hook", "onEnter", "OtelOnExitNamePlaceholder", "error", err)
 			}
 		}
 	}()

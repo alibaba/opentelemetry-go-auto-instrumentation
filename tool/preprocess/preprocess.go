@@ -52,6 +52,69 @@ const (
 	DryRunLog        = "dry_run.log"
 	CompileRemix     = "remix"
 	VendorDir        = "vendor"
+	OtelSlogInit     = `
+var otelSlogLogger *slog.Logger
+func init() {
+	if os.Getenv("LOG_ROTATE_ENABLED") == "true" {
+		logFileName := "goagent/fi-otel-goagent.log"
+		baseLogDirOnPlatform := "/applogs"
+		baseLogDirOnLocal := filepath.Join(os.Getenv("HOME"), "applogs")
+		baseLogDirOnCurrent := filepath.Join(".", "applogs")
+		baseDir := baseLogDirOnPlatform
+		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+			baseDir = baseLogDirOnLocal
+			if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+				baseDir = baseLogDirOnCurrent
+			}
+		}
+		appId := os.Getenv("APP_ID")
+		var logFilePath string
+		if appId == "" {
+			logFilePath = filepath.Join(baseDir, logFileName)
+		} else {
+			logFilePath = filepath.Join(baseDir, appId, logFileName)
+		}
+		if os.Getenv("LOG_FILE_PATH") != "" {
+			logFilePath = os.Getenv("LOG_FILE_PATH")
+		}
+
+		maxSize := 10
+		if v := os.Getenv("LOG_MAX_SIZE_MB"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxSize = n
+			}
+		}
+
+		maxBackups := 5
+		if v := os.Getenv("LOG_MAX_BACKUPS"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxBackups = n
+			}
+		}
+
+		maxAge := 30
+		if v := os.Getenv("LOG_MAX_AGE_DAYS"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxAge = n
+			}
+		}
+
+		compress := os.Getenv("LOG_COMPRESS") == "true"
+
+		logFile := &lumberjack.Logger{
+			Filename:   logFilePath,
+			MaxSize:    maxSize,
+			MaxBackups: maxBackups,
+			MaxAge:     maxAge,
+			Compress:   compress,
+		}
+
+		otelSlogLogger = slog.New(
+			slog.NewJSONHandler(logFile, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	}
+}
+`
 )
 
 type DepProcessor struct {
@@ -742,6 +805,9 @@ func (dp *DepProcessor) addRuleImporter() error {
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
 	}
+	// slog logger initialization
+	content += OtelSlogInit
+
 	cnt := 0
 	for _, bundle := range dp.bundles {
 		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
@@ -751,6 +817,10 @@ func (dp *DepProcessor) addRuleImporter() error {
 		lb = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n", cnt, bundle.ImportPath)
 		content += lb
 		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
+		content += s
+		lb = fmt.Sprintf("//go:linkname slogLogger%d %s.OtelSlogImpl\n", cnt, bundle.ImportPath)
+		content += lb
+		s = fmt.Sprintf("var slogLogger%d = func(msg string, args ...any) { otelSlogLogger.Error(msg, args...) }\n", cnt)
 		content += s
 		cnt++
 	}
