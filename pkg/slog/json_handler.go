@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/slog/internal/buffer"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/slog/internal/buffer"
 	"io"
 	"strconv"
 	"sync"

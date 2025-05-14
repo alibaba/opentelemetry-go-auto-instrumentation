@@ -1,3 +1,4 @@
+//go:build !linu
 // +build !linux
 
 package lumberjack

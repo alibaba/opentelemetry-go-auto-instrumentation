@@ -6,12 +6,7 @@ package slog
 
 import (
 	"context"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/slog/internal"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/slog/lumberjack"
-	"os"
-	"path/filepath"
-	"strconv"
-
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/slog/internal"
 	"log"
 
 	"runtime"
@@ -52,63 +47,6 @@ func SetLogLoggerLevel(level Level) (oldLevel Level) {
 }
 
 func init() {
-	if os.Getenv("LOG_ROTATE_ENABLED") == "true" {
-		logFileName := "goagent/fi-otel-goagent.log"
-		baseLogDirOnPlatform := "/applogs"
-		baseLogDirOnLocal := filepath.Join(os.Getenv("HOME"), "applogs")
-		baseLogDirOnCurrent := filepath.Join(".", "applogs")
-		baseDir := baseLogDirOnPlatform
-		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
-			baseDir = baseLogDirOnLocal
-			if _, err := os.Stat(baseDir); os.IsNotExist(err) {
-				baseDir = baseLogDirOnCurrent
-			}
-		}
-		appId := os.Getenv("APP_ID")
-		var logFilePath string
-		if appId == "" {
-			logFilePath = filepath.Join(baseDir, logFileName)
-		} else {
-			logFilePath = filepath.Join(baseDir, appId, logFileName)
-		}
-		if os.Getenv("LOG_FILE_PATH") != "" {
-			logFilePath = os.Getenv("LOG_FILE_PATH")
-		}
-
-		maxSize := 10
-		if v := os.Getenv("LOG_MAX_SIZE_MB"); v != "" {
-			if n, err := strconv.Atoi(v); err == nil {
-				maxSize = n
-			}
-		}
-
-		maxBackups := 5
-		if v := os.Getenv("LOG_MAX_BACKUPS"); v != "" {
-			if n, err := strconv.Atoi(v); err == nil {
-				maxBackups = n
-			}
-		}
-
-		maxAge := 30
-		if v := os.Getenv("LOG_MAX_AGE_DAYS"); v != "" {
-			if n, err := strconv.Atoi(v); err == nil {
-				maxAge = n
-			}
-		}
-
-		compress := os.Getenv("LOG_COMPRESS") == "true"
-
-		logFile := &lumberjack.Logger{
-			Filename:   logFilePath,
-			MaxSize:    maxSize,
-			MaxBackups: maxBackups,
-			MaxAge:     maxAge,
-			Compress:   compress,
-		}
-		defaultLogger.Store(New(
-			NewJSONHandler(logFile, &HandlerOptions{Level: LevelDebug}),
-		))
-	}
 }
 
 // Default returns the default [Logger].

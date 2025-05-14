@@ -18,10 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/slog"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/slog/lumberjack"
 	"log"
 	http2 "net/http"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
@@ -69,6 +73,7 @@ var (
 	traceProvider      *trace.TracerProvider
 	metricsProvider    otelmetric.MeterProvider
 	batchSpanProcessor trace.SpanProcessor
+	OtelSlogLogger     *slog.Logger
 )
 
 func init() {
@@ -125,7 +130,7 @@ func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
 }
 
 func initOpenTelemetry(ctx context.Context) error {
-
+	initSlog()
 	batchSpanProcessor = newSpanProcessor(ctx)
 
 	if batchSpanProcessor != nil {
@@ -138,6 +143,66 @@ func initOpenTelemetry(ctx context.Context) error {
 	otel.SetTracerProvider(traceProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	return initMetrics()
+}
+
+func initSlog() {
+	if os.Getenv("OTEL_LOG_ENABLED") == "true" {
+		logFileName := "goagent/fi-otel-goagent.log"
+		baseLogDirOnPlatform := "/applogs"
+		baseLogDirOnLocal := filepath.Join(os.Getenv("HOME"), "applogs")
+		baseLogDirOnCurrent := filepath.Join(".", "applogs")
+		baseDir := baseLogDirOnPlatform
+		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+			baseDir = baseLogDirOnLocal
+			if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+				baseDir = baseLogDirOnCurrent
+			}
+		}
+		appId := os.Getenv("APP_ID")
+		var logFilePath string
+		if appId == "" {
+			logFilePath = filepath.Join(baseDir, logFileName)
+		} else {
+			logFilePath = filepath.Join(baseDir, appId, logFileName)
+		}
+		if os.Getenv("OTEL_LOG_FILE_PATH") != "" {
+			logFilePath = os.Getenv("OTEL_LOG_FILE_PATH")
+		}
+
+		maxSize := 10
+		if v := os.Getenv("OTEL_LOG_MAX_SIZE_MB"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxSize = n
+			}
+		}
+
+		maxBackups := 5
+		if v := os.Getenv("OTEL_LOG_MAX_BACKUPS"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxBackups = n
+			}
+		}
+
+		maxAge := 30
+		if v := os.Getenv("OTEL_LOG_MAX_AGE_DAYS"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				maxAge = n
+			}
+		}
+
+		compress := os.Getenv("OTEL_LOG_COMPRESS") == "true"
+
+		logFile := &lumberjack.Logger{
+			Filename:   logFilePath,
+			MaxSize:    maxSize,
+			MaxBackups: maxBackups,
+			MaxAge:     maxAge,
+			Compress:   compress,
+		}
+		OtelSlogLogger = (slog.New(
+			slog.NewJSONHandler(logFile, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		))
+	}
 }
 
 func initMetrics() error {

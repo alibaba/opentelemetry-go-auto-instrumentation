@@ -7,7 +7,7 @@ package slog
 import (
 	"context"
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/slog/internal/buffer"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/slog/internal/buffer"
 
 	"io"
 	"reflect"
@@ -442,7 +442,7 @@ func (s *handleState) closeGroup(name string) {
 	if s.h.json {
 		s.buf.WriteByte('}')
 	} else {
-		(*s.prefix) = (*s.prefix)[:len(*s.prefix)-len(name)-1 /* for keyComponentSep */ ]
+		(*s.prefix) = (*s.prefix)[:len(*s.prefix)-len(name)-1 /* for keyComponentSep */]
 	}
 	s.sep = s.h.attrSep()
 	if s.groups != nil {
