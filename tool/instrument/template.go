@@ -87,7 +87,7 @@ func (c *CallContextImpl) GetPackageName() string { return c.PackageName }
 // Variable Template
 var OtelGetStackImpl func() []byte = nil
 var OtelPrintStackImpl func([]byte) = nil
-var OtelSlogImpl func(msg string, args ...any) = nil
+var OtelSlogImpl func(msg string, args ...interface{}) = nil
 
 // Trampoline Template
 func OtelOnEnterTrampoline() (CallContext, bool) {

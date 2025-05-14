@@ -4,16 +4,12 @@
 package main
 
 import (
-	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg" // use otel setup
-	"github.com/natefinch/lumberjack"                                // lumberjack for file rotation
-	_ "go.opentelemetry.io/otel"                                     // depends on otel
-	_ "go.opentelemetry.io/otel/baggage"                             // depends on otel
-	_ "go.opentelemetry.io/otel/sdk/trace"                           // depends on otel
-	"golang.org/x/exp/slog"                                          // slog for structured logging
-	"log"                                                            // for log.Printf
-	"os"                                                             // os for file operations
-	"path/filepath"                                                  // filepath for file path manipulations
-	"runtime/debug"                                                  // for debug.Stack
-	"strconv"                                                        // strconv for string conversions
-	_ "unsafe"                                                       // for go:linkname when declaring printstack/getstack variable
+	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"     // use otel setup
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/slog" // use slog
+	_ "go.opentelemetry.io/otel"                                         // depends on otel
+	_ "go.opentelemetry.io/otel/baggage"                                 // depends on otel
+	_ "go.opentelemetry.io/otel/sdk/trace"                               // depends on otel
+	"log"                                                                // for log.Printf
+	"runtime/debug"                                                      // for debug.Stack
+	_ "unsafe"                                                           // for go:linkname when declaring printstack/getstack variable
 )
