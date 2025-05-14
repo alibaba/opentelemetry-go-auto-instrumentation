@@ -52,12 +52,6 @@ const (
 	DryRunLog        = "dry_run.log"
 	CompileRemix     = "remix"
 	VendorDir        = "vendor"
-	OtelSlogInit     = `
-var otelSlogLogger *slog.Logger
-func init() {
-	otelSlogLogger = slog.Default()
-}
-`
 )
 
 type DepProcessor struct {
@@ -748,8 +742,6 @@ func (dp *DepProcessor) addRuleImporter() error {
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
 	}
-	// slog logger initialization
-	content += OtelSlogInit
 
 	cnt := 0
 	for _, bundle := range dp.bundles {
@@ -763,7 +755,7 @@ func (dp *DepProcessor) addRuleImporter() error {
 		content += s
 		lb = fmt.Sprintf("//go:linkname slogLogger%d %s.OtelSlogImpl\n", cnt, bundle.ImportPath)
 		content += lb
-		s = fmt.Sprintf("var slogLogger%d = func(msg string, args ...any) { otelSlogLogger.Error(msg, args...) }\n", cnt)
+		s = fmt.Sprintf("var slogLogger%d = func(msg string, args ...interface{}) { pkg.OtelSlogLogger.Error(msg, args...) }\n", cnt)
 		content += s
 		cnt++
 	}

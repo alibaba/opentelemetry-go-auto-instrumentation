@@ -4,12 +4,11 @@
 package main
 
 import (
-	_ "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"     // use otel setup
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/slog" // use slog
-	_ "go.opentelemetry.io/otel"                                         // depends on otel
-	_ "go.opentelemetry.io/otel/baggage"                                 // depends on otel
-	_ "go.opentelemetry.io/otel/sdk/trace"                               // depends on otel
-	"log"                                                                // for log.Printf
-	"runtime/debug"                                                      // for debug.Stack
-	_ "unsafe"                                                           // for go:linkname when declaring printstack/getstack variable
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg" // use otel setup
+	_ "go.opentelemetry.io/otel"                                   // depends on otel
+	_ "go.opentelemetry.io/otel/baggage"                           // depends on otel
+	_ "go.opentelemetry.io/otel/sdk/trace"                         // depends on otel
+	"log"                                                          // for log.Printf
+	"runtime/debug"                                                // for debug.Stack
+	_ "unsafe"                                                     // for go:linkname when declaring printstack/getstack variable
 )
