@@ -97,14 +97,13 @@ func OtelOnEnterTrampoline() (CallContext, bool) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			slogLogger := OtelSlogImpl
-			if slogLogger == nil {
-				fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
+			slogLogger, fetchStack, printStack := OtelSlogImpl, OtelGetStackImpl, OtelPrintStackImpl
+			if slogLogger != nil && fetchStack != nil {
+				slogLogger("failed to exec onEnter hook", "onEnter", "OtelOnEnterNamePlaceholder", "error", err, "stack", fetchStack())
+			} else {
 				if fetchStack != nil && printStack != nil {
 					printStack(fetchStack())
 				}
-			} else {
-				slogLogger("failed to exec onEnter hook", "onEnter", "OtelOnEnterNamePlaceholder", "error", err)
 			}
 		}
 	}()
@@ -122,14 +121,13 @@ func OtelOnExitTrampoline(callContext CallContext) {
 			if e, ok := err.(error); ok {
 				println(e.Error())
 			}
-			slogLogger := OtelSlogImpl
-			if slogLogger == nil {
-				fetchStack, printStack := OtelGetStackImpl, OtelPrintStackImpl
+			slogLogger, fetchStack, printStack := OtelSlogImpl, OtelGetStackImpl, OtelPrintStackImpl
+			if slogLogger != nil && fetchStack != nil {
+				slogLogger("failed to exec onExit hook", "onExit", "OtelOnExitNamePlaceholder", "error", err, "stack", fetchStack())
+			} else {
 				if fetchStack != nil && printStack != nil {
 					printStack(fetchStack())
 				}
-			} else {
-				slogLogger("failed to exec onExit hook", "onEnter", "OtelOnExitNamePlaceholder", "error", err)
 			}
 		}
 	}()
