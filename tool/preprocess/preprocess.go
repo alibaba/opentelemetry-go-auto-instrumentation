@@ -742,6 +742,7 @@ func (dp *DepProcessor) addRuleImporter() error {
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
 	}
+
 	cnt := 0
 	for _, bundle := range dp.bundles {
 		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
@@ -751,6 +752,10 @@ func (dp *DepProcessor) addRuleImporter() error {
 		lb = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n", cnt, bundle.ImportPath)
 		content += lb
 		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
+		content += s
+		lb = fmt.Sprintf("//go:linkname slogLogger%d %s.OtelSlogImpl\n", cnt, bundle.ImportPath)
+		content += lb
+		s = fmt.Sprintf("var slogLogger%d = func(msg string, args ...interface{}) { pkg.OtelSlogLogger.Error(msg, args...) }\n", cnt)
 		content += s
 		cnt++
 	}
