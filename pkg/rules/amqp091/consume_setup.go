@@ -16,14 +16,16 @@ package amqp091
 
 import (
 	"context"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
-	_ "unsafe"
 )
 
+//go:linkname consumeOnEnter github.com/rabbitmq/amqp091-go.consumeOnEnter
 func consumeOnEnter(call api.CallContext,
 	_ interface{},
 	tag string,
@@ -55,6 +57,8 @@ func consumeOnEnter(call api.CallContext,
 	data["rabbitMQ_consume_request"] = request
 	call.SetData(data)
 }
+
+//go:linkname consumeOnExit github.com/rabbitmq/amqp091-go.consumeOnExit
 func consumeOnExit(call api.CallContext, b bool) {
 	data, ok := call.GetData().(map[string]interface{})
 	if !ok {

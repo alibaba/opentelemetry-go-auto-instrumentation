@@ -15,13 +15,17 @@
 package error11
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 )
 
+//go:linkname onEnterTestSkip2 errorstest/auxiliary.onEnterTestSkip2
 func onEnterTestSkip2(call api.CallContext) {
 	call.SetSkipCall(true)
 }
 
+//go:linkname onExitTestSkip2 errorstest/auxiliary.onExitTestSkip2
 func onExitTestSkip2(call api.CallContext, _ int) {
 	call.SetReturnVal(0, 0x512)
 }

@@ -28,4 +28,4 @@ jobs:
     - name: Build
       run: make build
     - name: Test
-      run: go test -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test -run ".*Muzzle"
+      run: go test -a -timeout 50m -v github.com/alibaba/opentelemetry-go-auto-instrumentation/test -run ".*Muzzle"

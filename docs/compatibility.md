@@ -11,11 +11,11 @@ For versions of Go that are no longer supported upstream, `opentelemetry-go-auto
 stop ensuring compatibility with these versions in the following manner:
 
 - A minor release of `opentelemetry-go-auto-instrumentation` will be made to add support for the new
-  supported release of Go.
+supported release of Go.
 - The following minor release of `opentelemetry-go-auto-instrumentation` will remove compatibility
-  testing for the oldest (now archived upstream) version of Go. This, and
-  future, releases of `opentelemetry-go-auto-instrumentation` may include features only supported by
-  the currently supported versions of Go.
+testing for the oldest (now archived upstream) version of Go. This, and
+future, releases of `opentelemetry-go-auto-instrumentation` may include features only supported by
+the currently supported versions of Go.
 
 This project is tested on the following systems.
 
@@ -58,3 +58,6 @@ mapping of the `otel` to the supported OTel versions is as follows:
 | v0.7.0       | v1.33.0      | v0.58.0              |
 | v0.8.0       | v1.33.0      | v0.58.0              |
 | v0.9.0       | v1.35.0      | v0.60.0              |
+| v0.9.1       | v1.35.0      | v0.60.0              |
+| v0.9.2       | v1.35.0      | v0.60.0              |
+| v0.10.0      | v1.35.0      | v0.60.0              |
