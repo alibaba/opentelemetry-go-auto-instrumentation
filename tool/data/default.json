@@ -965,7 +965,7 @@
     "ReceiverType": "\\*Writer",
     "OnEnter": "producerWriteMessagesOnEnter",
     "OnExit": "producerWriteMessagesOnExit",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kafka-go"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/segmentio-kafka-go"
   },
   {
     "Version": "[0.4.0,)",
@@ -974,6 +974,6 @@
     "ReceiverType": "\\*Reader",
     "OnEnter": "consumerReadMessageOnEnter",
     "OnExit": "consumerReadMessageOnExit",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kafka-go"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/segmentio-kafka-go"
   }
 ]

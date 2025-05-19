@@ -28,16 +28,25 @@ import (
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
+	"os"
 )
 
 // Instrumentation enabler controller
-var kafkaEnabler = instrumenter.NewDefaultInstrumentEnabler()
+var kafkaEnabler = kafkaInnerEnabler{os.Getenv("OTEL_SEGMENTIO_KAFKA_ENABLED") != "false"}
 
 // Cache Instrumenter instances to avoid repeated creation
 var (
 	producerInstrumenter = buildKafkaProducerInstrumenter()
 	consumerInstrumenter = buildKafkaConsumerInstrumenter()
 )
+
+type kafkaInnerEnabler struct {
+	enabled bool
+}
+
+func (k kafkaInnerEnabler) Enable() bool {
+	return k.enabled
+}
 
 // KafkaProducerCarrier implements OpenTelemetry propagator carrier interface for producers
 type kafkaProducerCarrier struct {
@@ -250,11 +259,6 @@ func (extractor *kafkaProducerAttributesExtractor) OnStart(attributes []attribut
 }
 
 func (extractor *kafkaProducerAttributesExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, request kafkaProducerReq, response any, err error) ([]attribute.KeyValue, context.Context) {
-	if err != nil {
-		attributes = append(attributes, attribute.String("error", err.Error()))
-	}
-	attributes = append(attributes, attribute.Bool("messaging.kafka.async", request.async))
-	attributes = append(attributes, attribute.String("messaging.kafka.broker_address", request.addr.String()))
 	return attributes, ctx
 }
 
@@ -267,9 +271,6 @@ func (extractor *kafkaConsumerAttributesExtractor) OnStart(attributes []attribut
 }
 
 func (extractor *kafkaConsumerAttributesExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, request kafkaConsumerReq, response any, err error) ([]attribute.KeyValue, context.Context) {
-	if err != nil {
-		attributes = append(attributes, attribute.String("error", err.Error()))
-	}
 	return attributes, ctx
 }
 

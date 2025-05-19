@@ -18,9 +18,10 @@ import (
 	"context"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/segmentio/kafka-go"
+	_ "unsafe"
 )
 
-// github.com/segmentio/kafka-go/Writer.WriteMessages
+//go:linkname producerWriteMessagesOnEnter github.com/segmentio/kafka-go.producerWriteMessagesOnEnter
 func producerWriteMessagesOnEnter(call api.CallContext, writer *kafka.Writer, ctx context.Context, messages ...kafka.Message) {
 	if !kafkaEnabler.Enable() {
 		return
@@ -62,6 +63,7 @@ func producerWriteMessagesOnEnter(call api.CallContext, writer *kafka.Writer, ct
 	call.SetParam(2, messageCopies)
 }
 
+//go:linkname producerWriteMessagesOnExit github.com/segmentio/kafka-go.producerWriteMessagesOnExit
 func producerWriteMessagesOnExit(call api.CallContext, err error) {
 	if !kafkaEnabler.Enable() {
 		return

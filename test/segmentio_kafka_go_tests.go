@@ -13,18 +13,18 @@ import (
 	"time"
 )
 
-const kafkaModuleName = "kafka-go"
+const kafkaModuleName = "segmentio-kafka-go"
 
 func init() {
 	TestCases = append(TestCases,
-		NewGeneralTestCase("kafka-basic-test", kafkaModuleName, "0.4.0", "", "1.18.0", "", TestBasicKafka),
+		NewGeneralTestCase("segmentio-kafka-go-basic-test", kafkaModuleName, "0.4.0", "", "1.18.0", "", TestBasicKafka),
 	)
 }
 
 func TestBasicKafka(t *testing.T, env ...string) {
 	containers := initKafkaContainer(t)
 	defer containers.CleanupContainers(context.Background())
-	UseApp("kafka-go/v0.4.7")
+	UseApp("segmentio-kafka-go/v0.4.48")
 	RunGoBuild(t, "go", "build", "test_kafka_basic.go", "base.go")
 	env = append(env, "KAFKA_ADDR="+containers.KafkaAddress)
 	RunApp(t, "test_kafka_basic", env...)

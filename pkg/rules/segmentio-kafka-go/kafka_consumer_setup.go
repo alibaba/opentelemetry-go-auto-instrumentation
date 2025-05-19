@@ -19,21 +19,23 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/segmentio/kafka-go"
 	"time"
+	_ "unsafe"
 )
 
-// github.com/segmentio/kafka-go/Reader.ReadMessage
+//go:linkname consumerReadMessageOnEnter github.com/segmentio/kafka-go.consumerReadMessageOnEnter
 func consumerReadMessageOnEnter(call api.CallContext, _ interface{}, ctx context.Context) {
 	if !kafkaEnabler.Enable() {
 		return
 	}
 
 	instrumentationData := map[string]interface{}{
-		"originalContext": ctx,
-		"startTimestamp":  time.Now(),
+		"parentContext":  ctx,
+		"startTimestamp": time.Now(),
 	}
 	call.SetData(instrumentationData)
 }
 
+//go:linkname consumerReadMessageOnExit github.com/segmentio/kafka-go.consumerReadMessageOnExit
 func consumerReadMessageOnExit(call api.CallContext, message kafka.Message, err error) {
 	if !kafkaEnabler.Enable() {
 		return
@@ -44,13 +46,13 @@ func consumerReadMessageOnExit(call api.CallContext, message kafka.Message, err 
 		return
 	}
 
-	originalContext := instrumentationData["originalContext"].(context.Context)
+	parentContext := instrumentationData["parentContext"].(context.Context)
 	startTimestamp := instrumentationData["startTimestamp"].(time.Time)
 	endTimestamp := time.Now()
 
 	consumerRequest := kafkaConsumerReq{msg: message}
 	consumerInstrumenter.StartAndEnd(
-		originalContext,
+		parentContext,
 		consumerRequest,
 		nil,
 		err,
