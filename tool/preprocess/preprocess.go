@@ -131,8 +131,8 @@ func parseGoMod(gomod string) (*modfile.File, error) {
 	return modFile, nil
 }
 func (dp *DepProcessor) initCmd() {
-	// There is a tricky, all arguments after the tool itself are saved for
-	// later use, which means the subcommand "go build" are also  included
+	// There is a tricky, all arguments after the otel tool itself are saved for
+	// later use, which means the subcommand "go build" itself are also included
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	util.AssertGoBuild(dp.goBuildCmd)
@@ -456,7 +456,9 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 		buildArg := buildCmd[i]
 
 		// Stop canary when we see a build flag or a "build" command
-		if strings.HasPrefix("-", buildArg) || buildArg == "build" {
+		if strings.HasPrefix("-", buildArg) ||
+			buildArg == "build" ||
+			buildArg == "install" {
 			break
 		}
 
@@ -534,9 +536,11 @@ func runDryBuild(goBuildCmd []string) ([]string, error) {
 	if err != nil {
 		return nil, errc.New(errc.ErrCreateFile, err.Error())
 	}
-	// The full build command is: "go build -a -x -n  {...}"
-	args := []string{"go", "build", "-a", "-x", "-n"}
-	args = append(args, goBuildCmd[2:]...)
+	// The full build command is: "go build/install -a -x -n  {...}"
+	args := []string{}
+	args = append(args, goBuildCmd[:2]...)             // go build/install
+	args = append(args, []string{"-a", "-x", "-n"}...) // -a -x -n
+	args = append(args, goBuildCmd[2:]...)             // {...} remaining
 	util.AssertGoBuild(goBuildCmd)
 	util.AssertGoBuild(args)
 
@@ -584,12 +588,11 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	if err != nil {
 		return errc.New(errc.ErrGetExecutable, err.Error())
 	}
-	args := []string{
-		"go",
-		"build",
-		// Add remix subcommand to tell the tool this is toolexec mode
-		"-toolexec=" + exe + " " + CompileRemix,
-	}
+	// go build/install
+	args := []string{}
+	args = append(args, goBuildCmd[:2]...)
+	// Remix toolexec
+	args = append(args, "-toolexec="+exe+" "+CompileRemix)
 
 	// Leave the temporary compilation directory
 	args = append(args, util.BuildWork)
@@ -639,7 +642,7 @@ func precheck() error {
 		config.PrintVersion()
 		os.Exit(0)
 	}
-	if os.Args[2] != "build" {
+	if os.Args[2] != "build" && os.Args[2] != "install" {
 		// exec original go command
 		err := util.RunCmd(os.Args[1:]...)
 		if err != nil {

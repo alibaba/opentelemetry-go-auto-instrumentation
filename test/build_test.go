@@ -77,3 +77,9 @@ func TestBuildProject6(t *testing.T) {
 	ExpectPreprocessContains(t, util.DebugLogFile, "fmt")
 	ExpectPreprocessNotContains(t, util.DebugLogFile, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
 }
+
+func TestGoInstall(t *testing.T) {
+	const AppName = "build"
+	UseApp(AppName)
+	RunGoBuild(t, "go", "install", "cmd/foo.go")
+}

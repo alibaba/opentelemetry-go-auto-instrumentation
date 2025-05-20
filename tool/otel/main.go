@@ -38,6 +38,7 @@ const (
 var usage = `Usage: {} <command> [args]
 Example:
 	{} go build
+	{} go install
 	{} go build main.go
 	{} version
 	{} set -verbose -rule=custom.json
