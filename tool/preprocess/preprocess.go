@@ -207,8 +207,7 @@ func (dp *DepProcessor) initMod() (err error) {
 	// module, that's why we do this here.
 	// TODO: Once we publish the alibaba-otel/pkg module, we can remove this code
 	// along with the replace directive in the go.mod file.
-	pkgUrl := "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@f55e1e8"
-	dp.pkgLocalCache, err = dp.findModCacheDir(pkgUrl)
+	dp.pkgLocalCache, err = dp.findModCacheDir()
 	if err != nil {
 		return err
 	}
