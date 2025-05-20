@@ -42,8 +42,8 @@ else
 endif
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
-XVERSION := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) -X=$(MOD_NAME)/pkg/inst-api/version.Tag=v$(VERSION)
-LDFLAGS := -ldflags="$(XVERSION) $(STRIP_DEBUG)"
+XVALUES := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) -X=$(MOD_NAME)/tool/config.BuildPath=$(PWD)/pkg -X=$(MOD_NAME)/pkg/inst-api/version.Tag=v$(VERSION)
+LDFLAGS := -ldflags="$(XVALUES) $(STRIP_DEBUG)"
 GCFLAGS := -gcflags="all=-trimpath=$(PWD)" -asmflags="all=-trimpath=$(PWD)" 
 BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a $(LDFLAGS) $(GCFLAGS) -o $(3) ./tool/cmd
 
