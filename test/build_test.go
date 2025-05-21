@@ -81,5 +81,5 @@ func TestBuildProject6(t *testing.T) {
 func TestGoInstall(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
-	RunGoBuild(t, "go", "install", "cmd/foo.go")
+	RunGoBuild(t, "go", "install", "./cmd/...")
 }
