@@ -58,14 +58,9 @@ type BuildConfig struct {
 	DisableDefault bool
 }
 
-// @@This value is specified by the build system.
 // This is the version of the tool, which will be printed when the -version flag
-// is passed.
+// is passed. This value is specified by the build system.
 var ToolVersion = "1.0.0"
-
-// @@This value is specified by the build system.
-// It specifies the source path of the tool, which will be used to find the rules
-var BuildPath = ""
 
 var conf *BuildConfig
 
