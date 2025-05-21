@@ -190,7 +190,22 @@ func (dp *DepProcessor) initMod() (err error) {
 					}
 				}
 				if !found {
-					dp.goBuildCmd = append(dp.goBuildCmd, OtelImporter)
+					var importerPath string
+					lastPackage := dp.goBuildCmd[len(dp.goBuildCmd)-1]
+					if filepath.IsAbs(lastPackage) {
+						importerPath = dp.generatedOf(OtelImporter)
+					} else {
+						workdir, err := os.Getwd()
+						if err != nil {
+							return err
+						}
+						relativePath, err := filepath.Rel(workdir, dp.getGoModDir())
+						if err != nil {
+							return err
+						}
+						importerPath = filepath.Join(relativePath, OtelImporter)
+					}
+					dp.goBuildCmd = append(dp.goBuildCmd, importerPath)
 				}
 			}
 		}
