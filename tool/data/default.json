@@ -594,7 +594,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/elasticsearch"
   },
   {
-    "Version": "[2.43.0,2.52.7)",
+    "Version": "[2.43.0,2.52.9)",
     "ImportPath": "github.com/gofiber/fiber/v2",
     "Function": "handler",
     "ReceiverType": "\\*App",
