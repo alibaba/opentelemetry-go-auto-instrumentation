@@ -17,10 +17,10 @@ package test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const redigo_dependency_name = "github.com/gomodule/redigo"
@@ -72,6 +72,7 @@ func initRedigoContainer() (testcontainers.Container, nat.Port) {
 	req := testcontainers.ContainerRequest{
 		Image:        "redis:latest",
 		ExposedPorts: []string{"6379/tcp"},
+		WaitingFor:   wait.ForLog("Ready to accept connections"),
 	}
 	redisC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -80,7 +81,6 @@ func initRedigoContainer() (testcontainers.Container, nat.Port) {
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(10 * time.Second)
 	port, err := redisC.MappedPort(context.Background(), "6379")
 	if err != nil {
 		panic(err)

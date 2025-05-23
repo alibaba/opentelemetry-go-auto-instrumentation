@@ -17,10 +17,10 @@ package test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const mongo_dependency_name = "go.mongodb.org/mongo-driver"
@@ -73,6 +73,7 @@ func initMongoContainer() (testcontainers.Container, nat.Port) {
 	req := testcontainers.ContainerRequest{
 		Image:        "mongo:4.0",
 		ExposedPorts: []string{"27017/tcp"},
+		WaitingFor:   wait.ForLog("waiting for connections"),
 	}
 	mongoC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -81,7 +82,6 @@ func initMongoContainer() (testcontainers.Container, nat.Port) {
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(5 * time.Second)
 	port, err := mongoC.MappedPort(context.Background(), "27017")
 	if err != nil {
 		panic(err)

@@ -17,7 +17,6 @@ package test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
@@ -187,7 +186,6 @@ func init8xMySqlContainer() (testcontainers.Container, nat.Port) {
 	if err := mysqlContainer.Start(ctx); err != nil {
 		panic(err)
 	}
-	time.Sleep(5 * time.Second)
 	port, err := mysqlContainer.MappedPort(ctx, "3306")
 	if err != nil {
 		panic(err)

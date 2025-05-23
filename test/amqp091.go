@@ -17,10 +17,10 @@ package test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const rabbitmq_dependency_name = "https://github.com/rabbitmq/amqp091-go"
@@ -51,6 +51,7 @@ func initRabbitMQContainer() (testcontainers.Container, nat.Port) {
 	req := testcontainers.ContainerRequest{
 		Image:        "rabbitmq:4.0.7-alpine",
 		ExposedPorts: []string{"5672/tcp"},
+		WaitingFor:   wait.ForLog("Server startup complete"),
 	}
 	rabbitC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -59,7 +60,6 @@ func initRabbitMQContainer() (testcontainers.Container, nat.Port) {
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(5 * time.Second)
 	port, err := rabbitC.MappedPort(context.Background(), "5672")
 	if err != nil {
 		panic(err)
