@@ -70,9 +70,10 @@ func waitForMetrics() (metricdata.ResourceMetrics, error) {
 		err error
 	)
 	finish := false
+	timeout := time.After(20 * time.Second)
 	for !finish {
 		select {
-		case <-time.After(20 * time.Second):
+		case <-timeout:
 			log.Fatalf("Timeout waiting for metrics!")
 			finish = true
 		default:
@@ -112,9 +113,10 @@ func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 	defer trace.ResetTestSpans()
 	finish := false
 	var traces []tracetest.SpanStubs
+	timeout := time.After(20 * time.Second)
 	for !finish {
 		select {
-		case <-time.After(20 * time.Second):
+		case <-timeout:
 			log.Printf("Timeout waiting for traces!")
 			finish = true
 		default:

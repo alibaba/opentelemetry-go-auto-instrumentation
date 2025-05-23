@@ -61,3 +61,4 @@ test/redigo/v1.9.0/test_unsupported_commands
 test/elasticsearch/v8.5.0/test_es_typedclient
 test/elasticsearch/v8.4.0/test_es_crud
 test/nacos/v2.0.0/test_nacos_config
+test/amqp091/v1.10.0/test_mq_cascading
