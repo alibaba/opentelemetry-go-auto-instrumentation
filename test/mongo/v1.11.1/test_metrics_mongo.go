@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -44,7 +43,6 @@ func main() {
 	if err != nil {
 		log.Printf("failed to create collection: %v", err)
 	}
-	time.Sleep(3 * time.Second)
 	verifier.WaitAndAssertMetrics(map[string]func(metricdata.ResourceMetrics){
 		// TODO : verifier
 	})

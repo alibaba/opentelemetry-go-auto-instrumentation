@@ -16,7 +16,6 @@ package main
 
 import (
 	"strconv"
-	"time"
 
 	"log"
 	"os"
@@ -52,7 +51,6 @@ func main() {
 		log.Printf("failed to create index %v\n", err)
 	}
 
-	time.Sleep(3 * time.Second)
 	verifier.WaitAndAssertMetrics(map[string]func(metricdata.ResourceMetrics){
 		"http.client.request.duration": func(mrs metricdata.ResourceMetrics) {
 			if len(mrs.ScopeMetrics) <= 0 {

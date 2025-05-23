@@ -43,8 +43,7 @@ func init() {
 }
 
 func TestESCrud(t *testing.T, env ...string) {
-	esC, esPort := initElasticSearchContainer()
-	defer testcontainers.CleanupContainer(t, esC)
+	_, esPort := initElasticSearchContainer()
 	UseApp("elasticsearch/v8.4.0")
 	RunGoBuild(t, "go", "build", "test_es_crud.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
@@ -52,8 +51,7 @@ func TestESCrud(t *testing.T, env ...string) {
 }
 
 func TestESMetrics(t *testing.T, env ...string) {
-	esC, esPort := initElasticSearchContainer()
-	defer testcontainers.CleanupContainer(t, esC)
+	_, esPort := initElasticSearchContainer()
 	UseApp("elasticsearch/v8.4.0")
 	RunGoBuild(t, "go", "build", "test_es_metrics.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
@@ -61,8 +59,7 @@ func TestESMetrics(t *testing.T, env ...string) {
 }
 
 func TestESTypedClient(t *testing.T, env ...string) {
-	esC, esPort := initElasticSearchContainer()
-	defer testcontainers.CleanupContainer(t, esC)
+	_, esPort := initElasticSearchContainer()
 	UseApp("elasticsearch/v8.5.0")
 	RunGoBuild(t, "go", "build", "test_es_typedclient.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())
@@ -70,8 +67,7 @@ func TestESTypedClient(t *testing.T, env ...string) {
 }
 
 func TestEsTypedClientMetrics(t *testing.T, env ...string) {
-	esC, esPort := initElasticSearchContainer()
-	defer testcontainers.CleanupContainer(t, esC)
+	_, esPort := initElasticSearchContainer()
 	UseApp("elasticsearch/v8.5.0")
 	RunGoBuild(t, "go", "build", "test_es_typedclient_metrics.go")
 	env = append(env, "OTEL_ES_PORT="+esPort.Port())

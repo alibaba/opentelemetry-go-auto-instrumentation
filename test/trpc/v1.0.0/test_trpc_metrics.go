@@ -29,7 +29,6 @@ func main() {
 	clientSendReq()
 
 	// Verify metrics
-	time.Sleep(5 * time.Second)
 	verifier.WaitAndAssertMetrics(map[string]func(metricdata.ResourceMetrics){
 		"rpc.server.duration": func(mrs metricdata.ResourceMetrics) {
 			if len(mrs.ScopeMetrics) <= 0 {

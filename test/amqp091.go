@@ -16,10 +16,11 @@ package test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
-	"testing"
-	"time"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const rabbitmq_dependency_name = "https://github.com/rabbitmq/amqp091-go"
@@ -33,16 +34,14 @@ func init() {
 
 }
 func TestRabbitMQCascading(t *testing.T, env ...string) {
-	rabbitC, port := initRabbitMQContainer()
-	defer testcontainers.CleanupContainer(t, rabbitC)
+	_, port := initRabbitMQContainer()
 	UseApp("amqp091/v1.10.0")
 	RunGoBuild(t, "go", "build", "test_mq_cascading.go", "base.go")
 	env = append(env, "RabbitMQ_PORT="+port.Port())
 	RunApp(t, "test_mq_cascading", env...)
 }
 func TestRabbitMQNOCascading(t *testing.T, env ...string) {
-	rabbitC, port := initRabbitMQContainer()
-	defer testcontainers.CleanupContainer(t, rabbitC)
+	_, port := initRabbitMQContainer()
 	UseApp("amqp091/v1.10.0")
 	RunGoBuild(t, "go", "build", "test_mq_no_cascading.go", "base.go")
 	env = append(env, "RabbitMQ_PORT="+port.Port())
@@ -52,6 +51,7 @@ func initRabbitMQContainer() (testcontainers.Container, nat.Port) {
 	req := testcontainers.ContainerRequest{
 		Image:        "rabbitmq:4.0.7-alpine",
 		ExposedPorts: []string{"5672/tcp"},
+		WaitingFor:   wait.ForLog("Server startup complete"),
 	}
 	rabbitC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -60,7 +60,6 @@ func initRabbitMQContainer() (testcontainers.Container, nat.Port) {
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(5 * time.Second)
 	port, err := rabbitC.MappedPort(context.Background(), "5672")
 	if err != nil {
 		panic(err)
