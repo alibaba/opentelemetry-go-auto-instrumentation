@@ -16,7 +16,6 @@ package test
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -39,8 +38,7 @@ func init() {
 }
 
 func TestCrudMongo(t *testing.T, env ...string) {
-	mongoC, mongoPort := initMongoContainer()
-	defer testcontainers.CleanupContainer(t, mongoC)
+	_, mongoPort := initMongoContainer()
 	UseApp("mongo/v1.11.1")
 	RunGoBuild(t, "go", "build", "test_crud_mongo.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
@@ -48,8 +46,7 @@ func TestCrudMongo(t *testing.T, env ...string) {
 }
 
 func TestCursor(t *testing.T, env ...string) {
-	mongoC, mongoPort := initMongoContainer()
-	defer testcontainers.CleanupContainer(t, mongoC)
+	_, mongoPort := initMongoContainer()
 	UseApp("mongo/v1.11.1")
 	RunGoBuild(t, "go", "build", "test_cursor.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
@@ -57,8 +54,7 @@ func TestCursor(t *testing.T, env ...string) {
 }
 
 func TestBatch(t *testing.T, env ...string) {
-	mongoC, mongoPort := initMongoContainer()
-	defer testcontainers.CleanupContainer(t, mongoC)
+	_, mongoPort := initMongoContainer()
 	UseApp("mongo/v1.11.1")
 	RunGoBuild(t, "go", "build", "test_batch.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
@@ -66,8 +62,7 @@ func TestBatch(t *testing.T, env ...string) {
 }
 
 func TestMetrics(t *testing.T, env ...string) {
-	mongoC, mongoPort := initMongoContainer()
-	defer testcontainers.CleanupContainer(t, mongoC)
+	_, mongoPort := initMongoContainer()
 	UseApp("mongo/v1.11.1")
 	RunGoBuild(t, "go", "build", "test_metrics_mongo.go", "dsn.go")
 	env = append(env, "MONGO_PORT="+mongoPort.Port())
@@ -92,10 +87,4 @@ func initMongoContainer() (testcontainers.Container, nat.Port) {
 		panic(err)
 	}
 	return mongoC, port
-}
-
-func clearMongoContainer(mongoC testcontainers.Container) {
-	if err := mongoC.Terminate(context.Background()); err != nil {
-		log.Fatal(err)
-	}
 }

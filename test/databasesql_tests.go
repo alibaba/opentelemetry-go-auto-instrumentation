@@ -43,8 +43,8 @@ func init() {
 }
 
 func TestMySql5xAccessDatabase(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init5xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init5xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_access_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -53,8 +53,8 @@ func TestMySql5xAccessDatabase(t *testing.T, env ...string) {
 }
 
 func TestMySql5xFetchingDatabase(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init5xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init5xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_fetching_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -63,8 +63,8 @@ func TestMySql5xFetchingDatabase(t *testing.T, env ...string) {
 }
 
 func TestMySql5xModifyData(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init5xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init5xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_modify_data.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -73,8 +73,8 @@ func TestMySql5xModifyData(t *testing.T, env ...string) {
 }
 
 func TestMySql5xSingleRowQuery(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init5xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init5xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_single_row_query.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -83,8 +83,8 @@ func TestMySql5xSingleRowQuery(t *testing.T, env ...string) {
 }
 
 func TestMySql5xTransaction(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init5xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init5xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_transaction.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -93,8 +93,8 @@ func TestMySql5xTransaction(t *testing.T, env ...string) {
 }
 
 func TestMySql5xPreparedStatement(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init5xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init5xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_prepared_statement.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -103,8 +103,8 @@ func TestMySql5xPreparedStatement(t *testing.T, env ...string) {
 }
 
 func TestMySql8xAccessDatabase(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init8xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_access_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -113,8 +113,8 @@ func TestMySql8xAccessDatabase(t *testing.T, env ...string) {
 }
 
 func TestMySql8xFetchingDatabase(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init8xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_fetching_database.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -123,8 +123,8 @@ func TestMySql8xFetchingDatabase(t *testing.T, env ...string) {
 }
 
 func TestMySql8xModifyData(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init8xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_modify_data.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -133,8 +133,8 @@ func TestMySql8xModifyData(t *testing.T, env ...string) {
 }
 
 func TestSingleRowQuery(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init8xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_single_row_query.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -143,8 +143,8 @@ func TestSingleRowQuery(t *testing.T, env ...string) {
 }
 
 func TestTransaction(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init8xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_transaction.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())
@@ -153,8 +153,8 @@ func TestTransaction(t *testing.T, env ...string) {
 }
 
 func TestPreparedStatement(t *testing.T, env ...string) {
-	mysqlC, mysqlPort := init8xMySqlContainer()
-	defer testcontainers.CleanupContainer(t, mysqlC)
+	_, mysqlPort := init8xMySqlContainer()
+
 	UseApp("databasesql/mysql")
 	RunGoBuild(t, "go", "build", "test_prepared_statement.go")
 	env = append(env, "MYSQL_PORT="+mysqlPort.Port())

@@ -16,10 +16,11 @@ package test
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go"
 	"testing"
 	"time"
+
+	"github.com/docker/go-connections/nat"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const rabbitmq_dependency_name = "https://github.com/rabbitmq/amqp091-go"
@@ -33,16 +34,14 @@ func init() {
 
 }
 func TestRabbitMQCascading(t *testing.T, env ...string) {
-	rabbitC, port := initRabbitMQContainer()
-	defer testcontainers.CleanupContainer(t, rabbitC)
+	_, port := initRabbitMQContainer()
 	UseApp("amqp091/v1.10.0")
 	RunGoBuild(t, "go", "build", "test_mq_cascading.go", "base.go")
 	env = append(env, "RabbitMQ_PORT="+port.Port())
 	RunApp(t, "test_mq_cascading", env...)
 }
 func TestRabbitMQNOCascading(t *testing.T, env ...string) {
-	rabbitC, port := initRabbitMQContainer()
-	defer testcontainers.CleanupContainer(t, rabbitC)
+	_, port := initRabbitMQContainer()
 	UseApp("amqp091/v1.10.0")
 	RunGoBuild(t, "go", "build", "test_mq_no_cascading.go", "base.go")
 	env = append(env, "RabbitMQ_PORT="+port.Port())
