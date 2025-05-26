@@ -79,3 +79,10 @@ test/nacos/v2.1.0/test_nacos_config
 test/trpc/v1.0.0/test_trpc_basic
 test/trpc/v1.0.0/test_trpc_metrics
 test/zap/test_zap_with_field
+
+test/nethttp/nethttp
+test/redigo/v1.9.0/redigo
+test/redis/v8.11.0/test_redis_ring
+test/redis/v8.11.0/v8.11.0
+test/redis/v9.0.5/test_executing_commands
+test/redis/v9.0.5/v9.0.5
