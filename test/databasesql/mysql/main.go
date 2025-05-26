@@ -17,14 +17,15 @@ package main
 import (
 	"context"
 	"database/sql"
+	"log"
+	"os"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	_ "github.com/go-sql-driver/mysql"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"log"
-	"os"
 )
 
-func main() {
+func dbTransaction() {
 	ctx := context.Background()
 	db, err := sql.Open("mysql",
 		"test:test@tcp(127.0.0.1:"+os.Getenv("MYSQL_PORT")+")/test")
@@ -78,4 +79,13 @@ func main() {
 		verifier.VerifyDbAttributes(stubs[5][0], "UPDATE users", "mysql", "127.0.0.1", "UPDATE users SET name = ? WHERE id = ?", "UPDATE", "users", []any{"foobar", "0"})
 		verifier.VerifyDbAttributes(stubs[6][0], "COMMIT", "mysql", "127.0.0.1", "COMMIT", "COMMIT", "", nil)
 	}, 7)
+}
+
+func main() {
+	dbAccess()
+	dbFetching()
+	dbModify()
+	dbPrepared()
+	dbQuery()
+	dbTransaction()
 }
