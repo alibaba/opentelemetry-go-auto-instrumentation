@@ -17,24 +17,26 @@ package rocketmq
 import (
 	"context"
 	"reflect"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/apache/rocketmq-client-go/v2/consumer"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
-// consumerConsumeInnerOnEnter instrumentation entry point
+//go:linkname consumerConsumeInnerOnEnter github.com/apache/rocketmq-client-go/v2/consumer.consumerConsumeInnerOnEnter
 func consumerConsumeInnerOnEnter(call api.CallContext, _ interface{}, ctx context.Context, msgs []*primitive.MessageExt) {
-	if !enabler.Enable() {
+	if !rocketmqEnabler.Enable() {
 		return
 	}
 
 	var addr string
-	if len(msgs) > 0 && msgs[0] != nil && msgs[0].Queue != nil {
-		if clientValue := getClientValue(call); clientValue.IsValid() {
-			addr = getBrokerAddrFromMessageExt(clientValue, msgs[0])
-		}
-	}
+	// reflection loss performance
+	//if len(msgs) > 0 && msgs[0] != nil && msgs[0].Queue != nil {
+	//	if clientValue := getClientValue(call); clientValue.IsValid() {
+	//		addr = getBrokerAddrFromMessageExt(clientValue, msgs[0])
+	//	}
+	//}
 
 	// Store context and messages directly
 	call.SetData(map[string]interface{}{
@@ -43,9 +45,9 @@ func consumerConsumeInnerOnEnter(call api.CallContext, _ interface{}, ctx contex
 	})
 }
 
-// consumerConsumeInnerOnExit instrumentation exit point
+//go:linkname consumerConsumeInnerOnExit github.com/apache/rocketmq-client-go/v2/consumer.consumerConsumeInnerOnExit
 func consumerConsumeInnerOnExit(call api.CallContext, consumeResult consumer.ConsumeResult, err error) {
-	if !enabler.Enable() {
+	if !rocketmqEnabler.Enable() {
 		return
 	}
 

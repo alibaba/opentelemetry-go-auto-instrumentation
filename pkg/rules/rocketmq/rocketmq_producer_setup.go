@@ -23,9 +23,9 @@ import (
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
-// producerSendSyncOnEnter instrumentation entry point for SendSync
+//go:linkname producerSendSyncOnEnter github.com/apache/rocketmq-client-go/v2/producer.producerSendSyncOnEnter
 func producerSendSyncOnEnter(call api.CallContext, _ interface{}, ctx context.Context, msg *primitive.Message, res *primitive.SendResult) {
-	if !enabler.Enable() {
+	if !rocketmqEnabler.Enable() {
 		return
 	}
 
@@ -40,9 +40,9 @@ func producerSendSyncOnEnter(call api.CallContext, _ interface{}, ctx context.Co
 	})
 }
 
-// producerSendSyncOnExit instrumentation exit point for SendSync
+//go:linkname producerSendSyncOnExit github.com/apache/rocketmq-client-go/v2/producer.producerSendSyncOnExit
 func producerSendSyncOnExit(call api.CallContext, err error) {
-	if !enabler.Enable() {
+	if !rocketmqEnabler.Enable() {
 		return
 	}
 
@@ -81,9 +81,9 @@ func producerSendSyncOnExit(call api.CallContext, err error) {
 	}, err)
 }
 
-// producerSendAsyncOnEnter instrumentation entry point for SendAsync
+//go:linkname producerSendAsyncOnEnter github.com/apache/rocketmq-client-go/v2/producer.producerSendAsyncOnEnter
 func producerSendAsyncOnEnter(call api.CallContext, _ interface{}, ctx context.Context, msg *primitive.Message, originalCallback func(context.Context, *primitive.SendResult, error)) {
-	if !enabler.Enable() {
+	if !rocketmqEnabler.Enable() {
 		return
 	}
 
@@ -95,26 +95,27 @@ func producerSendAsyncOnEnter(call api.CallContext, _ interface{}, ctx context.C
 	wrappedCallback := func(callbackCtx context.Context, result *primitive.SendResult, callbackErr error) {
 		originalCallback(callbackCtx, result, callbackErr)
 
-		clientValue := getClientValue(call.GetParam(0))
-		if !clientValue.IsValid() || result == nil || result.MessageQueue == nil {
+		// reflection loss performance
+		//clientValue := getClientValue(call.GetParam(0))
+		if result == nil || result.MessageQueue == nil {
 			producerInst.End(ctx, req, ProducerResponse{Result: result}, callbackErr)
 			return
 		}
-
-		addr := getBrokerAddr(clientValue, result)
+		// reflection loss performance
+		//addr := getBrokerAddr(clientValue, result)
 
 		producerInst.End(newCtx, req, ProducerResponse{
-			Result:     result,
-			BrokerAddr: addr,
+			Result: result,
+			//BrokerAddr: addr,
 		}, callbackErr)
 	}
 
 	call.SetParam(3, wrappedCallback)
 }
 
-// producerSendOneWayOnEnter instrumentation entry point for SendOneWay
+//go:linkname producerSendOneWayOnEnter github.com/apache/rocketmq-client-go/v2/producer.producerSendOneWayOnEnter
 func producerSendOneWayOnEnter(call api.CallContext, _ interface{}, ctx context.Context, msg *primitive.Message) {
-	if !enabler.Enable() {
+	if !rocketmqEnabler.Enable() {
 		return
 	}
 
@@ -129,9 +130,9 @@ func producerSendOneWayOnEnter(call api.CallContext, _ interface{}, ctx context.
 	})
 }
 
-// producerSendOneWayOnExit instrumentation exit point for SendOneWay
+//go:linkname producerSendOneWayOnExit github.com/apache/rocketmq-client-go/v2/producer.producerSendOneWayOnExit
 func producerSendOneWayOnExit(call api.CallContext, err error) {
-	if !enabler.Enable() {
+	if !rocketmqEnabler.Enable() {
 		return
 	}
 
@@ -150,17 +151,16 @@ func producerSendOneWayOnExit(call api.CallContext, err error) {
 		return
 	}
 
-	clientValue := getClientValue(call.GetParam(0))
-	if !clientValue.IsValid() || req.Message == nil || req.Message.Queue == nil {
+	// reflection loss performance
+	//clientValue := getClientValue(call.GetParam(0))
+	if req.Message == nil || req.Message.Queue == nil {
 		producerInst.End(ctx, req, ProducerResponse{}, err)
 		return
 	}
+	// reflection loss performance
+	//addr := getBrokerAddrFromMessage(clientValue, req.Message)
 
-	addr := getBrokerAddrFromMessage(clientValue, req.Message)
-
-	producerInst.End(ctx, req, ProducerResponse{
-		BrokerAddr: addr,
-	}, err)
+	producerInst.End(ctx, req, ProducerResponse{}, err)
 }
 
 // getClientValue safely extracts the client value from producer

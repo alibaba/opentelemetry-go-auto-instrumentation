@@ -17,6 +17,7 @@ package rocketmq
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/message"
@@ -36,12 +37,20 @@ import (
 
 // Instrumentation control
 var (
-	enabler                   = instrumenter.NewDefaultInstrumentEnabler()
+	rocketmqEnabler           = rocketmqInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_ROCKETMQ_ENABLED") != "false"}
 	producerInst              = newProducerInstrumenter()
 	singleProcessConsumerInst = newConsumerInstrumenter(message.PROCESS, false)
 	batchProcessConsumerInst  = newConsumerInstrumenter(message.PROCESS, true)
 	receiveConsumerInst       = newReceiveInstrumenter()
 )
+
+type rocketmqInnerEnabler struct {
+	enabled bool
+}
+
+func (g rocketmqInnerEnabler) Enable() bool {
+	return g.enabled
+}
 
 // sendStatusToString converts SendStatus to readable string
 func sendStatusToString(status primitive.SendStatus) string {

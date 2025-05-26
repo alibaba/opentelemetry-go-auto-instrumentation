@@ -975,8 +975,8 @@
     "OnEnter": "consumerReadMessageOnEnter",
     "OnExit": "consumerReadMessageOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/segmentio-kafka-go"
-  }
-}, {
+  },
+  {
     "Version": "[2.0.0,)",
     "ImportPath": "github.com/apache/rocketmq-client-go/v2/producer",
     "Function": "sendSync",

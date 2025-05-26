@@ -59,6 +59,7 @@ require (
 	gorm.io/driver/mysql v1.1.3
 	gorm.io/gorm v1.22.0
 	trpc.group/trpc-go/trpc-go v1.0.0
+	github.com/apache/rocketmq-client-go/v2 v2.1.2
 )
 
 require (
@@ -241,6 +242,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	stathat.com/c/consistent v1.0.0 // indirect
 	trpc.group/trpc-go/tnet v1.0.1 // indirect
 	trpc.group/trpc/trpc-protocol/pb/go/trpc v1.0.0 // indirect
 )
