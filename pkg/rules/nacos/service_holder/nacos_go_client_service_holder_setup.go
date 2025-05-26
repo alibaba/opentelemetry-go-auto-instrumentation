@@ -16,15 +16,18 @@ package service_holder
 
 import (
 	"context"
+	"log"
+	"strconv"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"log"
-	"strconv"
 )
 
+//go:linkname beforeNewServiceInfoHolder github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache.beforeNewServiceInfoHolder
 func beforeNewServiceInfoHolder(call api.CallContext, namespace, cacheDir string, updateCacheWhenEmpty, notLoadCacheAtStart bool) {
 	if !experimental.NacosEnabler.Enable() {
 		return
@@ -35,6 +38,7 @@ func beforeNewServiceInfoHolder(call api.CallContext, namespace, cacheDir string
 	call.SetKeyData("notLoadCacheAtStart", strconv.FormatBool(notLoadCacheAtStart))
 }
 
+//go:linkname afterNewServiceInfoHolder github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache.afterNewServiceInfoHolder
 func afterNewServiceInfoHolder(call api.CallContext, holder *naming_cache.ServiceInfoHolder) {
 	if !experimental.NacosEnabler.Enable() {
 		return
@@ -53,7 +57,12 @@ func afterNewServiceInfoHolder(call api.CallContext, holder *naming_cache.Servic
 			Key:   "not.load.cache.at.start",
 			Value: attribute.StringValue(call.GetKeyData("notLoadCacheAtStart").(string)),
 		})
-		observer.ObserveInt64(experimental.ClientServiceInfoMapSize, int64(holder.ServiceInfoMap.Count()), metric.WithAttributeSet(attrSet))
+		count := 0
+		holder.ServiceInfoMap.Range(func(k, v interface{}) bool {
+			count++
+			return true
+		})
+		observer.ObserveInt64(experimental.ClientServiceInfoMapSize, int64(count), metric.WithAttributeSet(attrSet))
 		return nil
 	}, experimental.ClientServiceInfoMapSize)
 	if err != nil {

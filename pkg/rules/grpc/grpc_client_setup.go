@@ -16,12 +16,14 @@ package grpc
 
 import (
 	"context"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
 )
 
+//go:linkname grpcClientOnEnter google.golang.org/grpc.grpcClientOnEnter
 func grpcClientOnEnter(call api.CallContext, ctx context.Context, target string, opts ...grpc.DialOption) {
 	if !grpcEnabler.Enable() {
 		return
@@ -33,6 +35,7 @@ func grpcClientOnEnter(call api.CallContext, ctx context.Context, target string,
 	call.SetParam(2, opt)
 }
 
+//go:linkname grpcClientOnExit google.golang.org/grpc.grpcClientOnExit
 func grpcClientOnExit(call api.CallContext, cc *grpc.ClientConn, err error) {
 	if !grpcEnabler.Enable() {
 		return

@@ -15,6 +15,8 @@
 package logrus
 
 import (
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -31,6 +33,7 @@ func (l logrusInnerEnabler) Enable() bool {
 
 var logrusEnabler = logrusInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_LOGRUS_ENABLED") != "false"}
 
+//go:linkname logNewOnEnter github.com/sirupsen/logrus.logNewOnEnter
 func logNewOnEnter(call api.CallContext, log *logrus.Logger, formatter logrus.Formatter) {
 	if !logrusEnabler.Enable() {
 		return
@@ -38,6 +41,7 @@ func logNewOnEnter(call api.CallContext, log *logrus.Logger, formatter logrus.Fo
 	call.SetData(log)
 }
 
+//go:linkname logNewOnExit github.com/sirupsen/logrus.logNewOnExit
 func logNewOnExit(call api.CallContext) {
 	if !logrusEnabler.Enable() {
 		return

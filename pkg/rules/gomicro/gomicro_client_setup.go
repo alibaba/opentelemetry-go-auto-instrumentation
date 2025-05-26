@@ -16,6 +16,7 @@ package gomicro
 
 import (
 	"context"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	micro "go-micro.dev/v5"
@@ -90,11 +91,13 @@ func (s *clientV5Wrapper) Publish(ctx context.Context, p client.Message, opts ..
 
 }
 
+//go:linkname NewServiceOnEnter go-micro.dev/v5.NewServiceOnEnter
 func NewServiceOnEnter(call api.CallContext, opts ...micro.Option) {
 	opts = append(opts, micro.WrapClient(NewV5ClientWrapper))
 	call.SetParam(0, opts)
 }
 
+//go:linkname NextOnExit go-micro.dev/v5/client.NextOnExit
 func NextOnExit(call api.CallContext, nextSelector selector.Next, e error) {
 	span := sdktrace.SpanFromGLS()
 	if nextSelector != nil && span != nil {

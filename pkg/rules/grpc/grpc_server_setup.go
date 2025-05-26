@@ -16,6 +16,7 @@ package grpc
 
 import (
 	"context"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"google.golang.org/grpc"
@@ -25,6 +26,7 @@ import (
 
 var grpcServerInstrument = BuildGrpcServerInstrumenter()
 
+//go:linkname grpcServerOnEnter google.golang.org/grpc.grpcServerOnEnter
 func grpcServerOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
 	if !grpcEnabler.Enable() {
 		return
@@ -36,6 +38,7 @@ func grpcServerOnEnter(call api.CallContext, opts ...grpc.ServerOption) {
 	call.SetParam(0, opt)
 }
 
+//go:linkname grpcServerOnExit google.golang.org/grpc.grpcServerOnExit
 func grpcServerOnExit(call api.CallContext, s *grpc.Server) {
 	if !grpcEnabler.Enable() {
 		return

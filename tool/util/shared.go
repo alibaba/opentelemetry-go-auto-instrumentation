@@ -33,7 +33,6 @@ const (
 	GoWorkSumFile        = "go.work.sum"
 	DebugLogFile         = "debug.log"
 	TempBuildDir         = ".otel-build"
-	BuildConfFile        = "build_conf.json"
 )
 
 const (
@@ -52,7 +51,7 @@ func AssertGoBuild(args []string) {
 	if !strings.Contains(args[0], "go") {
 		Assert(false, "invalid go build command %v", args)
 	}
-	if args[1] != "build" {
+	if args[1] != "build" && args[1] != "install" {
 		Assert(false, "invalid go build command %v", args)
 	}
 }
@@ -102,10 +101,6 @@ func GetInstrumentLogPath(name string) string {
 
 func GetPreprocessLogPath(name string) string {
 	return filepath.Join(TempBuildDir, PPreprocess, name)
-}
-
-func GetConfigureLogPath(name string) string {
-	return filepath.Join(TempBuildDir, PConfigure, name)
 }
 
 func GetVarNameOfFunc(fn string) string {

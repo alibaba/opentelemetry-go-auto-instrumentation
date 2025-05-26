@@ -16,12 +16,15 @@ package langchain
 
 import (
 	"context"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/tools"
 )
 
+//go:linkname doActionOnEnter github.com/tmc/langchaingo/agents.doActionOnEnter
 func doActionOnEnter(call api.CallContext,
 	e *agents.Executor,
 	ctx context.Context,
@@ -43,6 +46,8 @@ func doActionOnEnter(call api.CallContext,
 	data["ctx"] = langCtx
 	call.SetData(data)
 }
+
+//go:linkname doActionOnExit github.com/tmc/langchaingo/agents.doActionOnExit
 func doActionOnExit(call api.CallContext, steps []schema.AgentStep, err error) {
 	data := call.GetData().(map[string]interface{})
 	request := langChainRequest{

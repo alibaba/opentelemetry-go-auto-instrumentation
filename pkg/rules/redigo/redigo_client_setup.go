@@ -17,6 +17,7 @@ package redigo
 import (
 	"context"
 	"os"
+	_ "unsafe"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/gomodule/redigo/redis"
@@ -32,6 +33,7 @@ func (r redigoInnerEnabler) Enable() bool {
 
 var redigoEnabler = redigoInnerEnabler{os.Getenv("OTEL_INSTRUMENTATION_REDIGO_ENABLED") != "false"}
 
+//go:linkname onBeforeDialContext github.com/gomodule/redigo/redis.onBeforeDialContext
 func onBeforeDialContext(call api.CallContext, ctx context.Context, network, address string, options ...redis.DialOption) {
 	if !redigoEnabler.Enable() {
 		return
@@ -42,6 +44,7 @@ func onBeforeDialContext(call api.CallContext, ctx context.Context, network, add
 	call.SetData(data)
 }
 
+//go:linkname onExitDialContext github.com/gomodule/redigo/redis.onExitDialContext
 func onExitDialContext(call api.CallContext, conn redis.Conn, err error) {
 	if !redigoEnabler.Enable() {
 		return

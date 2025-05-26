@@ -17,11 +17,14 @@ package mcp
 import (
 	"context"
 	"fmt"
+	_ "unsafe"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
+//go:linkname hookBeforeAnyOnEnter github.com/mark3labs/mcp-go/server.hookBeforeAnyOnEnter
 func hookBeforeAnyOnEnter(call api.CallContext, c *server.Hooks,
 	ctx context.Context, id any, method mcp.MCPMethod, message any) {
 	if method == mcp.MethodPing {
@@ -44,6 +47,8 @@ func hookBeforeAnyOnEnter(call api.CallContext, c *server.Hooks,
 	//subRequest.OtelRequest = request
 	subRequest.OtelContext = Ctx
 }
+
+//go:linkname hookOnSuccessOnEnter github.com/mark3labs/mcp-go/server.hookOnSuccessOnEnter
 func hookOnSuccessOnEnter(call api.CallContext, c *server.Hooks,
 	ctx context.Context, id any, method mcp.MCPMethod, message any, result any) {
 	subRequest := getSubRequest(method, nil, message)
@@ -60,6 +65,8 @@ func hookOnSuccessOnEnter(call api.CallContext, c *server.Hooks,
 	}
 	ServerInstrumenter.End(ctx, request, nil, nil)
 }
+
+//go:linkname hookOnErrorOnEnter github.com/mark3labs/mcp-go/server.hookOnErrorOnEnter
 func hookOnErrorOnEnter(call api.CallContext, c *server.Hooks,
 	ctx context.Context, id any, method mcp.MCPMethod, message any, err error) {
 	subRequest := getSubRequest(method, nil, message)

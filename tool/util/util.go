@@ -36,7 +36,6 @@ const (
 	PInvalid    = "invalid"
 	PPreprocess = "preprocess"
 	PInstrument = "instrument"
-	PConfigure  = "configure"
 )
 
 var rp RunPhase = "bad"
@@ -61,20 +60,12 @@ func InInstrument() bool {
 	return rp == PInstrument
 }
 
-func InConfigure() bool {
-	return rp == PConfigure
-}
-
 func GuaranteeInPreprocess() {
 	Assert(rp == PPreprocess, "not in preprocess stage")
 }
 
 func GuaranteeInInstrument() {
 	Assert(rp == PInstrument, "not in instrument stage")
-}
-
-func GuaranteeInConfigure() {
-	Assert(rp == PConfigure, "not in configure stage")
 }
 
 func Assert(cond bool, format string, args ...interface{}) {

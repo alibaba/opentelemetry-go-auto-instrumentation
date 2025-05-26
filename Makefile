@@ -22,7 +22,7 @@ CURRENT_ARCH := $(shell uname -m | sed 's/aarch64/arm64/;s/armv7l/arm/;s/armv6l/
 MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
 STRIP_DEBUG := -s -w
 # default build cmd without ldflags
-BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -o $(3) ./tool/cmd
+BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -o $(3) ./tool/otel
 
 OUTPUT_BASE = otel
 OUTPUT_DARWIN_AMD64 = $(OUTPUT_BASE)-darwin-amd64
@@ -42,10 +42,10 @@ else
 endif
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
-XVERSION := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) -X=$(MOD_NAME)/pkg/inst-api/version.Tag=v$(VERSION)
-LDFLAGS := -ldflags="$(XVERSION) $(STRIP_DEBUG)"
-GCFLAGS := -gcflags="all=-trimpath=$(PWD)" -asmflags="all=-trimpath=$(PWD)" 
-BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a $(LDFLAGS) $(GCFLAGS) -o $(3) ./tool/cmd
+XVALUES := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) -X=$(MOD_NAME)/tool/config.BuildPath=$(CURDIR)/pkg -X=$(MOD_NAME)/pkg/inst-api/version.Tag=v$(VERSION)
+LDFLAGS := -ldflags="$(XVALUES) $(STRIP_DEBUG)"
+GCFLAGS := -gcflags="all=-trimpath=$(CURDIR)" -asmflags="all=-trimpath=$(CURDIR)" 
+BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a $(LDFLAGS) $(GCFLAGS) -o $(3) ./tool/otel
 
 #-------------------------------------------------------------------------------
 # Multiple OS and ARCH support
@@ -100,7 +100,7 @@ clean:
 	go clean
 
 test:
-	go test -timeout 50m -v $(MOD_NAME)/test
+	go test -a -timeout 50m -v $(MOD_NAME)/test
 
 install: build
 	@echo "Running install process..."
