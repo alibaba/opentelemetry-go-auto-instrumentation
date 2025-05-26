@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
@@ -34,7 +35,19 @@ type moduleInfo struct {
 	Dir   string `json:"Dir"`
 }
 
-func (dp *DepProcessor) findModCacheDir(modulePath string) (string, error) {
+func (dp *DepProcessor) findModCacheDir() (string, error) {
+	if config.BuildPath != "" && util.PathExists(config.BuildPath) {
+		// In development mode, there is a high probability that we may have
+		// added new rules. In such cases, we prefer to use the pkg directory
+		// with the newly added rules rather than the remote pkg module. Our
+		// approach is to embed the source code directory into the tool during
+		// the packaging process. The tool will then check whether this directory
+		// exists. If it does exist, the tool will use it. Otherwise, we will
+		// fall back to using the remote pkg module.
+		return config.BuildPath, nil
+	}
+
+	modulePath := "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@f55e1e8"
 	output, err := runCmdCombinedOutput(dp.getGoModDir(),
 		"go", "mod", "download", "-json", modulePath)
 	if err != nil {
