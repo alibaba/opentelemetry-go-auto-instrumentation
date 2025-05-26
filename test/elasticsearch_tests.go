@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const es_v8_dependency_name = "github.com/elastic/go-elasticsearch/v8"
@@ -80,7 +80,6 @@ func initElasticSearchContainer() (testcontainers.Container, nat.Port) {
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(5 * time.Second)
 	port, err := elasticsearchContainer.MappedPort(context.Background(), "9200")
 	if err != nil {
 		panic(err)
@@ -100,6 +99,7 @@ func runElasticSearchContainer(ctx context.Context) (testcontainers.Container, e
 				defaultHTTPPort + "/tcp",
 				defaultTCPPort + "/tcp",
 			},
+			WaitingFor: wait.ForLog("Cluster health status changed from [YELLOW] to [GREEN]"),
 		},
 		Started: true,
 	}
