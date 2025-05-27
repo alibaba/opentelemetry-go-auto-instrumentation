@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
@@ -63,5 +64,5 @@ func main() {
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyMQPublishAttributes(stubs[0][0], exchange, routingKey, queueName, "publish", destination, "rabbitmq")
 		verifier.VerifyMQConsumeAttributes(stubs[1][0], exchange, routingKey, queueName, "receive", destination, "rabbitmq")
-	}, 3)
+	}, 2)
 }

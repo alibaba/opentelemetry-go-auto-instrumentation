@@ -82,5 +82,5 @@ func main() {
 		verifier.VerifyLLMCommonAttributes(stubs[3][3], "execute_other:prompts/get", "mcp", trace.SpanKindServer)
 		verifier.VerifyLLMCommonAttributes(stubs[4][0], "execute_other:prompts/list", "mcp", trace.SpanKindClient)
 		verifier.VerifyLLMCommonAttributes(stubs[4][3], "execute_other:prompts/list", "mcp", trace.SpanKindServer)
-	}, 10)
+	}, 5)
 }

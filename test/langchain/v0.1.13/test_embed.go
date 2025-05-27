@@ -9,14 +9,6 @@ import (
 )
 
 func main() {
-	/*llmEm, err := ollama.New([]ollama.Option{
-		ollama.WithModel("snowflake-arctic-embed:22m"),
-		ollama.WithServerURL("http://127.0.0.1:" + os.Getenv("OLLAMA_EMBD_PORT")),
-	}...)
-	if err != nil {
-		panic(err)
-	}*/
-
 	emb, err := embeddings.NewEmbedder(embedFake{},
 		embeddings.WithBatchSize(15), //批量上传限制
 	)
@@ -36,5 +28,5 @@ func main() {
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyLLMCommonAttributes(stubs[0][0], "singleEmbed", "langchain", trace.SpanKindClient)
 		verifier.VerifyLLMCommonAttributes(stubs[1][0], "batchedEmbed", "langchain", trace.SpanKindClient)
-	}, 3)
+	}, 2)
 }

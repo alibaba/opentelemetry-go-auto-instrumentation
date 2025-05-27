@@ -432,7 +432,21 @@ func GetRandomVersion(versionNum int, moduleName string, minVersion, maxVersion 
 		}
 		shuffle = append(shuffle, v)
 	}
-	return shuffle[:versionNum], nil
+	// There are some duplicated versions in the list, so we need to remove them
+	// and return the unique ones
+	seen := make(map[string]bool)
+	for _, v := range shuffle[:versionNum] {
+		seen[v.Original()] = true
+	}
+	unique := make([]*Version, 0, len(seen))
+	for k := range seen {
+		v, err := NewVersion(k)
+		if err != nil {
+			continue
+		}
+		unique = append(unique, v)
+	}
+	return unique, nil
 }
 
 func GetLatestVersion(moduleName string, minVersion, maxVersion *Version) (*Version, error) {

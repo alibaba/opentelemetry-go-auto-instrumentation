@@ -68,7 +68,6 @@ func main() {
 	go setupFiberServer()
 	time.Sleep(2 * time.Second)
 	requestHttpServer()
-	time.Sleep(3 * time.Second)
 	verifier.WaitAndAssertMetrics(map[string]func(metricdata.ResourceMetrics){
 		"http.server.request.duration": func(mrs metricdata.ResourceMetrics) {
 			if len(mrs.ScopeMetrics) <= 0 {

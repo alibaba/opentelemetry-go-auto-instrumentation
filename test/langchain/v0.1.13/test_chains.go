@@ -20,5 +20,5 @@ func main() {
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyLLMCommonAttributes(stubs[0][0], "chains", "langchain", trace.SpanKindClient)
-	}, 3)
+	}, 1)
 }
