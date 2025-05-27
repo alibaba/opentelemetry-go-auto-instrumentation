@@ -161,7 +161,7 @@ func (dp *DepProcessor) initMod() (err error) {
 			util.Assert(pkg.Module.GoMod != "", "pkg.Module.GoMod is empty")
 			dp.moduleName = pkg.Module.Path
 			dp.modulePath = pkg.Module.GoMod
-			dp.otelImporter = filepath.Join(dp.modulePath, OtelImporter)
+			dp.otelImporter = filepath.Join(filepath.Dir(dp.modulePath), OtelImporter)
 		} else {
 			// Build the source files
 			// If we cannot find the module information from the package field,
@@ -217,6 +217,7 @@ func (dp *DepProcessor) initMod() (err error) {
 	}
 
 	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
+	util.Log("Setup otel importer %v", dp.otelImporter)
 
 	// We will import alibaba-otel/pkg module in generated code, which is not
 	// published yet, so we also need to add a replace directive to the go.mod file
@@ -631,15 +632,13 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 		args = append(args, nullDevice())
 	}
 
-	if config.GetConf().Verbose {
-		util.Log("Run go build with args %v in toolexec mode", args)
-	}
+	util.Log("Run toolexec build: %v", args)
 	util.AssertGoBuild(args)
 	// @@ Note that we should not set the working directory here, as the build
 	// with toolexec should be run in the same directory as the original build
 	// command
 	out, err := runCmdCombinedOutput("", args...)
-	util.Log("Run go build with toolexec: %v", out)
+	util.Log("Output from toolexec build: %v", out)
 	return err
 }
 
