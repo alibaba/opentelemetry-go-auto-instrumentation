@@ -73,7 +73,7 @@ func findLatest() []*TestCase {
 
 func TestPlugins1(t *testing.T) {
 	cases := findPlugin()
-	for _, c := range cases[:len(cases)/2] {
+	for _, c := range cases[:len(cases)/4] {
 		t.Run(c.TestName, func(t *testing.T) {
 			c.TestFunc(t)
 		})
@@ -82,7 +82,25 @@ func TestPlugins1(t *testing.T) {
 
 func TestPlugins2(t *testing.T) {
 	cases := findPlugin()
-	for _, c := range cases[len(cases)/2:] {
+	for _, c := range cases[len(cases)/4 : len(cases)/2] {
+		t.Run(c.TestName, func(t *testing.T) {
+			c.TestFunc(t)
+		})
+	}
+}
+
+func TestPlugins3(t *testing.T) {
+	cases := findPlugin()
+	for _, c := range cases[len(cases)/2 : (len(cases)/2 + len(cases)/4)] {
+		t.Run(c.TestName, func(t *testing.T) {
+			c.TestFunc(t)
+		})
+	}
+}
+
+func TestPlugins4(t *testing.T) {
+	cases := findPlugin()
+	for _, c := range cases[(len(cases)/2 + len(cases)/4):] {
 		t.Run(c.TestName, func(t *testing.T) {
 			c.TestFunc(t)
 		})
