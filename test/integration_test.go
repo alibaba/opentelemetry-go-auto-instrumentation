@@ -71,6 +71,8 @@ func findLatest() []*TestCase {
 	return cases
 }
 
+// Split the plugin tests into 4 parts to avoid too many tests in one run
+// This is useful for CI to avoid timeout issues.
 func TestPlugins1(t *testing.T) {
 	cases := findPlugin()
 	for _, c := range cases[:len(cases)/4] {
