@@ -62,6 +62,7 @@ type DepProcessor struct {
 	goBuildCmd    []string
 	vendorMode    bool
 	pkgLocalCache string // Local module cache path of alibaba-otel pkg module
+	otelImporter  string // Path to the otel_importer.go file
 }
 
 func newDepProcessor() *DepProcessor {
@@ -70,6 +71,7 @@ func newDepProcessor() *DepProcessor {
 		backups:       map[string]string{},
 		vendorMode:    false,
 		pkgLocalCache: "",
+		otelImporter:  "",
 	}
 	return dp
 }
@@ -152,13 +154,16 @@ func (dp *DepProcessor) initMod() (err error) {
 			continue
 		}
 		if pkg.Module != nil {
+			// Build the module
 			// Best case, we find the module information from the package field
 			util.Log("Find Go module %v", util.Jsonify(pkg.Module))
 			util.Assert(pkg.Module.Path != "", "pkg.Module.Path is empty")
 			util.Assert(pkg.Module.GoMod != "", "pkg.Module.GoMod is empty")
 			dp.moduleName = pkg.Module.Path
 			dp.modulePath = pkg.Module.GoMod
+			dp.otelImporter = filepath.Join(filepath.Dir(dp.modulePath), OtelImporter)
 		} else {
+			// Build the source files
 			// If we cannot find the module information from the package field,
 			// we try to find it from the go.mod file, where go.mod file is in
 			// the same directory as the source file.
@@ -190,7 +195,16 @@ func (dp *DepProcessor) initMod() (err error) {
 					}
 				}
 				if !found {
-					dp.goBuildCmd = append(dp.goBuildCmd, OtelImporter)
+					// Generate the otel_importer.go file in the same directory
+					// as the source file, e.g. main.go
+					// Note that we must guarantee they are either absolute paths
+					// or relative paths, otherwise the compiler will complain
+					// about they are not in the same directory
+					last := dp.goBuildCmd[len(dp.goBuildCmd)-1]
+					util.Assert(util.IsGoFile(last), "must be go file")
+					dir := filepath.Dir(last)
+					dp.otelImporter = filepath.Join(dir, OtelImporter)
+					dp.goBuildCmd = append(dp.goBuildCmd, dp.otelImporter)
 				}
 			}
 		}
@@ -198,8 +212,12 @@ func (dp *DepProcessor) initMod() (err error) {
 	if dp.moduleName == "" || dp.modulePath == "" {
 		return errc.New(errc.ErrPreprocess, "cannot find compiled module")
 	}
+	if dp.otelImporter == "" {
+		return errc.New(errc.ErrPreprocess, "cannot place otel_importer.go file")
+	}
 
 	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
+	util.Log("Setup otel importer %v", dp.otelImporter)
 
 	// We will import alibaba-otel/pkg module in generated code, which is not
 	// published yet, so we also need to add a replace directive to the go.mod file
@@ -279,7 +297,7 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
-	_ = os.RemoveAll(dp.generatedOf(OtelImporter))
+	_ = os.RemoveAll(dp.otelImporter)
 
 	_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
 
@@ -614,15 +632,13 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 		args = append(args, nullDevice())
 	}
 
-	if config.GetConf().Verbose {
-		util.Log("Run go build with args %v in toolexec mode", args)
-	}
+	util.Log("Run toolexec build: %v", args)
 	util.AssertGoBuild(args)
 	// @@ Note that we should not set the working directory here, as the build
 	// with toolexec should be run in the same directory as the original build
 	// command
 	out, err := runCmdCombinedOutput("", args...)
-	util.Log("Run go build with toolexec: %v", out)
+	util.Log("Output from toolexec build: %v", out)
 	return err
 }
 
@@ -721,7 +737,7 @@ var importerTemplate string
 
 func (dp *DepProcessor) newRuleImporter() {
 	importerTemplate = strings.ReplaceAll(importerTemplate, util.GoBuildIgnoreComment, "")
-	util.WriteFile(dp.generatedOf(OtelImporter), importerTemplate)
+	util.WriteFile(dp.otelImporter, importerTemplate)
 }
 
 func (dp *DepProcessor) addRuleImporter() error {
@@ -737,7 +753,7 @@ func (dp *DepProcessor) addRuleImporter() error {
 			}
 		}
 	}
-	content, err := util.ReadFile(dp.generatedOf(OtelImporter))
+	content, err := util.ReadFile(dp.otelImporter)
 	if err != nil {
 		return err
 	}
@@ -756,7 +772,7 @@ func (dp *DepProcessor) addRuleImporter() error {
 		content += s
 		cnt++
 	}
-	util.WriteFile(dp.generatedOf(OtelImporter), content)
+	util.WriteFile(dp.otelImporter, content)
 	return nil
 }
 
