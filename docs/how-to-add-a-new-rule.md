@@ -1,76 +1,46 @@
-# How to add a new rule
+# Adding a New Plugin
+This document will briefly describe how to add a new plugin to the official repository — that is, how to inject instrumentation code into a new third-party library.
 
-## 1. Create the Rule
-We demonstrate how to inject code for a new package through an example.
-
-Here's how to inject logging into the os.Setenv() function to track key and value usage.
-
-First, create and initialize a Go module in a new directory:
-
-```console
-$ mkdir mysetenv && cd mysetenv
-$ go mod init mysetenv
+## 1. Registering the New Plugin in default.json
+We need to add a new entry to tool/data/default.json to register this plugin:
+```json
+[{
+  "Version": "[1.3.0,1.7.4)",
+  "ImportPath": "github.com/gorilla/mux",
+  "Function": "setCurrentRoute",
+  "OnEnter": "muxRoute130OnEnter",
+  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mux"
+},...]
 ```
 
-Next, create the hook.go file in the mysetenv directory:
+Taking `github.com/gorilla/mux` as an example, this entry declares that we want to inject our instrumentation function `muxRoute130OnEnter` at the beginning of the target function `setCurrentRoute`. The instrumentation code is located under the directory `github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mux`, and the supported versions of mux are `[1.3.0,1.7.4)`.
+
+For more detailed field definitions, please refer to [rule_def.md](rule_def.md).
+
+## 2. Writing the Plugin Code
+We need to create a new plugin directory under pkg/rules/ and then write the plugin code, like this:
 
 ```go
-package mysetenv
+package mux
 
-import (
-	"fmt"
+import _ "unsafe"
+import "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+import mux "github.com/gorilla/mux"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-)
-
-func onEnterSetenv(call api.CallContext, key, value string) {
-	fmt.Printf("Setting environment variable %s to %s", key, value)
+//go:linkname muxRoute130OnEnter github.com/gorilla/mux.muxRoute130OnEnter
+func muxRoute130OnEnter(call api.CallContext, req *http.Request, route interface{}) {
+    ...
 }
 ```
+There's no magic here — it's just regular Go code. A few interesting points:
 
-Run `go mod tidy` to download the dependencies. This sets up the hook code.
+- The hook function muxRoute130OnEnter must be annotated with the go:linkname directive.
+- The first parameter of the hook function must be of type api.CallContext, and the remaining parameters should match those of the target function:
+  - If the target function is `func foo(a int, b string, c float) (d string, e error)`, then the onEnter hook function should be `func hook(call api.CallContext, a int, b string, c float)`
+  - If the target function is `func foo(a int, b string, c float) (d string, e error)`, then the onExit hook function should be `func hook(call api.CallContext, d string, e error)`
+  - If you need to modify the parameters or return values of the target function, you can use `CallContext.SetParam()` or `CallContext.SetReturnVal()`
 
-## 2. Register the Rule
+We need more documentation explaining all aspects of writing plugin code. For now, the best way is to refer to other plugin implementations, such as `pkg/rules/mux` or any other existing plugin.
 
-Create a `rule.json` file to specify the target function and hook code:
-
-```json
-[
-  {
-    "ImportPath": "os",
-    "Function": "Setenv",
-    "OnEnter": "onEnterSetenv",
-    "Path": "/path/to/mysetenv"
-  }
-]
-```
-
-- `ImportPath`: The import path of the package that contains the function
-- `Function`: The function to instrument.
-- `OnEnter`: The hook code
-- `Path`: Directory containing the hook code.
-
-Additional fields like `ReceiverType`, `OnExit` and `Order` can also be specified. Refer to [the documentation](rule_def.md) for details.
-
-## 3. Verify the Rule
-Test the rule with a simple program:
-
-```console
-$ mkdir setenv-demo && cd setenv-demo
-$ go mod init setenv-demo
-$ cat <<EOF > main.go
-package main
-import "os"
-func main() {
-    os.Setenv("hello", "world")
-}
-EOF
-$ ~/otel set -rule=rule.json
-$ ~/otel build main.go
-$ ./main
-Setting environment variable hello to world%
-```
-
-The output confirms successful code injection as the message appears when `os.Setenv()` is called.
-
-There are many advanced features that is not covered in this example, you can refer to the existing rules in the `pkg/rules` directory for more information.
+## 3. Testing the Plugin
+Please refer to [how-to-write-tests-for-plugins.md](how-to-write-tests-for-plugins.md) for details.
