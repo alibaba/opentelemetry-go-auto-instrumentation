@@ -1,4 +1,6 @@
 name: truffle
+permissions:
+  contents: read
 on:
   push:
     branches:
