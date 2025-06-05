@@ -260,6 +260,20 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
   },
   {
+    "ImportPath": "dubbo.apache.org/dubbo-go/v3",
+    "Function": "NewServer",
+    "ReceiverType": "\\*Instance",
+    "OnEnter": "dubboNewServerOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/dubbo"
+  },
+  {
+    "ImportPath": "dubbo.apache.org/dubbo-go/v3",
+    "Function": "NewClient",
+    "ReceiverType": "\\*Instance",
+    "OnEnter": "dubboNewClientOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/dubbo"
+  },
+  {
     "Version": "[4.0.0,4.12.1)",
     "ImportPath": "github.com/labstack/echo/v4",
     "Function": "New",
@@ -907,7 +921,7 @@
     "Function": "PublishWithDeferredConfirm",
     "OnEnter": "publishWithDeferredConfirmOnEnter",
     "OnExit":"publishWithDeferredConfirmOnExit",
-      "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
   },{
   "Version": "[0.20.0,)",
   "ImportPath": "github.com/mark3labs/mcp-go/mcp",
