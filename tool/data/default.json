@@ -260,17 +260,21 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
   },
   {
-    "ImportPath": "dubbo.apache.org/dubbo-go/v3",
-    "Function": "NewServer",
-    "ReceiverType": "\\*Instance",
-    "OnEnter": "dubboNewServerOnEnter",
+    "Version": "[3.3.0,)",
+    "ImportPath": "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown",
+    "Function": "Invoke",
+    "ReceiverType": "\\*consumerGracefulShutdownFilter",
+    "OnEnter": "dubboConsumerGracefulShutdownFilterInvokeOnEnter",
+    "OnExit": "dubboConsumerGracefulShutdownFilterInvokeOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/dubbo"
   },
   {
-    "ImportPath": "dubbo.apache.org/dubbo-go/v3",
-    "Function": "NewClient",
-    "ReceiverType": "\\*Instance",
-    "OnEnter": "dubboNewClientOnEnter",
+    "Version": "[3.3.0,)",
+    "ImportPath": "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown",
+    "Function": "Invoke",
+    "ReceiverType": "\\*providerGracefulShutdownFilter",
+    "OnEnter": "dubboProviderGracefulShutdownFilterInvokeOnEnter",
+    "OnExit": "dubboProviderGracefulShutdownFilterInvokeOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/dubbo"
   },
   {

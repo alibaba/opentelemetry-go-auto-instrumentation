@@ -1,10 +1,5 @@
 package dubbo
 
-const (
-	DubboServerOTelFilterKey = "DubboServerOTelFilter"
-	DubboClientOTelFilterKey = "DubboClientOTelFilter"
-)
-
 type dubboRequest struct {
 	methodName    string
 	serviceKey    string
