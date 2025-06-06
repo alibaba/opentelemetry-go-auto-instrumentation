@@ -30,6 +30,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/dave/dst"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 )
@@ -146,6 +147,33 @@ func (dp *DepProcessor) initCmd() {
 	util.AssertGoBuild(dp.goBuildCmd)
 }
 
+func findMainDir(pkgs []*packages.Package) (string, error) {
+	gofiles := make([]string, 0)
+	for _, pkg := range pkgs {
+		if pkg.GoFiles == nil {
+			continue
+		}
+		gofiles = append(gofiles, pkg.GoFiles...)
+	}
+	for _, gofile := range gofiles {
+		if !util.IsGoFile(gofile) {
+			continue
+		}
+		root, err := util.ParseAstFromFileFast(gofile)
+		if err != nil {
+			return "", err
+		}
+		for _, decl := range root.Decls {
+			if d, ok := decl.(*dst.FuncDecl); ok && d.Name.Name == "main" {
+				// We found the main function, return the directory of the file
+				return filepath.Dir(gofile), nil
+			}
+		}
+	}
+	return "", errc.New(errc.ErrPreprocess,
+		"cannot find main function in the source files")
+}
+
 func (dp *DepProcessor) initMod() (err error) {
 	// Find compiling module and package information from the build command
 	pkgs, err := findModule(dp.goBuildCmd)
@@ -166,7 +194,11 @@ func (dp *DepProcessor) initMod() (err error) {
 			util.Assert(pkg.Module.GoMod != "", "pkg.Module.GoMod is empty")
 			dp.moduleName = pkg.Module.Path
 			dp.modulePath = pkg.Module.GoMod
-			dp.otelImporter = filepath.Join(filepath.Dir(dp.modulePath), OtelImporter)
+			dir, err := findMainDir(pkgs)
+			if err != nil {
+				return err
+			}
+			dp.otelImporter = filepath.Join(dir, OtelImporter)
 		} else {
 			// Build the source files
 			// If we cannot find the module information from the package field,
@@ -200,14 +232,10 @@ func (dp *DepProcessor) initMod() (err error) {
 					}
 				}
 				if !found {
-					// Generate the otel_importer.go file in the same directory
-					// as the source file, e.g. main.go
-					// Note that we must guarantee they are either absolute paths
-					// or relative paths, otherwise the compiler will complain
-					// about they are not in the same directory
-					last := dp.goBuildCmd[len(dp.goBuildCmd)-1]
-					util.Assert(util.IsGoFile(last), "must be go file")
-					dir := filepath.Dir(last)
+					dir, err := findMainDir(pkgs)
+					if err != nil {
+						return err
+					}
 					dp.otelImporter = filepath.Join(dir, OtelImporter)
 					dp.goBuildCmd = append(dp.goBuildCmd, dp.otelImporter)
 				}
