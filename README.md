@@ -48,7 +48,6 @@ The configuration for the tool can be set by the following command:
 $ otel set -verbose                          # print verbose logs
 $ otel set -debug                            # enable debug mode
 $ otel set -rule=custom.json                 # use default and custom rules
-$ otel set -debug -verbose -rule=custom.json # set multiple configs
 ```
 
 **Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:**

@@ -30,6 +30,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/dave/dst"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 )
@@ -74,6 +75,12 @@ func newDepProcessor() *DepProcessor {
 		otelImporter:  "",
 	}
 	return dp
+}
+
+func (dp *DepProcessor) String() string {
+	return fmt.Sprintf("moduleName: %s, modulePath: %s, goBuildCmd: %v, vendorMode: %v, pkgLocalCache: %s, otelImporter: %s",
+		dp.moduleName, dp.modulePath, dp.goBuildCmd, dp.vendorMode,
+		dp.pkgLocalCache, dp.otelImporter)
 }
 
 func (dp *DepProcessor) getGoModPath() string {
@@ -138,7 +145,33 @@ func (dp *DepProcessor) initCmd() {
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	util.AssertGoBuild(dp.goBuildCmd)
-	util.Log("Go build command: %v", dp.goBuildCmd)
+}
+
+func findMainDir(pkgs []*packages.Package) (string, error) {
+	gofiles := make([]string, 0)
+	for _, pkg := range pkgs {
+		if pkg.GoFiles == nil {
+			continue
+		}
+		gofiles = append(gofiles, pkg.GoFiles...)
+	}
+	for _, gofile := range gofiles {
+		if !util.IsGoFile(gofile) {
+			continue
+		}
+		root, err := util.ParseAstFromFileFast(gofile)
+		if err != nil {
+			return "", err
+		}
+		for _, decl := range root.Decls {
+			if d, ok := decl.(*dst.FuncDecl); ok && d.Name.Name == "main" {
+				// We found the main function, return the directory of the file
+				return filepath.Dir(gofile), nil
+			}
+		}
+	}
+	return "", errc.New(errc.ErrPreprocess,
+		"cannot find main function in the source files")
 }
 
 func (dp *DepProcessor) initMod() (err error) {
@@ -161,7 +194,11 @@ func (dp *DepProcessor) initMod() (err error) {
 			util.Assert(pkg.Module.GoMod != "", "pkg.Module.GoMod is empty")
 			dp.moduleName = pkg.Module.Path
 			dp.modulePath = pkg.Module.GoMod
-			dp.otelImporter = filepath.Join(filepath.Dir(dp.modulePath), OtelImporter)
+			dir, err := findMainDir(pkgs)
+			if err != nil {
+				return err
+			}
+			dp.otelImporter = filepath.Join(dir, OtelImporter)
 		} else {
 			// Build the source files
 			// If we cannot find the module information from the package field,
@@ -195,15 +232,8 @@ func (dp *DepProcessor) initMod() (err error) {
 					}
 				}
 				if !found {
-					// Generate the otel_importer.go file in the same directory
-					// as the source file, e.g. main.go
-					// Note that we must guarantee they are either absolute paths
-					// or relative paths, otherwise the compiler will complain
-					// about they are not in the same directory
 					last := dp.goBuildCmd[len(dp.goBuildCmd)-1]
-					util.Assert(util.IsGoFile(last), "must be go file")
-					dir := filepath.Dir(last)
-					dp.otelImporter = filepath.Join(dir, OtelImporter)
+					dp.otelImporter = filepath.Join(filepath.Dir(last), OtelImporter)
 					dp.goBuildCmd = append(dp.goBuildCmd, dp.otelImporter)
 				}
 			}
@@ -215,9 +245,6 @@ func (dp *DepProcessor) initMod() (err error) {
 	if dp.otelImporter == "" {
 		return errc.New(errc.ErrPreprocess, "cannot place otel_importer.go file")
 	}
-
-	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
-	util.Log("Setup otel importer %v", dp.otelImporter)
 
 	// We will import alibaba-otel/pkg module in generated code, which is not
 	// published yet, so we also need to add a replace directive to the go.mod file
@@ -232,7 +259,6 @@ func (dp *DepProcessor) initMod() (err error) {
 	if dp.pkgLocalCache == "" {
 		return errc.New(errc.ErrPreprocess, "cannot find rule cache dir")
 	}
-	util.Log("Local module cache: %s", dp.pkgLocalCache)
 	return nil
 }
 
@@ -259,7 +285,6 @@ func (dp *DepProcessor) initBuildMode() {
 	// additional dependencies online, which means all dependencies should be
 	// available in the vendor directory. This requires users to add these
 	// dependencies proactively
-	util.Log("Vendor mode: %v", dp.vendorMode)
 }
 
 func (dp *DepProcessor) initSignalHandler() {
@@ -285,7 +310,10 @@ func (dp *DepProcessor) init() error {
 	}
 	dp.initBuildMode()
 	dp.initSignalHandler()
-
+	// Once all the initialization is done, let's log the configuration
+	util.Log("ToolVersion: %s, BuildPath: %s, UsedPkg: %s",
+		config.ToolVersion, config.BuildPath, config.UsedPkg)
+	util.Log("%s", dp.String())
 	return nil
 }
 
@@ -594,6 +622,13 @@ func (dp *DepProcessor) runModTidy() error {
 	return err
 }
 
+func (dp *DepProcessor) runModVendor() error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "mod", "vendor")
+	util.Log("Run go mod vendor: %v", out)
+	return err
+}
+
 func nullDevice() string {
 	if runtime.GOOS == "windows" {
 		return "NUL"
@@ -802,7 +837,16 @@ func Preprocess() error {
 
 		// Add otel dependencies as part of the project dependencies
 		dp.newRuleImporter()
-		dp.runModTidy()
+		err = dp.runModTidy()
+		if err != nil {
+			return err
+		}
+		if dp.vendorMode {
+			err = dp.runModVendor()
+			if err != nil {
+				return err
+			}
+		}
 
 		// Match rules based on the source files plus added otel imports
 		err = dp.matchRules()
@@ -811,9 +855,21 @@ func Preprocess() error {
 		}
 
 		// Add hook rule dependency as part of the project dependencies
-		dp.addRuleImporter()
+		err = dp.addRuleImporter()
+		if err != nil {
+			return err
+		}
 		// Update go.mod with the all additional dependencies
-		dp.runModTidy()
+		err = dp.runModTidy()
+		if err != nil {
+			return err
+		}
+		if dp.vendorMode {
+			err = dp.runModVendor()
+			if err != nil {
+				return err
+			}
+		}
 
 		// Rectify file rules to make sure we can find them locally
 		err = dp.rectifyRule()
