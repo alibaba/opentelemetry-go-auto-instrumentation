@@ -43,11 +43,6 @@ Multiple Rule Files: Combine multiple custom rule files along with the default r
   $ otel set -rule=a.json,b.json
 ```
 
-Force Pkg Module: Force the tool to use a specific pkg module, which is useful when you need to ensure that the tool operates with a particular version or commit of a module.
-```console
-  $ otel set -pkgmodule=commit-hash
-```
-
 ## Using Environment Variables
 In addition to using the `otel set` command, configuration can also be overridden using environment variables. For example, the `OTELTOOL_DEBUG` environment variable allows you to force the tool into debug mode temporarily, making this approach effective for one-time configurations without altering permanent settings.
 

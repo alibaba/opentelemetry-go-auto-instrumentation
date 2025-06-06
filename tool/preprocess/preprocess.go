@@ -622,6 +622,13 @@ func (dp *DepProcessor) runModTidy() error {
 	return err
 }
 
+func (dp *DepProcessor) runModVendor() error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "mod", "vendor")
+	util.Log("Run go mod vendor: %v", out)
+	return err
+}
+
 func nullDevice() string {
 	if runtime.GOOS == "windows" {
 		return "NUL"
@@ -830,7 +837,16 @@ func Preprocess() error {
 
 		// Add otel dependencies as part of the project dependencies
 		dp.newRuleImporter()
-		dp.runModTidy()
+		err = dp.runModTidy()
+		if err != nil {
+			return err
+		}
+		if dp.vendorMode {
+			err = dp.runModVendor()
+			if err != nil {
+				return err
+			}
+		}
 
 		// Match rules based on the source files plus added otel imports
 		err = dp.matchRules()
@@ -839,9 +855,21 @@ func Preprocess() error {
 		}
 
 		// Add hook rule dependency as part of the project dependencies
-		dp.addRuleImporter()
+		err = dp.addRuleImporter()
+		if err != nil {
+			return err
+		}
 		// Update go.mod with the all additional dependencies
-		dp.runModTidy()
+		err = dp.runModTidy()
+		if err != nil {
+			return err
+		}
+		if dp.vendorMode {
+			err = dp.runModVendor()
+			if err != nil {
+				return err
+			}
+		}
 
 		// Rectify file rules to make sure we can find them locally
 		err = dp.rectifyRule()

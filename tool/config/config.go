@@ -54,9 +54,6 @@ type BuildConfig struct {
 	// Restore true means restore all instrumentations.
 	Restore bool
 
-	// PkgModule is the version of the pkg module
-	PkgModule string
-
 	// DisableDefault true means disable default rules.
 	DisableDefault bool
 }
@@ -282,8 +279,6 @@ func Configure() error {
 		"Use custom.json rules. Multiple rules are separated by comma.")
 	flag.BoolVar(&bc.DisableDefault, "disabledefault", bc.DisableDefault,
 		"Disable default rules")
-	flag.StringVar(&bc.PkgModule, "pkgmodule", bc.PkgModule,
-		"Specify the version of the pkg module to use")
 	flag.CommandLine.Parse(os.Args[2:])
 
 	util.Log("Configured in %s", getConfPath(BuildConfFile))
