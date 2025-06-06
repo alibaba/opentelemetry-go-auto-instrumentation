@@ -54,6 +54,9 @@ type BuildConfig struct {
 	// Restore true means restore all instrumentations.
 	Restore bool
 
+	// PkgModule is the version of the pkg module
+	PkgModule string
+
 	// DisableDefault true means disable default rules.
 	DisableDefault bool
 }
@@ -66,6 +69,17 @@ var ToolVersion = "1.0.0"
 // @@This value is specified by the build system.
 // It specifies the source path of the tool, which will be used to find the rules
 var BuildPath = ""
+
+// @@This value is specified by the build system.
+// It specifies the version of the pkg module, whose rules resides in it.
+// If the value is "latest", it means the latest version of the pkg module will
+// be used. If the value is a specific version, it means the specific version
+// of the pkg module will be used.
+// We added this flag because we want each release of the otel tool to precisely
+// bind to a specific version of the pkg module. Without this flag, every version
+// of the otel tool would pull the latest pkg modules (i.e., pkg/rules), which
+// is not our intention.
+var UsedPkg = "latest"
 
 var conf *BuildConfig
 
@@ -268,6 +282,8 @@ func Configure() error {
 		"Use custom.json rules. Multiple rules are separated by comma.")
 	flag.BoolVar(&bc.DisableDefault, "disabledefault", bc.DisableDefault,
 		"Disable default rules")
+	flag.StringVar(&bc.PkgModule, "pkgmodule", bc.PkgModule,
+		"Specify the version of the pkg module to use")
 	flag.CommandLine.Parse(os.Args[2:])
 
 	util.Log("Configured in %s", getConfPath(BuildConfFile))

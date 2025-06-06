@@ -36,7 +36,9 @@ type moduleInfo struct {
 }
 
 func (dp *DepProcessor) findModCacheDir() (string, error) {
-	if config.BuildPath != "" && util.PathExists(config.BuildPath) {
+	if config.BuildPath != "" &&
+		util.PathExists(config.BuildPath) &&
+		config.GetConf().PkgModule == "" {
 		// In development mode, there is a high probability that we may have
 		// added new rules. In such cases, we prefer to use the pkg directory
 		// with the newly added rules rather than the remote pkg module. Our
@@ -46,8 +48,13 @@ func (dp *DepProcessor) findModCacheDir() (string, error) {
 		// fall back to using the remote pkg module.
 		return config.BuildPath, nil
 	}
-
-	modulePath := "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg@f55e1e8"
+	pkgVersion := config.UsedPkg
+	if config.GetConf().PkgModule != "" {
+		// If the user has specified a custom pkg module by using otel set -pkgmodule
+		// we should use it instead of the default one, it has the highest priority
+		pkgVersion = config.GetConf().PkgModule
+	}
+	modulePath := pkgPrefix + "@" + pkgVersion
 	output, err := runCmdCombinedOutput(dp.getGoModDir(),
 		"go", "mod", "download", "-json", modulePath)
 	if err != nil {

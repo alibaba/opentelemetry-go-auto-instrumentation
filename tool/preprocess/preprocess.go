@@ -76,6 +76,12 @@ func newDepProcessor() *DepProcessor {
 	return dp
 }
 
+func (dp *DepProcessor) String() string {
+	return fmt.Sprintf("moduleName: %s, modulePath: %s, goBuildCmd: %v, vendorMode: %v, pkgLocalCache: %s, otelImporter: %s",
+		dp.moduleName, dp.modulePath, dp.goBuildCmd, dp.vendorMode,
+		dp.pkgLocalCache, dp.otelImporter)
+}
+
 func (dp *DepProcessor) getGoModPath() string {
 	util.Assert(dp.modulePath != "", "modulePath is empty")
 	return dp.modulePath
@@ -138,7 +144,6 @@ func (dp *DepProcessor) initCmd() {
 	dp.goBuildCmd = make([]string, len(os.Args)-1)
 	copy(dp.goBuildCmd, os.Args[1:])
 	util.AssertGoBuild(dp.goBuildCmd)
-	util.Log("Go build command: %v", dp.goBuildCmd)
 }
 
 func (dp *DepProcessor) initMod() (err error) {
@@ -216,9 +221,6 @@ func (dp *DepProcessor) initMod() (err error) {
 		return errc.New(errc.ErrPreprocess, "cannot place otel_importer.go file")
 	}
 
-	util.Log("Found module %v in %v", dp.moduleName, dp.modulePath)
-	util.Log("Setup otel importer %v", dp.otelImporter)
-
 	// We will import alibaba-otel/pkg module in generated code, which is not
 	// published yet, so we also need to add a replace directive to the go.mod file
 	// to tell the go tool to use the local module cache instead of the remote
@@ -232,7 +234,6 @@ func (dp *DepProcessor) initMod() (err error) {
 	if dp.pkgLocalCache == "" {
 		return errc.New(errc.ErrPreprocess, "cannot find rule cache dir")
 	}
-	util.Log("Local module cache: %s", dp.pkgLocalCache)
 	return nil
 }
 
@@ -259,7 +260,6 @@ func (dp *DepProcessor) initBuildMode() {
 	// additional dependencies online, which means all dependencies should be
 	// available in the vendor directory. This requires users to add these
 	// dependencies proactively
-	util.Log("Vendor mode: %v", dp.vendorMode)
 }
 
 func (dp *DepProcessor) initSignalHandler() {
@@ -285,7 +285,10 @@ func (dp *DepProcessor) init() error {
 	}
 	dp.initBuildMode()
 	dp.initSignalHandler()
-
+	// Once all the initialization is done, let's log the configuration
+	util.Log("ToolVersion: %s, BuildPath: %s, UsedPkg: %s",
+		config.ToolVersion, config.BuildPath, config.UsedPkg)
+	util.Log("%s", dp.String())
 	return nil
 }
 
