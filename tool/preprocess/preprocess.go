@@ -232,11 +232,8 @@ func (dp *DepProcessor) initMod() (err error) {
 					}
 				}
 				if !found {
-					dir, err := findMainDir(pkgs)
-					if err != nil {
-						return err
-					}
-					dp.otelImporter = filepath.Join(dir, OtelImporter)
+					last := dp.goBuildCmd[len(dp.goBuildCmd)-1]
+					dp.otelImporter = filepath.Join(filepath.Dir(last), OtelImporter)
 					dp.goBuildCmd = append(dp.goBuildCmd, dp.otelImporter)
 				}
 			}
