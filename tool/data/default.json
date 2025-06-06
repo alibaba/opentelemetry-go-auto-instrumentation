@@ -260,7 +260,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
   },
   {
-    "Version": "[v3.0.0-rc2,)",
+    "Version": "[3.3.0,)",
     "ImportPath": "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown",
     "Function": "Invoke",
     "ReceiverType": "\\*consumerGracefulShutdownFilter",
@@ -269,7 +269,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/dubbo"
   },
   {
-    "Version": "[v3.0.0-rc2,)",
+    "Version": "[3.3.0,)",
     "ImportPath": "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown",
     "Function": "Invoke",
     "ReceiverType": "\\*providerGracefulShutdownFilter",
