@@ -15,16 +15,16 @@
 package main
 
 import (
+	"time"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"time"
 )
 
 func main() {
 	go setupWithRoute()
 	time.Sleep(5 * time.Second)
 	GetRoute()
-	time.Sleep(1 * time.Second)
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyHttpClientAttributes(stubs[0][0], "GET", "GET", "http://127.0.0.1:8888/hertz/v1", "http", "", "tcp", "ipv4", "", "127.0.0.1:8888", 301, 0, 8888)
 		verifier.VerifyHttpServerAttributes(stubs[0][1], "GET /hertz/v1/", "GET", "http", "tcp", "ipv4", "", "127.0.0.1:8888", "Host", "http", "/hertz/v1/", "", "/hertz/v1/", 301)

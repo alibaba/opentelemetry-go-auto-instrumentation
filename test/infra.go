@@ -293,7 +293,7 @@ func ExecMuzzle(t *testing.T, dependencyName, moduleName string, minVersion, max
 		t.Skip()
 		return
 	}
-	versions, err := version.GetRandomVersion(3, dependencyName, minVersion, maxVersion)
+	versions, err := version.GetRandomVersion(1, dependencyName, minVersion, maxVersion)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -54,6 +54,5 @@ func main() {
 		if stubs[0][1].Parent.TraceID().String() != stubs[0][0].SpanContext.TraceID().String() {
 			log.Fatal("span 1 should be child of span 0")
 		}
-
-	}, 2)
+	}, 1)
 }

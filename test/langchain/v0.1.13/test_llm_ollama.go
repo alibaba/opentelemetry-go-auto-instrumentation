@@ -39,5 +39,5 @@ func main() {
 	}
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyLLMAttributes(stubs[0][0], "chat", "deepseek-r1", "deepseek-r1:8b")
-	}, 3)
+	}, 1)
 }

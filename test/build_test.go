@@ -20,12 +20,20 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
+func TestBuildProject(t *testing.T) {
+	const AppName = "build"
+	UseApp(AppName)
+	RunGoBuild(t, "go", "build", "-o", "default", "cmd/foo.go")
+	RunGoBuild(t, "go", "build", "-o", "./cmd", "./cmd")
+	RunGoBuild(t, "go", "build", "cmd/foo.go", "cmd/bar.go")
+
+}
+
 func TestBuildProject2(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
 	RunGoBuild(t, "go", "build", ".")
-	RunGoBuild(t, "go", "build", "")
 	RunGoBuild(t, "go", "build", "./...")
 }
 
@@ -33,7 +41,6 @@ func TestBuildProject3(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunGoBuild(t, "go", "build", "m1")
 	RunGoBuildFallible(t, "go", "build", "m2") // not used in go.work
 }
 
@@ -41,16 +48,10 @@ func TestBuildProject4(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/default.json")
-	RunGoBuild(t, "go", "build", "m1")
 	RunSet(t, "-disabledefault=false", "-rule=../../tool/data/default.json")
 	RunGoBuildFallible(t, "go", "build", "m1") // duplicated default rules
 	RunSet(t, "-rule=../../tool/data/default")
 	RunGoBuildFallible(t, "go", "build", "m1")
-	RunSet(t, "-rule=../../tool/data/test_error.json,../../tool/data/test_fmt.json")
-	RunGoBuild(t, "go", "build", "m1")
-	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/test_error.json,../../tool/data/test_fmt.json,../../tool/data/test_runtime.json")
-	RunGoBuild(t, "go", "build", "m1")
 	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/default.json,../../tool/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 }

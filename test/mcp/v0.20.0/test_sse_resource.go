@@ -101,6 +101,5 @@ func main() {
 		verifier.VerifyLLMCommonAttributes(stubs[4][3], "execute_other:resources/list", "mcp", trace.SpanKindServer)
 		verifier.VerifyLLMCommonAttributes(stubs[5][0], "execute_other:resources/templates/list", "mcp", trace.SpanKindClient)
 		verifier.VerifyLLMCommonAttributes(stubs[5][3], "execute_other:resources/templates/list", "mcp", trace.SpanKindServer)
-
-	}, 7)
+	}, 6)
 }

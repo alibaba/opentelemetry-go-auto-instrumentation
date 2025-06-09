@@ -38,7 +38,7 @@ const (
 	PInstrument = "instrument"
 )
 
-var rp RunPhase = "bad"
+var rp RunPhase = "conf"
 
 func SetRunPhase(phase RunPhase) {
 	rp = phase

@@ -17,14 +17,15 @@ package main
 import (
 	"context"
 	"database/sql"
+	"log"
+	"os"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	_ "github.com/go-sql-driver/mysql"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"log"
-	"os"
 )
 
-func main() {
+func dbPrepared() {
 	ctx := context.Background()
 	db, err := sql.Open("mysql",
 		"test:test@tcp(127.0.0.1:"+os.Getenv("MYSQL_PORT")+")/test")

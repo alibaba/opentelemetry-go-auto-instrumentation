@@ -412,15 +412,18 @@ func GetRandomVersion(versionNum int, moduleName string, minVersion, maxVersion 
 	if err != nil {
 		return nil, err
 	}
-	versionArray := strings.Split(string(versions), " ")
-	if versionNum > len(versions) {
-		versionNum = len(versions)
-	}
-	shuffle := make([]*Version, 0, len(versions))
-	i := 0
-	for len(shuffle) < versionNum {
-		v, err := NewVersion(versionArray[rand.Int()%len(versionArray)])
-		i++
+
+	// trim the output and split by space to get individual versions
+	versionStr := strings.TrimSpace(string(versions))
+	versionArray := strings.Split(versionStr, " ")
+
+	// first filter out all versions that meet the criteria
+	validVersions := make([]*Version, 0, len(versionArray))
+	for _, vStr := range versionArray {
+		if vStr == "" {
+			continue
+		}
+		v, err := NewVersion(vStr)
 		if err != nil {
 			continue
 		}
@@ -430,9 +433,30 @@ func GetRandomVersion(versionNum int, moduleName string, minVersion, maxVersion 
 		if maxVersion != nil && v.GreaterThan(maxVersion) {
 			continue
 		}
-		shuffle = append(shuffle, v)
+		validVersions = append(validVersions, v)
 	}
-	return shuffle[:versionNum], nil
+
+	// if the number of versions that meet the criteria is less than the requested quantity, return all versions that meet the criteria
+	if len(validVersions) <= versionNum {
+		return validVersions, nil
+	}
+
+	// randomly select from eligible versions and ensure uniqueness
+	selected := make([]*Version, 0, versionNum)
+	seen := make(map[string]bool)
+
+	for len(selected) < versionNum {
+		randomIndex := rand.Int() % len(validVersions)
+		v := validVersions[randomIndex]
+		versionStr := v.Original()
+
+		if !seen[versionStr] {
+			seen[versionStr] = true
+			selected = append(selected, v)
+		}
+	}
+
+	return selected, nil
 }
 
 func GetLatestVersion(moduleName string, minVersion, maxVersion *Version) (*Version, error) {

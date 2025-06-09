@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"trpc.group/trpc-go/trpc-go"
 	"trpc.group/trpc-go/trpc-go/client"
@@ -55,6 +54,4 @@ func clientSendReq() {
 		fmt.Printf("call SayHello failed: %v\n", err)
 		return
 	}
-	// Delay exit to ensure trace reporting
-	time.Sleep(8 * time.Second)
 }

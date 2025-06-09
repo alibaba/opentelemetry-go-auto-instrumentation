@@ -44,12 +44,8 @@ $ otel version
 通过以下命令配置工具参数：
 ```console
 $ otel set -verbose                          # 打印详细日志
-$ otel set -log=/path/to/file.log            # 设置日志文件路径
 $ otel set -debug                            # 启用调试模式
-$ otel set -debug -verbose -rule=custom.json # 组合配置参数
-$ otel set -disabledefault -rule=custom.json # 禁用默认规则，仅使用自定义规则
 $ otel set -rule=custom.json                 # 同时使用默认和自定义规则
-$ otel set -rule=a.json,b.json               # 使用默认规则及 a 和 b 自定义规则
 ```
 
 通常情况下，你无需设置任何配置。只需在 `go build` 前加上 `otel` 前缀来构建你的项目：

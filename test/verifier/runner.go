@@ -17,14 +17,15 @@ package verifier
 import (
 	"errors"
 	"fmt"
+	"log"
+	"sort"
+	"time"
+
 	"github.com/mohae/deepcopy"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"log"
-	"sort"
-	"time"
 )
 
 type node struct {
@@ -69,23 +70,20 @@ func waitForMetrics() (metricdata.ResourceMetrics, error) {
 		err error
 	)
 	finish := false
-	var i int
+	timeout := time.After(20 * time.Second)
 	for !finish {
 		select {
-		case <-time.After(20 * time.Second):
-			log.Printf("Timeout waiting for metrics!")
+		case <-timeout:
+			log.Fatalf("Timeout waiting for metrics!")
 			finish = true
 		default:
+			time.Sleep(500 * time.Millisecond)
 			mi, err := metric.GetTestMetrics()
 			mrs = mi.(metricdata.ResourceMetrics)
 			if err == nil {
 				finish = true
 				break
 			}
-			i++
-		}
-		if i == 10 {
-			break
 		}
 	}
 	return mrs, err
@@ -115,22 +113,23 @@ func waitForTraces(numberOfTraces int) []tracetest.SpanStubs {
 	defer trace.ResetTestSpans()
 	finish := false
 	var traces []tracetest.SpanStubs
-	var i int
+	timeout := time.After(20 * time.Second)
 	for !finish {
 		select {
-		case <-time.After(20 * time.Second):
+		case <-timeout:
 			log.Printf("Timeout waiting for traces!")
 			finish = true
 		default:
+			time.Sleep(500 * time.Millisecond)
 			traces = groupAndSortTrace()
 			if len(traces) >= numberOfTraces {
 				finish = true
 			}
-			i++
 		}
-		if i == 10 {
-			break
-		}
+	}
+	if len(traces) < numberOfTraces {
+		log.Fatalf("Not enough traces, expected %d, got %d",
+			numberOfTraces, len(traces))
 	}
 	return traces
 }

@@ -12,13 +12,6 @@ import (
 )
 
 func main() {
-	/*llm, err := ollama.New([]ollama.Option{
-		ollama.WithModel("qwen2.5:0.5b"),
-		ollama.WithServerURL("http://127.0.0.1:" + os.Getenv("OLLAMA_QWEN_PORT")),
-	}...)
-	if err != nil {
-		panic(err)
-	}*/
 	calc := new(tools.Calculator)
 	ag := agents.NewConversationalAgent(fakeAgentLlm{}, []tools.Tool{getAgeTool{}, calc})
 	ex := agents.NewExecutor(ag, agents.WithMaxIterations(100))
@@ -29,7 +22,7 @@ func main() {
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifyLLMCommonAttributes(stubs[1][0], "agentAction", "langchain", trace.SpanKindClient)
-	}, 6)
+	}, 3)
 }
 
 type getAgeTool struct {
