@@ -260,6 +260,24 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/databasesql"
   },
   {
+    "Version": "[3.3.0,)",
+    "ImportPath": "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown",
+    "Function": "Invoke",
+    "ReceiverType": "\\*consumerGracefulShutdownFilter",
+    "OnEnter": "dubboConsumerGracefulShutdownFilterInvokeOnEnter",
+    "OnExit": "dubboConsumerGracefulShutdownFilterInvokeOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/dubbo"
+  },
+  {
+    "Version": "[3.3.0,)",
+    "ImportPath": "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown",
+    "Function": "Invoke",
+    "ReceiverType": "\\*providerGracefulShutdownFilter",
+    "OnEnter": "dubboProviderGracefulShutdownFilterInvokeOnEnter",
+    "OnExit": "dubboProviderGracefulShutdownFilterInvokeOnExit",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/dubbo"
+  },
+  {
     "Version": "[4.0.0,4.12.1)",
     "ImportPath": "github.com/labstack/echo/v4",
     "Function": "New",
@@ -907,7 +925,7 @@
     "Function": "PublishWithDeferredConfirm",
     "OnEnter": "publishWithDeferredConfirmOnEnter",
     "OnExit":"publishWithDeferredConfirmOnExit",
-      "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/amqp091"
   },{
   "Version": "[0.20.0,)",
   "ImportPath": "github.com/mark3labs/mcp-go/mcp",
