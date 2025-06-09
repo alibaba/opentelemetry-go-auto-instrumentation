@@ -157,9 +157,6 @@ func (r ProducerAttrsGetter) GetMessageBodySize(req ProducerRequest) int64 {
 	if req.Message == nil {
 		return 0
 	}
-	if req.Message.Batch && req.Message.Compress {
-		return int64(len(req.Message.CompressedBody))
-	}
 	return int64(len(req.Message.Body))
 }
 
