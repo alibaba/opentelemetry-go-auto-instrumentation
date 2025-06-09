@@ -225,7 +225,7 @@ func ExpectDebugLogContains(t *testing.T, text string) {
 }
 
 func ExpectDebugLogNotContains(t *testing.T, text string) {
-	path := filepath.Join(util.TempBuildDir, util.PPreprocess)
+	path := filepath.Join(util.TempBuildDir, util.DebugLogFile)
 	content := readLog(t, path)
 	ExpectNotContains(t, content, text)
 }
