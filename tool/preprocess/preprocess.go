@@ -99,11 +99,12 @@ func (dp *DepProcessor) generatedOf(dir string) string {
 // Run runs the command and returns the combined standard output and standard
 // error. dir specifies the working directory of the command. If dir is the
 // empty string, run runs the command in the calling process's current directory.
-func runCmdCombinedOutput(dir string, args ...string) (string, error) {
+func runCmdCombinedOutputWithEnv(dir string, env []string, args ...string) (string, error) {
 	path := args[0]
 	args = args[1:]
 	cmd := exec.Command(path, args...)
 	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), env...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errc.New(errc.ErrRunCmd, string(out)).
@@ -325,7 +326,7 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
-	_ = dp.runCleanCache()
+	_ = os.RemoveAll(util.GetOtelGoCachePath())
 
 	_ = os.RemoveAll(dp.otelImporter)
 
@@ -618,23 +619,26 @@ func runDryBuild(goBuildCmd []string) ([]string, error) {
 }
 
 func (dp *DepProcessor) runModTidy() error {
-	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+	env, err := util.GetOtelGoCacheEnv()
+	if err != nil {
+		return err
+	}
+
+	out, err := runCmdCombinedOutputWithEnv(dp.getGoModDir(), env,
 		"go", "mod", "tidy")
 	util.Log("Run go mod tidy: %v", out)
 	return err
 }
 
 func (dp *DepProcessor) runModVendor() error {
-	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+	env, err := util.GetOtelGoCacheEnv()
+	if err != nil {
+		return err
+	}
+
+	out, err := runCmdCombinedOutputWithEnv(dp.getGoModDir(), env,
 		"go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
-	return err
-}
-
-func (dp *DepProcessor) runCleanCache() error {
-	out, err := runCmdCombinedOutput(dp.getGoModDir(),
-		"go", "clean", "-cache")
-	util.Log("Run go clean -cache: %v", out)
 	return err
 }
 
@@ -678,10 +682,18 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 
 	util.Log("Run toolexec build: %v", args)
 	util.AssertGoBuild(args)
+
+	// get isolated GOCACHE environment variable
+	env, err := util.GetOtelGoCacheEnv()
+	if err != nil {
+		return err
+	}
+	util.Log("Using isolated GOCACHE: %s", util.GetOtelGoCachePath())
+
 	// @@ Note that we should not set the working directory here, as the build
 	// with toolexec should be run in the same directory as the original build
 	// command
-	out, err := runCmdCombinedOutput("", args...)
+	out, err := runCmdCombinedOutputWithEnv("", env, args...)
 	util.Log("Output from toolexec build: %v", out)
 	return err
 }

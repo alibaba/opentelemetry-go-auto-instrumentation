@@ -48,7 +48,7 @@ func (dp *DepProcessor) findModCacheDir() (string, error) {
 	}
 	pkgVersion := config.UsedPkg
 	modulePath := pkgPrefix + "@" + pkgVersion
-	output, err := runCmdCombinedOutput(dp.getGoModDir(),
+	output, err := runCmdCombinedOutputWithEnv(dp.getGoModDir(), nil,
 		"go", "mod", "download", "-json", modulePath)
 	if err != nil {
 		return "", err

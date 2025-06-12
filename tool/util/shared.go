@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -33,6 +34,10 @@ const (
 	GoWorkSumFile        = "go.work.sum"
 	DebugLogFile         = "debug.log"
 	TempBuildDir         = ".otel-build"
+)
+
+const (
+	OtelGoCacheDir = "gocache"
 )
 
 const (
@@ -81,6 +86,28 @@ func IsCompileCommand(line string) bool {
 		return false
 	}
 	return true
+}
+
+// GetOtelGoCacheEnv returns a GOCACHE environment variable
+// pointing to a temporary build cache directory to avoid polluting the user's go build environment.
+func GetOtelGoCacheEnv() ([]string, error) {
+	gocachePath, err := filepath.Abs(filepath.Join(TempBuildDir, OtelGoCacheDir))
+	if err != nil {
+		return nil, err
+	}
+
+	if !PathExists(gocachePath) {
+		err = os.MkdirAll(gocachePath, 0755)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return []string{"GOCACHE=" + gocachePath}, nil
+}
+
+func GetOtelGoCachePath() string {
+	return filepath.Join(TempBuildDir, OtelGoCacheDir)
 }
 
 func GetTempBuildDir() string {
