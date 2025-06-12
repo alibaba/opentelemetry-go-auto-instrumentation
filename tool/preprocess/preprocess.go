@@ -325,6 +325,8 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
+	_ = dp.runCleanCache()
+
 	_ = os.RemoveAll(dp.otelImporter)
 
 	_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
@@ -626,6 +628,13 @@ func (dp *DepProcessor) runModVendor() error {
 	out, err := runCmdCombinedOutput(dp.getGoModDir(),
 		"go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
+	return err
+}
+
+func (dp *DepProcessor) runCleanCache() error {
+	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+		"go", "clean", "-cache")
+	util.Log("Run go clean -cache: %v", out)
 	return err
 }
 
