@@ -53,6 +53,7 @@ const (
 	DryRunLog        = "dry_run.log"
 	CompileRemix     = "remix"
 	VendorDir        = "vendor"
+	GoCacheDir       = "gocache"
 )
 
 type DepProcessor struct {
@@ -99,7 +100,7 @@ func (dp *DepProcessor) generatedOf(dir string) string {
 // Run runs the command and returns the combined standard output and standard
 // error. dir specifies the working directory of the command. If dir is the
 // empty string, run runs the command in the calling process's current directory.
-func runCmdCombinedOutputWithEnv(dir string, env []string, args ...string) (string, error) {
+func runCmdCombinedOutput(dir string, env []string, args ...string) (string, error) {
 	path := args[0]
 	args = args[1:]
 	cmd := exec.Command(path, args...)
@@ -326,7 +327,7 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
-	_ = os.RemoveAll(util.GetOtelGoCachePath())
+	_ = os.RemoveAll(getTempGoCache())
 
 	_ = os.RemoveAll(dp.otelImporter)
 
@@ -619,27 +620,45 @@ func runDryBuild(goBuildCmd []string) ([]string, error) {
 }
 
 func (dp *DepProcessor) runModTidy() error {
-	env, err := util.GetOtelGoCacheEnv()
-	if err != nil {
-		return err
-	}
-
-	out, err := runCmdCombinedOutputWithEnv(dp.getGoModDir(), env,
+	out, err := runCmdCombinedOutput(dp.getGoModDir(), nil,
 		"go", "mod", "tidy")
 	util.Log("Run go mod tidy: %v", out)
 	return err
 }
 
 func (dp *DepProcessor) runModVendor() error {
-	env, err := util.GetOtelGoCacheEnv()
+	goCachePath, err := filepath.Abs(getTempGoCache())
 	if err != nil {
 		return err
 	}
 
-	out, err := runCmdCombinedOutputWithEnv(dp.getGoModDir(), env,
+	out, err := runCmdCombinedOutput(dp.getGoModDir(), buildGoCacheEnv(goCachePath),
 		"go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
 	return err
+}
+
+func getTempGoCache() string {
+	return filepath.Join(util.TempBuildDir, GoCacheDir)
+}
+
+func createTempGoCache() error {
+	goCachePath, err := filepath.Abs(getTempGoCache())
+	if err != nil {
+		return err
+	}
+
+	if !util.PathExists(goCachePath) {
+		err = os.MkdirAll(goCachePath, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func buildGoCacheEnv(value string) []string {
+	return []string{"GOCACHE=" + value}
 }
 
 func nullDevice() string {
@@ -683,17 +702,17 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	util.Log("Run toolexec build: %v", args)
 	util.AssertGoBuild(args)
 
-	// get isolated GOCACHE environment variable
-	env, err := util.GetOtelGoCacheEnv()
+	// get the temporary build cache path
+	goCachePath, err := filepath.Abs(getTempGoCache())
 	if err != nil {
 		return err
 	}
-	util.Log("Using isolated GOCACHE: %s", util.GetOtelGoCachePath())
+	util.Log("Using isolated GOCACHE: %s", goCachePath)
 
 	// @@ Note that we should not set the working directory here, as the build
 	// with toolexec should be run in the same directory as the original build
 	// command
-	out, err := runCmdCombinedOutputWithEnv("", env, args...)
+	out, err := runCmdCombinedOutput("", buildGoCacheEnv(goCachePath), args...)
 	util.Log("Output from toolexec build: %v", out)
 	return err
 }
@@ -848,6 +867,12 @@ func Preprocess() error {
 	defer func() { dp.postProcess() }()
 	{
 		defer util.PhaseTimer("Preprocess")()
+
+		// Create the temporary build cache directory to avoid polluting the user's go build environment.
+		err := createTempGoCache()
+		if err != nil {
+			return err
+		}
 
 		// Backup go.mod and add additional repalce directives for the
 		// alibaba-otel pkg module
