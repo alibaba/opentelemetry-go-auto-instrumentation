@@ -22,6 +22,7 @@ import (
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -65,11 +66,11 @@ func (dp *DepProcessor) findModCacheDir() (string, error) {
 }
 
 // rectifyRule rectifies the file rules path to the local module cache path.
-func (dp *DepProcessor) rectifyRule() error {
+func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 	util.GuaranteeInPreprocess()
 	defer util.PhaseTimer("Fetch")()
 	rectified := map[string]bool{}
-	for _, bundle := range dp.bundles {
+	for _, bundle := range bundles {
 		for _, funcRules := range bundle.File2FuncRules {
 			for _, rs := range funcRules {
 				for _, rule := range rs {

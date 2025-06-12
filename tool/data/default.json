@@ -447,34 +447,34 @@
   {
     "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
     "FileName": "otel_trace_context_linker.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/trace"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
-    "FileName": "trace-context/otel_trace_context.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "FileName": "otel_trace_context.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/trace"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
-    "FileName": "trace-context/otel_trace_test_func_holder.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "FileName": "otel_trace_test_func_holder.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/trace"
+  },
+   {
+    "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
+    "FileName": "span.go",
+    "Replace": true,
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/trace"
+  },
+  {
+    "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
+    "FileName": "tracer.go",
+    "Replace": true,
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/trace"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/sdk/metric",
-    "FileName": "metric/otel_metric_test_func_holder.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
-  },
-  {
-    "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
-    "FileName": "trace-context/span.go",
-    "Replace": true,
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
-  },
-  {
-    "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
-    "FileName": "trace-context/tracer.go",
-    "Replace": true,
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "FileName": "otel_metric_test_func_holder.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/metric"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/trace",
@@ -484,25 +484,25 @@
   },
   {
     "ImportPath": "go.opentelemetry.io/otel",
-    "FileName": "trace-context/trace.go",
+    "FileName": "trace.go",
     "Replace": true,
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/otel"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/baggage",
     "FileName": "otel_baggage_linker.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/baggage"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/baggage",
     "FileName": "otel_baggage_util.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/baggage"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/baggage",
-    "FileName": "baggage/context.go",
+    "FileName": "context.go",
     "Replace": true,
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/baggage"
   },
   {
     "Version": "[1.20.0,1.27.1)",
