@@ -325,10 +325,6 @@ func (dp *DepProcessor) postProcess() {
 		return
 	}
 
-	if path, err := getTempGoCache(); err == nil {
-		_ = os.RemoveAll(path)
-	}
-
 	_ = os.RemoveAll(dp.otelImporter)
 
 	_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
