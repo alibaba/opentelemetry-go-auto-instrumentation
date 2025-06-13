@@ -30,12 +30,12 @@
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/sdk/trace",
-    "FileName": "trace-context/otel_trace_test_func_holder.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "FileName": "otel_trace_test_func_holder.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/trace"
   },
   {
     "ImportPath": "go.opentelemetry.io/otel/sdk/metric",
-    "FileName": "metric/otel_metric_test_func_holder.go",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk"
+    "FileName": "otel_metric_test_func_holder.go",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/metric"
   }
 ]

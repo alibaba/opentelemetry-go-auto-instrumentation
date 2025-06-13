@@ -8,8 +8,8 @@ require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.9.3
 	go.opentelemetry.io/otel/sdk v1.36.0
-	gorm.io/driver/mysql v1.6.0
-	gorm.io/gorm v1.30.0
+	gorm.io/driver/mysql v1.0.5
+	gorm.io/gorm v1.22.0
 )
 
 require (
@@ -24,5 +24,4 @@ require (
 	go.opentelemetry.io/otel/metric v1.36.0 // indirect
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
 )
