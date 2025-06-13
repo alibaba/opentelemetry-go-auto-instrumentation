@@ -444,7 +444,7 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	scanner.Buffer(buffer, cap(buffer))
 
 	vms := make([]*vendorModule, 0)
-	var mod *vendorModule
+	mod := &vendorModule{}
 	vendorVersion := make(map[string]string)
 	// From src/cmd/go/internal/modload/vendor.go
 	for scanner.Scan() {
