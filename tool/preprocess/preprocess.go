@@ -764,7 +764,6 @@ func addModReplace(gomod string, replaceMap map[string]string) error {
 
 	// If we have added any replace directive, we need to write the go.mod file
 	// back to the disk, otherwise we can just skip it.
-	util.Log("Add replace directives tob%v %s: %v ||%v", added, gomod, replaceMap, modfile.Replace)
 	if added {
 		bs, err := modfile.Format()
 		if err != nil {
@@ -774,35 +773,6 @@ func addModReplace(gomod string, replaceMap map[string]string) error {
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (dp *DepProcessor) rectifyMod() error {
-	// Backup go.mod and go.sum files
-	gomodDir := dp.getGoModDir()
-	files := []string{}
-	files = append(files, filepath.Join(gomodDir, util.GoModFile))
-	files = append(files, filepath.Join(gomodDir, util.GoSumFile))
-	files = append(files, filepath.Join(gomodDir, util.GoWorkSumFile))
-	for _, file := range files {
-		if util.PathExists(file) {
-			err := dp.backupFile(file)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	// Since we haven't published the alibaba-otel pkg module, we need to add
-	// a replace directive to tell the go tool to use the local module cache
-	// instead of the remote module. This is a workaround for the case that
-	// the remote module is not available(published).
-	replaceMap := map[string]string{
-		pkgPrefix: dp.pkgLocalCache,
-	}
-	err := addModReplace(dp.getGoModPath(), replaceMap)
-	if err != nil {
-		return err
 	}
 	return nil
 }

@@ -100,3 +100,32 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 	}
 	return nil
 }
+
+func (dp *DepProcessor) rectifyMod() error {
+	// Backup go.mod and go.sum files
+	gomodDir := dp.getGoModDir()
+	files := []string{}
+	files = append(files, filepath.Join(gomodDir, util.GoModFile))
+	files = append(files, filepath.Join(gomodDir, util.GoSumFile))
+	files = append(files, filepath.Join(gomodDir, util.GoWorkSumFile))
+	for _, file := range files {
+		if util.PathExists(file) {
+			err := dp.backupFile(file)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	// Since we haven't published the alibaba-otel pkg module, we need to add
+	// a replace directive to tell the go tool to use the local module cache
+	// instead of the remote module. This is a workaround for the case that
+	// the remote module is not available(published).
+	replaceMap := map[string]string{
+		pkgPrefix: dp.pkgLocalCache,
+	}
+	err := addModReplace(dp.getGoModPath(), replaceMap)
+	if err != nil {
+		return err
+	}
+	return nil
+}
