@@ -17,7 +17,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/kratos/v2 v2.6.3
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/go-pg/pg/v10 v10.0.0
+	github.com/go-pg/pg/v10 v10.10.0
 	github.com/go-sql-driver/mysql v1.9.1
 	github.com/gofiber/fiber/v2 v2.43.0
 	github.com/gomodule/redigo v1.9.0
