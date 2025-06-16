@@ -801,7 +801,7 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 
 	// No rule bundles? We still need to generate the otel_importer.go file whose
 	// purpose is to import the fundamental dependencies
-	if bundles == nil || len(bundles) == 0 {
+	if len(bundles) == 0 {
 		_, err := util.WriteFile(dp.otelImporter, importerTemplate)
 		if err != nil {
 			return err
