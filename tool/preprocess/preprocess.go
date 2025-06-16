@@ -795,10 +795,59 @@ func (dp *DepProcessor) saveDebugFiles() {
 //go:embed template.go
 var importerTemplate string
 
-func (dp *DepProcessor) newRuleImporter() {
+func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) error {
 	importerTemplate = strings.ReplaceAll(importerTemplate,
 		util.GoBuildIgnoreComment, "")
-	util.WriteFile(dp.otelImporter, importerTemplate)
+
+	// No rule bundles? We still need to generate the otel_importer.go file whose
+	// purpose is to import the fundamental dependencies
+	if bundles == nil || len(bundles) == 0 {
+		_, err := util.WriteFile(dp.otelImporter, importerTemplate)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Generate the otel_importer.go file with the rule bundles
+	paths := map[string]bool{}
+	for _, bundle := range bundles {
+		for _, funcRules := range bundle.File2FuncRules {
+			for _, rules := range funcRules {
+				for _, rule := range rules {
+					if rule.GetPath() != "" {
+						paths[rule.GetPath()] = true
+					}
+				}
+			}
+		}
+	}
+	content := importerTemplate
+	replaceMap := map[string]string{}
+	for path := range paths {
+		content += fmt.Sprintf("import _ %q\n", path)
+		t := strings.TrimPrefix(path, pkgPrefix)
+		replaceMap[path] = filepath.Join(dp.pkgLocalCache, t)
+	}
+	cnt := 0
+	for _, bundle := range bundles {
+		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
+		content += lb
+		s := fmt.Sprintf("var getstatck%d = debug.Stack\n", cnt)
+		content += s
+		lb = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n", cnt, bundle.ImportPath)
+		content += lb
+		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
+		content += s
+		cnt++
+	}
+	util.WriteFile(dp.otelImporter, content)
+	// Add replace directives for all matched rules
+	err := addModReplace(dp.getGoModPath(), replaceMap)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (dp *DepProcessor) addRuleImporter(bundles []*resource.RuleBundle) error {
@@ -868,33 +917,35 @@ func Preprocess() error {
 			return err
 		}
 
-		// Add otel dependencies as part of the project dependencies
-		dp.newRuleImporter()
-		err = dp.refreshDeps()
-		if err != nil {
-			return err
-		}
-
+		// Two round of rule matching
 		// First match based on the {source files, otel imports}
-		bundles, err := dp.matchRules()
-		if err != nil {
-			return err
+		// Second match based on the {source files, otel imports, hook rules}
+		bundles := make([]*resource.RuleBundle, 0)
+		for range 2 {
+			err = dp.newRuleImporterWith(bundles)
+			if err != nil {
+				return err
+			}
+
+			err = dp.refreshDeps()
+			if err != nil {
+				return err
+			}
+
+			bundles, err = dp.matchRules()
+			if err != nil {
+				return err
+			}
 		}
 
 		// Add hook rule dependency as part of the project dependencies
-		err = dp.addRuleImporter(bundles)
+		err = dp.newRuleImporterWith(bundles)
 		if err != nil {
 			return err
 		}
 
 		// Update go.mod with the all additional dependencies
 		err = dp.refreshDeps()
-		if err != nil {
-			return err
-		}
-
-		// Second match based on the {source files, otel imports, hook rules}
-		bundles, err = dp.matchRules()
 		if err != nil {
 			return err
 		}
