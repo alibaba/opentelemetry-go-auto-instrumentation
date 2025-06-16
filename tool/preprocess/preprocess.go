@@ -938,13 +938,12 @@ func Preprocess() error {
 			}
 		}
 
-		// Add hook rule dependency as part of the project dependencies
+		// Update the otel_importer.go file with the second matched rules
 		err = dp.newRuleImporterWith(bundles)
 		if err != nil {
 			return err
 		}
 
-		// Update go.mod with the all additional dependencies
 		err = dp.refreshDeps()
 		if err != nil {
 			return err
