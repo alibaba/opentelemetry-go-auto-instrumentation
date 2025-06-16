@@ -139,6 +139,7 @@ func parseGoMod(gomod string) (*modfile.File, error) {
 	}
 	return modFile, nil
 }
+
 func (dp *DepProcessor) initCmd() {
 	// There is a tricky, all arguments after the otel tool itself are saved for
 	// later use, which means the subcommand "go build" itself are also included
@@ -850,50 +851,6 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 	return nil
 }
 
-func (dp *DepProcessor) addRuleImporter(bundles []*resource.RuleBundle) error {
-	paths := map[string]bool{}
-	for _, bundle := range bundles {
-		for _, funcRules := range bundle.File2FuncRules {
-			for _, rules := range funcRules {
-				for _, rule := range rules {
-					if rule.GetPath() != "" {
-						paths[rule.GetPath()] = true
-					}
-				}
-			}
-		}
-	}
-	content, err := util.ReadFile(dp.otelImporter)
-	if err != nil {
-		return err
-	}
-	replaceMap := map[string]string{}
-	for path := range paths {
-		content += fmt.Sprintf("import _ %q\n", path)
-		t := strings.TrimPrefix(path, pkgPrefix)
-		replaceMap[path] = filepath.Join(dp.pkgLocalCache, t)
-	}
-	cnt := 0
-	for _, bundle := range bundles {
-		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
-		content += lb
-		s := fmt.Sprintf("var getstatck%d = debug.Stack\n", cnt)
-		content += s
-		lb = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n", cnt, bundle.ImportPath)
-		content += lb
-		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
-		content += s
-		cnt++
-	}
-	util.WriteFile(dp.otelImporter, content)
-	// Add replace directives for all matched rules
-	err = addModReplace(dp.getGoModPath(), replaceMap)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func Preprocess() error {
 	// Make sure the project is modularized otherwise we cannot proceed
 	err := precheck()
@@ -918,10 +875,24 @@ func Preprocess() error {
 		}
 
 		// Two round of rule matching
-		// First match based on the {source files, otel imports}
-		// Second match based on the {source files, otel imports, hook rules}
+		//    {prepare->refresh}
+		//        1st match
+		//    {prepare->refresh}
+		//        2nd match
+		//    {prepare->refresh}
+		// Let's break it down a little bit. We first prepare the rule import,
+		// which is used to import foundational dependencies (e.g., otel, as we
+		// will instrument the otel SDK itself). Then, we perform a refresh to
+		// ensure dependencies are ready and proceed to the 1st match. During
+		// this phase, some rules matching specific criteria are identified. We
+		// then update the rule import again to include these newly matched rules.
+		// Since these rules may (and likely will) break the original dependency
+		// graph, a 2nd match is required to resolve the final set of rules.
+		// These final rules are used to perform a final update of the rule import.
+		// At this point, all preparations are complete, and the process can
+		// advance to the second stage: instrumentation.
 		bundles := make([]*resource.RuleBundle, 0)
-		for range 2 {
+		for i := 0; i < 3; i++ {
 			err = dp.newRuleImporterWith(bundles)
 			if err != nil {
 				return err
@@ -931,22 +902,13 @@ func Preprocess() error {
 			if err != nil {
 				return err
 			}
-
+			if i == 2 {
+				continue
+			}
 			bundles, err = dp.matchRules()
 			if err != nil {
 				return err
 			}
-		}
-
-		// Update the otel_importer.go file with the second matched rules
-		err = dp.newRuleImporterWith(bundles)
-		if err != nil {
-			return err
-		}
-
-		err = dp.refreshDeps()
-		if err != nil {
-			return err
 		}
 
 		// Rectify file rules to make sure we can find them locally
