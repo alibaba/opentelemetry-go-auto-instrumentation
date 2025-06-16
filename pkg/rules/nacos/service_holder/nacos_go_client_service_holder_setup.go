@@ -57,11 +57,7 @@ func afterNewServiceInfoHolder(call api.CallContext, holder *naming_cache.Servic
 			Key:   "not.load.cache.at.start",
 			Value: attribute.StringValue(call.GetKeyData("notLoadCacheAtStart").(string)),
 		})
-		count := 0
-		holder.ServiceInfoMap.Range(func(k, v interface{}) bool {
-			count++
-			return true
-		})
+		count := holder.ServiceInfoMap.Count()
 		observer.ObserveInt64(experimental.ClientServiceInfoMapSize, int64(count), metric.WithAttributeSet(attrSet))
 		return nil
 	}, experimental.ClientServiceInfoMapSize)
