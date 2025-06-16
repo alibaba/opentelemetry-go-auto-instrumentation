@@ -22,6 +22,7 @@ import (
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
@@ -65,11 +66,11 @@ func (dp *DepProcessor) findModCacheDir() (string, error) {
 }
 
 // rectifyRule rectifies the file rules path to the local module cache path.
-func (dp *DepProcessor) rectifyRule() error {
+func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 	util.GuaranteeInPreprocess()
 	defer util.PhaseTimer("Fetch")()
 	rectified := map[string]bool{}
-	for _, bundle := range dp.bundles {
+	for _, bundle := range bundles {
 		for _, funcRules := range bundle.File2FuncRules {
 			for _, rs := range funcRules {
 				for _, rule := range rs {
@@ -96,6 +97,35 @@ func (dp *DepProcessor) rectifyRule() error {
 			fileRule.FileName = filepath.Join(p, fileRule.FileName)
 			rectified[p] = true
 		}
+	}
+	return nil
+}
+
+func (dp *DepProcessor) rectifyMod() error {
+	// Backup go.mod and go.sum files
+	gomodDir := dp.getGoModDir()
+	files := []string{}
+	files = append(files, filepath.Join(gomodDir, util.GoModFile))
+	files = append(files, filepath.Join(gomodDir, util.GoSumFile))
+	files = append(files, filepath.Join(gomodDir, util.GoWorkSumFile))
+	for _, file := range files {
+		if util.PathExists(file) {
+			err := dp.backupFile(file)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	// Since we haven't published the alibaba-otel pkg module, we need to add
+	// a replace directive to tell the go tool to use the local module cache
+	// instead of the remote module. This is a workaround for the case that
+	// the remote module is not available(published).
+	replaceMap := map[string]string{
+		pkgPrefix: dp.pkgLocalCache,
+	}
+	err := addModReplace(dp.getGoModPath(), replaceMap)
+	if err != nil {
+		return err
 	}
 	return nil
 }
