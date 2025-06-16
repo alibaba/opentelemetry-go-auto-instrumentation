@@ -21,7 +21,7 @@ func main() {
 	defer ts.Close()
 	llm, err := openai.New(
 		openai.WithModel("deepseek-reasoner"),
-		openai.WithToken("sk-3fad43649f6947d19317b3a75f81a3e6"),
+		openai.WithToken("token"),
 		openai.WithBaseURL(ts.URL),
 		openai.WithHTTPClient(httputil.DebugHTTPClient),
 	)
