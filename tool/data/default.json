@@ -993,5 +993,12 @@
     "OnEnter": "consumerReadMessageOnEnter",
     "OnExit": "consumerReadMessageOnExit",
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/segmentio-kafka-go"
+  },
+  {
+    "Version": "[10.0.0,10.14.0]",
+    "ImportPath": "github.com/go-pg/pg/v10",
+    "Function": "Connect",
+    "OnExit": "afterGopgConnect",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gopg"
   }
 ]
