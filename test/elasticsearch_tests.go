@@ -93,6 +93,7 @@ func runElasticSearchContainer(ctx context.Context) (testcontainers.Container, e
 			Image: "docker.elastic.co/elasticsearch/elasticsearch:7.17.25",
 			Env: map[string]string{
 				"discovery.type": "single-node",
+				"ES_JAVA_OPTS":   "-Xms512m -Xmx512m",
 				"cluster.routing.allocation.disk.threshold_enabled": "false",
 			},
 			ExposedPorts: []string{
