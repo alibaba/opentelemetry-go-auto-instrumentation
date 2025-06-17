@@ -163,3 +163,14 @@ not work with the agent, we find out through this build and can address it by th
 Users can add a latest-depth check case by calling `NewLatestDepthTestCase`, the arguments taken by `NewLatestDepthTestCase`
 are almost the same as `NewGeneralTestCase`. You need to additionally specify the dependency name of the plugin and the list of
 classes that need to do the latest-depth check.
+
+## Update the world test
+
+World test is a comprehensive compatibility check designed to ensure that the Go agent correctly matches a wide range of 
+plugin rules. It helps prevent missing instrumentation when adding or modifying rules, and ensures the rule system works across 
+different versions of third-party libraries. The test verifies integrity by checking whether the number of matched ImportPath
+values equals the expected count. If the counts do not match, all matched paths are logged for debugging.
+
+Users can update the World test by modifying the `test/world_test.go` and `test/world/main.go` files. Add the relevant plugin import
+path to test/world/main.go, and update the `expectImportCounts` variable in `test/world_test.go`. This ensures the completeness of 
+rule matching.

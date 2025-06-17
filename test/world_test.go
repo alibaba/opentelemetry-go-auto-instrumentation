@@ -22,6 +22,8 @@ import (
 
 const WorldAppName = "world"
 
+const expectImportCounts = 28
+
 func TestCompileTheWorld(t *testing.T) {
 	UseApp(WorldAppName)
 
@@ -39,7 +41,7 @@ func TestCompileTheWorld(t *testing.T) {
 		importPath := match[1]
 		importPaths[importPath] = struct{}{}
 	}
-	if len(importPaths) != 28 {
+	if len(importPaths) != expectImportCounts {
 		t.Log("Matched import paths:")
 		// sort import paths for better readability
 		// (not strictly necessary, but helps in debugging)
