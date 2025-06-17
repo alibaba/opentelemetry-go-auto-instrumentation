@@ -46,11 +46,11 @@ func TestBuildProject4(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disabledefault=false", "-rule=../../tool/data/default.json")
+	RunSet(t, "-disabledefault=false", "-rule=../../tool/data/rules/base.json")
 	RunGoBuildFallible(t, "go", "build", "m1") // duplicated default rules
-	RunSet(t, "-rule=../../tool/data/default")
+	RunSet(t, "-rule=../../tool/data/rules/base")
 	RunGoBuildFallible(t, "go", "build", "m1")
-	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/default.json,../../tool/data/test_fmt.json")
+	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/rules/base.json,../../tool/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 }
 
