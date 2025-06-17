@@ -31,6 +31,7 @@ import (
 	"github.com/dave/dst"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
+	"golang.org/x/sync/errgroup"
 )
 
 type ruleMatcher struct {
@@ -94,11 +95,56 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 }
 
 func loadDefaultRules() []resource.InstRule {
-	rules, err := loadRuleRaw(data.UseDefaultRuleJson())
+	// Read all default embedded rule files
+	files, err := data.ListJSONFiles()
 	if err != nil {
-		util.Log("Failed to load default rules: %v", err)
+		util.Log("Failed to list default rule json files: %v", err)
 		return nil
 	}
+
+	type chunk []resource.InstRule
+	ruleChunks := make([]chunk, len(files))
+
+	group := new(errgroup.Group)
+
+	// Load and parse each rule file concurrently
+	for i, name := range files {
+		i, name := i, name // capture loop variables
+
+		group.Go(func() error {
+			raw, err := data.ReadRuleFile(name)
+			if err != nil {
+				util.Log("Failed to read rule file %s: %v", name, err)
+				return err
+			}
+
+			// Parse JSON content into InstRule slice
+			rule, err := loadRuleRaw(string(raw))
+			if err != nil {
+				util.Log("Failed to parse rule file %s: %v", name, err)
+				return nil
+			}
+
+			ruleChunks[i] = rule
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil {
+		util.Log("One or more default rule files failed to load: %v", err)
+		return nil
+	}
+
+	// Merge all ruleChunks
+	total := 0
+	for _, c := range ruleChunks {
+		total += len(c)
+	}
+	rules := make([]resource.InstRule, 0, total)
+	for _, c := range ruleChunks {
+		rules = append(rules, c...)
+	}
+
 	return rules
 }
 
