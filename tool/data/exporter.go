@@ -23,7 +23,7 @@ import (
 //go:embed rules/*.json
 var defaultRulesFS embed.FS
 
-func ListJSONFiles() ([]string, error) {
+func ListRuleFiles() ([]string, error) {
 	entries, err := defaultRulesFS.ReadDir("rules")
 	if err != nil {
 		return nil, err

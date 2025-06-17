@@ -96,7 +96,7 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 
 func loadDefaultRules() []resource.InstRule {
 	// Read all default embedded rule files
-	files, err := data.ListJSONFiles()
+	files, err := data.ListRuleFiles()
 	if err != nil {
 		util.Log("Failed to list default rule json files: %v", err)
 		return nil
@@ -105,7 +105,7 @@ func loadDefaultRules() []resource.InstRule {
 	type chunk []resource.InstRule
 	ruleChunks := make([]chunk, len(files))
 
-	group := new(errgroup.Group)
+	group := &errgroup.Group{}
 
 	// Load and parse each rule file concurrently
 	for i, name := range files {
@@ -136,11 +136,7 @@ func loadDefaultRules() []resource.InstRule {
 	}
 
 	// Merge all ruleChunks
-	total := 0
-	for _, c := range ruleChunks {
-		total += len(c)
-	}
-	rules := make([]resource.InstRule, 0, total)
+	rules := make([]resource.InstRule, 0)
 	for _, c := range ruleChunks {
 		rules = append(rules, c...)
 	}
