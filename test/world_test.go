@@ -39,7 +39,7 @@ func TestCompileTheWorld(t *testing.T) {
 		importPath := match[1]
 		importPaths[importPath] = struct{}{}
 	}
-	if len(importPaths) != 27 {
+	if len(importPaths) != 28 {
 		t.Log("Matched import paths:")
 		// sort import paths for better readability
 		// (not strictly necessary, but helps in debugging)

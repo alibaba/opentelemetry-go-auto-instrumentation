@@ -22,6 +22,7 @@ import (
 	_ "net/http"
 	_ "runtime"
 
+	_ "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown"
 	_ "github.com/cloudwego/hertz/pkg/app/server"
 	_ "github.com/gin-gonic/gin"
 	_ "github.com/go-kratos/kratos/v2/transport/grpc"
