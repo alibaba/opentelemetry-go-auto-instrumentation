@@ -17,7 +17,6 @@ package data
 import (
 	"embed"
 	_ "embed"
-	"path/filepath"
 	"strings"
 )
 
@@ -40,5 +39,5 @@ func ListJSONFiles() ([]string, error) {
 }
 
 func ReadRuleFile(name string) ([]byte, error) {
-	return defaultRulesFS.ReadFile(filepath.Join("rules", name))
+	return defaultRulesFS.ReadFile("rules/" + name)
 }
