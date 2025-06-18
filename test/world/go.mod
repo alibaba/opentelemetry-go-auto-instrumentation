@@ -10,7 +10,7 @@ require (
 	github.com/cloudwego/hertz v0.9.3
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-kratos/kratos/v2 v2.7.2
-	github.com/go-redis/redis/v8 v8.11.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gorilla/mux v1.8.1
 	github.com/labstack/echo/v4 v4.12.0
