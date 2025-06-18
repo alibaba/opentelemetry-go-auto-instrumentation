@@ -1,0 +1,9 @@
+[
+  {
+    "ImportPath": "log/slog",
+    "Function": "log",
+    "ReceiverType": "\\*Logger",
+    "OnEnter": "goSlogWriteOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goslog"
+  }
+]

@@ -15,10 +15,29 @@
 package data
 
 import (
+	"embed"
 	_ "embed"
+	"strings"
 )
 
-//go:embed default.json
-var defaultRuleJson string
+//go:embed rules/*.json
+var defaultRulesFS embed.FS
 
-func UseDefaultRuleJson() string { return defaultRuleJson }
+func ListRuleFiles() ([]string, error) {
+	entries, err := defaultRulesFS.ReadDir("rules")
+	if err != nil {
+		return nil, err
+	}
+
+	var files []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+			files = append(files, e.Name())
+		}
+	}
+	return files, nil
+}
+
+func ReadRuleFile(name string) ([]byte, error) {
+	return defaultRulesFS.ReadFile("rules/" + name)
+}

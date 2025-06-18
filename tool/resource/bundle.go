@@ -16,12 +16,10 @@ package resource
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
-	"github.com/dave/dst"
 )
 
 const (
@@ -99,57 +97,6 @@ func (rb *RuleBundle) SetPackageName(name string) {
 
 func (rb *RuleBundle) AddFileRule(rule *InstFileRule) {
 	rb.FileRules = append(rb.FileRules, rule)
-}
-
-func isHookDefined(root *dst.File, rule *InstFuncRule) bool {
-	util.Assert(rule.OnEnter != "" || rule.OnExit != "", "hook must be set")
-	if rule.OnEnter != "" {
-		if util.FindFuncDecl(root, rule.OnEnter) == nil {
-			return false
-		}
-	}
-	if rule.OnExit != "" {
-		if util.FindFuncDecl(root, rule.OnExit) == nil {
-			return false
-		}
-	}
-	return true
-}
-
-func FindHookFile(rule *InstFuncRule) (string, error) {
-	files, err := FindRuleFiles(rule)
-	if err != nil {
-		return "", err
-	}
-	for _, file := range files {
-		if !util.IsGoFile(file) {
-			continue
-		}
-		root, err := util.ParseAstFromFileFast(file)
-		if err != nil {
-			return "", err
-		}
-		if isHookDefined(root, rule) {
-			return file, nil
-		}
-	}
-	return "", errc.New(errc.ErrNotExist,
-		fmt.Sprintf("no hook %s/%s found for %s from %v",
-			rule.OnEnter, rule.OnExit, rule.Function, files))
-}
-
-func FindRuleFiles(rule InstRule) ([]string, error) {
-	files, err := util.ListFiles(rule.GetPath())
-	if err != nil {
-		return nil, err
-	}
-	switch rule.(type) {
-	case *InstFuncRule, *InstFileRule:
-		return files, nil
-	case *InstStructRule:
-		util.ShouldNotReachHereT("insane rule type")
-	}
-	return nil, nil
 }
 
 func StoreRuleBundles(bundles []*RuleBundle) error {

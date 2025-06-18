@@ -31,6 +31,7 @@ import (
 	"github.com/dave/dst"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
+	"golang.org/x/sync/errgroup"
 )
 
 type ruleMatcher struct {
@@ -94,11 +95,52 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 }
 
 func loadDefaultRules() []resource.InstRule {
-	rules, err := loadRuleRaw(data.UseDefaultRuleJson())
+	// Read all default embedded rule files
+	files, err := data.ListRuleFiles()
 	if err != nil {
-		util.Log("Failed to load default rules: %v", err)
+		util.Log("Failed to list default rule json files: %v", err)
 		return nil
 	}
+
+	type chunk []resource.InstRule
+	ruleChunks := make([]chunk, len(files))
+
+	group := &errgroup.Group{}
+
+	// Load and parse each rule file concurrently
+	for i, name := range files {
+		i, name := i, name // capture loop variables
+
+		group.Go(func() error {
+			raw, err := data.ReadRuleFile(name)
+			if err != nil {
+				util.Log("Failed to read rule file %s: %v", name, err)
+				return err
+			}
+
+			// Parse JSON content into InstRule slice
+			rule, err := loadRuleRaw(string(raw))
+			if err != nil {
+				util.Log("Failed to parse rule file %s: %v", name, err)
+				return nil
+			}
+
+			ruleChunks[i] = rule
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil {
+		util.Log("One or more default rule files failed to load: %v", err)
+		return nil
+	}
+
+	// Merge all ruleChunks
+	rules := make([]resource.InstRule, 0)
+	for _, c := range ruleChunks {
+		rules = append(rules, c...)
+	}
+
 	return rules
 }
 
@@ -444,7 +486,7 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	scanner.Buffer(buffer, cap(buffer))
 
 	vms := make([]*vendorModule, 0)
-	var mod *vendorModule
+	mod := &vendorModule{}
 	vendorVersion := make(map[string]string)
 	// From src/cmd/go/internal/modload/vendor.go
 	for scanner.Scan() {
@@ -514,7 +556,7 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *resource.RuleBundle) {
 	ch <- bundle
 }
 
-func (dp *DepProcessor) matchRules() error {
+func (dp *DepProcessor) matchRules() ([]*resource.RuleBundle, error) {
 	defer util.PhaseTimer("Match")()
 	// Run a dry build to get all dependencies needed for the project
 	// Match the dependencies with available rules and prepare them
@@ -525,7 +567,7 @@ func (dp *DepProcessor) matchRules() error {
 		// Tell us more about what happened in the dry run
 		errLog, _ := util.ReadFile(util.GetLogPath(DryRunLog))
 		err = errc.Adhere(err, "reason", errLog)
-		return err
+		return nil, err
 	}
 
 	matcher := newRuleMatcher()
@@ -535,7 +577,7 @@ func (dp *DepProcessor) matchRules() error {
 	if dp.vendorMode {
 		modules, err := parseVendorModules(dp.getGoModDir())
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if config.GetConf().Verbose {
 			util.Log("Vendor modules: %v", modules)
@@ -549,12 +591,13 @@ func (dp *DepProcessor) matchRules() error {
 		go runMatch(matcher, cmd, ch)
 	}
 	cnt := 0
+	bundles := make([]*resource.RuleBundle, 0)
 	for cnt < len(compileCmds) {
 		bundle := <-ch
 		if bundle.IsValid() {
-			dp.bundles = append(dp.bundles, bundle)
+			bundles = append(bundles, bundle)
 		}
 		cnt++
 	}
-	return nil
+	return bundles, nil
 }

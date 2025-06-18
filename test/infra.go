@@ -70,6 +70,15 @@ func ReadPreprocessLog(t *testing.T, fileName string) string {
 	return content
 }
 
+func ReadLog(t *testing.T) string {
+	path := filepath.Join(util.TempBuildDir, util.DebugLogFile)
+	content, err := util.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return content
+}
+
 func readStdoutLog(t *testing.T) string {
 	return readLog(t, "stdout.log")
 }
@@ -109,7 +118,7 @@ func RunGoBuild(t *testing.T, args ...string) {
 		t.Log(stdout)
 		t.Log("\n\n\n")
 		t.Log(stderr)
-		log1 := ReadPreprocessLog(t, util.DebugLogFile)
+		log1 := ReadLog(t)
 		text := fmt.Sprintf("failed to run instrument: %v\n", err)
 		text += fmt.Sprintf("text: %v\n", log1)
 		t.Fatal(text)
@@ -128,7 +137,7 @@ func RunGoBuildWithEnv(t *testing.T, envs []string, args ...string) {
 		t.Log(stdout)
 		t.Log("\n\n\n")
 		t.Log(stderr)
-		log1 := ReadPreprocessLog(t, util.DebugLogFile)
+		log1 := ReadLog(t)
 		text := fmt.Sprintf("failed to run instrument: %v\n", err)
 		text += fmt.Sprintf("text: %v\n", log1)
 		t.Fatal(text)
@@ -209,28 +218,16 @@ func ExpectStderrContains(t *testing.T, expect string) {
 	ExpectContains(t, content, expect)
 }
 
-func ExpectInstrumentContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(util.TempBuildDir, util.PInstrument, log)
+func ExpectDebugLogContains(t *testing.T, text string) {
+	path := filepath.Join(util.TempBuildDir, util.DebugLogFile)
 	content := readLog(t, path)
-	ExpectContains(t, content, rule)
+	ExpectContains(t, content, text)
 }
 
-func ExpectInstrumentNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(util.TempBuildDir, util.PInstrument, log)
+func ExpectDebugLogNotContains(t *testing.T, text string) {
+	path := filepath.Join(util.TempBuildDir, util.DebugLogFile)
 	content := readLog(t, path)
-	ExpectNotContains(t, content, rule)
-}
-
-func ExpectPreprocessContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(util.TempBuildDir, util.PPreprocess, log)
-	content := readLog(t, path)
-	ExpectContains(t, content, rule)
-}
-
-func ExpectPreprocessNotContains(t *testing.T, log string, rule string) {
-	path := filepath.Join(util.TempBuildDir, util.PPreprocess, log)
-	content := readLog(t, path)
-	ExpectNotContains(t, content, rule)
+	ExpectNotContains(t, content, text)
 }
 
 func ExpectContains(t *testing.T, text, expect string) {
