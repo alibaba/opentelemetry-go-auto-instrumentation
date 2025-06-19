@@ -26,12 +26,22 @@ const gopg_dependency_name = "github.com/go-pg/pg/v10"
 const gopg_module_name = "gopg"
 
 func init() {
-	TestCases = append(TestCases, NewGeneralTestCase("test_gopg_crud", gopg_module_name, "v10.10.0", "v10.14.0", "1.19", "", TestGopgCrud10100))
+	TestCases = append(TestCases, NewGeneralTestCase("test_gopg_crud", gopg_module_name, "v10.10.0", "v10.14.0", "1.19", "", TestGopgCrud10140),
+		NewLatestDepthTestCase("test_gopg_crud", gopg_dependency_name, gopg_module_name, "v10.10.0", "v10.14.0", "1.19", "", TestGopgCrud10140),
+		NewGeneralTestCase("test_gopg_crud", gopg_module_name, "v10.10.0", "vv10.14.0", "1.19", "", TestGopgCrud10100))
 }
 
 func TestGopgCrud10100(t *testing.T, env ...string) {
 	_, postgresPort := initPostgresContainer()
 	UseApp("gopg/v10.10.0")
+	RunGoBuild(t, "go", "build", "test_gopg_crud.go")
+	env = append(env, "POSTGRES_PORT="+postgresPort.Port())
+	RunApp(t, "test_gopg_crud", env...)
+}
+
+func TestGopgCrud10140(t *testing.T, env ...string) {
+	_, postgresPort := initPostgresContainer()
+	UseApp("gopg/v10.14.0")
 	RunGoBuild(t, "go", "build", "test_gopg_crud.go")
 	env = append(env, "POSTGRES_PORT="+postgresPort.Port())
 	RunApp(t, "test_gopg_crud", env...)
@@ -46,7 +56,7 @@ func initPostgresContainer() (testcontainers.Container, nat.Port) {
 			"POSTGRES_PASSWORD": "postgres",
 			"POSTGRES_DB":       "postgres",
 		},
-		WaitingFor: wait.ForLog("waiting for connections")}
+		WaitingFor: wait.ForLog("database system is ready to accept connections")}
 	postgresC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
 	if err != nil {
 		panic(err)
