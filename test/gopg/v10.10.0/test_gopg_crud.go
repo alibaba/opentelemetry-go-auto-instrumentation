@@ -1,8 +1,23 @@
+// Copyright (c) 2025 Alibaba Group Holding Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
 	"os"
@@ -11,12 +26,12 @@ import (
 var db *pg.DB
 
 type User struct {
-	ID   uint
+	ID   string
 	Name string
 	Age  uint8
 }
 
-func TestRaw() {
+func TestCreateTable() {
 	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS users (id char(255), name VARCHAR(255), age INTEGER)`); err != nil {
 		log.Printf("%v", err)
 	}
@@ -37,13 +52,19 @@ func TestQuery() {
 }
 
 func TestUpdate() {
-	if _, err := db.Model(&User{ID: 1, Age: 10}).Update("name", "hello"); err != nil {
+	if _, err := db.Model(&User{ID: "1", Age: 10}).WherePK().Update("name", "hello"); err != nil {
 		log.Printf("%v", err)
 	}
 }
 
 func TestDelete() {
-	if _, err := db.Model(&User{ID: 1}).Delete(); err != nil {
+	if _, err := db.Model(&User{ID: "1"}).WherePK().Delete(); err != nil {
+		log.Printf("%v", err)
+	}
+}
+
+func TestDropTable() {
+	if err := db.Model(&User{}).DropTable(&orm.DropTableOptions{}); err != nil {
 		log.Printf("%v", err)
 	}
 }
@@ -51,25 +72,22 @@ func TestDelete() {
 func main() {
 	db = pg.Connect(&pg.Options{
 		Addr:     "127.0.0.1:" + os.Getenv("POSTGRES_PORT"),
-		User:     "user",
-		Database: "database",
+		User:     "postgres",
+		Password: "postgres",
+		Database: "postgres",
 	})
-	TestRaw()
+	TestCreateTable()
 	TestInsert()
 	TestQuery()
 	TestUpdate()
 	TestDelete()
+	TestDropTable()
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "SELECT dual", "mysql", "127.0.0.1", "SELECT VERSION()", "SELECT", "dual", nil)
-		verifier.VerifyDbAttributes(stubs[1][0], "ping", "mysql", "127.0.0.1", "ping", "ping", "", nil)
-		verifier.VerifyDbAttributes(stubs[2][0], "raw", "mysql", "127.0.0.1", "", "raw", "", nil)
-		verifier.VerifyDbAttributes(stubs[3][0], "START", "mysql", "127.0.0.1", "START TRANSACTION", "START", "", nil)
-		verifier.VerifyDbAttributes(stubs[4][0], "create", "mysql", "127.0.0.1", "", "create", "", nil)
-		verifier.VerifyDbAttributes(stubs[5][0], "query", "mysql", "127.0.0.1", "", "query", "", nil)
-		verifier.VerifyDbAttributes(stubs[6][0], "row", "mysql", "127.0.0.1", "", "row", "", nil)
-		verifier.VerifyDbAttributes(stubs[7][0], "START", "mysql", "127.0.0.1", "START TRANSACTION", "START", "", nil)
-		verifier.VerifyDbAttributes(stubs[8][0], "update", "mysql", "127.0.0.1", "", "update", "", nil)
-		verifier.VerifyDbAttributes(stubs[9][0], "START", "mysql", "127.0.0.1", "START TRANSACTION", "START", "", nil)
-		verifier.VerifyDbAttributes(stubs[10][0], "delete", "mysql", "127.0.0.1", "", "delete", "", nil)
+		verifier.VerifyDbAttributes(stubs[0][0], "postgresql", "postgresql", "127.0.0.1:5432", "CREATE TABLE IF NOT EXISTS users (id char(255), name VARCHAR(255), age INTEGER)", "", "", nil)
+		verifier.VerifyDbAttributes(stubs[1][0], "INSERT", "postgresql", "127.0.0.1:5432", "INSERT INTO \"users\" (\"id\", \"name\", \"age\") VALUES (DEFAULT, 'opentelemetry', 18)", "INSERT", "", nil)
+		verifier.VerifyDbAttributes(stubs[2][0], "SELECT", "postgresql", "127.0.0.1:5432", "SELECT \"user\".\"id\", \"user\".\"name\", \"user\".\"age\" FROM \"users\" AS \"user\"", "SELECT", "", nil)
+		verifier.VerifyDbAttributes(stubs[3][0], "UPDATE", "postgresql", "127.0.0.1:5432", "UPDATE \"users\" AS \"user\" SET \"name\" = NULL, \"age\" = 10 WHERE \"user\".\"id\" = '1'", "UPDATE", "", nil)
+		verifier.VerifyDbAttributes(stubs[4][0], "DELETE", "postgresql", "127.0.0.1:5432", "DELETE FROM \"users\" AS \"user\" WHERE \"user\".\"id\" = '1'", "DELETE", "", nil)
+		verifier.VerifyDbAttributes(stubs[5][0], "DROP TABLE", "postgresql", "127.0.0.1:5432", "DROP TABLE \"users\"", "DROP TABLE", "", nil)
 	}, 1)
 }
