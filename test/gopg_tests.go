@@ -17,7 +17,6 @@ package test
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"testing"
 )
@@ -41,7 +40,12 @@ func initPostgresContainer() (testcontainers.Container, nat.Port) {
 	containerReqeust := testcontainers.ContainerRequest{
 		Image:        "postgres:latest",
 		ExposedPorts: []string{"5432/tcp"},
-		WaitingFor:   wait.ForLog("waiting for connections")}
+		Env: map[string]string{
+			"POSTGRES_USER":     "postgres",
+			"POSTGRES_PASSWORD": "postgres",
+			"POSTGRES_DB":       "postgres",
+		},
+		WaitingFor: wait.ForLog("waiting for connections")}
 	postgresC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
 	if err != nil {
 		panic(err)
