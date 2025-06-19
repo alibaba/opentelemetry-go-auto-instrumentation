@@ -236,7 +236,7 @@ func InitConfig() (err error) {
 	}
 	if conf.Log == "" {
 		// Redirect log to file if flag is not set
-		debugLogPath := util.GetPreprocessLogPath(util.DebugLogFile)
+		debugLogPath := util.GetTempBuildDirWith(util.DebugLogFile)
 		debugLog, _ := os.OpenFile(debugLogPath, mode, 0777)
 		if debugLog != nil {
 			util.SetLogger(debugLog)

@@ -53,10 +53,10 @@ const (
 	DryRunLog        = "dry_run.log"
 	CompileRemix     = "remix"
 	VendorDir        = "vendor"
+	GoCacheDir       = "gocache"
 )
 
 type DepProcessor struct {
-	bundles       []*resource.RuleBundle // All dependent rule bundles
 	backups       map[string]string
 	moduleName    string // Module name from go.mod
 	modulePath    string // Where go.mod is located
@@ -68,7 +68,6 @@ type DepProcessor struct {
 
 func newDepProcessor() *DepProcessor {
 	dp := &DepProcessor{
-		bundles:       []*resource.RuleBundle{},
 		backups:       map[string]string{},
 		vendorMode:    false,
 		pkgLocalCache: "",
@@ -99,11 +98,12 @@ func (dp *DepProcessor) generatedOf(dir string) string {
 // Run runs the command and returns the combined standard output and standard
 // error. dir specifies the working directory of the command. If dir is the
 // empty string, run runs the command in the calling process's current directory.
-func runCmdCombinedOutput(dir string, args ...string) (string, error) {
+func runCmdCombinedOutput(dir string, env []string, args ...string) (string, error) {
 	path := args[0]
 	args = args[1:]
 	cmd := exec.Command(path, args...)
 	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), env...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errc.New(errc.ErrRunCmd, string(out)).
@@ -139,6 +139,7 @@ func parseGoMod(gomod string) (*modfile.File, error) {
 	}
 	return modFile, nil
 }
+
 func (dp *DepProcessor) initCmd() {
 	// There is a tricky, all arguments after the otel tool itself are saved for
 	// later use, which means the subcommand "go build" itself are also included
@@ -566,16 +567,6 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 	return candidates, nil
 }
 
-func (dp *DepProcessor) storeRuleBundles() error {
-	err := resource.StoreRuleBundles(dp.bundles)
-	if err != nil {
-		return err
-	}
-	// No longer valid from now on
-	dp.bundles = nil
-	return nil
-}
-
 // runDryBuild runs a dry build to get all dependencies needed for the project.
 func runDryBuild(goBuildCmd []string) ([]string, error) {
 	dryRunLog, err := os.Create(util.GetLogPath(DryRunLog))
@@ -616,17 +607,54 @@ func runDryBuild(goBuildCmd []string) ([]string, error) {
 }
 
 func (dp *DepProcessor) runModTidy() error {
-	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+	out, err := runCmdCombinedOutput(dp.getGoModDir(), nil,
 		"go", "mod", "tidy")
 	util.Log("Run go mod tidy: %v", out)
 	return err
 }
 
 func (dp *DepProcessor) runModVendor() error {
-	out, err := runCmdCombinedOutput(dp.getGoModDir(),
+	out, err := runCmdCombinedOutput(dp.getGoModDir(), nil,
 		"go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
 	return err
+}
+
+func (dp *DepProcessor) refreshDeps() error {
+	// Run go mod tidy to remove unused dependencies
+	err := dp.runModTidy()
+	if err != nil {
+		return err
+	}
+
+	// Run go mod vendor to update the vendor directory
+	if dp.vendorMode {
+		err = dp.runModVendor()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getTempGoCache() (string, error) {
+	goCachePath, err := filepath.Abs(filepath.Join(util.TempBuildDir, GoCacheDir))
+	if err != nil {
+		return "", err
+	}
+
+	if !util.PathExists(goCachePath) {
+		err = os.MkdirAll(goCachePath, 0755)
+		if err != nil {
+			return "", err
+		}
+	}
+	return goCachePath, nil
+}
+
+func buildGoCacheEnv(value string) []string {
+	return []string{"GOCACHE=" + value}
 }
 
 func nullDevice() string {
@@ -669,10 +697,18 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 
 	util.Log("Run toolexec build: %v", args)
 	util.AssertGoBuild(args)
+
+	// get the temporary build cache path
+	goCachePath, err := getTempGoCache()
+	if err != nil {
+		return err
+	}
+	util.Log("Using isolated GOCACHE: %s", goCachePath)
+
 	// @@ Note that we should not set the working directory here, as the build
 	// with toolexec should be run in the same directory as the original build
 	// command
-	out, err := runCmdCombinedOutput("", args...)
+	out, err := runCmdCombinedOutput("", buildGoCacheEnv(goCachePath), args...)
 	util.Log("Output from toolexec build: %v", out)
 	return err
 }
@@ -704,42 +740,32 @@ func precheck() error {
 	return nil
 }
 
-func (dp *DepProcessor) rectifyMod() error {
-	// Backup go.mod and go.sum files
-	gomodDir := dp.getGoModDir()
-	files := []string{}
-	files = append(files, filepath.Join(gomodDir, util.GoModFile))
-	files = append(files, filepath.Join(gomodDir, util.GoSumFile))
-	files = append(files, filepath.Join(gomodDir, util.GoWorkSumFile))
-	for _, file := range files {
-		if util.PathExists(file) {
-			err := dp.backupFile(file)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	// Since we haven't published the alibaba-otel pkg module, we need to add
-	// a replace directive to tell the go tool to use the local module cache
-	// instead of the remote module. This is a workaround for the case that
-	// the remote module is not available(published).
-	gomod := dp.getGoModPath()
+func addModReplace(gomod string, replaceMap map[string]string) error {
 	modfile, err := parseGoMod(gomod)
 	if err != nil {
 		return err
 	}
-	hasReplace := false
-	for _, r := range modfile.Replace {
-		if r.Old.Path == pkgPrefix {
-			hasReplace = true
-			break
+	added := false
+	for a, b := range replaceMap {
+		hasReplace := false
+		for _, r := range modfile.Replace {
+			if r.Old.Path == a {
+				hasReplace = true
+				break
+			}
+		}
+		if !hasReplace {
+			err = modfile.AddReplace(a, "", b, "")
+			if err != nil {
+				return err
+			}
+			added = true
 		}
 	}
-	if !hasReplace {
-		err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
-		if err != nil {
-			return err
-		}
+
+	// If we have added any replace directive, we need to write the go.mod file
+	// back to the disk, otherwise we can just skip it.
+	if added {
 		bs, err := modfile.Format()
 		if err != nil {
 			return err
@@ -770,14 +796,23 @@ func (dp *DepProcessor) saveDebugFiles() {
 //go:embed template.go
 var importerTemplate string
 
-func (dp *DepProcessor) newRuleImporter() {
-	importerTemplate = strings.ReplaceAll(importerTemplate, util.GoBuildIgnoreComment, "")
-	util.WriteFile(dp.otelImporter, importerTemplate)
-}
+func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) error {
+	importerTemplate = strings.ReplaceAll(importerTemplate,
+		util.GoBuildIgnoreComment, "")
 
-func (dp *DepProcessor) addRuleImporter() error {
+	// No rule bundles? We still need to generate the otel_importer.go file whose
+	// purpose is to import the fundamental dependencies
+	if len(bundles) == 0 {
+		_, err := util.WriteFile(dp.otelImporter, importerTemplate)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Generate the otel_importer.go file with the rule bundles
 	paths := map[string]bool{}
-	for _, bundle := range dp.bundles {
+	for _, bundle := range bundles {
 		for _, funcRules := range bundle.File2FuncRules {
 			for _, rules := range funcRules {
 				for _, rule := range rules {
@@ -788,15 +823,15 @@ func (dp *DepProcessor) addRuleImporter() error {
 			}
 		}
 	}
-	content, err := util.ReadFile(dp.otelImporter)
-	if err != nil {
-		return err
-	}
+	content := importerTemplate
+	replaceMap := map[string]string{}
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
+		t := strings.TrimPrefix(path, pkgPrefix)
+		replaceMap[path] = filepath.Join(dp.pkgLocalCache, t)
 	}
 	cnt := 0
-	for _, bundle := range dp.bundles {
+	for _, bundle := range bundles {
 		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
 		content += lb
 		s := fmt.Sprintf("var getstatck%d = debug.Stack\n", cnt)
@@ -808,6 +843,11 @@ func (dp *DepProcessor) addRuleImporter() error {
 		cnt++
 	}
 	util.WriteFile(dp.otelImporter, content)
+	// Add replace directives for all matched rules
+	err := addModReplace(dp.getGoModPath(), replaceMap)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -828,57 +868,57 @@ func Preprocess() error {
 	{
 		defer util.PhaseTimer("Preprocess")()
 
-		// Backup go.mod and add additional repalce directives for the
-		// alibaba-otel pkg module
+		// Backup go.mod and add additional repalce directives for the pkg module
 		err = dp.rectifyMod()
 		if err != nil {
 			return err
 		}
 
-		// Add otel dependencies as part of the project dependencies
-		dp.newRuleImporter()
-		err = dp.runModTidy()
-		if err != nil {
-			return err
-		}
-		if dp.vendorMode {
-			err = dp.runModVendor()
+		// Two round of rule matching
+		//    {prepare->refresh}
+		//        1st match
+		//    {prepare->refresh}
+		//        2nd match
+		//    {prepare->refresh}
+		// Let's break it down a little bit. We first prepare the rule import,
+		// which is used to import foundational dependencies (e.g., otel, as we
+		// will instrument the otel SDK itself). Then, we perform a refresh to
+		// ensure dependencies are ready and proceed to the 1st match. During
+		// this phase, some rules matching specific criteria are identified. We
+		// then update the rule import again to include these newly matched rules.
+		// Since these rules may (and likely will) break the original dependency
+		// graph, a 2nd match is required to resolve the final set of rules.
+		// These final rules are used to perform a final update of the rule import.
+		// At this point, all preparations are complete, and the process can
+		// advance to the second stage: instrumentation.
+		bundles := make([]*resource.RuleBundle, 0)
+		for i := 0; i < 3; i++ {
+			err = dp.newRuleImporterWith(bundles)
 			if err != nil {
 				return err
 			}
-		}
 
-		// Match rules based on the source files plus added otel imports
-		err = dp.matchRules()
-		if err != nil {
-			return err
-		}
-
-		// Add hook rule dependency as part of the project dependencies
-		err = dp.addRuleImporter()
-		if err != nil {
-			return err
-		}
-		// Update go.mod with the all additional dependencies
-		err = dp.runModTidy()
-		if err != nil {
-			return err
-		}
-		if dp.vendorMode {
-			err = dp.runModVendor()
+			err = dp.refreshDeps()
+			if err != nil {
+				return err
+			}
+			if i == 2 {
+				continue
+			}
+			bundles, err = dp.matchRules()
 			if err != nil {
 				return err
 			}
 		}
 
 		// Rectify file rules to make sure we can find them locally
-		err = dp.rectifyRule()
+		err = dp.rectifyRule(bundles)
 		if err != nil {
 			return err
 		}
 
 		// From this point on, we no longer modify the rules
-		err = dp.storeRuleBundles()
+		err = resource.StoreRuleBundles(bundles)
 		if err != nil {
 			return err
 		}

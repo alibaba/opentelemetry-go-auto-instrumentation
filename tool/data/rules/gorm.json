@@ -1,0 +1,15 @@
+[
+  {
+    "ImportPath": "gorm.io/driver/mysql",
+    "StructType": "Dialector",
+    "FieldName": "DbInfo",
+    "FieldType": "interface{}"
+  },
+  {
+    "Version": "[1.22.0,1.25.10)",
+    "ImportPath": "gorm.io/gorm",
+    "Function": "Open",
+    "OnExit": "afterGormOpen",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorm"
+  }
+]

@@ -16,8 +16,6 @@ package test
 
 import (
 	"testing"
-
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
 )
 
 func TestBuildProject(t *testing.T) {
@@ -48,11 +46,11 @@ func TestBuildProject4(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disabledefault=false", "-rule=../../tool/data/default.json")
+	RunSet(t, "-disabledefault=false", "-rule=../../tool/data/rules/base.json")
 	RunGoBuildFallible(t, "go", "build", "m1") // duplicated default rules
-	RunSet(t, "-rule=../../tool/data/default")
+	RunSet(t, "-rule=../../tool/data/rules/base")
 	RunGoBuildFallible(t, "go", "build", "m1")
-	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/default.json,../../tool/data/test_fmt.json")
+	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/rules/base.json,../../tool/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 }
 
@@ -64,8 +62,8 @@ func TestBuildProject5(t *testing.T) {
 	RunGoBuild(t, "go", "build", "m1")
 	// both test_fmt.json and default.json rules should be available
 	// because we always append new -rule to the default.json by default
-	ExpectPreprocessContains(t, util.DebugLogFile, "fmt")
-	ExpectPreprocessContains(t, util.DebugLogFile, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
+	ExpectDebugLogContains(t, "fmt")
+	ExpectDebugLogContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
 }
 
 func TestBuildProject6(t *testing.T) {
@@ -75,8 +73,8 @@ func TestBuildProject6(t *testing.T) {
 	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/test_fmt.json,../../tool/data/test_runtime.json", "-verbose")
 	RunGoBuild(t, "go", "build", "m1")
 	// only test_fmt.json should be available because -disabledefault is set
-	ExpectPreprocessContains(t, util.DebugLogFile, "fmt")
-	ExpectPreprocessNotContains(t, util.DebugLogFile, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
+	ExpectDebugLogContains(t, "fmt")
+	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
 }
 
 func TestGoInstall(t *testing.T) {

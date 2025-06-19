@@ -16,6 +16,7 @@ package instrument
 
 import (
 	_ "embed"
+	"fmt"
 	"go/token"
 	"strconv"
 
@@ -140,8 +141,59 @@ type ParamTrait struct {
 	IsInterfaceAny bool
 }
 
+func isHookDefined(root *dst.File, rule *resource.InstFuncRule) bool {
+	util.Assert(rule.OnEnter != "" || rule.OnExit != "", "hook must be set")
+	if rule.OnEnter != "" {
+		if util.FindFuncDecl(root, rule.OnEnter) == nil {
+			return false
+		}
+	}
+	if rule.OnExit != "" {
+		if util.FindFuncDecl(root, rule.OnExit) == nil {
+			return false
+		}
+	}
+	return true
+}
+
+func findHookFile(rule *resource.InstFuncRule) (string, error) {
+	files, err := findRuleFiles(rule)
+	if err != nil {
+		return "", err
+	}
+	for _, file := range files {
+		if !util.IsGoFile(file) {
+			continue
+		}
+		root, err := util.ParseAstFromFileFast(file)
+		if err != nil {
+			return "", err
+		}
+		if isHookDefined(root, rule) {
+			return file, nil
+		}
+	}
+	return "", errc.New(errc.ErrNotExist,
+		fmt.Sprintf("no hook %s/%s found for %s from %v",
+			rule.OnEnter, rule.OnExit, rule.Function, files))
+}
+
+func findRuleFiles(rule resource.InstRule) ([]string, error) {
+	files, err := util.ListFiles(rule.GetPath())
+	if err != nil {
+		return nil, err
+	}
+	switch rule.(type) {
+	case *resource.InstFuncRule, *resource.InstFileRule:
+		return files, nil
+	case *resource.InstStructRule:
+		util.ShouldNotReachHereT("insane rule type")
+	}
+	return nil, nil
+}
+
 func getHookFunc(t *resource.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
-	file, err := resource.FindHookFile(t)
+	file, err := findHookFile(t)
 	if err != nil {
 		return nil, err
 	}
