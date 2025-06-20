@@ -83,11 +83,11 @@ func main() {
 	TestDelete()
 	TestDropTable()
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "postgresql", "postgresql", "127.0.0.1:5432", "CREATE TABLE IF NOT EXISTS users (id char(255), name VARCHAR(255), age INTEGER)", "", "", nil)
-		verifier.VerifyDbAttributes(stubs[1][0], "INSERT", "postgresql", "127.0.0.1:5432", "INSERT INTO \"users\" (\"id\", \"name\", \"age\") VALUES (DEFAULT, 'opentelemetry', 18)", "INSERT", "", nil)
-		verifier.VerifyDbAttributes(stubs[2][0], "SELECT", "postgresql", "127.0.0.1:5432", "SELECT \"user\".\"id\", \"user\".\"name\", \"user\".\"age\" FROM \"users\" AS \"user\"", "SELECT", "", nil)
-		verifier.VerifyDbAttributes(stubs[3][0], "UPDATE", "postgresql", "127.0.0.1:5432", "UPDATE \"users\" AS \"user\" SET \"name\" = NULL, \"age\" = 10 WHERE \"user\".\"id\" = '1'", "UPDATE", "", nil)
-		verifier.VerifyDbAttributes(stubs[4][0], "DELETE", "postgresql", "127.0.0.1:5432", "DELETE FROM \"users\" AS \"user\" WHERE \"user\".\"id\" = '1'", "DELETE", "", nil)
-		verifier.VerifyDbAttributes(stubs[5][0], "DROP TABLE", "postgresql", "127.0.0.1:5432", "DROP TABLE \"users\"", "DROP TABLE", "", nil)
+		verifier.VerifyDbAttributes(stubs[0][0], "postgresql", "postgresql", "127.0.0.1", "CREATE TABLE IF NOT EXISTS users (id char(255), name VARCHAR(255), age INTEGER)", "", "", nil)
+		verifier.VerifyDbAttributes(stubs[1][0], "INSERT", "postgresql", "127.0.0.1", "INSERT INTO \"users\" (\"id\", \"name\", \"age\") VALUES (DEFAULT, 'opentelemetry', 18)", "INSERT", "", nil)
+		verifier.VerifyDbAttributes(stubs[2][0], "SELECT", "postgresql", "127.0.0.1", "SELECT \"user\".\"id\", \"user\".\"name\", \"user\".\"age\" FROM \"users\" AS \"user\"", "SELECT", "", nil)
+		verifier.VerifyDbAttributes(stubs[3][0], "UPDATE", "postgresql", "127.0.0.1", "UPDATE \"users\" AS \"user\" SET \"name\" = NULL, \"age\" = 10 WHERE \"user\".\"id\" = '1'", "UPDATE", "", nil)
+		verifier.VerifyDbAttributes(stubs[4][0], "DELETE", "postgresql", "127.0.0.1", "DELETE FROM \"users\" AS \"user\" WHERE \"user\".\"id\" = '1'", "DELETE", "", nil)
+		verifier.VerifyDbAttributes(stubs[5][0], "DROP TABLE", "postgresql", "127.0.0.1", "DROP TABLE \"users\"", "DROP TABLE", "", nil)
 	}, 1)
 }
