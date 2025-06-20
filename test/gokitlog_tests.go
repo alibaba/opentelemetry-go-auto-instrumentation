@@ -12,28 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package test
 
 import (
-	"net/http"
-	"os"
-	"time"
-
-	kitlog "github.com/go-kit/log"
+	"bufio"
+	"strings"
+	"testing"
 )
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	logger := kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stdout))
-	logger.Log("go-kit logger")
-	w.Write([]byte("hello world"))
+func init() {
+	TestCases = append(TestCases,
+		NewGeneralTestCase("gokitlog-test", "gokitlog", "v0.1.0", "v0.2.1", "1.18", "", TestGoKitLog),
+	)
 }
 
-func main() {
-	http.HandleFunc("/hello", hello)
-	go func() {
-		http.ListenAndServe(":8080", nil)
-	}()
-	time.Sleep(5 * time.Second)
-	client := http.Client{}
-	client.Get("http://localhost:8080/hello")
+func TestGoKitLog(t *testing.T, env ...string) {
+	UseApp("gokitlog")
+	RunGoBuild(t, "go", "build", "test_gokitlog.go")
+	_, stderr := RunApp(t, "test_gokitlog", env...)
+	reader := strings.NewReader(stderr)
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "[test debugging]") {
+			continue
+		}
+		ExpectContains(t, line, "trace_id")
+		ExpectContains(t, line, "span_id")
+	}
 }
