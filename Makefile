@@ -14,8 +14,6 @@
 
 #-------------------------------------------------------------------------------
 # General build options
-MAIN_VERSION := $(shell git describe --tags --abbrev=0 | sed 's/^v//')
-
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 CURRENT_ARCH := $(shell uname -m | sed 's/aarch64/arm64/;s/armv7l/arm/;s/armv6l/arm/')
 
@@ -31,12 +29,17 @@ OUTPUT_LINUX_ARM64 = $(OUTPUT_BASE)-linux-arm64
 
 #-------------------------------------------------------------------------------
 # Prepare version
-# Get the current Git commit ID
 CHECK_GIT_DIRECTORY := $(if $(wildcard .git),true,false)
 ifeq ($(CHECK_GIT_DIRECTORY),true)
 	COMMIT_ID := $(shell git rev-parse --short HEAD)
 else
-	COMMIT_ID := default
+	COMMIT_ID := latest
+endif
+
+ifeq ($(shell git describe --tags --abbrev=0 2>/dev/null),)
+    MAIN_VERSION := $(shell git rev-parse --abbrev-ref HEAD | sed 's/[^a-zA-Z0-9._-]/_/g')
+else
+    MAIN_VERSION := $(shell git describe --tags --abbrev=0 | sed 's/^v//')
 endif
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)

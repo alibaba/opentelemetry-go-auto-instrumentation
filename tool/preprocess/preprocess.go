@@ -793,17 +793,32 @@ func (dp *DepProcessor) saveDebugFiles() {
 	}
 }
 
-//go:embed template.go
-var importerTemplate string
-
 func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) error {
-	importerTemplate = strings.ReplaceAll(importerTemplate,
-		util.GoBuildIgnoreComment, "")
+	content := "package main\n"
+	builtin := map[string]string{
+		// for go:linkname when declaring printstack/getstack variable
+		"unsafe": "_",
+		// for debug.Stack and log.Printf when declaring printstack/getstack
+		// we do need import alias because user may declare global variable such
+		// as "log" or "debug" in their code, which will conflict with the import
+		"runtime/debug": "_otel_debug",
+		// for log.Printf when declaring printstack/getstack variable
+		"log": "_otel_log",
+		// otel setup
+		"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg": "_",
+		// otel dependencies
+		"go.opentelemetry.io/otel":           "_",
+		"go.opentelemetry.io/otel/sdk/trace": "_",
+		"go.opentelemetry.io/otel/baggage":   "_",
+	}
+	for pkg, alias := range builtin {
+		content += fmt.Sprintf("import %s %q\n", alias, pkg)
+	}
 
 	// No rule bundles? We still need to generate the otel_importer.go file whose
 	// purpose is to import the fundamental dependencies
 	if len(bundles) == 0 {
-		_, err := util.WriteFile(dp.otelImporter, importerTemplate)
+		_, err := util.WriteFile(dp.otelImporter, content)
 		if err != nil {
 			return err
 		}
@@ -823,7 +838,6 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 			}
 		}
 	}
-	content := importerTemplate
 	replaceMap := map[string]string{}
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
@@ -832,13 +846,16 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 	}
 	cnt := 0
 	for _, bundle := range bundles {
-		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
+		lb := fmt.Sprintf("//go:linkname _getstatck%d %s.OtelGetStackImpl\n",
+			cnt, bundle.ImportPath)
 		content += lb
-		s := fmt.Sprintf("var getstatck%d = debug.Stack\n", cnt)
+		s := fmt.Sprintf("var _getstatck%d = _otel_debug.Stack\n", cnt)
 		content += s
-		lb = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n", cnt, bundle.ImportPath)
+		lb = fmt.Sprintf("//go:linkname _printstack%d %s.OtelPrintStackImpl\n",
+			cnt, bundle.ImportPath)
 		content += lb
-		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
+		s = fmt.Sprintf("var _printstack%d = func (bt []byte){ _otel_log.Printf(string(bt)) }\n",
+			cnt)
 		content += s
 		cnt++
 	}
