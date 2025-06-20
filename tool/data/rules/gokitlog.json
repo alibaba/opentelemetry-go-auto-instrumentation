@@ -1,6 +1,6 @@
 [
   {
-    "Version": "[0.1.0,)",
+    "Version": "[0.1.0,0.2.2)",
     "ImportPath": "github.com/go-kit/log",
     "Function": "Log",
     "ReceiverType": "logfmtLogger",
@@ -8,7 +8,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/go-kit-log"
   },
   {
-    "Version": "[0.1.0,)",
+    "Version": "[0.1.0,0.2.2)",
     "ImportPath": "github.com/go-kit/log",
     "Function": "Log",
     "ReceiverType": "\\*jsonLogger",
