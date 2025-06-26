@@ -107,6 +107,7 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | trpc-go       | https://github.com/trpc-group/trpc-go          | v1.0.0                | v1.0.3                |
 | zap           | https://github.com/uber-go/zap                 | v1.20.0               | v1.27.0               |
 | zerolog       | https://github.com/rs/zerolog                  | v1.10.0               | v1.33.0               |
+| go-kit/log    | https://github.com/go-kit/log                  | v0.1.0                | v0.2.1                |
 | pg            | https://github.com/go-pg/pg                    | v1.10.0               | v1.14.0               |
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
