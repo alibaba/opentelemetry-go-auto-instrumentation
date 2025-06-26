@@ -56,6 +56,23 @@ const (
 	GoCacheDir       = "gocache"
 )
 
+var oTel3rdDependenciesMapping map[string]string = map[string]string{
+	"go.opentelemetry.io/otel":                                          "v1.35.0",
+	"go.opentelemetry.io/otel/sdk":                                      "v1.35.0",
+	"go.opentelemetry.io/otel/trace":                                    "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace":                 "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc":   "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp":   "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc": "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp": "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/prometheus":                     "v0.57.0",
+	"go.opentelemetry.io/contrib/instrumentation/runtime":               "v0.60.0",
+	"google.golang.org/protobuf":                                        "v1.35.2",
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric":            "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace":             "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/zipkin":                         "v1.35.0",
+}
+
 type DepProcessor struct {
 	backups       map[string]string
 	moduleName    string // Module name from go.mod
@@ -745,6 +762,20 @@ func addModReplace(gomod string, replaceMap map[string]string) error {
 	if err != nil {
 		return err
 	}
+
+	// replace OTel related 3rd dependencies to avoid conflict
+	for dep, v := range oTel3rdDependenciesMapping {
+		err := modfile.AddReplace(dep, "", dep, v)
+		bs, err := modfile.Format()
+		if err != nil {
+			return err
+		}
+		_, err = util.WriteFile(gomod, string(bs))
+		if err != nil {
+			return err
+		}
+	}
+
 	added := false
 	for a, b := range replaceMap {
 		hasReplace := false
