@@ -2,7 +2,7 @@ module world
 
 go 1.23.0
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../
 
 require (
 	dubbo.apache.org/dubbo-go/v3 v3.3.0
