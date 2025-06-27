@@ -56,23 +56,6 @@ const (
 	GoCacheDir       = "gocache"
 )
 
-var oTel3rdDependenciesMapping map[string]string = map[string]string{
-	"go.opentelemetry.io/otel":                                          "v1.35.0",
-	"go.opentelemetry.io/otel/sdk":                                      "v1.35.0",
-	"go.opentelemetry.io/otel/trace":                                    "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace":                 "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc":   "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp":   "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc": "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp": "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/prometheus":                     "v0.57.0",
-	"go.opentelemetry.io/contrib/instrumentation/runtime":               "v0.60.0",
-	"google.golang.org/protobuf":                                        "v1.35.2",
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric":            "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace":             "v1.35.0",
-	"go.opentelemetry.io/otel/exporters/zipkin":                         "v1.35.0",
-}
-
 type DepProcessor struct {
 	backups       map[string]string
 	moduleName    string // Module name from go.mod
@@ -757,23 +740,14 @@ func precheck() error {
 	return nil
 }
 
-func addModReplace(gomod string, replaceMap map[string]string) error {
+// addModReplace adds replace directives to the go.mod file. The fisrt parameter
+// is the path to the go.mod file, the second parameter is a map of replace
+// directives, where the key is the old import path and the value is a tuple
+// of the new import path and the version.
+func addModReplace(gomod string, replaceMap map[string][2]string) error {
 	modfile, err := parseGoMod(gomod)
 	if err != nil {
 		return err
-	}
-
-	// replace OTel related 3rd dependencies to avoid conflict
-	for dep, v := range oTel3rdDependenciesMapping {
-		err := modfile.AddReplace(dep, "", dep, v)
-		bs, err := modfile.Format()
-		if err != nil {
-			return err
-		}
-		_, err = util.WriteFile(gomod, string(bs))
-		if err != nil {
-			return err
-		}
 	}
 
 	added := false
@@ -786,7 +760,7 @@ func addModReplace(gomod string, replaceMap map[string]string) error {
 			}
 		}
 		if !hasReplace {
-			err = modfile.AddReplace(a, "", b, "")
+			err = modfile.AddReplace(a, "", b[0] /*path*/, b[1] /*version*/)
 			if err != nil {
 				return err
 			}
@@ -855,11 +829,11 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 		}
 	}
 	content := importerTemplate
-	replaceMap := map[string]string{}
+	replaceMap := map[string][2]string{}
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
 		t := strings.TrimPrefix(path, pkgPrefix)
-		replaceMap[path] = filepath.Join(dp.pkgLocalCache, t)
+		replaceMap[path] = [2]string{filepath.Join(dp.pkgLocalCache, t), ""}
 	}
 	cnt := 0
 	for _, bundle := range bundles {

@@ -30,6 +30,23 @@ const (
 	pkgPrefix = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
 )
 
+var otelDeps = map[string]string{
+	"go.opentelemetry.io/otel":                                          "v1.35.0",
+	"go.opentelemetry.io/otel/sdk":                                      "v1.35.0",
+	"go.opentelemetry.io/otel/trace":                                    "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace":                 "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc":   "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp":   "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc": "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp": "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/prometheus":                     "v0.57.0",
+	"go.opentelemetry.io/contrib/instrumentation/runtime":               "v0.60.0",
+	"google.golang.org/protobuf":                                        "v1.35.2",
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric":            "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace":             "v1.35.0",
+	"go.opentelemetry.io/otel/exporters/zipkin":                         "v1.35.0",
+}
+
 type moduleInfo struct {
 	Path  string `json:"Path"`
 	Error string `json:"Error"`
@@ -120,8 +137,15 @@ func (dp *DepProcessor) rectifyMod() error {
 	// a replace directive to tell the go tool to use the local module cache
 	// instead of the remote module. This is a workaround for the case that
 	// the remote module is not available(published).
-	replaceMap := map[string]string{
-		pkgPrefix: dp.pkgLocalCache,
+	replaceMap := map[string][2]string{
+		pkgPrefix: {dp.pkgLocalCache, ""},
+	}
+	// OTel dependencies may publish new versions that are not compatible
+	// with the otel tool. In such cases, we need to add a replace directive
+	// to use certain versions of the OTel dependencies for given otel tool,
+	// otherwise, the otel tool may fail to run.
+	for path, version := range otelDeps {
+		replaceMap[path] = [2]string{path, version}
 	}
 	err := addModReplace(dp.getGoModPath(), replaceMap)
 	if err != nil {
