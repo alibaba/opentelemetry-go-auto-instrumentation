@@ -82,7 +82,7 @@ export OTEL_METRICS_EXEMPLAR_RESERVOIR_SIZE=10
 
 2. **Trace Sampling**: When using `trace_based` filter, exemplars are only recorded for sampled traces.
 
-3. **Backend Support**: Your observability backend must support exemplars (e.g., Prometheus with exemplar storage enabled, Grafana Tempo, etc.)
+3. **Backend Support**: Your observability backend must support exemplars (e.g., Prometheus with exemplar storage enabled, Grafana Tempo, etc.).
 
 ## How It Works
 
