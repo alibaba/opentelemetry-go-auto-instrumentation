@@ -740,11 +740,16 @@ func precheck() error {
 	return nil
 }
 
-func addModReplace(gomod string, replaceMap map[string]string) error {
+// addModReplace adds replace directives to the go.mod file. The fisrt parameter
+// is the path to the go.mod file, the second parameter is a map of replace
+// directives, where the key is the old import path and the value is a tuple
+// of the new import path and the version.
+func addModReplace(gomod string, replaceMap map[string][2]string) error {
 	modfile, err := parseGoMod(gomod)
 	if err != nil {
 		return err
 	}
+
 	added := false
 	for a, b := range replaceMap {
 		hasReplace := false
@@ -755,7 +760,7 @@ func addModReplace(gomod string, replaceMap map[string]string) error {
 			}
 		}
 		if !hasReplace {
-			err = modfile.AddReplace(a, "", b, "")
+			err = modfile.AddReplace(a, "", b[0] /*path*/, b[1] /*version*/)
 			if err != nil {
 				return err
 			}
@@ -824,11 +829,11 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 		}
 	}
 	content := importerTemplate
-	replaceMap := map[string]string{}
+	replaceMap := map[string][2]string{}
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
 		t := strings.TrimPrefix(path, pkgPrefix)
-		replaceMap[path] = filepath.Join(dp.pkgLocalCache, t)
+		replaceMap[path] = [2]string{filepath.Join(dp.pkgLocalCache, t), ""}
 	}
 	cnt := 0
 	for _, bundle := range bundles {
