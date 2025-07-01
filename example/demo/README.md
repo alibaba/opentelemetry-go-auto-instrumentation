@@ -84,7 +84,7 @@ docker run --rm --name jaeger \
 Set your OpenTelemetry endpoint according
 to https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables
 
-if run on loacal machine:
+if run on local machine:
 
 ```shell
 OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318" OTEL_EXPORTER_OTLP_INSECURE=true OTEL_SERVICE_NAME=demo ./demo
@@ -113,7 +113,7 @@ curl localhost:9000/http-service
 
 ### 7. check trace data
 
-if run on loacal machine:
+if run on local machine:
 
 access Jaeger UI: http://localhost:16686
 
@@ -125,6 +125,14 @@ kubectl get svc opentelemetry-demo-jaeger-collector
 
 Wait a little while, you can see the corresponding trace data！All the spans are aggregated in one trace.
 ![jaeger.png](jaeger.png)
+
+### 8. check prometheus data
+
+if run on local machine:
+
+access prometheus page: http://localhost:9464/metrics
+
+![metrics.png](metrics.png)
 
 ## Related
 
