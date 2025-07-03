@@ -1,4 +1,4 @@
-## Intergrating with manual instrumentation
+## Integrating with manual instrumentation
 
 Automatic instrumentation already meets our needs in most scenarios, but manual instrumentation allows developers to have greater control over their projects.
 
