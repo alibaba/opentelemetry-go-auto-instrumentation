@@ -60,7 +60,7 @@ func main() {
 	http.HandleFunc("/logwithtrace", func(w http.ResponseWriter, r *http.Request) {
 		logger := zap.NewExample()
 		traceId, spanId := trace.GetTraceAndSpanId()
-		logger.Info("this is info message with fileds",
+		logger.Info("this is info message with fields",
 			zap.String("traceId", traceId),
 			zap.String("spanId", spanId),
 		)
@@ -73,7 +73,7 @@ For example, if we build the following Go file with `opentelemetry-go-auto-instr
 see the following output:
 
 ```shell
-{"level":"info","msg":"this is info message with fileds","traceId":"92d63797010a2040484222a74c5ce304","spanId":"5a2c84c807a6e12c"}
+{"level":"info","msg":"this is info message with fields","traceId":"92d63797010a2040484222a74c5ce304","spanId":"5a2c84c807a6e12c"}
 ```
 
 The above code is placed in the [example/log](../example/log) directory

@@ -32,6 +32,8 @@ import (
 	testaccess "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/testaccess"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	otelruntime "go.opentelemetry.io/contrib/instrumentation/runtime"
+
+	// The version of the following packages/modules must be fixed
 	"go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"

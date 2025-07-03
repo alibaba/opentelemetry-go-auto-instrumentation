@@ -17,14 +17,15 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"os"
+
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/update"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"log"
-	"os"
 )
 
 var (

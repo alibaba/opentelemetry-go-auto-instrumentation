@@ -47,6 +47,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../test/verifier
