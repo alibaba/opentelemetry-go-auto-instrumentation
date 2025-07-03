@@ -46,11 +46,11 @@ func TestBuildProject4(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disabledefault=false", "-rule=../../tool/data/rules/base.json")
+	RunSet(t, "-disable=", "-rule=../../tool/data/rules/base.json")
 	RunGoBuildFallible(t, "go", "build", "m1") // duplicated default rules
 	RunSet(t, "-rule=../../tool/data/rules/base")
 	RunGoBuildFallible(t, "go", "build", "m1")
-	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/rules/base.json,../../tool/data/test_fmt.json")
+	RunSet(t, "-disable=all", "-rule=../../tool/data/rules/base.json,../../tool/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 }
 
@@ -58,7 +58,7 @@ func TestBuildProject5(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disabledefault=false", "-verbose", "-rule=../../tool/data/test_fmt.json")
+	RunSet(t, "-disable=", "-verbose", "-rule=../../tool/data/test_fmt.json")
 	RunGoBuild(t, "go", "build", "m1")
 	// both test_fmt.json and default.json rules should be available
 	// because we always append new -rule to the default.json by default
@@ -70,9 +70,9 @@ func TestBuildProject6(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disabledefault=true", "-rule=../../tool/data/test_fmt.json,../../tool/data/test_runtime.json", "-verbose")
+	RunSet(t, "-disable=all", "-rule=../../tool/data/test_fmt.json,../../tool/data/test_runtime.json", "-verbose")
 	RunGoBuild(t, "go", "build", "m1")
-	// only test_fmt.json should be available because -disabledefault is set
+	// only test_fmt.json should be available because -disable=all is set
 	ExpectDebugLogContains(t, "fmt")
 	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
 }
@@ -81,4 +81,30 @@ func TestGoInstall(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 	RunGoBuild(t, "go", "install", "./cmd/...")
+}
+
+func TestDisableSpecificRules(t *testing.T) {
+	const AppName = "build"
+	UseApp(AppName)
+
+	// Test disabling specific rules
+	RunSet(t, "-disable=gorm.json,redis.json", "-verbose")
+	RunGoBuild(t, "go", "build", "m1")
+	// Should not contain gorm and redis rules, but should contain other default rules
+	ExpectDebugLogNotContains(t, "gorm.json")
+	ExpectDebugLogNotContains(t, "redis.json")
+	ExpectDebugLogContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
+}
+
+func TestDisableAllRules(t *testing.T) {
+	const AppName = "build"
+	UseApp(AppName)
+
+	// Test disabling all default rules
+	RunSet(t, "-disable=all", "-verbose")
+	RunGoBuild(t, "go", "build", "m1")
+	// Should not contain any default rules
+	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
+	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorm")
+	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/redis")
 }

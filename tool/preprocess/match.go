@@ -102,13 +102,26 @@ func loadDefaultRules() []resource.InstRule {
 		return nil
 	}
 
+	// Get disabled rules configuration
+	disabledRules := config.GetConf().GetDisabledRules()
+	
+	// Filter out disabled rule files
+	var filteredFiles []string
+	for _, name := range files {
+		if disabledRules == nil || !disabledRules[name] {
+			filteredFiles = append(filteredFiles, name)
+		} else {
+			util.Log("Skipping disabled rule file: %s", name)
+		}
+	}
+
 	type chunk []resource.InstRule
-	ruleChunks := make([]chunk, len(files))
+	ruleChunks := make([]chunk, len(filteredFiles))
 
 	group := &errgroup.Group{}
 
 	// Load and parse each rule file concurrently
-	for i, name := range files {
+	for i, name := range filteredFiles {
 		i, name := i, name // capture loop variables
 
 		group.Go(func() error {
@@ -155,11 +168,9 @@ func findAvailableRules() []resource.InstRule {
 
 	rules := make([]resource.InstRule, 0)
 
-	// Load default rules unless explicitly disabled
-	if !config.GetConf().IsDisableDefault() {
-		defaultRules := loadDefaultRules()
-		rules = append(rules, defaultRules...)
-	}
+	// Load default rules (filtering is handled inside loadDefaultRules)
+	defaultRules := loadDefaultRules()
+	rules = append(rules, defaultRules...)
 
 	// If rule files are provided, load them
 	if config.GetConf().RuleJsonFiles != "" {

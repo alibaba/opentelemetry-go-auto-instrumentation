@@ -39,7 +39,7 @@ type BuildConfig struct {
 	// comma. e.g. -rule=rule1.json,rule2.json. By default, new rules are appended
 	// to default rules, i.e. -rule=rule1.json,rule2.json is exactly equivalent to
 	// -rule=default.json,rule1.json,rule2.json. But if you do want to disable
-	// default rules, you can configure -disabledefault flag in advance.
+	// default rules, you can configure -disable flag in advance.
 	RuleJsonFiles string
 
 	// Log specifies the log file path. If not set, log will be saved to file.
@@ -54,8 +54,12 @@ type BuildConfig struct {
 	// Restore true means restore all instrumentations.
 	Restore bool
 
-	// DisableDefault true means disable default rules.
-	DisableDefault bool
+	// DisableRules specifies which rules to disable. It can be:
+	// - "all" to disable all default rules
+	// - comma-separated list of rule file names to disable specific rules
+	//   e.g. "gorm.json,redis.json"
+	// - empty string to enable all default rules
+	DisableRules string
 }
 
 // @@This value is specified by the build system.
@@ -86,7 +90,29 @@ func GetConf() *BuildConfig {
 }
 
 func (bc *BuildConfig) IsDisableDefault() bool {
-	return bc.DisableDefault
+	return bc.DisableRules == "all"
+}
+
+// GetDisabledRules returns a set of rule file names that should be disabled
+func (bc *BuildConfig) GetDisabledRules() map[string]bool {
+	if bc.DisableRules == "" {
+		return nil
+	}
+	
+	disabled := make(map[string]bool)
+	if bc.DisableRules == "all" {
+		return disabled // Return empty map for "all" case, handled separately
+	}
+	
+	// Parse comma-separated list of rule file names
+	ruleFiles := strings.Split(bc.DisableRules, ",")
+	for _, ruleFile := range ruleFiles {
+		ruleFile = strings.TrimSpace(ruleFile)
+		if ruleFile != "" {
+			disabled[ruleFile] = true
+		}
+	}
+	return disabled
 }
 
 func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {
@@ -277,8 +303,8 @@ func Configure() error {
 		"Restore all instrumentations")
 	flag.StringVar(&bc.RuleJsonFiles, "rule", bc.RuleJsonFiles,
 		"Use custom.json rules. Multiple rules are separated by comma.")
-	flag.BoolVar(&bc.DisableDefault, "disabledefault", bc.DisableDefault,
-		"Disable default rules")
+	flag.StringVar(&bc.DisableRules, "disable", bc.DisableRules,
+		"Disable specific rules. Use 'all' to disable all default rules, or comma-separated list of rule file names to disable specific rules")
 	flag.CommandLine.Parse(os.Args[2:])
 
 	util.Log("Configured in %s", getConfPath(BuildConfFile))

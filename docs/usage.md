@@ -30,7 +30,12 @@ Multiple Configurations: Set multiple configurations at once. For instance, enab
 
 Custom Rules Only: Disable the default rule set and apply only specific custom rules. This is particularly useful when you need a tailored rule set for your project.
 ```console
-  $ otel set -disabledefault -rule=custom.json
+  $ otel set -disable=all -rule=custom.json
+```
+
+Disable Specific Rules: Disable specific default rules while keeping others enabled. This allows fine-grained control over which instrumentation rules are applied.
+```console
+  $ otel set -disable=gorm.json,redis.json
 ```
 
 Combination of Default and Custom Rules: Use both the default rules and custom rules to provide a comprehensive configuration:
@@ -58,7 +63,7 @@ Full List of Environment Variables:
 - `OTELTOOL_DEBUG`: Enable debug mode.
 - `OTELTOOL_VERBOSE`: Enable verbose logging.
 - `OTELTOOL_RULE_JSON_FILES`: Specify custom rule files.
-- `OTELTOOL_DISABLE_DEFAULT`: Disable default rules.
+- `OTELTOOL_DISABLE_RULES`: Disable specific rules. Use 'all' to disable all default rules, or comma-separated list of rule file names to disable specific rules.
 
 This approach provides flexibility for testing changes and experimenting with configurations without permanently altering your existing setup.
 
