@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
@@ -94,6 +95,8 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 	return rules, nil
 }
 
+type chunk []resource.InstRule
+
 func loadDefaultRules() []resource.InstRule {
 	// Read all default embedded rule files
 	files, err := data.ListRuleFiles()
@@ -102,29 +105,35 @@ func loadDefaultRules() []resource.InstRule {
 		return nil
 	}
 
-	if config.GetConf().IsDisableAll() {
-		return nil
-	}
-
-	// Filter out disabled rule files
-	disabledRules := config.GetConf().GetDisabledRules()
-	var filteredFiles []string
-	for _, name := range files {
-		if disabledRules == nil || !disabledRules[name] {
-			filteredFiles = append(filteredFiles, name)
-		} else {
-			util.Log("Skipping disabled rule file: %s", name)
+	// Disable specific rules if specified
+	filteredFiles := make([]string, 0)
+	disable := config.GetConf().GetDisabledRules()
+	switch disable {
+	case "all":
+		// Disable all rules except base.json
+		filteredFiles = append(filteredFiles, "base.json")
+	case "":
+		// Enable all rules
+		filteredFiles = files
+	default:
+		// Disable specific rules
+		disabledRules := strings.Split(disable, ",")
+		for _, name := range files {
+			if !slices.Contains(disabledRules, name) {
+				filteredFiles = append(filteredFiles, name)
+			}
 		}
 	}
 
-	type chunk []resource.InstRule
-	ruleChunks := make([]chunk, len(filteredFiles))
-
-	group := &errgroup.Group{}
-
 	// Load and parse each rule file concurrently
+	ruleChunks := make([]chunk, len(filteredFiles))
+	group := &errgroup.Group{}
+	foundBase := false
 	for i, name := range filteredFiles {
 		i, name := i, name // capture loop variables
+		if name == "base.json" {
+			foundBase = true
+		}
 
 		group.Go(func() error {
 			raw, err := data.ReadRuleFile(name)
@@ -149,13 +158,16 @@ func loadDefaultRules() []resource.InstRule {
 		util.Log("One or more default rule files failed to load: %v", err)
 		return nil
 	}
+	if !foundBase {
+		util.Log("base.json is not found in the default rule files")
+		return nil
+	}
 
 	// Merge all ruleChunks
 	rules := make([]resource.InstRule, 0)
 	for _, c := range ruleChunks {
 		rules = append(rules, c...)
 	}
-
 	return rules
 }
 

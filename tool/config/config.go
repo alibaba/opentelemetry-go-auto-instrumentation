@@ -53,6 +53,8 @@ type BuildConfig struct {
 	// - comma-separated list of rule file names to disable specific rules
 	//   e.g. "gorm.json,redis.json"
 	// - empty string to enable all default rules
+	// Note that base.json is inevitable to be enabled, even if it is explicitly
+	// disabled.
 	DisableRules string
 }
 
@@ -88,22 +90,8 @@ func (bc *BuildConfig) IsDisableAll() bool {
 }
 
 // GetDisabledRules returns a set of rule file names that should be disabled
-func (bc *BuildConfig) GetDisabledRules() map[string]bool {
-	disabled := make(map[string]bool)
-	// Don't disable any rules if -disable is not specified or is "".
-	if bc.DisableRules == "" {
-		return disabled
-	}
-
-	// Parse comma-separated list of rule file names
-	ruleFiles := strings.Split(bc.DisableRules, ",")
-	for _, ruleFile := range ruleFiles {
-		ruleFile = strings.TrimSpace(ruleFile)
-		if ruleFile != "" {
-			disabled[ruleFile] = true
-		}
-	}
-	return disabled
+func (bc *BuildConfig) GetDisabledRules() string {
+	return bc.DisableRules
 }
 
 func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {

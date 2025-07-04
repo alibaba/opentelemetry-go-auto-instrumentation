@@ -69,12 +69,7 @@ func initTempDir() error {
 		}
 	}
 	for _, subdir := range []string{util.PPreprocess, util.PInstrument} {
-		if util.PathExists(util.GetTempBuildDirWith(subdir)) {
-			err := os.RemoveAll(util.GetTempBuildDirWith(subdir))
-			if err != nil {
-				return errc.New(errc.ErrRemoveAll, err.Error())
-			}
-		}
+		_ = os.RemoveAll(util.GetTempBuildDirWith(subdir))
 		err := os.MkdirAll(util.GetTempBuildDirWith(subdir), 0777)
 		if err != nil {
 			return errc.New(errc.ErrMkdirAll, err.Error())

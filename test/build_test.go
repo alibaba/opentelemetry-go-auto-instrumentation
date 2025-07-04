@@ -88,11 +88,11 @@ func TestDisableSpecificRules(t *testing.T) {
 	UseApp(AppName)
 
 	// Test disabling specific rules
-	RunSet(t, "-disable=gorm.json,redis.json", "-verbose")
+	RunSet(t, "-disable=gorm.json,redis.json", "-verbose", "-rule=")
 	RunGoBuild(t, "go", "build", "m1")
 	// Should not contain gorm and redis rules, but should contain other default rules
-	ExpectDebugLogNotContains(t, "gorm.json")
-	ExpectDebugLogNotContains(t, "redis.json")
+	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/gorm")
+	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/redis")
 	ExpectDebugLogContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
 }
 
@@ -101,7 +101,7 @@ func TestDisableAllRules(t *testing.T) {
 	UseApp(AppName)
 
 	// Test disabling all default rules
-	RunSet(t, "-disable=all", "-verbose")
+	RunSet(t, "-disable=all", "-verbose", "-rule=")
 	RunGoBuild(t, "go", "build", "m1")
 	// Should not contain any default rules
 	ExpectDebugLogNotContains(t, "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/http")
