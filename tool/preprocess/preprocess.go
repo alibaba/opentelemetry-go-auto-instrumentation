@@ -251,7 +251,7 @@ func (dp *DepProcessor) initMod() (err error) {
 	// module, that's why we do this here.
 	// TODO: Once we publish the alibaba-otel/pkg module, we can remove this code
 	// along with the replace directive in the go.mod file.
-	dp.pkgLocalCache, err = dp.findModCacheDir()
+	dp.pkgLocalCache, err = findModCacheDir()
 	if err != nil {
 		return err
 	}
@@ -310,8 +310,7 @@ func (dp *DepProcessor) init() error {
 	dp.initBuildMode()
 	dp.initSignalHandler()
 	// Once all the initialization is done, let's log the configuration
-	util.Log("ToolVersion: %s, BuildPath: %s, UsedPkg: %s",
-		config.ToolVersion, config.BuildPath, config.UsedPkg)
+	util.Log("ToolVersion: %s", config.ToolVersion)
 	util.Log("%s", dp.String())
 	return nil
 }
@@ -745,7 +744,11 @@ func addModReplace(gomod string, replaceMap map[string][2]string) error {
 			}
 		}
 		if !hasReplace {
-			err = modfile.AddReplace(a, "", b[0] /*path*/, b[1] /*version*/)
+			b0, err := filepath.Abs(b[0])
+			if err != nil {
+				return errc.New(errc.ErrAbsPath, err.Error())
+			}
+			err = modfile.AddReplace(a, "", b0 /*path*/, b[1] /*version*/)
 			if err != nil {
 				return err
 			}
