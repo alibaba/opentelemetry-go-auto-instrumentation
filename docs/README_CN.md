@@ -59,7 +59,7 @@ $ otel go build -gcflags="-m" cmd/app
 
 `otel` 工具的详细用法可以在 [**使用指南**](./usage.md) 中找到。
 
-> [!NOTE]
+> [!NOTE] 
 > 如果您发现 `go build` 能正常工作但出现编译失败，这很可能是一个 bug。
 > 请随时在
 > [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)

@@ -42,17 +42,11 @@ type BuildConfig struct {
 	// default rules, you can configure -disable flag in advance.
 	RuleJsonFiles string
 
-	// Log specifies the log file path. If not set, log will be saved to file.
-	Log string
-
 	// Verbose true means print verbose log.
 	Verbose bool
 
 	// Debug true means debug mode.
 	Debug bool
-
-	// Restore true means restore all instrumentations.
-	Restore bool
 
 	// DisableRules specifies which rules to disable. It can be:
 	// - "all" to disable all default rules
@@ -98,12 +92,12 @@ func (bc *BuildConfig) GetDisabledRules() map[string]bool {
 	if bc.DisableRules == "" {
 		return nil
 	}
-	
+
 	disabled := make(map[string]bool)
 	if bc.DisableRules == "all" {
 		return disabled // Return empty map for "all" case, handled separately
 	}
-	
+
 	// Parse comma-separated list of rule file names
 	ruleFiles := strings.Split(bc.DisableRules, ",")
 	for _, ruleFile := range ruleFiles {
@@ -260,20 +254,11 @@ func InitConfig() (err error) {
 		// instrument phase, we append log content to the existing file.
 		mode = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	}
-	if conf.Log == "" {
-		// Redirect log to file if flag is not set
-		debugLogPath := util.GetTempBuildDirWith(util.DebugLogFile)
-		debugLog, _ := os.OpenFile(debugLogPath, mode, 0777)
-		if debugLog != nil {
-			util.SetLogger(debugLog)
-		}
-	} else {
-		// Otherwise, log to the specified file
-		logFile, err := os.OpenFile(conf.Log, mode, 0777)
-		if err != nil {
-			return errc.New(errc.ErrOpenFile, err.Error())
-		}
-		util.SetLogger(logFile)
+	// Always redirect log to debug log file
+	debugLogPath := util.GetTempBuildDirWith(util.DebugLogFile)
+	debugLog, _ := os.OpenFile(debugLogPath, mode, 0777)
+	if debugLog != nil {
+		util.SetLogger(debugLog)
 	}
 	return nil
 }
@@ -293,14 +278,10 @@ func Configure() error {
 	if err != nil {
 		bc = &BuildConfig{}
 	}
-	flag.StringVar(&bc.Log, "log", bc.Log,
-		"Log file path. If not set, log will be saved to file.")
 	flag.BoolVar(&bc.Verbose, "verbose", bc.Verbose,
 		"Print verbose log")
 	flag.BoolVar(&bc.Debug, "debug", bc.Debug,
 		"Enable debug mode, leave temporary files for debugging")
-	flag.BoolVar(&bc.Restore, "restore", bc.Restore,
-		"Restore all instrumentations")
 	flag.StringVar(&bc.RuleJsonFiles, "rule", bc.RuleJsonFiles,
 		"Use custom.json rules. Multiple rules are separated by comma.")
 	flag.StringVar(&bc.DisableRules, "disable", bc.DisableRules,

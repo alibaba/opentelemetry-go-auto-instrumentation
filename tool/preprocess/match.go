@@ -159,18 +159,12 @@ func loadDefaultRules() []resource.InstRule {
 
 func findAvailableRules() []resource.InstRule {
 	util.GuaranteeInPreprocess()
-	// Disable all instrumentation rules and rebuild the whole project to restore
-	// all instrumentation actions, this also reverts the modification on Golang
-	// runtime package.
-	if config.GetConf().Restore {
-		return nil
-	}
 
 	rules := make([]resource.InstRule, 0)
 
 	// Load default rules (filtering is handled inside loadDefaultRules)
-	defaultRules := loadDefaultRules()
-	rules = append(rules, defaultRules...)
+		defaultRules := loadDefaultRules()
+		rules = append(rules, defaultRules...)
 
 	// If rule files are provided, load them
 	if config.GetConf().RuleJsonFiles != "" {

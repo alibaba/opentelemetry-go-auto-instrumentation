@@ -17,7 +17,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -53,17 +52,6 @@ func printUsage() {
 	name, _ := util.GetToolName()
 	usage = strings.ReplaceAll(usage, "{}", name)
 	fmt.Print(usage)
-}
-
-func initLog() error {
-	name := util.PPreprocess
-	path := util.GetTempBuildDirWith(name)
-	logPath := filepath.Join(path, util.DebugLogFile)
-	_, err := os.Create(logPath)
-	if err != nil {
-		return errc.New(errc.ErrCreateFile, err.Error())
-	}
-	return nil
 }
 
 func initTempDir() error {
@@ -115,14 +103,6 @@ func initEnv() error {
 	err := initTempDir()
 	if err != nil {
 		return err
-	}
-
-	// Create log files under temp build directory
-	if util.InPreprocess() {
-		err := initLog()
-		if err != nil {
-			return err
-		}
 	}
 
 	// Prepare shared configuration

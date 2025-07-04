@@ -22,7 +22,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -46,7 +45,6 @@ import (
 const (
 	OtelPkgDir       = "otel_pkg"
 	OtelImporter     = "otel_importer.go"
-	OtelUser         = "otel_user"
 	OtelRuleCache    = "rule_cache"
 	OtelBackups      = "backups"
 	OtelBackupSuffix = ".bk"
@@ -657,13 +655,6 @@ func buildGoCacheEnv(value string) []string {
 	return []string{"GOCACHE=" + value}
 }
 
-func nullDevice() string {
-	if runtime.GOOS == "windows" {
-		return "NUL"
-	}
-	return "/dev/null"
-}
-
 func runBuildWithToolexec(goBuildCmd []string) error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -688,12 +679,6 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 
 	// Append additional build arguments provided by the user
 	args = append(args, goBuildCmd[2:]...)
-
-	if config.GetConf().Restore {
-		// Dont generate any compiled binary when using -restore
-		args = append(args, "-o")
-		args = append(args, nullDevice())
-	}
 
 	util.Log("Run toolexec build: %v", args)
 	util.AssertGoBuild(args)
@@ -784,13 +769,8 @@ func addModReplace(gomod string, replaceMap map[string][2]string) error {
 }
 
 func (dp *DepProcessor) saveDebugFiles() {
-	dir := filepath.Join(util.GetTempBuildDir(), OtelPkgDir)
+	dir := filepath.Join(util.GetTempBuildDir(), "changed")
 	err := os.MkdirAll(dir, os.ModePerm)
-	if err == nil {
-		util.CopyDir(dp.generatedOf(OtelPkgDir), dir)
-	}
-	dir = filepath.Join(util.GetTempBuildDir(), OtelUser)
-	err = os.MkdirAll(dir, os.ModePerm)
 	if err == nil {
 		for origin := range dp.backups {
 			util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))

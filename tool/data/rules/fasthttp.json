@@ -1,6 +1,6 @@
 [
   {
-    "Version": "[1.45.0,1.62.1)",
+    "Version": "[1.45.0,1.63.1)",
     "ImportPath": "github.com/valyala/fasthttp",
     "Function": "Do",
     "ReceiverType": "\\*HostClient",
@@ -9,7 +9,7 @@
     "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/fasthttp"
   },
   {
-    "Version": "[1.45.0,1.62.1)",
+    "Version": "[1.45.0,1.63.1)",
     "ImportPath": "github.com/valyala/fasthttp",
     "Function": "ListenAndServe",
     "ReceiverType": "\\*Server",
