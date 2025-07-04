@@ -744,11 +744,17 @@ func addModReplace(gomod string, replaceMap map[string][2]string) error {
 			}
 		}
 		if !hasReplace {
-			b0, err := filepath.Abs(b[0])
-			if err != nil {
-				return errc.New(errc.ErrAbsPath, err.Error())
+			b0, b1 := b[0], b[1] // path, version
+			if b1 == "" {
+				// replace mod => /path/to/local/mod
+				b0, err = filepath.Abs(b0)
+				if err != nil {
+					return errc.New(errc.ErrAbsPath, err.Error())
+				}
+			} else {
+				// replace mod => mod version
 			}
-			err = modfile.AddReplace(a, "", b0 /*path*/, b[1] /*version*/)
+			err = modfile.AddReplace(a, "", b0, b1)
 			if err != nil {
 				return err
 			}
