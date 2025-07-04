@@ -20,11 +20,11 @@ import (
 	"strings"
 )
 
-//go:embed rules/*.json
-var defaultRulesFS embed.FS
+//go:embed *
+var dataFs embed.FS
 
 func ListRuleFiles() ([]string, error) {
-	entries, err := defaultRulesFS.ReadDir("rules")
+	entries, err := dataFs.ReadDir("rules")
 	if err != nil {
 		return nil, err
 	}
@@ -39,5 +39,9 @@ func ListRuleFiles() ([]string, error) {
 }
 
 func ReadRuleFile(name string) ([]byte, error) {
-	return defaultRulesFS.ReadFile("rules/" + name)
+	return dataFs.ReadFile("rules/" + name)
+}
+
+func UseEmbededPkg() ([]byte, error) {
+	return dataFs.ReadFile("alibaba-pkg.gz")
 }

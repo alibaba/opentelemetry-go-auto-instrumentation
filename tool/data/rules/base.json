@@ -1,9 +1,10 @@
-[{
-  "ImportPath": "runtime",
-  "StructType": "g",
-  "FieldName": "otel_trace_context",
-  "FieldType": "interface{}"
-},
+[
+  {
+    "ImportPath": "runtime",
+    "StructType": "g",
+    "FieldName": "otel_trace_context",
+    "FieldType": "interface{}"
+  },
   {
     "ImportPath": "runtime",
     "StructType": "g",

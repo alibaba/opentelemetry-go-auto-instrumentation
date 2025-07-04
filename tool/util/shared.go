@@ -15,14 +15,11 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"golang.org/x/mod/module"
 )
 
@@ -149,23 +146,6 @@ func IsGoSumFile(path string) bool {
 
 func IsGoTestFile(path string) bool {
 	return strings.HasSuffix(path, "_test.go")
-}
-
-func HashStruct(st interface{}) (uint64, error) {
-	bs, err := json.Marshal(st)
-	if err != nil {
-		return 0, errc.New(errc.ErrInvalidJSON, err.Error())
-	}
-	hasher := fnv.New64a()
-	_, err = hasher.Write(bs)
-	if err != nil {
-		return 0, errc.New(errc.ErrInternal, err.Error())
-	}
-	return hasher.Sum64(), nil
-}
-
-func MakePublic(name string) string {
-	return strings.Title(name)
 }
 
 // SplitCmds splits the command line by space, but keep the quoted part as a

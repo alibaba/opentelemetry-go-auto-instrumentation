@@ -29,13 +29,13 @@ const redis_module_name = "redis"
 
 func init() {
 	TestCases = append(TestCases, NewGeneralTestCase("redis-9.0.5-executing-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingCommands),
-		NewGeneralTestCase("redis-9.0.5-executing-unsupported-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingUnsupporetedCommands),
+		NewGeneralTestCase("redis-9.0.5-executing-unsupported-commands-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestExecutingUnsupportedCommands),
 		NewGeneralTestCase("redis-9.0.5-redis-conn-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisConn),
 		NewGeneralTestCase("redis-9.0.5-ring-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisRing),
 		NewGeneralTestCase("redis-9.0.5-transactions-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisTransactions),
 		NewGeneralTestCase("redis-9.0.5-universal-test", redis_module_name, "v9.0.5", "v9.5.1", "1.18", "", TestRedisUniversal),
 		NewGeneralTestCase("redis-8.11.0-executing-commands-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8ExecutingCommands),
-		NewGeneralTestCase("redis-8.11.0-executing-unsupported-commands-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8ExecutingUnsupporetedCommands),
+		NewGeneralTestCase("redis-8.11.0-executing-unsupported-commands-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8ExecutingUnsupportedCommands),
 		NewGeneralTestCase("redis-8.11.0-redis-conn-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisConn),
 		NewGeneralTestCase("redis-8.11.0-ring-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisRing),
 		NewGeneralTestCase("redis-8.11.0-transactions-test", redis_module_name, "v8.11.0", "v8.11.5", "1.18", "", TestV8RedisTransactions),
@@ -53,7 +53,7 @@ func TestExecutingCommands(t *testing.T, env ...string) {
 	RunApp(t, "test_executing_commands", env...)
 }
 
-func TestExecutingUnsupporetedCommands(t *testing.T, env ...string) {
+func TestExecutingUnsupportedCommands(t *testing.T, env ...string) {
 	_, redisPort := initRedisContainer()
 	UseApp("redis/v9.0.5")
 	RunGoBuild(t, "go", "build", "test_executing_unsupported_commands.go")
@@ -101,7 +101,7 @@ func TestV8ExecutingCommands(t *testing.T, env ...string) {
 	RunApp(t, "test_executing_commands", env...)
 }
 
-func TestV8ExecutingUnsupporetedCommands(t *testing.T, env ...string) {
+func TestV8ExecutingUnsupportedCommands(t *testing.T, env ...string) {
 	_, redisPort := initRedisContainer()
 	UseApp("redis/v8.11.0")
 	RunGoBuild(t, "go", "build", "test_executing_unsupported_commands.go")

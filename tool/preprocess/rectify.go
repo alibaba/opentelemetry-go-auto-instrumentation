@@ -15,12 +15,15 @@
 package preprocess
 
 import (
-	"encoding/json"
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/data"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
@@ -49,39 +52,82 @@ var otelDeps = map[string]string{
 	"go.opentelemetry.io/otel/exporters/zipkin":                         "v1.35.0",
 }
 
-type moduleInfo struct {
-	Path  string `json:"Path"`
-	Error string `json:"Error"`
-	Dir   string `json:"Dir"`
+func extractGZip(data []byte, targetDir string) error {
+	err := os.MkdirAll(targetDir, 0755)
+	if err != nil {
+		return errc.New(errc.ErrMkdirAll, err.Error())
+	}
+
+	gzReader, err := gzip.NewReader(strings.NewReader(string(data)))
+	if err != nil {
+		return errc.New(errc.ErrReadDir, fmt.Sprintf("gzip error: %v", err))
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return errc.New(errc.ErrReadDir, fmt.Sprintf("gzip error: %v", err))
+		}
+
+		// Skip AppleDouble files (._filename) and other hidden files
+		if strings.HasPrefix(filepath.Base(header.Name), "._") ||
+			strings.HasPrefix(filepath.Base(header.Name), ".") {
+			continue
+		}
+
+		targetPath := filepath.Join(targetDir, header.Name)
+		switch header.Typeflag {
+		case tar.TypeDir:
+			err = os.MkdirAll(targetPath, os.FileMode(header.Mode))
+			if err != nil {
+				return errc.New(errc.ErrMkdirAll, err.Error())
+			}
+
+		case tar.TypeReg:
+			file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR,
+				os.FileMode(header.Mode))
+			if err != nil {
+				return errc.New(errc.ErrOpenFile, err.Error())
+			}
+			defer file.Close()
+
+			_, err = io.Copy(file, tarReader)
+			if err != nil {
+				return errc.New(errc.ErrCopyFile, err.Error())
+			}
+
+		default:
+			return errc.New(errc.ErrPreprocess,
+				fmt.Sprintf("unsupported file type: %c in %s",
+					header.Typeflag, header.Name))
+		}
+	}
+
+	return nil
 }
 
-func (dp *DepProcessor) findModCacheDir() (string, error) {
-	if config.BuildPath != "" && util.PathExists(config.BuildPath) {
-		// In development mode, there is a high probability that we may have
-		// added new rules. In such cases, we prefer to use the pkg directory
-		// with the newly added rules rather than the remote pkg module. Our
-		// approach is to embed the source code directory into the tool during
-		// the packaging process. The tool will then check whether this directory
-		// exists. If it does exist, the tool will use it. Otherwise, we will
-		// fall back to using the remote pkg module.
-		return config.BuildPath, nil
+// Fetch the zipped pkg module from the embedded data section and extract it to
+// a temporary directory, then return the path to the pkg directory.
+func findModCacheDir() (string, error) {
+	bs, err := data.UseEmbededPkg()
+	if err != nil {
+		return "", errc.New(errc.ErrPreprocess,
+			fmt.Sprintf("error reading embedded pkg: %v", err))
 	}
-	pkgVersion := config.UsedPkg
-	modulePath := pkgPrefix + "@" + pkgVersion
-	output, err := runCmdCombinedOutput(dp.getGoModDir(), nil,
-		"go", "mod", "download", "-json", modulePath)
+	tempPkg := util.GetTempBuildDirWith("alibaba-pkg")
+	if util.PathExists(tempPkg) {
+		_ = os.RemoveAll(tempPkg)
+	}
+	err = extractGZip(bs, tempPkg)
 	if err != nil {
 		return "", err
 	}
-	var moduleInfo moduleInfo
-	if err := json.Unmarshal([]byte(output), &moduleInfo); err != nil {
-		return "", errc.New(errc.ErrPreprocess, "failed to unmarshal module info")
-	}
-	if moduleInfo.Error != "" {
-		return "", errc.New(errc.ErrPreprocess,
-			fmt.Sprintf("error downloading module: %s", moduleInfo.Error))
-	}
-	return moduleInfo.Dir, nil
+	return filepath.Join(tempPkg, "pkg"), nil
 }
 
 // rectifyRule rectifies the file rules path to the local module cache path.
