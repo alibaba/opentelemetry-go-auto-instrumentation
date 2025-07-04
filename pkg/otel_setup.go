@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/slog"
+	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/slog/lumberjack"
 	"log"
 	http2 "net/http"
 	"os"
@@ -71,6 +73,7 @@ var (
 	traceProvider      *trace.TracerProvider
 	metricsProvider    otelmetric.MeterProvider
 	batchSpanProcessor trace.SpanProcessor
+	OtelSlogLogger     *slog.Logger
 )
 
 func init() {
@@ -127,7 +130,7 @@ func newSpanProcessor(ctx context.Context) trace.SpanProcessor {
 }
 
 func initOpenTelemetry(ctx context.Context) error {
-
+	initSlog()
 	batchSpanProcessor = newSpanProcessor(ctx)
 
 	if batchSpanProcessor != nil {
@@ -140,6 +143,23 @@ func initOpenTelemetry(ctx context.Context) error {
 	otel.SetTracerProvider(traceProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	return initMetrics()
+}
+
+func initSlog() {
+	if os.Getenv("OTEL_LOG_ENABLED") != "false" {
+		logFile := &lumberjack.Logger{
+			Filename:   "go-agent.log",
+			MaxSize:    100,
+			MaxBackups: 5,
+			MaxAge:     30,
+			Compress:   true,
+		}
+		OtelSlogLogger = slog.New(
+			slog.NewJSONHandler(logFile, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+		OtelSlogLogger.Info("Starting otel-go agent")
+		OtelSlogLogger.Info("version: 0.10.0")
+	}
 }
 
 func initMetrics() error {

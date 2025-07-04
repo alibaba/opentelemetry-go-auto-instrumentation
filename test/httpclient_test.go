@@ -32,7 +32,7 @@ func TestRunHttpclient(t *testing.T) {
 	ExpectContains(t, stderr, "NewRequest1()")
 	ExpectContains(t, stderr, "NewRequestWithContext()")
 	ExpectContains(t, stderr, "MaxBytesError()")
-	ExpectContains(t, stderr, "debug.Stack()") // during recover()
+	//ExpectContains(t, stderr, "debug.Stack()") // during recover() debug.Stack() is printed slog
 	ExpectContains(t, stderr, "4008208820")
 	ExpectContains(t, stderr, "Prince of Qin Smashing the Battle line")
 	ExpectContains(t, stderr, "IsPrint")
