@@ -83,19 +83,16 @@ func GetConf() *BuildConfig {
 	return conf
 }
 
-func (bc *BuildConfig) IsDisableDefault() bool {
+func (bc *BuildConfig) IsDisableAll() bool {
 	return bc.DisableRules == "all"
 }
 
 // GetDisabledRules returns a set of rule file names that should be disabled
 func (bc *BuildConfig) GetDisabledRules() map[string]bool {
-	if bc.DisableRules == "" {
-		return nil
-	}
-
 	disabled := make(map[string]bool)
-	if bc.DisableRules == "all" {
-		return disabled // Return empty map for "all" case, handled separately
+	// Don't disable any rules if -disable is not specified or is "".
+	if bc.DisableRules == "" {
+		return disabled
 	}
 
 	// Parse comma-separated list of rule file names

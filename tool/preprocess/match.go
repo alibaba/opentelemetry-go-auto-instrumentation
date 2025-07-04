@@ -102,10 +102,12 @@ func loadDefaultRules() []resource.InstRule {
 		return nil
 	}
 
-	// Get disabled rules configuration
-	disabledRules := config.GetConf().GetDisabledRules()
-	
+	if config.GetConf().IsDisableAll() {
+		return nil
+	}
+
 	// Filter out disabled rule files
+	disabledRules := config.GetConf().GetDisabledRules()
 	var filteredFiles []string
 	for _, name := range files {
 		if disabledRules == nil || !disabledRules[name] {
@@ -163,8 +165,8 @@ func findAvailableRules() []resource.InstRule {
 	rules := make([]resource.InstRule, 0)
 
 	// Load default rules (filtering is handled inside loadDefaultRules)
-		defaultRules := loadDefaultRules()
-		rules = append(rules, defaultRules...)
+	defaultRules := loadDefaultRules()
+	rules = append(rules, defaultRules...)
 
 	// If rule files are provided, load them
 	if config.GetConf().RuleJsonFiles != "" {
