@@ -22,7 +22,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log"
 	"testing"
 )
 
@@ -119,7 +118,7 @@ func TestRpcClientExtractorEnd(t *testing.T) {
 	parentContext := context.Background()
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if len(attrs) != 0 {
-		log.Fatal("attrs should be empty")
+		t.Fatalf("attrs should be empty")
 	}
 }
 
@@ -145,7 +144,7 @@ func TestRpcServerExtractorEnd(t *testing.T) {
 	parentContext := context.Background()
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if len(attrs) != 0 {
-		log.Fatal("attrs should be empty")
+		t.Fatalf("attrs should be empty")
 	}
 }
 
