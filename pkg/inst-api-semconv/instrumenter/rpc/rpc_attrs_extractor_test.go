@@ -22,13 +22,11 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log"
 	"testing"
 )
 
 type testRequest struct {
-	System  string
-	Service string
-	Method  string
 }
 
 type testResponse struct {
@@ -38,23 +36,14 @@ type rpcAttrsGetter struct {
 }
 
 func (h rpcAttrsGetter) GetSystem(request testRequest) string {
-	if request.System != "" {
-		return request.System
-	}
 	return "system"
 }
 
 func (h rpcAttrsGetter) GetService(request testRequest) string {
-	if request.Service != "" {
-		return request.Service
-	}
 	return "service"
 }
 
 func (h rpcAttrsGetter) GetMethod(request testRequest) string {
-	if request.Method != "" {
-		return request.Method
-	}
 	return "method"
 }
 
@@ -118,7 +107,7 @@ func TestRpcClientExtractorEnd(t *testing.T) {
 	parentContext := context.Background()
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if len(attrs) != 0 {
-		t.Fatalf("attrs should be empty")
+		log.Fatal("attrs should be empty")
 	}
 }
 
@@ -144,7 +133,7 @@ func TestRpcServerExtractorEnd(t *testing.T) {
 	parentContext := context.Background()
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
 	if len(attrs) != 0 {
-		t.Fatalf("attrs should be empty")
+		log.Fatal("attrs should be empty")
 	}
 }
 
