@@ -49,9 +49,9 @@ func TestBuildProject4(t *testing.T) {
 	RunSet(t, "-disable=", "-rule=../../tool/data/rules/base.json")
 	RunGoBuildFallible(t, "go", "build", "m1") // duplicated default rules
 	RunSet(t, "-rule=../../tool/data/rules/base")
-	RunGoBuildFallible(t, "go", "build", "m1")
+	RunGoBuildFallible(t, "go", "build", "m1") // base not found
 	RunSet(t, "-disable=all", "-rule=../../tool/data/rules/base.json,../../tool/data/test_fmt.json")
-	RunGoBuild(t, "go", "build", "m1")
+	RunGoBuildFallible(t, "go", "build", "m1") // base.json is duplicated becase -all can not disable base.json
 }
 
 func TestBuildProject5(t *testing.T) {
