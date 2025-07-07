@@ -70,7 +70,7 @@ func TestBuildProject6(t *testing.T) {
 	const AppName = "build"
 	UseApp(AppName)
 
-	RunSet(t, "-disable=all", "-rule=../../tool/data/test_fmt.json,../../tool/data/test_runtime.json", "-verbose")
+	RunSet(t, "-disable=all", "-rule=../../tool/data/test_fmt.json", "-verbose")
 	RunGoBuild(t, "go", "build", "m1")
 	// only test_fmt.json should be available because -disable=all is set
 	ExpectDebugLogContains(t, "fmt")
