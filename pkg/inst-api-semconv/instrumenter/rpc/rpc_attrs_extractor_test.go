@@ -74,14 +74,14 @@ func (h grpcAttrsGetter) GetServerAddress(request testRequest) string {
 func TestClientGetSpanKey(t *testing.T) {
 	rpcExtractor := &ClientRpcAttrsExtractor[testRequest, any, rpcAttrsGetter]{}
 	if rpcExtractor.GetSpanKey() != utils.RPC_CLIENT_KEY {
-		t.Fatalf("Should have returned RPC_CLIENT_KEY")
+		log.Fatal("Should have returned RPC_CLIENT_KEY")
 	}
 }
 
 func TestServerGetSpanKey(t *testing.T) {
 	rpcExtractor := &ServerRpcAttrsExtractor[testRequest, any, rpcAttrsGetter]{}
 	if rpcExtractor.GetSpanKey() != utils.RPC_SERVER_KEY {
-		t.Fatalf("Should have returned RPC_SERVER_KEY")
+		log.Fatal("Should have returned RPC_SERVER_KEY")
 	}
 }
 
@@ -91,13 +91,13 @@ func TestRpcClientExtractorStart(t *testing.T) {
 	parentContext := context.Background()
 	attrs, _ = rpcExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.RPCSystemKey || attrs[0].Value.AsString() != "system" {
-		t.Fatalf("rpc system should be system")
+		log.Fatal("rpc system should be system")
 	}
 	if attrs[1].Key != semconv.RPCServiceKey || attrs[1].Value.AsString() != "service" {
-		t.Fatalf("rpc service should be service")
+		log.Fatal("rpc service should be service")
 	}
 	if attrs[2].Key != semconv.RPCMethodKey || attrs[2].Value.AsString() != "method" {
-		t.Fatalf("rpc method should be method")
+		log.Fatal("rpc method should be method")
 	}
 }
 
@@ -117,13 +117,13 @@ func TestRpcServerExtractorStart(t *testing.T) {
 	parentContext := context.Background()
 	attrs, _ = rpcExtractor.OnStart(attrs, parentContext, testRequest{})
 	if attrs[0].Key != semconv.RPCSystemKey || attrs[0].Value.AsString() != "system" {
-		t.Fatalf("rpc system should be system")
+		log.Fatal("rpc system should be system")
 	}
 	if attrs[1].Key != semconv.RPCServiceKey || attrs[1].Value.AsString() != "service" {
-		t.Fatalf("rpc service should be service")
+		log.Fatal("rpc service should be service")
 	}
 	if attrs[2].Key != semconv.RPCMethodKey || attrs[2].Value.AsString() != "method" {
-		t.Fatalf("rpc method should be method")
+		log.Fatal("rpc method should be method")
 	}
 }
 
@@ -148,16 +148,16 @@ func TestGrpcClientExtractorEndSuccess(t *testing.T) {
 	
 	// Should have one attribute for gRPC status code
 	if len(attrs) != 1 {
-		t.Fatalf("Expected 1 attribute for gRPC status code, got %d", len(attrs))
+		log.Fatal("Expected 1 attribute for gRPC status code")
 	}
 	
 	// Check that the status code attribute is present and set to 0 (OK)
 	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-		t.Fatalf("Expected RPCGRPCStatusCodeKey, got %v", attrs[0].Key)
+		log.Fatal("Expected RPCGRPCStatusCodeKey")
 	}
 	
 	if attrs[0].Value.AsInt64() != 0 {
-		t.Fatalf("Expected status code 0 (OK), got %d", attrs[0].Value.AsInt64())
+		log.Fatal("Expected status code 0 (OK)")
 	}
 }
 
@@ -175,16 +175,16 @@ func TestGrpcClientExtractorEndError(t *testing.T) {
 	
 	// Should have one attribute for gRPC status code
 	if len(attrs) != 1 {
-		t.Fatalf("Expected 1 attribute for gRPC status code, got %d", len(attrs))
+		log.Fatal("Expected 1 attribute for gRPC status code")
 	}
 	
 	// Check that the status code attribute is present and set to 5 (NotFound)
 	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-		t.Fatalf("Expected RPCGRPCStatusCodeKey, got %v", attrs[0].Key)
+		log.Fatal("Expected RPCGRPCStatusCodeKey")
 	}
 	
 	if attrs[0].Value.AsInt64() != int64(codes.NotFound) {
-		t.Fatalf("Expected status code %d (NotFound), got %d", codes.NotFound, attrs[0].Value.AsInt64())
+		log.Fatal("Expected status code for NotFound")
 	}
 }
 
@@ -202,7 +202,7 @@ func TestGrpcClientExtractorEndNonGrpcError(t *testing.T) {
 	
 	// Should have no attributes since the error is not a gRPC status error
 	if len(attrs) != 0 {
-		t.Fatalf("Expected 0 attributes for non-gRPC error, got %d", len(attrs))
+		log.Fatal("Expected 0 attributes for non-gRPC error")
 	}
 }
 
@@ -217,16 +217,16 @@ func TestGrpcServerExtractorEndSuccess(t *testing.T) {
 	
 	// Should have one attribute for gRPC status code
 	if len(attrs) != 1 {
-		t.Fatalf("Expected 1 attribute for gRPC status code, got %d", len(attrs))
+		log.Fatal("Expected 1 attribute for gRPC status code")
 	}
 	
 	// Check that the status code attribute is present and set to 0 (OK)
 	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-		t.Fatalf("Expected RPCGRPCStatusCodeKey, got %v", attrs[0].Key)
+		log.Fatal("Expected RPCGRPCStatusCodeKey")
 	}
 	
 	if attrs[0].Value.AsInt64() != 0 {
-		t.Fatalf("Expected status code 0 (OK), got %d", attrs[0].Value.AsInt64())
+		log.Fatal("Expected status code 0 (OK)")
 	}
 }
 
@@ -244,16 +244,16 @@ func TestGrpcServerExtractorEndError(t *testing.T) {
 	
 	// Should have one attribute for gRPC status code
 	if len(attrs) != 1 {
-		t.Fatalf("Expected 1 attribute for gRPC status code, got %d", len(attrs))
+		log.Fatal("Expected 1 attribute for gRPC status code")
 	}
 	
 	// Check that the status code attribute is present and set to 3 (InvalidArgument)
 	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-		t.Fatalf("Expected RPCGRPCStatusCodeKey, got %v", attrs[0].Key)
+		log.Fatal("Expected RPCGRPCStatusCodeKey")
 	}
 	
 	if attrs[0].Value.AsInt64() != int64(codes.InvalidArgument) {
-		t.Fatalf("Expected status code %d (InvalidArgument), got %d", codes.InvalidArgument, attrs[0].Value.AsInt64())
+		log.Fatal("Expected status code for InvalidArgument")
 	}
 }
 
@@ -272,7 +272,7 @@ func TestNonGrpcSystemNoStatusCode(t *testing.T) {
 	
 	// Should have no attributes since the system is not "grpc"
 	if len(attrs) != 0 {
-		t.Fatalf("Expected 0 attributes for non-gRPC system, got %d", len(attrs))
+		log.Fatal("Expected 0 attributes for non-gRPC system")
 	}
 }
 
@@ -321,16 +321,16 @@ func TestGrpcStatusCodes(t *testing.T) {
 			
 			// Should have one attribute for gRPC status code
 			if len(attrs) != 1 {
-				t.Fatalf("Expected 1 attribute for gRPC status code, got %d", len(attrs))
+				log.Fatal("Expected 1 attribute for gRPC status code")
 			}
 			
 			// Check that the status code matches expected value
 			if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-				t.Fatalf("Expected RPCGRPCStatusCodeKey, got %v", attrs[0].Key)
+				log.Fatal("Expected RPCGRPCStatusCodeKey")
 			}
 			
 			if attrs[0].Value.AsInt64() != tc.expected {
-				t.Fatalf("Expected status code %d (%s), got %d", tc.expected, tc.name, attrs[0].Value.AsInt64())
+				log.Fatal("Status code mismatch")
 			}
 		})
 	}
