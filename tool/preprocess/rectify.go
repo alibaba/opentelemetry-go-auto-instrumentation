@@ -80,7 +80,26 @@ func extractGZip(data []byte, targetDir string) error {
 			continue
 		}
 
-		targetPath := filepath.Join(targetDir, header.Name)
+		// Sanitize the file path to prevent Zip Slip vulnerability
+		// Clean the path and ensure it doesn't contain path traversal sequences
+		cleanName := filepath.Clean(header.Name)
+		if cleanName == "." || cleanName == ".." || strings.HasPrefix(cleanName, "..") {
+			continue
+		}
+
+		// Ensure the resolved path is within the target directory
+		targetPath := filepath.Join(targetDir, cleanName)
+		resolvedPath, err := filepath.EvalSymlinks(targetPath)
+		if err != nil {
+			// If symlink evaluation fails, use the original path
+			resolvedPath = targetPath
+		}
+
+		// Check if the resolved path is within the target directory
+		relPath, err := filepath.Rel(targetDir, resolvedPath)
+		if err != nil || strings.HasPrefix(relPath, "..") || filepath.IsAbs(relPath) {
+			continue // Skip files that would be extracted outside target dir
+		}
 		switch header.Typeflag {
 		case tar.TypeDir:
 			err = os.MkdirAll(targetPath, os.FileMode(header.Mode))
