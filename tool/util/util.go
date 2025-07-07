@@ -216,19 +216,6 @@ func ListFiles(dir string) ([]string, error) {
 	return files, nil
 }
 
-func ListFilesFlat(dir string) ([]string, error) {
-	// no recursive
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, errc.New(errc.ErrReadDir, err.Error())
-	}
-	var paths []string
-	for _, file := range files {
-		paths = append(paths, filepath.Join(dir, file.Name()))
-	}
-	return paths, nil
-}
-
 func CopyDir(src string, dst string) error {
 	// Get the properties of the source directory
 	sourceInfo, err := os.Stat(src)

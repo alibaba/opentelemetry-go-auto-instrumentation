@@ -39,11 +39,8 @@ type BuildConfig struct {
 	// comma. e.g. -rule=rule1.json,rule2.json. By default, new rules are appended
 	// to default rules, i.e. -rule=rule1.json,rule2.json is exactly equivalent to
 	// -rule=default.json,rule1.json,rule2.json. But if you do want to disable
-	// default rules, you can configure -disabledefault flag in advance.
+	// default rules, you can configure -disable flag in advance.
 	RuleJsonFiles string
-
-	// Log specifies the log file path. If not set, log will be saved to file.
-	Log string
 
 	// Verbose true means print verbose log.
 	Verbose bool
@@ -51,32 +48,20 @@ type BuildConfig struct {
 	// Debug true means debug mode.
 	Debug bool
 
-	// Restore true means restore all instrumentations.
-	Restore bool
-
-	// DisableDefault true means disable default rules.
-	DisableDefault bool
+	// DisableRules specifies which rules to disable. It can be:
+	// - "all" to disable all default rules
+	// - comma-separated list of rule file names to disable specific rules
+	//   e.g. "gorm.json,redis.json"
+	// - empty string to enable all default rules
+	// Note that base.json is inevitable to be enabled, even if it is explicitly
+	// disabled.
+	DisableRules string
 }
 
 // @@This value is specified by the build system.
 // This is the version of the tool, which will be printed when the -version flag
 // is passed.
 var ToolVersion = "1.0.0"
-
-// @@This value is specified by the build system.
-// It specifies the source path of the tool, which will be used to find the rules
-var BuildPath = ""
-
-// @@This value is specified by the build system.
-// It specifies the version of the pkg module, whose rules resides in it.
-// If the value is "latest", it means the latest version of the pkg module will
-// be used. If the value is a specific version, it means the specific version
-// of the pkg module will be used.
-// We added this flag because we want each release of the otel tool to precisely
-// bind to a specific version of the pkg module. Without this flag, every version
-// of the otel tool would pull the latest pkg modules (i.e., pkg/rules), which
-// is not our intention.
-var UsedPkg = "latest"
 
 var conf *BuildConfig
 
@@ -85,8 +70,13 @@ func GetConf() *BuildConfig {
 	return conf
 }
 
-func (bc *BuildConfig) IsDisableDefault() bool {
-	return bc.DisableDefault
+func (bc *BuildConfig) IsDisableAll() bool {
+	return bc.DisableRules == "all"
+}
+
+// GetDisabledRules returns a set of rule file names that should be disabled
+func (bc *BuildConfig) GetDisabledRules() string {
+	return bc.DisableRules
 }
 
 func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {
@@ -234,20 +224,11 @@ func InitConfig() (err error) {
 		// instrument phase, we append log content to the existing file.
 		mode = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	}
-	if conf.Log == "" {
-		// Redirect log to file if flag is not set
-		debugLogPath := util.GetTempBuildDirWith(util.DebugLogFile)
-		debugLog, _ := os.OpenFile(debugLogPath, mode, 0777)
-		if debugLog != nil {
-			util.SetLogger(debugLog)
-		}
-	} else {
-		// Otherwise, log to the specified file
-		logFile, err := os.OpenFile(conf.Log, mode, 0777)
-		if err != nil {
-			return errc.New(errc.ErrOpenFile, err.Error())
-		}
-		util.SetLogger(logFile)
+	// Always redirect log to debug log file
+	debugLogPath := util.GetTempBuildDirWith(util.DebugLogFile)
+	debugLog, _ := os.OpenFile(debugLogPath, mode, 0777)
+	if debugLog != nil {
+		util.SetLogger(debugLog)
 	}
 	return nil
 }
@@ -267,18 +248,14 @@ func Configure() error {
 	if err != nil {
 		bc = &BuildConfig{}
 	}
-	flag.StringVar(&bc.Log, "log", bc.Log,
-		"Log file path. If not set, log will be saved to file.")
 	flag.BoolVar(&bc.Verbose, "verbose", bc.Verbose,
 		"Print verbose log")
 	flag.BoolVar(&bc.Debug, "debug", bc.Debug,
 		"Enable debug mode, leave temporary files for debugging")
-	flag.BoolVar(&bc.Restore, "restore", bc.Restore,
-		"Restore all instrumentations")
 	flag.StringVar(&bc.RuleJsonFiles, "rule", bc.RuleJsonFiles,
 		"Use custom.json rules. Multiple rules are separated by comma.")
-	flag.BoolVar(&bc.DisableDefault, "disabledefault", bc.DisableDefault,
-		"Disable default rules")
+	flag.StringVar(&bc.DisableRules, "disable", bc.DisableRules,
+		"Disable specific rules. Use 'all' to disable all default rules, or comma-separated list of rule file names to disable specific rules")
 	flag.CommandLine.Parse(os.Args[2:])
 
 	util.Log("Configured in %s", getConfPath(BuildConfFile))
