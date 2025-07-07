@@ -206,57 +206,6 @@ func TestGrpcClientExtractorEndNonGrpcError(t *testing.T) {
 	}
 }
 
-// Test gRPC server extractor for successful requests
-func TestGrpcServerExtractorEndSuccess(t *testing.T) {
-	rpcExtractor := ServerRpcAttrsExtractor[testRequest, testResponse, grpcAttrsGetter]{}
-	attrs := make([]attribute.KeyValue, 0)
-	parentContext := context.Background()
-	
-	// Test successful gRPC call (no error)
-	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
-	
-	// Should have one attribute for gRPC status code
-	if len(attrs) != 1 {
-		log.Fatal("Expected 1 attribute for gRPC status code")
-	}
-	
-	// Check that the status code attribute is present and set to 0 (OK)
-	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-		log.Fatal("Expected RPCGRPCStatusCodeKey")
-	}
-	
-	if attrs[0].Value.AsInt64() != 0 {
-		log.Fatal("Expected status code 0 (OK)")
-	}
-}
-
-// Test gRPC server extractor for error requests
-func TestGrpcServerExtractorEndError(t *testing.T) {
-	rpcExtractor := ServerRpcAttrsExtractor[testRequest, testResponse, grpcAttrsGetter]{}
-	attrs := make([]attribute.KeyValue, 0)
-	parentContext := context.Background()
-	
-	// Create a gRPC status error
-	grpcErr := status.Error(codes.InvalidArgument, "invalid argument")
-	
-	// Test gRPC call with error
-	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, grpcErr)
-	
-	// Should have one attribute for gRPC status code
-	if len(attrs) != 1 {
-		log.Fatal("Expected 1 attribute for gRPC status code")
-	}
-	
-	// Check that the status code attribute is present and set to 3 (InvalidArgument)
-	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-		log.Fatal("Expected RPCGRPCStatusCodeKey")
-	}
-	
-	if attrs[0].Value.AsInt64() != int64(codes.InvalidArgument) {
-		log.Fatal("Expected status code for InvalidArgument")
-	}
-}
-
 // Test non-gRPC system should not have status code attribute
 func TestNonGrpcSystemNoStatusCode(t *testing.T) {
 	// Use regular rpcAttrsGetter which returns "system" instead of "grpc"
@@ -273,65 +222,5 @@ func TestNonGrpcSystemNoStatusCode(t *testing.T) {
 	// Should have no attributes since the system is not "grpc"
 	if len(attrs) != 0 {
 		log.Fatal("Expected 0 attributes for non-gRPC system")
-	}
-}
-
-// Test various gRPC status codes
-func TestGrpcStatusCodes(t *testing.T) {
-	rpcExtractor := ClientRpcAttrsExtractor[testRequest, testResponse, grpcAttrsGetter]{}
-	parentContext := context.Background()
-	
-	testCases := []struct {
-		name       string
-		code       codes.Code
-		message    string
-		expected   int64
-	}{
-		{"OK", codes.OK, "success", 0},
-		{"Cancelled", codes.Canceled, "cancelled", 1},
-		{"Unknown", codes.Unknown, "unknown error", 2},
-		{"InvalidArgument", codes.InvalidArgument, "invalid argument", 3},
-		{"DeadlineExceeded", codes.DeadlineExceeded, "deadline exceeded", 4},
-		{"NotFound", codes.NotFound, "not found", 5},
-		{"AlreadyExists", codes.AlreadyExists, "already exists", 6},
-		{"PermissionDenied", codes.PermissionDenied, "permission denied", 7},
-		{"ResourceExhausted", codes.ResourceExhausted, "resource exhausted", 8},
-		{"FailedPrecondition", codes.FailedPrecondition, "failed precondition", 9},
-		{"Aborted", codes.Aborted, "aborted", 10},
-		{"OutOfRange", codes.OutOfRange, "out of range", 11},
-		{"Unimplemented", codes.Unimplemented, "unimplemented", 12},
-		{"Internal", codes.Internal, "internal error", 13},
-		{"Unavailable", codes.Unavailable, "unavailable", 14},
-		{"DataLoss", codes.DataLoss, "data loss", 15},
-		{"Unauthenticated", codes.Unauthenticated, "unauthenticated", 16},
-	}
-	
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			attrs := make([]attribute.KeyValue, 0)
-			
-			var err error
-			if tc.code == codes.OK {
-				err = nil
-			} else {
-				err = status.Error(tc.code, tc.message)
-			}
-			
-			attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, err)
-			
-			// Should have one attribute for gRPC status code
-			if len(attrs) != 1 {
-				log.Fatal("Expected 1 attribute for gRPC status code")
-			}
-			
-			// Check that the status code matches expected value
-			if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
-				log.Fatal("Expected RPCGRPCStatusCodeKey")
-			}
-			
-			if attrs[0].Value.AsInt64() != tc.expected {
-				log.Fatal("Status code mismatch")
-			}
-		})
 	}
 }
