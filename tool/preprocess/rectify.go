@@ -153,6 +153,16 @@ func findModCacheDir() (string, error) {
 func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 	util.GuaranteeInPreprocess()
 	defer util.PhaseTimer("Fetch")()
+	modfile, err := parseGoMod(dp.getGoModPath())
+	if err != nil {
+		return err
+	}
+	// Collect all the replace directives from go.mod file, we will use it to
+	// rectify the custom rules.
+	replaceMap := map[string]string{}
+	for _, replace := range modfile.Replace {
+		replaceMap[replace.Old.Path] = replace.New.Path
+	}
 	rectified := map[string]bool{}
 	for _, bundle := range bundles {
 		for _, funcRules := range bundle.File2FuncRules {
@@ -164,10 +174,20 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 					if rectified[rule.GetPath()] {
 						continue
 					}
-					p := strings.TrimPrefix(rule.Path, pkgPrefix)
-					p = filepath.Join(dp.pkgLocalCache, p)
-					rule.SetPath(p)
-					rectified[p] = true
+					if strings.HasPrefix(rule.Path, pkgPrefix) {
+						p := strings.TrimPrefix(rule.Path, pkgPrefix)
+						p = filepath.Join(dp.pkgLocalCache, p)
+						rule.SetPath(p)
+						rectified[p] = true
+					} else {
+						p, exist := replaceMap[rule.Path]
+						if !exist {
+							return errc.New(errc.ErrPreprocess,
+								fmt.Sprintf("rule path %s is not found in go.mod file", rule.Path))
+						}
+						rule.SetPath(p)
+						rectified[p] = true
+					}
 				}
 			}
 		}
@@ -175,11 +195,22 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 			if rectified[fileRule.GetPath()] {
 				continue
 			}
-			p := strings.TrimPrefix(fileRule.Path, pkgPrefix)
-			p = filepath.Join(dp.pkgLocalCache, p)
-			fileRule.SetPath(p)
-			fileRule.FileName = filepath.Join(p, fileRule.FileName)
-			rectified[p] = true
+			if strings.HasPrefix(fileRule.Path, pkgPrefix) {
+				p := strings.TrimPrefix(fileRule.Path, pkgPrefix)
+				p = filepath.Join(dp.pkgLocalCache, p)
+				fileRule.SetPath(p)
+				fileRule.FileName = filepath.Join(p, fileRule.FileName)
+				rectified[p] = true
+			} else {
+				p, exist := replaceMap[fileRule.Path]
+				if !exist {
+					return errc.New(errc.ErrPreprocess,
+						fmt.Sprintf("rule path %s is not found in go.mod file", fileRule.Path))
+				}
+				fileRule.SetPath(p)
+				fileRule.FileName = filepath.Join(p, fileRule.FileName)
+				rectified[p] = true
+			}
 		}
 	}
 	return nil

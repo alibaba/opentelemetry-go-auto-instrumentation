@@ -785,6 +785,7 @@ func (dp *DepProcessor) saveDebugFiles() {
 			util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))
 		}
 	}
+	_ = util.CopyFile(dp.otelImporter, filepath.Join(dir, OtelImporter))
 }
 
 //go:embed template.go
@@ -826,12 +827,23 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 	}
 	cnt := 0
 	for _, bundle := range bundles {
-		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
-		content += lb
+		tag := ""
+		// If we occasionally instrument the main package, we don't need to add
+		// the linkname directive, as the target variables are already defined
+		// in the main package, adding new linkname for generated code will cause
+		// the symbol redefinition error.
+		if bundle.ImportPath != "main" {
+			tag = fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n",
+				cnt, bundle.ImportPath)
+		}
+		content += tag
 		s := fmt.Sprintf("var getstatck%d = debug.Stack\n", cnt)
 		content += s
-		lb = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n", cnt, bundle.ImportPath)
-		content += lb
+		if bundle.ImportPath != "main" {
+			tag = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n",
+				cnt, bundle.ImportPath)
+		}
+		content += tag
 		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
 		content += s
 		cnt++

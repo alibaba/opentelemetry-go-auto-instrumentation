@@ -70,9 +70,11 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 
 # Examples
 
-You can also explore [**these examples**](./example/) to get hands-on experience. They are designed to construct a full picture of how to use the tool in different scenarios.
-
-Also there are several [**documents**](./docs) that you may find useful for either understanding the project or contributing to it.
+- [demo](./example/demo) - Complete end-to-end example demonstrating automatic instrumentation with OpenTelemetry tracing and metrics collection.
+- [zap logging](./example/log) - Integration example showing how to automatically instrument structured logging with the `github.com/uber-go/zap` package.
+- [benchmark](./example/benchmark) - Performance testing suite to measure the overhead and efficiency of the auto-instrumentation tool.
+- [sql injection](./example/sqlinject) - Security-focused example demonstrating custom code injection for SQL injection detection and prevention.
+- [nethttp](./example/nethttp) - HTTP monitoring example showcasing automatic instrumentation of request/response headers and network traffic analysis.
 
 # Supported Libraries
 
