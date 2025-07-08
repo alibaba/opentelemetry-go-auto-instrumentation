@@ -19,6 +19,7 @@ import (
 	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+	"google.golang.org/grpc/status"
 )
 
 // TODO: remove server.address and put it into NetworkAttributesExtractor
@@ -45,6 +46,26 @@ func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnStart(attributes []attr
 }
 
 func (r *RpcAttrsExtractor[REQUEST, RESPONSE, GETTER]) OnEnd(attributes []attribute.KeyValue, context context.Context, request REQUEST, response RESPONSE, err error) ([]attribute.KeyValue, context.Context) {
+	// Only add gRPC status code if the RPC system is gRPC
+	system := r.Getter.GetSystem(request)
+	if system == "grpc" {
+		// Extract gRPC status code if error is present
+		if err != nil {
+			// Convert error to gRPC status code
+			if st, ok := status.FromError(err); ok {
+				attributes = append(attributes, attribute.KeyValue{
+					Key:   semconv.RPCGRPCStatusCodeKey,
+					Value: attribute.IntValue(int(st.Code())),
+				})
+			}
+		} else {
+			// Default to OK (0) status code for successful responses
+			attributes = append(attributes, attribute.KeyValue{
+				Key:   semconv.RPCGRPCStatusCodeKey,
+				Value: attribute.IntValue(0),
+			})
+		}
+	}
 	return attributes, context
 }
 
