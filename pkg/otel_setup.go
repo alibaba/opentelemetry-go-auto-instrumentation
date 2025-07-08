@@ -220,29 +220,19 @@ func gracefullyShutdown(ctx context.Context) {
 	if metricsProvider != nil {
 		mp, ok := metricsProvider.(*metric.MeterProvider)
 		if ok {
-			if err := mp.Shutdown(ctx); err != nil {
-				log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric provider", err)
-			}
+			_ = mp.Shutdown(ctx)
 		}
 	}
 	if traceProvider != nil {
-		if err := traceProvider.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry trace provider", err)
-		}
+		_ = traceProvider.Shutdown(ctx)
 	}
 	if spanExporter != nil {
-		if err := spanExporter.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry span exporter", err)
-		}
+		_ = spanExporter.Shutdown(ctx)
 	}
 	if metricExporter != nil {
-		if err := metricExporter.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric exporter", err)
-		}
+		_ = metricExporter.Shutdown(ctx)
 	}
 	if batchSpanProcessor != nil {
-		if err := batchSpanProcessor.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry batch span processor", err)
-		}
+		_ = batchSpanProcessor.Shutdown(ctx)
 	}
 }

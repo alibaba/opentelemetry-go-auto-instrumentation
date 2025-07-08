@@ -28,7 +28,7 @@ const gopg_module_name = "gopg"
 func init() {
 	TestCases = append(TestCases, NewGeneralTestCase("test_gopg_crud", gopg_module_name, "v10.10.0", "v10.14.0", "1.19", "", TestGopgCrud10140),
 		NewLatestDepthTestCase("test_gopg_crud", gopg_dependency_name, gopg_module_name, "v10.10.0", "v10.14.0", "1.19", "", TestGopgCrud10140),
-		NewGeneralTestCase("test_gopg_crud", gopg_module_name, "v10.10.0", "vv10.14.0", "1.19", "", TestGopgCrud10100))
+		NewGeneralTestCase("test_gopg_crud", gopg_module_name, "v10.10.0", "v10.14.0", "1.19", "", TestGopgCrud10100))
 }
 
 func TestGopgCrud10100(t *testing.T, env ...string) {

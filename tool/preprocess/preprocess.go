@@ -22,7 +22,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -46,7 +45,6 @@ import (
 const (
 	OtelPkgDir       = "otel_pkg"
 	OtelImporter     = "otel_importer.go"
-	OtelUser         = "otel_user"
 	OtelRuleCache    = "rule_cache"
 	OtelBackups      = "backups"
 	OtelBackupSuffix = ".bk"
@@ -253,7 +251,7 @@ func (dp *DepProcessor) initMod() (err error) {
 	// module, that's why we do this here.
 	// TODO: Once we publish the alibaba-otel/pkg module, we can remove this code
 	// along with the replace directive in the go.mod file.
-	dp.pkgLocalCache, err = dp.findModCacheDir()
+	dp.pkgLocalCache, err = findModCacheDir()
 	if err != nil {
 		return err
 	}
@@ -312,8 +310,7 @@ func (dp *DepProcessor) init() error {
 	dp.initBuildMode()
 	dp.initSignalHandler()
 	// Once all the initialization is done, let's log the configuration
-	util.Log("ToolVersion: %s, BuildPath: %s, UsedPkg: %s",
-		config.ToolVersion, config.BuildPath, config.UsedPkg)
+	util.Log("ToolVersion: %s", config.ToolVersion)
 	util.Log("%s", dp.String())
 	return nil
 }
@@ -657,13 +654,6 @@ func buildGoCacheEnv(value string) []string {
 	return []string{"GOCACHE=" + value}
 }
 
-func nullDevice() string {
-	if runtime.GOOS == "windows" {
-		return "NUL"
-	}
-	return "/dev/null"
-}
-
 func runBuildWithToolexec(goBuildCmd []string) error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -688,12 +678,6 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 
 	// Append additional build arguments provided by the user
 	args = append(args, goBuildCmd[2:]...)
-
-	if config.GetConf().Restore {
-		// Dont generate any compiled binary when using -restore
-		args = append(args, "-o")
-		args = append(args, nullDevice())
-	}
 
 	util.Log("Run toolexec build: %v", args)
 	util.AssertGoBuild(args)
@@ -760,7 +744,17 @@ func addModReplace(gomod string, replaceMap map[string][2]string) error {
 			}
 		}
 		if !hasReplace {
-			err = modfile.AddReplace(a, "", b[0] /*path*/, b[1] /*version*/)
+			b0, b1 := b[0], b[1] // path, version
+			if b1 == "" {
+				// replace mod => /path/to/local/mod
+				b0, err = filepath.Abs(b0)
+				if err != nil {
+					return errc.New(errc.ErrAbsPath, err.Error())
+				}
+			} else {
+				// replace mod => mod version
+			}
+			err = modfile.AddReplace(a, "", b0, b1)
 			if err != nil {
 				return err
 			}
@@ -784,18 +778,14 @@ func addModReplace(gomod string, replaceMap map[string][2]string) error {
 }
 
 func (dp *DepProcessor) saveDebugFiles() {
-	dir := filepath.Join(util.GetTempBuildDir(), OtelPkgDir)
+	dir := filepath.Join(util.GetTempBuildDir(), "changed")
 	err := os.MkdirAll(dir, os.ModePerm)
-	if err == nil {
-		util.CopyDir(dp.generatedOf(OtelPkgDir), dir)
-	}
-	dir = filepath.Join(util.GetTempBuildDir(), OtelUser)
-	err = os.MkdirAll(dir, os.ModePerm)
 	if err == nil {
 		for origin := range dp.backups {
 			util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))
 		}
 	}
+	_ = util.CopyFile(dp.otelImporter, filepath.Join(dir, OtelImporter))
 }
 
 //go:embed template.go
@@ -837,12 +827,23 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 	}
 	cnt := 0
 	for _, bundle := range bundles {
-		lb := fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n", cnt, bundle.ImportPath)
-		content += lb
+		tag := ""
+		// If we occasionally instrument the main package, we don't need to add
+		// the linkname directive, as the target variables are already defined
+		// in the main package, adding new linkname for generated code will cause
+		// the symbol redefinition error.
+		if bundle.ImportPath != "main" {
+			tag = fmt.Sprintf("//go:linkname getstatck%d %s.OtelGetStackImpl\n",
+				cnt, bundle.ImportPath)
+		}
+		content += tag
 		s := fmt.Sprintf("var getstatck%d = debug.Stack\n", cnt)
 		content += s
-		lb = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n", cnt, bundle.ImportPath)
-		content += lb
+		if bundle.ImportPath != "main" {
+			tag = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n",
+				cnt, bundle.ImportPath)
+		}
+		content += tag
 		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
 		content += s
 		cnt++

@@ -106,3 +106,6 @@ test/redis/v9.0.5/v9.0.5
 test/trpc/v1.0.0/test_trpc_basic
 test/trpc/v1.0.0/test_trpc_metrics
 test/zap/test_zap_with_field
+tool/data/alibaba-pkg.gz
+test/custom/custom
+example/sqlinject/sqlinjectdemo
