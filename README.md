@@ -90,8 +90,8 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | gomicro       | https://github.com/micro/go-micro              | v5.0.0                | v5.3.0                |
 | gorestful     | https://github.com/emicklei/go-restful         | v3.7.0                | v3.12.1               |
 | gorm          | https://github.com/go-gorm/gorm                | v1.22.0               | v1.25.9               |
-| grpc          | https://google.golang.org/grpc                 | v1.44.0               | v1.71.0               |
-| hertz         | https://github.com/cloudwego/hertz             | v0.8.0                | v0.9.2                |
+| grpc          | https://google.golang.org/grpc                 | v1.44.0               | -                     |
+| hertz         | https://github.com/cloudwego/hertz             | v0.8.0                | -                     |
 | iris          | https://github.com/kataras/iris                | v12.2.0               | v12.2.11              |
 | kitex         | https://github.com/cloudwego/kitex             | v0.5.1                | v0.11.3               |
 | kratos        | https://github.com/go-kratos/kratos            | v2.6.3                | v2.8.4                |
