@@ -76,6 +76,7 @@ endif
 .PHONY: all test clean
 
 all: clean darwin_amd64 linux_amd64 windows_amd64 darwin_arm64 linux_arm64
+	@echo "All builds completed: $(OUTPUT_DARWIN_AMD64) $(OUTPUT_LINUX_AMD64) $(OUTPUT_WINDOWS_AMD64) $(OUTPUT_DARWIN_ARM64) $(OUTPUT_LINUX_ARM64)"
 
 darwin_amd64: package-pkg tidy
 	@echo "Building darwin_amd64..."
