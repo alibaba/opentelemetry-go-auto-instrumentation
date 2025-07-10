@@ -825,6 +825,7 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 		t := strings.TrimPrefix(path, pkgPrefix)
 		replaceMap[path] = [2]string{filepath.Join(dp.pkgLocalCache, t), ""}
 	}
+
 	cnt := 0
 	for _, bundle := range bundles {
 		tag := ""
@@ -845,6 +846,10 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 		}
 		content += tag
 		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
+		content += s
+		lb = fmt.Sprintf("//go:linkname slogLogger%d %s.OtelSlogImpl\n", cnt, bundle.ImportPath)
+		content += lb
+		s = fmt.Sprintf("var slogLogger%d = func(msg string, args ...interface{}) { pkg.OtelSlogLogger.Error(msg, args...) }\n", cnt)
 		content += s
 		cnt++
 	}
