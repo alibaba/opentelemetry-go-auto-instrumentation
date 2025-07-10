@@ -17,15 +17,14 @@ package kafka
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
-	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
 func TestKafkaMetricsInitialization(t *testing.T) {
