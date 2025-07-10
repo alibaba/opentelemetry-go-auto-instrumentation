@@ -29,6 +29,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 	"os"
+	"time"
 )
 
 // Instrumentation enabler controller
@@ -38,6 +39,9 @@ var kafkaEnabler = kafkaInnerEnabler{os.Getenv("OTEL_SEGMENTIO_KAFKA_ENABLED") !
 var (
 	producerInstrumenter = buildKafkaProducerInstrumenter()
 	consumerInstrumenter = buildKafkaConsumerInstrumenter()
+	
+	// Metrics instance
+	kafkaMetrics = GetKafkaMetrics()
 )
 
 type kafkaInnerEnabler struct {
@@ -117,7 +121,66 @@ func (extractor *kafkaConsumerStatusExtractor) Extract(span trace.Span, request 
 	}
 }
 
-// KafkaMessageProducerAttributesGetter retrieves producer message attributes
+// Enhanced Producer Metrics Extractor
+type kafkaProducerMetricsExtractor struct{}
+
+func (extractor *kafkaProducerMetricsExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kafkaProducerReq) ([]attribute.KeyValue, context.Context) {
+	// Store start time for duration calculation
+	ctx := context.WithValue(parentContext, "kafka_start_time", time.Now())
+	return attributes, ctx
+}
+
+func (extractor *kafkaProducerMetricsExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, request kafkaProducerReq, response any, err error) ([]attribute.KeyValue, context.Context) {
+	// Calculate duration
+	if startTime, ok := ctx.Value("kafka_start_time").(time.Time); ok {
+		duration := time.Since(startTime)
+		
+		// Record metrics
+		kafkaMetrics.RecordProducerSend(ctx, request.topic, int64(len(request.msgs)), duration, err)
+	}
+	
+	return attributes, ctx
+}
+
+// Enhanced Consumer Metrics Extractor  
+type kafkaConsumerMetricsExtractor struct{}
+
+func (extractor *kafkaConsumerMetricsExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kafkaConsumerReq) ([]attribute.KeyValue, context.Context) {
+	// Store start time for duration calculation
+	ctx := context.WithValue(parentContext, "kafka_start_time", time.Now())
+	return attributes, ctx
+}
+
+func (extractor *kafkaConsumerMetricsExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, request kafkaConsumerReq, response any, err error) ([]attribute.KeyValue, context.Context) {
+	// Calculate duration
+	if startTime, ok := ctx.Value("kafka_start_time").(time.Time); ok {
+		duration := time.Since(startTime)
+		
+		// Extract consumer group from message headers or context if available
+		consumerGroup := "" // This would need to be extracted from the actual consumer configuration
+		
+		// Record metrics
+		kafkaMetrics.RecordConsumerReceive(ctx, request.msg.Topic, consumerGroup, 1, duration, err)
+	}
+	
+	return attributes, ctx
+}
+
+// Message Processing Metrics Helper
+type kafkaProcessMetricsHelper struct{}
+
+func (helper *kafkaProcessMetricsHelper) RecordProcessingStart(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "kafka_process_start_time", time.Now())
+}
+
+func (helper *kafkaProcessMetricsHelper) RecordProcessingEnd(ctx context.Context, topic string, consumerGroup string, err error) {
+	if startTime, ok := ctx.Value("kafka_process_start_time").(time.Time); ok {
+		duration := time.Since(startTime)
+		kafkaMetrics.RecordMessageProcess(ctx, topic, consumerGroup, duration, err)
+	}
+}
+
+// KafkaMessageProducerAttrsGetter retrieves producer message attributes
 type kafkaMessageProducerAttrsGetter struct{}
 
 func (getter kafkaMessageProducerAttrsGetter) IsAnonymousDestination(request kafkaProducerReq) bool {
@@ -176,7 +239,7 @@ func (getter kafkaMessageProducerAttrsGetter) GetMessageHeader(request kafkaProd
 	return []string{}
 }
 
-// KafkaMessageConsumerAttributesGetter retrieves consumer message attributes
+// KafkaMessageConsumerAttrsGetter retrieves consumer message attributes
 type kafkaMessageConsumerAttrsGetter struct{}
 
 func (getter kafkaMessageConsumerAttrsGetter) IsAnonymousDestination(request kafkaConsumerReq) bool {
@@ -245,7 +308,7 @@ func (getter kafkaMessageConsumerAttrsGetter) GetMessageHeader(request kafkaCons
 	return headerValues
 }
 
-// KafkaProducerAttributesExtractor extracts producer attributes
+// KafkaProducerAttributesExtractor extracts producer attributes with metrics
 type kafkaProducerAttributesExtractor struct {
 }
 
@@ -255,26 +318,45 @@ func (extractor *kafkaProducerAttributesExtractor) OnStart(attributes []attribut
 		semconv.MessagingDestinationNameKey.String(request.topic),
 		semconv.MessagingOperationName("publish"),
 	}
-	return append(attributes, kafkaAttributes...), parentContext
+	
+	// Store start time for metrics
+	ctx := context.WithValue(parentContext, "kafka_start_time", time.Now())
+	
+	return append(attributes, kafkaAttributes...), ctx
 }
 
 func (extractor *kafkaProducerAttributesExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, request kafkaProducerReq, response any, err error) ([]attribute.KeyValue, context.Context) {
+	// Record metrics
+	if startTime, ok := ctx.Value("kafka_start_time").(time.Time); ok {
+		duration := time.Since(startTime)
+		kafkaMetrics.RecordProducerSend(ctx, request.topic, int64(len(request.msgs)), duration, err)
+	}
+	
 	return attributes, ctx
 }
 
-// KafkaConsumerAttributesExtractor extracts consumer attributes
+// KafkaConsumerAttributesExtractor extracts consumer attributes with metrics
 type kafkaConsumerAttributesExtractor struct {
 }
 
 func (extractor *kafkaConsumerAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request kafkaConsumerReq) ([]attribute.KeyValue, context.Context) {
-	return attributes, parentContext
-}
-
-func (extractor *kafkaConsumerAttributesExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, request kafkaConsumerReq, response any, err error) ([]attribute.KeyValue, context.Context) {
+	// Store start time for metrics
+	ctx := context.WithValue(parentContext, "kafka_start_time", time.Now())
 	return attributes, ctx
 }
 
-// Build Kafka producer instrumenter
+func (extractor *kafkaConsumerAttributesExtractor) OnEnd(attributes []attribute.KeyValue, ctx context.Context, request kafkaConsumerReq, response any, err error) ([]attribute.KeyValue, context.Context) {
+	// Record metrics
+	if startTime, ok := ctx.Value("kafka_start_time").(time.Time); ok {
+		duration := time.Since(startTime)
+		consumerGroup := "" // Extract from actual consumer configuration if available
+		kafkaMetrics.RecordConsumerReceive(ctx, request.msg.Topic, consumerGroup, 1, duration, err)
+	}
+	
+	return attributes, ctx
+}
+
+// Build Kafka producer instrumenter with metrics support
 func buildKafkaProducerInstrumenter() instrumenter.Instrumenter[kafkaProducerReq, any] {
 	builder := instrumenter.Builder[kafkaProducerReq, any]{}
 	return builder.Init().
@@ -289,6 +371,7 @@ func buildKafkaProducerInstrumenter() instrumenter.Instrumenter[kafkaProducerReq
 		SetSpanKindExtractor(&instrumenter.AlwaysProducerExtractor[kafkaProducerReq]{}).
 		SetSpanStatusExtractor(&kafkaProducerStatusExtractor{}).
 		AddAttributesExtractor(&kafkaProducerAttributesExtractor{}).
+		AddAttributesExtractor(&kafkaProducerMetricsExtractor{}).
 		BuildPropagatingToDownstreamInstrumenter(
 			func(request kafkaProducerReq) propagation.TextMapCarrier {
 				return kafkaProducerCarrier{messages: request.msgs}
@@ -297,7 +380,7 @@ func buildKafkaProducerInstrumenter() instrumenter.Instrumenter[kafkaProducerReq
 		)
 }
 
-// Build Kafka consumer instrumenter
+// Build Kafka consumer instrumenter with metrics support
 func buildKafkaConsumerInstrumenter() instrumenter.Instrumenter[kafkaConsumerReq, any] {
 	builder := instrumenter.Builder[kafkaConsumerReq, any]{}
 	return builder.Init().
@@ -314,6 +397,7 @@ func buildKafkaConsumerInstrumenter() instrumenter.Instrumenter[kafkaConsumerReq
 			Operation: message.PROCESS,
 		}).
 		AddAttributesExtractor(&kafkaConsumerAttributesExtractor{}).
+		AddAttributesExtractor(&kafkaConsumerMetricsExtractor{}).
 		BuildPropagatingFromUpstreamInstrumenter(
 			func(request kafkaConsumerReq) propagation.TextMapCarrier {
 				return kafkaConsumerCarrier{message: request.msg}
