@@ -6,19 +6,11 @@ replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier =
 
 replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
 
-replace github.com/cloudwego/eino-ext/libs/acl/openai => ../../../../../cloudwego/eino-ext/libs/acl/openai
-
-//todo
-replace github.com/cloudwego/eino-ext/components/model/openai => ../../../../../cloudwego/eino-ext/components/model/openai
-
-replace github.com/cloudwego/eino-ext/components/model/ollama => ../../../../../cloudwego/eino-ext/components/model/ollama
-
 require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/cloudwego/eino v0.3.51
-	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250709065928-969ed5f74a90
-	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-00010101000000-000000000000
-	github.com/cloudwego/eino-ext/components/tool/wikipedia v0.0.0-20250708081507-4936951487dd
+	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250710065240-482d48888f25
+	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250710065240-482d48888f25
 	go.opentelemetry.io/otel/sdk v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
 )
