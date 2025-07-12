@@ -1,0 +1,37 @@
+[
+  {
+    "Version": "[0.3.51,)",
+    "ImportPath": "github.com/cloudwego/eino/compose",
+    "Function": "newGraph",
+    "OnEnter": "newGraphOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/eino"
+  },
+  {
+    "ImportPath": "github.com/cloudwego/eino-ext/components/model/openai",
+    "Function": "Generate",
+    "ReceiverType": "\\*ChatModel",
+    "OnEnter": "openaiGenerateOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/eino"
+  },
+  {
+    "ImportPath": "github.com/cloudwego/eino-ext/components/model/openai",
+    "Function": "Stream",
+    "ReceiverType": "\\*ChatModel",
+    "OnEnter": "openaiStreamOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/eino"
+  },
+  {
+    "ImportPath": "github.com/cloudwego/eino-ext/components/model/ollama",
+    "Function": "Generate",
+    "ReceiverType": "\\*ChatModel",
+    "OnEnter": "ollamaGenerateOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/eino"
+  },
+  {
+    "ImportPath": "github.com/cloudwego/eino-ext/components/model/ollama",
+    "Function": "Stream",
+    "ReceiverType": "\\*ChatModel",
+      "OnEnter": "ollamaStreamOnEnter",
+    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/eino"
+  }
+]
