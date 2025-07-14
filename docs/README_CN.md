@@ -78,7 +78,7 @@ $ otel go build -gcflags="-m" cmd/app
 | database/sql  | https://pkg.go.dev/database/sql                | -                     | -                     |
 | dubbo-go      | https://github.com/apache/dubbo-go             | v3.3.0                | -                     |
 | echo          | https://github.com/labstack/echo               | v4.0.0                | v4.12.0               |
-| eino          | https://github.com/cloudwego/eino              | v3.3.51               | -                     |
+| eino          | https://github.com/cloudwego/eino              | v0.3.51               | -                     |
 | elasticsearch | https://github.com/elastic/go-elasticsearch    | v8.4.0                | v8.15.0               |
 | fasthttp      | https://github.com/valyala/fasthttp            | v1.45.0               | v1.59.0               |
 | fiber         | https://github.com/gofiber/fiber               | v2.43.0               | v2.52.6               |

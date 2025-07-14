@@ -7,7 +7,7 @@ replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../..
 require (
 	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-20250707083332-bbadcb2d53b5
 	github.com/bytedance/sonic v1.13.2
-	github.com/cloudwego/eino v0.3.48
+	github.com/cloudwego/eino v0.3.51
 	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250709065928-969ed5f74a90
 	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250708081507-4936951487dd
 	go.opentelemetry.io/otel v1.37.0

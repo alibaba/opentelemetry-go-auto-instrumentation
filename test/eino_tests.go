@@ -1,3 +1,17 @@
+// Copyright (c) 2025 Alibaba Group Holding Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package test
 
 import "testing"
@@ -13,13 +27,13 @@ func init() {
 		NewGeneralTestCase("eino-ollama-invoke-test", eino_module_name, "v0.3.51", "", "1.18", "", TestOllamaInvokeEino),
 		NewGeneralTestCase("eino-ollama-stream-test", eino_module_name, "v0.3.51", "", "1.18", "", TestOllamaStreamEino),
 		NewGeneralTestCase("eino-document-test", eino_module_name, "v0.3.51", "", "1.18", "", TestDocumentEino),
-		NewLatestDepthTestCase("eino-latest-depth-test", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.21", "", TestOpenAIInvokeEino),
-		NewMuzzleTestCase("eino-muzzle-test-react-agent", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.21", "1.24", []string{"go", "build", "test_react_agent.go", "eino_common.go"}),
-		NewMuzzleTestCase("eino-muzzle-test-openai-invoke", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.21", "1.24", []string{"go", "build", "test_openai_invoke_chatmodel.go", "eino_common.go"}),
-		NewMuzzleTestCase("eino-muzzle-test-openai-stream", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.21", "1.24", []string{"go", "build", "test_openai_stream_chatmodel.go", "eino_common.go"}),
-		NewMuzzleTestCase("eino-muzzle-test-ollama-invoke", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.21", "", []string{"go", "build", "test_ollama_invoke_chatmodel.go", "eino_common.go"}),
-		NewMuzzleTestCase("eino-muzzle-test-ollama-stream", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.21", "", []string{"go", "build", "test_ollama_stream_chatmodel.go", "eino_common.go"}),
-		NewMuzzleTestCase("eino-muzzle-test-document-test", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.21", "", []string{"go", "build", "test_document_graph.go", "eino_common.go"}),
+		NewLatestDepthTestCase("eino-latest-depth-test", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.18", "", TestOpenAIInvokeEino),
+		NewMuzzleTestCase("eino-muzzle-test-react-agent", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.18", "", []string{"go", "build", "test_react_agent.go", "eino_common.go"}),
+		NewMuzzleTestCase("eino-muzzle-test-openai-invoke", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.18", "", []string{"go", "build", "test_openai_invoke_chatmodel.go", "eino_common.go"}),
+		NewMuzzleTestCase("eino-muzzle-test-openai-stream", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.18", "", []string{"go", "build", "test_openai_stream_chatmodel.go", "eino_common.go"}),
+		NewMuzzleTestCase("eino-muzzle-test-ollama-invoke", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.18", "", []string{"go", "build", "test_ollama_invoke_chatmodel.go", "eino_common.go"}),
+		NewMuzzleTestCase("eino-muzzle-test-ollama-stream", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.18", "", []string{"go", "build", "test_ollama_stream_chatmodel.go", "eino_common.go"}),
+		NewMuzzleTestCase("eino-muzzle-test-document-test", eino_dependency_name, eino_module_name, "v0.3.51", "", "1.18", "", []string{"go", "build", "test_document_graph.go", "eino_common.go"}),
 	)
 }
 
