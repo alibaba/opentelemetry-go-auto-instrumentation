@@ -16,6 +16,7 @@ package main
 
 import (
 	"github.com/alibaba/loongsuite-go-agent/test/verifier"
+	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
