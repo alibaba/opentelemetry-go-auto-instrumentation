@@ -17,7 +17,7 @@ package rpc
 import (
 	"context"
 	"errors"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/utils"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"google.golang.org/grpc/codes"
@@ -142,20 +142,20 @@ func TestGrpcClientExtractorEndSuccess(t *testing.T) {
 	rpcExtractor := ClientRpcAttrsExtractor[testRequest, testResponse, grpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	
+
 	// Test successful gRPC call (no error)
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, nil)
-	
+
 	// Should have one attribute for gRPC status code
 	if len(attrs) != 1 {
 		log.Fatal("Expected 1 attribute for gRPC status code")
 	}
-	
+
 	// Check that the status code attribute is present and set to 0 (OK)
 	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
 		log.Fatal("Expected RPCGRPCStatusCodeKey")
 	}
-	
+
 	if attrs[0].Value.AsInt64() != 0 {
 		log.Fatal("Expected status code 0 (OK)")
 	}
@@ -166,23 +166,23 @@ func TestGrpcClientExtractorEndError(t *testing.T) {
 	rpcExtractor := ClientRpcAttrsExtractor[testRequest, testResponse, grpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	
+
 	// Create a gRPC status error
 	grpcErr := status.Error(codes.NotFound, "resource not found")
-	
+
 	// Test gRPC call with error
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, grpcErr)
-	
+
 	// Should have one attribute for gRPC status code
 	if len(attrs) != 1 {
 		log.Fatal("Expected 1 attribute for gRPC status code")
 	}
-	
+
 	// Check that the status code attribute is present and set to 5 (NotFound)
 	if attrs[0].Key != semconv.RPCGRPCStatusCodeKey {
 		log.Fatal("Expected RPCGRPCStatusCodeKey")
 	}
-	
+
 	if attrs[0].Value.AsInt64() != int64(codes.NotFound) {
 		log.Fatal("Expected status code for NotFound")
 	}
@@ -193,13 +193,13 @@ func TestGrpcClientExtractorEndNonGrpcError(t *testing.T) {
 	rpcExtractor := ClientRpcAttrsExtractor[testRequest, testResponse, grpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	
+
 	// Create a non-gRPC error
 	regularErr := errors.New("regular error")
-	
+
 	// Test gRPC call with non-gRPC error
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, regularErr)
-	
+
 	// Should have no attributes since the error is not a gRPC status error
 	if len(attrs) != 0 {
 		log.Fatal("Expected 0 attributes for non-gRPC error")
@@ -212,13 +212,13 @@ func TestNonGrpcSystemNoStatusCode(t *testing.T) {
 	rpcExtractor := ClientRpcAttrsExtractor[testRequest, testResponse, rpcAttrsGetter]{}
 	attrs := make([]attribute.KeyValue, 0)
 	parentContext := context.Background()
-	
+
 	// Create a gRPC status error (but system is not "grpc")
 	grpcErr := status.Error(codes.Internal, "internal error")
-	
+
 	// Test non-gRPC call with gRPC error
 	attrs, _ = rpcExtractor.OnEnd(attrs, parentContext, testRequest{}, testResponse{}, grpcErr)
-	
+
 	// Should have no attributes since the system is not "grpc"
 	if len(attrs) != 0 {
 		log.Fatal("Expected 0 attributes for non-gRPC system")

@@ -17,8 +17,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
 // -----------------------------------------------------------------------------

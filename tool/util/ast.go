@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 )

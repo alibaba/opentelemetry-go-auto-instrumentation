@@ -21,7 +21,7 @@ import (
 	"strings"
 	_ "unsafe"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 )
 
 func checkSqlInjection(query string) error {

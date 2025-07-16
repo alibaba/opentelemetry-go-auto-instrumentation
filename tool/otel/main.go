@@ -20,11 +20,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/instrument"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/preprocess"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/loongsuite-go-agent/tool/config"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/instrument"
+	"github.com/alibaba/loongsuite-go-agent/tool/preprocess"
+	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
 const (

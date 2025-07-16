@@ -4,7 +4,7 @@
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./README_CN.md)  &nbsp;
 [![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)  &nbsp;
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
-[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) &nbsp;
+[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
 该项目为希望利用 OpenTelemetry 实现有效可观察性的 Golang 应用程序提供了一个自动解决方案。目标应用程序无需更改代码，插装是在编译时完成的。只需在 `go build` 前添加 `otel` 前缀即可开始 :rocket:
 
@@ -20,7 +20,7 @@ $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-inst
 ### 预编译二进制文件
 
 请从
-[Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
+[Release](https://github.com/alibaba/loongsuite-go-agent/releases)
 页面下载最新的预编译版本。
 
 ### 从源代码编译
@@ -62,7 +62,7 @@ $ otel go build -gcflags="-m" cmd/app
 > [!NOTE] 
 > 如果您发现 `go build` 能正常工作但出现编译失败，这很可能是一个 bug。
 > 请随时在
-> [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+> [GitHub Issues](https://github.com/alibaba/loongsuite-go-agent/issues)
 > 提交问题报告以帮助我们改进本项目。
 
 # 示例
@@ -123,7 +123,7 @@ $ otel go build -gcflags="-m" cmd/app
 
 我们衷心感谢以下为该项目做出宝贵贡献的贡献者：
 
-<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
+<a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
   <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation" height="100"/>
 </a>
 

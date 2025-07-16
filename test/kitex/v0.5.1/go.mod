@@ -3,12 +3,12 @@ module kitex/v0.5.1
 go 1.23.0
 
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../
+replace github.com/alibaba/loongsuite-go-agent => ../../../
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../test/verifier
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/apache/thrift v0.13.0
 	github.com/cloudwego/kitex v0.5.1
 	go.opentelemetry.io/otel/sdk v1.35.0

@@ -18,7 +18,7 @@ import (
 	erralias "errors"
 	_ "unsafe"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 )
 
 //go:linkname onEnterErrorsNewAlias errors.onEnterErrorsNewAlias

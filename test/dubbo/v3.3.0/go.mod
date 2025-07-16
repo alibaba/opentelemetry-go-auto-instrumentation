@@ -2,13 +2,13 @@ module dubbo-go
 
 go 1.23.9
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../test/verifier
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../
+replace github.com/alibaba/loongsuite-go-agent => ../../../
 
 require (
 	dubbo.apache.org/dubbo-go/v3 v3.3.0
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-20250527084128-19207e16a9a8
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-20250527084128-19207e16a9a8
 	github.com/dubbogo/gost v1.14.1
 	go.opentelemetry.io/otel v1.36.0
 	go.opentelemetry.io/otel/sdk v1.36.0

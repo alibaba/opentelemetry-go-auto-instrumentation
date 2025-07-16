@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/version"
+	"github.com/alibaba/loongsuite-go-agent/test/version"
 )
 
 // TestCase represents the configuration and metadata for a test case,

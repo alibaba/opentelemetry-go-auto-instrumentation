@@ -6,6 +6,6 @@
     "Function": "SetFormatter",
     "OnEnter": "logNewOnEnter",
     "OnExit": "logNewOnExit",
-    "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/logrus"
+    "Path": "github.com/alibaba/loongsuite-go-agent/pkg/rules/logrus"
   }
 ]

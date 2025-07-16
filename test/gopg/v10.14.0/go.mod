@@ -3,11 +3,11 @@ module gopg/v10.0.0
 go 1.23.0
 
 replace (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+	github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
 )
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/go-pg/pg/v10 v10.14.0
 	go.opentelemetry.io/otel/sdk v1.35.0
 )

@@ -3,12 +3,12 @@ module langchain/v0.1.13
 go 1.23.0
 
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../
+replace github.com/alibaba/loongsuite-go-agent => ../../../
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../test/verifier
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-20250227024304-f25d514205ee
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-20250227024304-f25d514205ee
 	github.com/tmc/langchaingo v0.1.13
 	go.opentelemetry.io/otel/sdk v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0

@@ -19,7 +19,7 @@ import (
 	_ "unsafe"
 
 	"dubbo.apache.org/dubbo-go/v3/protocol"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 	"go.opentelemetry.io/otel"
 )
 

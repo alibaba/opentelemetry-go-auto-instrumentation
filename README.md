@@ -4,7 +4,7 @@
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
 [![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)  &nbsp;
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
-[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) &nbsp;
+[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -23,7 +23,7 @@ It will be installed in `/usr/local/bin/otel` by default.
 ### Precompiled Binary
 
 Please download the latest precompiled release version from
-the [Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
+the [Release](https://github.com/alibaba/loongsuite-go-agent/releases)
 page.
 
 ### Build From Source
@@ -65,7 +65,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 > [!NOTE]
 > If you find any compilation failures while `go build` works, it's likely a bug.
 > Please feel free to file a bug
-> at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+> at [GitHub Issues](https://github.com/alibaba/loongsuite-go-agent/issues)
 > to help us enhance this project.
 
 # Examples
@@ -129,7 +129,7 @@ to engage with us.
 
 We would thankfully acknowledge the following contributors for their valuable contributions to this project:
 
-<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
+<a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
   <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation" height="100"/>
 </a>
 
