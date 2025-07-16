@@ -2,7 +2,7 @@
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](../README.md) &nbsp;
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./README_CN.md)  &nbsp;
-[![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)  &nbsp;
+[![codecov](https://codecov.io/gh/alibaba/loongsuite-go-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/loongsuite-go-agent)  &nbsp;
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
 [![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
@@ -13,7 +13,7 @@
 ### 通过 Bash 安装
 对于 Linux 和 MacOS 用户，运行以下命令安装该工具：
 ```console
-$ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
+$ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/loongsuite-go-agent@main/install.sh | sudo bash
 ```
 默认情况下，它将安装在 `/usr/local/bin/otel` 中。
 
@@ -124,9 +124,9 @@ $ otel go build -gcflags="-m" cmd/app
 我们衷心感谢以下为该项目做出宝贵贡献的贡献者：
 
 <a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation" height="100"/>
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/loongsuite-go-agent" height="100"/>
 </a>
 
 该项目的Star历史如下，它展示了这个项目随着时间推移的发展情况：
 
-<img src="https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date" height="200">
+<img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200">

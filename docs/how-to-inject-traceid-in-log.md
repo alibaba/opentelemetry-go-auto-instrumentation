@@ -2,7 +2,7 @@
 
 ## Automatic Injection
 
-If we use the log framework supported by `opentelemetry-go-auto-instrumentation`, which is shown
+If we use the log framework supported by `loongsuite-go-agent`, which is shown
 in [here](./supported-libraries.md). TraceId and SpanId are automatically injected into the log.
 
 ```go
@@ -27,7 +27,7 @@ func main() {
 
 ```
 
-For example, if we build the following Go file with `opentelemetry-go-auto-instrumentation`, run the binary
+For example, if we build the following Go file with `loongsuite-go-agent`, run the binary
 and `curl localhost:9999/log`, we will
 see the following output:
 
@@ -46,7 +46,7 @@ The TraceId and SpanId are automatically injected into the log.
 
 ## Maunal Injection
 
-If the framework is not supported by `opentelemetry-go-auto-instrumentation`. We can manually inject TraceId and SpanId into the log:
+If the framework is not supported by `loongsuite-go-agent`. We can manually inject TraceId and SpanId into the log:
 ```go
 package main
 
@@ -69,7 +69,7 @@ func main() {
 }
 ```
 
-For example, if we build the following Go file with `opentelemetry-go-auto-instrumentation`, run the binary and `curl localhost:9999/logwithtrace`, we will
+For example, if we build the following Go file with `loongsuite-go-agent`, run the binary and `curl localhost:9999/logwithtrace`, we will
 see the following output:
 
 ```shell

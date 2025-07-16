@@ -24,7 +24,7 @@ test/build/default
 test/build/foo
 otel_rules
 otel_pkgdep
-opentelemetry-go-auto-instrumentation
+loongsuite-go-agent
 *_cache
 example/demo/demo
 test/zap/test_zap

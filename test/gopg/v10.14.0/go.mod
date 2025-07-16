@@ -3,7 +3,7 @@ module gopg/v10.0.0
 go 1.23.0
 
 replace (
-	github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+	github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../../loongsuite-go-agent/test/verifier
 )
 
 require (

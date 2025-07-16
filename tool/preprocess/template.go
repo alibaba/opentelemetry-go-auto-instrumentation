@@ -4,9 +4,8 @@
 package main
 
 import (
-	_ "github.com/alibaba/loongsuite-go-agent/pkg" // use otel setup
-	_ "go.opentelemetry.io/otel"                   // depends on otel
-	_ "go.opentelemetry.io/otel/baggage"           // depends on otel
-	_ "go.opentelemetry.io/otel/sdk/trace"         // depends on otel
-	_ "unsafe"                                     // for go:linkname when declaring printstack/getstack variable
+	_ "go.opentelemetry.io/otel"           // depends on otel
+	_ "go.opentelemetry.io/otel/baggage"   // depends on otel
+	_ "go.opentelemetry.io/otel/sdk/trace" // depends on otel
+	_ "unsafe"                             // for go:linkname when declaring printstack/getstack variable
 )
