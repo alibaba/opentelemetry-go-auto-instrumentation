@@ -24,12 +24,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
-	testaccess "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/testaccess"
+	"github.com/alibaba/loongsuite-go-agent/pkg/core/meter"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/db"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/experimental"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/http"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/rpc"
+	testaccess "github.com/alibaba/loongsuite-go-agent/pkg/testaccess"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	otelruntime "go.opentelemetry.io/contrib/instrumentation/runtime"
 

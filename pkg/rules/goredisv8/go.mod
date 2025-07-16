@@ -1,11 +1,11 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/goredisv8
+module github.com/alibaba/loongsuite-go-agent/pkg/rules/goredisv8
 
 go 1.23.0
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../pkg
+replace github.com/alibaba/loongsuite-go-agent/pkg => ../../../pkg
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/pkg v0.0.0-00010101000000-000000000000
 	github.com/go-redis/redis/v8 v8.11.5
 	go.opentelemetry.io/otel/sdk v1.36.0
 	go.opentelemetry.io/otel/trace v1.36.0

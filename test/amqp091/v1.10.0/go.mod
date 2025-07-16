@@ -2,12 +2,12 @@ module rabbitmq
 
 go 1.23.3
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../
+replace github.com/alibaba/loongsuite-go-agent => ../../../
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../test/verifier
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-20250320105343-62831da72796
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-20250320105343-62831da72796
 	github.com/rabbitmq/amqp091-go v1.10.0
 	go.opentelemetry.io/otel/sdk v1.35.0
 )

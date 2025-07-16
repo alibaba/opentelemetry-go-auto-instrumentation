@@ -18,7 +18,7 @@ import (
 	_ "fmt"
 	_ "unsafe"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 )
 
 //go:linkname OnEnterPrintf2 fmt.OnEnterPrintf2

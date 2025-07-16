@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
 )
 
 type RunPhase string

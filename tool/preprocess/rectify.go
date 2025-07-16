@@ -23,14 +23,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/data"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/loongsuite-go-agent/tool/data"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/resource"
+	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
 const (
-	pkgPrefix = "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg"
+	pkgPrefix = "github.com/alibaba/loongsuite-go-agent/pkg"
 )
 
 var otelDeps = map[string]string{

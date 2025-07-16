@@ -2,10 +2,10 @@ module fiberTest/v2.43.0
 
 go 1.23.0
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../test/verifier
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/gofiber/fiber/v2 v2.43.0
 	github.com/valyala/fasthttp v1.45.0
 	go.opentelemetry.io/otel/sdk v1.35.0

@@ -1,4 +1,4 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg
+module github.com/alibaba/loongsuite-go-agent/pkg
 
 go 1.23.0
 

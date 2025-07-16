@@ -17,7 +17,7 @@ package hook
 import (
 	_ "unsafe"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 )
 
 //go:linkname mainOnEnter main.mainOnEnter

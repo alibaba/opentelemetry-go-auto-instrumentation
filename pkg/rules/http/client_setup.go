@@ -20,8 +20,8 @@ import (
 	"strings"
 	_ "unsafe"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/loongsuite-go-agent/pkg/api"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/utils"
 )
 
 // TODO: use a interface to filter

@@ -1,10 +1,10 @@
-![](docs/anim-logo.svg)
+![](docs/loongsuite.png)
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md) &nbsp;
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
-[![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)  &nbsp;
+[![codecov](https://codecov.io/gh/alibaba/loongsuite-go-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/loongsuite-go-agent)  &nbsp;
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
-[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) &nbsp;
+[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -23,7 +23,7 @@ It will be installed in `/usr/local/bin/otel` by default.
 ### Precompiled Binary
 
 Please download the latest precompiled release version from
-the [Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
+the [Release](https://github.com/alibaba/loongsuite-go-agent/releases)
 page.
 
 ### Build From Source
@@ -65,7 +65,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 > [!NOTE]
 > If you find any compilation failures while `go build` works, it's likely a bug.
 > Please feel free to file a bug
-> at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+> at [GitHub Issues](https://github.com/alibaba/loongsuite-go-agent/issues)
 > to help us enhance this project.
 
 # Examples
@@ -129,10 +129,10 @@ to engage with us.
 
 We would thankfully acknowledge the following contributors for their valuable contributions to this project:
 
-<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation" height="100"/>
+<a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/loongsuite-go-agent" height="100"/>
 </a>
 
 The star history of this project is as follows, which shows the growth of this project over time:
 
-<img src="https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date" height="200">
+<img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200">

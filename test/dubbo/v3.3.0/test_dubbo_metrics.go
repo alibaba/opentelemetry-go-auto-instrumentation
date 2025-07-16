@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/alibaba/loongsuite-go-agent/test/verifier"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
