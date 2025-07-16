@@ -1,4 +1,4 @@
-![](anim-logo.svg)
+![](loongsuite.png)
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](../README.md) &nbsp;
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./README_CN.md)  &nbsp;
