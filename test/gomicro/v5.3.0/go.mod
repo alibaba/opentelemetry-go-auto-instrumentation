@@ -3,10 +3,10 @@ module gomicroTest/v5.3.0
 go 1.23.0
 
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../test/verifier
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/go-micro/examples v0.0.0-20230412102204-758a9e786e6a
 	go-micro.dev/v5 v5.3.0
 	go.opentelemetry.io/otel/sdk v1.35.0

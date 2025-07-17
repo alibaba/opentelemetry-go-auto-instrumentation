@@ -9,11 +9,11 @@ We need to add a JSON file named after the plugin, such as nethttp.json, in the 
   "ImportPath": "github.com/gorilla/mux",
   "Function": "setCurrentRoute",
   "OnEnter": "muxRoute130OnEnter",
-  "Path": "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mux"
+  "Path": "github.com/alibaba/loongsuite-go-agent/pkg/rules/mux"
 },...]
 ```
 
-Taking `github.com/gorilla/mux` as an example, this entry declares that we want to inject our instrumentation function `muxRoute130OnEnter` at the beginning of the target function `setCurrentRoute`. The instrumentation code is located under the directory `github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/mux`, and the supported versions of mux are `[1.3.0,1.7.4)`.
+Taking `github.com/gorilla/mux` as an example, this entry declares that we want to inject our instrumentation function `muxRoute130OnEnter` at the beginning of the target function `setCurrentRoute`. The instrumentation code is located under the directory `github.com/alibaba/loongsuite-go-agent/pkg/rules/mux`, and the supported versions of mux are `[1.3.0,1.7.4)`.
 
 For more detailed field definitions, please refer to [rule_def.md](rule_def.md).
 
@@ -24,7 +24,7 @@ We need to create a new plugin directory under pkg/rules/ and then write the plu
 package mux
 
 import _ "unsafe"
-import "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+import "github.com/alibaba/loongsuite-go-agent/pkg/api"
 import mux "github.com/gorilla/mux"
 
 //go:linkname muxRoute130OnEnter github.com/gorilla/mux.muxRoute130OnEnter

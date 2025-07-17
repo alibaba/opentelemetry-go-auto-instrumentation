@@ -24,14 +24,16 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/core/meter"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/db"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/experimental"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/http"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/rpc"
-	testaccess "github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/testaccess"
+	"github.com/alibaba/loongsuite-go-agent/pkg/core/meter"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/db"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/experimental"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/http"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/rpc"
+	testaccess "github.com/alibaba/loongsuite-go-agent/pkg/testaccess"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	otelruntime "go.opentelemetry.io/contrib/instrumentation/runtime"
+
+	// The version of the following packages/modules must be fixed
 	"go.opentelemetry.io/otel"
 	_ "go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
@@ -218,29 +220,19 @@ func gracefullyShutdown(ctx context.Context) {
 	if metricsProvider != nil {
 		mp, ok := metricsProvider.(*metric.MeterProvider)
 		if ok {
-			if err := mp.Shutdown(ctx); err != nil {
-				log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric provider", err)
-			}
+			_ = mp.Shutdown(ctx)
 		}
 	}
 	if traceProvider != nil {
-		if err := traceProvider.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry trace provider", err)
-		}
+		_ = traceProvider.Shutdown(ctx)
 	}
 	if spanExporter != nil {
-		if err := spanExporter.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry span exporter", err)
-		}
+		_ = spanExporter.Shutdown(ctx)
 	}
 	if metricExporter != nil {
-		if err := metricExporter.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry metric exporter", err)
-		}
+		_ = metricExporter.Shutdown(ctx)
 	}
 	if batchSpanProcessor != nil {
-		if err := batchSpanProcessor.Shutdown(ctx); err != nil {
-			log.Printf("%s: %v", "Failed to shutdown the OpenTelemetry batch span processor", err)
-		}
+		_ = batchSpanProcessor.Shutdown(ctx)
 	}
 }

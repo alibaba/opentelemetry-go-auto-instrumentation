@@ -47,3 +47,5 @@ const KAFKAGO_PRODUCER_SCOPE_NAME = "pkg/rules/segmentio-kafka-go/kafka_producer
 const KAFKAGO_CONSUMER_SCOPE_NAME = "pkg/rules/segmentio-kafka-go/kafka_consumer_setup.go"
 const ROCKETMQGO_PRODUCER_SCOPE_NAME = "pkg/rules/rocketmq/rocketmq_producer_setup.go"
 const ROCKETMQGO_CONSUMER_SCOPE_NAME = "pkg/rules/rocketmq/rocketmq_consumer_setup.go"
+const GOPG_SCOPE_NAME = "pkg/rules/gopg/setup.go"
+

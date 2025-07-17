@@ -17,7 +17,7 @@ package error19
 import (
 	_ "unsafe"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/api"
+	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 )
 
 // onEnterGeneric is a generic hook function that can be used to handle all

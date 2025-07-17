@@ -1,11 +1,11 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/logrus
+module github.com/alibaba/loongsuite-go-agent/pkg/rules/logrus
 
 go 1.23.0
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../pkg
+replace github.com/alibaba/loongsuite-go-agent/pkg => ../../../pkg
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/pkg v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.5.0
 	go.opentelemetry.io/otel/sdk v1.36.0
 )

@@ -1,11 +1,11 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/echo
+module github.com/alibaba/loongsuite-go-agent/pkg/rules/echo
 
 go 1.23.0
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../pkg
+replace github.com/alibaba/loongsuite-go-agent/pkg => ../../../pkg
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/pkg v0.0.0-00010101000000-000000000000
 	github.com/labstack/echo/v4 v4.0.0
 	go.opentelemetry.io/otel/sdk v1.36.0
 )

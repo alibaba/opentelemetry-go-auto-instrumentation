@@ -2,7 +2,7 @@
 
 ## Automatic Injection
 
-If we use the log framework supported by `opentelemetry-go-auto-instrumentation`, which is shown
+If we use the log framework supported by `loongsuite-go-agent`, which is shown
 in [here](./supported-libraries.md). TraceId and SpanId are automatically injected into the log.
 
 ```go
@@ -27,7 +27,7 @@ func main() {
 
 ```
 
-For example, if we build the following Go file with `opentelemetry-go-auto-instrumentation`, run the binary
+For example, if we build the following Go file with `loongsuite-go-agent`, run the binary
 and `curl localhost:9999/log`, we will
 see the following output:
 
@@ -46,7 +46,7 @@ The TraceId and SpanId are automatically injected into the log.
 
 ## Maunal Injection
 
-If the framework is not supported by `opentelemetry-go-auto-instrumentation`. We can manually inject TraceId and SpanId into the log:
+If the framework is not supported by `loongsuite-go-agent`. We can manually inject TraceId and SpanId into the log:
 ```go
 package main
 
@@ -60,7 +60,7 @@ func main() {
 	http.HandleFunc("/logwithtrace", func(w http.ResponseWriter, r *http.Request) {
 		logger := zap.NewExample()
 		traceId, spanId := trace.GetTraceAndSpanId()
-		logger.Info("this is info message with fileds",
+		logger.Info("this is info message with fields",
 			zap.String("traceId", traceId),
 			zap.String("spanId", spanId),
 		)
@@ -69,11 +69,11 @@ func main() {
 }
 ```
 
-For example, if we build the following Go file with `opentelemetry-go-auto-instrumentation`, run the binary and `curl localhost:9999/logwithtrace`, we will
+For example, if we build the following Go file with `loongsuite-go-agent`, run the binary and `curl localhost:9999/logwithtrace`, we will
 see the following output:
 
 ```shell
-{"level":"info","msg":"this is info message with fileds","traceId":"92d63797010a2040484222a74c5ce304","spanId":"5a2c84c807a6e12c"}
+{"level":"info","msg":"this is info message with fields","traceId":"92d63797010a2040484222a74c5ce304","spanId":"5a2c84c807a6e12c"}
 ```
 
 The above code is placed in the [example/log](../example/log) directory

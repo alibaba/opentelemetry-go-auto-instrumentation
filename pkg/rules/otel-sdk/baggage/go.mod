@@ -1,5 +1,5 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/otel-sdk/baggage
+module github.com/alibaba/loongsuite-go-agent/pkg/rules/otel-sdk/baggage
 
 go 1.23.0
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../../../pkg
+replace github.com/alibaba/loongsuite-go-agent/pkg => ../../../../../pkg

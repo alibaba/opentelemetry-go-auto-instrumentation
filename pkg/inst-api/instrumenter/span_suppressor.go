@@ -17,7 +17,7 @@ package instrumenter
 import (
 	"context"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api/utils"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/utils"
 
 	"go.opentelemetry.io/otel/attribute"
 	ottrace "go.opentelemetry.io/otel/sdk/trace"
@@ -49,6 +49,7 @@ var scopeKey = map[string]attribute.Key{
 	utils.REDIGO_SCOPE_NAME:       utils.DB_CLIENT_KEY,
 	utils.MONGO_SCOPE_NAME:        utils.DB_CLIENT_KEY,
 	utils.GORM_SCOPE_NAME:         utils.DB_CLIENT_KEY,
+	utils.GOPG_SCOPE_NAME:         utils.DB_CLIENT_KEY,
 }
 
 var kindKey = map[string]trace.SpanKind{
@@ -68,7 +69,7 @@ var kindKey = map[string]trace.SpanKind{
 
 	utils.TRPCGO_CLIENT_SCOPE_NAME: trace.SpanKindClient,
 	utils.TRPCGO_SERVER_SCOPE_NAME: trace.SpanKindServer,
-	
+
 	// kitex
 	utils.KITEX_CLIENT_SCOPE_NAME: trace.SpanKindClient,
 	utils.KITEX_SERVER_SCOPE_NAME: trace.SpanKindServer,
@@ -80,6 +81,7 @@ var kindKey = map[string]trace.SpanKind{
 	utils.REDIGO_SCOPE_NAME:       trace.SpanKindClient,
 	utils.MONGO_SCOPE_NAME:        trace.SpanKindClient,
 	utils.GORM_SCOPE_NAME:         trace.SpanKindClient,
+	utils.GOPG_SCOPE_NAME:         trace.SpanKindClient,
 }
 
 type SpanSuppressor interface {

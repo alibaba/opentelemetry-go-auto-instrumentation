@@ -17,15 +17,14 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/instrument"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/preprocess"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/loongsuite-go-agent/tool/config"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/instrument"
+	"github.com/alibaba/loongsuite-go-agent/tool/preprocess"
+	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
 const (
@@ -55,17 +54,6 @@ func printUsage() {
 	fmt.Print(usage)
 }
 
-func initLog() error {
-	name := util.PPreprocess
-	path := util.GetTempBuildDirWith(name)
-	logPath := filepath.Join(path, util.DebugLogFile)
-	_, err := os.Create(logPath)
-	if err != nil {
-		return errc.New(errc.ErrCreateFile, err.Error())
-	}
-	return nil
-}
-
 func initTempDir() error {
 	// All temp directories are prepared before, instrument phase should not
 	// create any new directories.
@@ -81,12 +69,7 @@ func initTempDir() error {
 		}
 	}
 	for _, subdir := range []string{util.PPreprocess, util.PInstrument} {
-		if util.PathExists(util.GetTempBuildDirWith(subdir)) {
-			err := os.RemoveAll(util.GetTempBuildDirWith(subdir))
-			if err != nil {
-				return errc.New(errc.ErrRemoveAll, err.Error())
-			}
-		}
+		_ = os.RemoveAll(util.GetTempBuildDirWith(subdir))
 		err := os.MkdirAll(util.GetTempBuildDirWith(subdir), 0777)
 		if err != nil {
 			return errc.New(errc.ErrMkdirAll, err.Error())
@@ -115,14 +98,6 @@ func initEnv() error {
 	err := initTempDir()
 	if err != nil {
 		return err
-	}
-
-	// Create log files under temp build directory
-	if util.InPreprocess() {
-		err := initLog()
-		if err != nil {
-			return err
-		}
 	}
 
 	// Prepare shared configuration

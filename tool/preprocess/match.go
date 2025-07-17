@@ -21,13 +21,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/config"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/data"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/loongsuite-go-agent/tool/config"
+	"github.com/alibaba/loongsuite-go-agent/tool/data"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/resource"
+	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
@@ -94,6 +95,8 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 	return rules, nil
 }
 
+type chunk []resource.InstRule
+
 func loadDefaultRules() []resource.InstRule {
 	// Read all default embedded rule files
 	files, err := data.ListRuleFiles()
@@ -102,14 +105,35 @@ func loadDefaultRules() []resource.InstRule {
 		return nil
 	}
 
-	type chunk []resource.InstRule
-	ruleChunks := make([]chunk, len(files))
-
-	group := &errgroup.Group{}
+	// Disable specific rules if specified
+	filteredFiles := make([]string, 0)
+	disable := config.GetConf().GetDisabledRules()
+	switch disable {
+	case "all":
+		// Disable all rules except base.json
+		filteredFiles = append(filteredFiles, "base.json")
+	case "":
+		// Enable all rules
+		filteredFiles = files
+	default:
+		// Disable specific rules
+		disabledRules := strings.Split(disable, ",")
+		for _, name := range files {
+			if !slices.Contains(disabledRules, name) {
+				filteredFiles = append(filteredFiles, name)
+			}
+		}
+	}
 
 	// Load and parse each rule file concurrently
-	for i, name := range files {
+	ruleChunks := make([]chunk, len(filteredFiles))
+	group := &errgroup.Group{}
+	foundBase := false
+	for i, name := range filteredFiles {
 		i, name := i, name // capture loop variables
+		if name == "base.json" {
+			foundBase = true
+		}
 
 		group.Go(func() error {
 			raw, err := data.ReadRuleFile(name)
@@ -134,32 +158,27 @@ func loadDefaultRules() []resource.InstRule {
 		util.Log("One or more default rule files failed to load: %v", err)
 		return nil
 	}
+	if !foundBase {
+		util.Log("base.json is not found in the default rule files")
+		return nil
+	}
 
 	// Merge all ruleChunks
 	rules := make([]resource.InstRule, 0)
 	for _, c := range ruleChunks {
 		rules = append(rules, c...)
 	}
-
 	return rules
 }
 
 func findAvailableRules() []resource.InstRule {
 	util.GuaranteeInPreprocess()
-	// Disable all instrumentation rules and rebuild the whole project to restore
-	// all instrumentation actions, this also reverts the modification on Golang
-	// runtime package.
-	if config.GetConf().Restore {
-		return nil
-	}
 
 	rules := make([]resource.InstRule, 0)
 
-	// Load default rules unless explicitly disabled
-	if !config.GetConf().IsDisableDefault() {
-		defaultRules := loadDefaultRules()
-		rules = append(rules, defaultRules...)
-	}
+	// Load default rules (filtering is handled inside loadDefaultRules)
+	defaultRules := loadDefaultRules()
+	rules = append(rules, defaultRules...)
 
 	// If rule files are provided, load them
 	if config.GetConf().RuleJsonFiles != "" {

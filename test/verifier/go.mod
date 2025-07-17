@@ -1,4 +1,4 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier
+module github.com/alibaba/loongsuite-go-agent/test/verifier
 
 go 1.23.0
 

@@ -19,7 +19,7 @@ MAIN_VERSION := $(shell git describe --tags --abbrev=0 | sed 's/^v//')
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 CURRENT_ARCH := $(shell uname -m | sed 's/aarch64/arm64/;s/armv7l/arm/;s/armv6l/arm/')
 
-MOD_NAME := github.com/alibaba/opentelemetry-go-auto-instrumentation
+MOD_NAME := github.com/alibaba/loongsuite-go-agent
 STRIP_DEBUG := -s -w
 
 OUTPUT_BASE = otel
@@ -41,8 +41,6 @@ endif
 
 VERSION := $(MAIN_VERSION)_$(COMMIT_ID)
 XVALUES := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) \
-		   -X=$(MOD_NAME)/tool/config.BuildPath=$(CURDIR)/pkg \
-		   -X=$(MOD_NAME)/tool/config.UsedPkg=$(COMMIT_ID) \
 		   -X=$(MOD_NAME)/pkg/inst-api/version.Tag=v$(VERSION)
 
 LDFLAGS := -ldflags="$(XVALUES) $(STRIP_DEBUG)"
@@ -66,44 +64,68 @@ endif
 #-------------------------------------------------------------------------------
 # Build targets
 .PHONY: build
-build: tidy
+build: package-pkg tidy
+	@echo "Building $(OUTPUT_BIN)..."
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE))
 ifeq ($(CURRENT_OS),windows)
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE).exe)
 endif
-	$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
+	@$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
+	@echo "Built completed: $(OUTPUT_BIN)"
 
 .PHONY: all test clean
 
 all: clean darwin_amd64 linux_amd64 windows_amd64 darwin_arm64 linux_arm64
+	@echo "All builds completed: $(OUTPUT_DARWIN_AMD64) $(OUTPUT_LINUX_AMD64) $(OUTPUT_WINDOWS_AMD64) $(OUTPUT_DARWIN_ARM64) $(OUTPUT_LINUX_ARM64)"
 
-darwin_amd64: tidy
-	$(call BUILD_CMD,darwin,amd64,$(OUTPUT_DARWIN_AMD64))
+darwin_amd64: package-pkg tidy
+	@echo "Building darwin_amd64..."
+	@$(call BUILD_CMD,darwin,amd64,$(OUTPUT_DARWIN_AMD64))
 
-linux_amd64: tidy
-	$(call BUILD_CMD,linux,amd64,$(OUTPUT_LINUX_AMD64))
+linux_amd64: package-pkg tidy
+	@echo "Building linux_amd64..."
+	@$(call BUILD_CMD,linux,amd64,$(OUTPUT_LINUX_AMD64))
 
-windows_amd64: tidy
-	$(call BUILD_CMD,windows,amd64,$(OUTPUT_WINDOWS_AMD64))
+windows_amd64: package-pkg tidy
+	@echo "Building windows_amd64..."
+	@$(call BUILD_CMD,windows,amd64,$(OUTPUT_WINDOWS_AMD64))
 
-darwin_arm64: tidy
-	$(call BUILD_CMD,darwin,arm64,$(OUTPUT_DARWIN_ARM64))
+darwin_arm64: package-pkg tidy
+	@echo "Building darwin_arm64..."
+	@$(call BUILD_CMD,darwin,arm64,$(OUTPUT_DARWIN_ARM64))
 
-linux_arm64: tidy
-	$(call BUILD_CMD,linux,arm64,$(OUTPUT_LINUX_ARM64))
+linux_arm64: package-pkg tidy
+	@echo "Building linux_arm64..."
+	@$(call BUILD_CMD,linux,arm64,$(OUTPUT_LINUX_ARM64))
 
 .PHONY: tidy
 tidy:
-	go mod tidy
+	@echo "Tidying up dependencies..."
+	@go mod tidy
 
 clean:
-	rm -f $(OUTPUT_DARWIN_AMD64) $(OUTPUT_LINUX_AMD64) $(OUTPUT_WINDOWS_AMD64) $(OUTPUT_DARWIN_ARM64) $(OUTPUT_LINUX_ARM64) $(OUTPUT_BASE)
-	go clean
+	@echo "Cleaning up..."
+	@rm -f $(OUTPUT_DARWIN_AMD64) $(OUTPUT_LINUX_AMD64) $(OUTPUT_WINDOWS_AMD64) $(OUTPUT_DARWIN_ARM64) $(OUTPUT_LINUX_ARM64) $(OUTPUT_BASE)
+	@go clean
 
 test:
 	go test -a -timeout 50m -v $(MOD_NAME)/test
 
 install: build
 	@echo "Running install process..."
-	cp $(OUTPUT_BASE) /usr/local/bin/
+	@cp $(OUTPUT_BASE) /usr/local/bin/
 	@echo "Installed at /usr/local/bin/$(OUTPUT_BASE)"
+
+#-------------------------------------------------------------------------------
+# Package pkg module
+# Embed the pkg module into the otel binary during the build process. When the
+# otel tool needs to use it, it can directly extract and utilize the embedded
+# package, instead of downloading it from the internet (via go mod tidy or
+# go mod download).
+PKG_GZIP = alibaba-pkg.gz
+
+.PHONY: package-pkg
+package-pkg:
+	@echo "Packaging pkg module..."
+	@tar -czf alibaba-pkg.gz --exclude='*.log' --exclude='*.string' --exclude='*.pprof' --exclude='*.gz' pkg
+	@mv alibaba-pkg.gz tool/data/

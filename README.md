@@ -1,10 +1,10 @@
-![](docs/anim-logo.svg)
+![](docs/loongsuite.png)
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md) &nbsp;
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
-[![codecov](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/opentelemetry-go-auto-instrumentation)  &nbsp;
+[![codecov](https://codecov.io/gh/alibaba/loongsuite-go-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/loongsuite-go-agent)  &nbsp;
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
-[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/225) &nbsp;
+[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
 This project provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -23,7 +23,7 @@ It will be installed in `/usr/local/bin/otel` by default.
 ### Precompiled Binary
 
 Please download the latest precompiled release version from
-the [Release](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/releases)
+the [Release](https://github.com/alibaba/loongsuite-go-agent/releases)
 page.
 
 ### Build From Source
@@ -65,14 +65,16 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 > [!NOTE]
 > If you find any compilation failures while `go build` works, it's likely a bug.
 > Please feel free to file a bug
-> at [GitHub Issues](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues)
+> at [GitHub Issues](https://github.com/alibaba/loongsuite-go-agent/issues)
 > to help us enhance this project.
 
 # Examples
 
-You can also explore [**these examples**](./example/) to get hands-on experience. They are designed to construct a full picture of how to use the tool in different scenarios.
-
-Also there are several [**documents**](./docs) that you may find useful for either understanding the project or contributing to it.
+- [demo](./example/demo) - Complete end-to-end example demonstrating automatic instrumentation with OpenTelemetry tracing and metrics collection.
+- [zap logging](./example/log) - Integration example showing how to automatically instrument structured logging with the `github.com/uber-go/zap` package.
+- [benchmark](./example/benchmark) - Performance testing suite to measure the overhead and efficiency of the auto-instrumentation tool.
+- [sql injection](./example/sqlinject) - Security-focused example demonstrating custom code injection for SQL injection detection and prevention.
+- [nethttp](./example/nethttp) - HTTP monitoring example showcasing automatic instrumentation of request/response headers and network traffic analysis.
 
 # Supported Libraries
 
@@ -82,16 +84,16 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | dubbo-go      | https://github.com/apache/dubbo-go             | v3.3.0                | -                     |
 | echo          | https://github.com/labstack/echo               | v4.0.0                | v4.12.0               |
 | elasticsearch | https://github.com/elastic/go-elasticsearch    | v8.4.0                | v8.15.0               |
-| fasthttp      | https://github.com/valyala/fasthttp            | v1.45.0               | v1.59.0               |
-| fiber         | https://github.com/gofiber/fiber               | v2.43.0               | v2.52.6               |
+| fasthttp      | https://github.com/valyala/fasthttp            | v1.45.0               | v1.63.0               |
+| fiber         | https://github.com/gofiber/fiber               | v2.43.0               | v2.52.8               |
 | gin           | https://github.com/gin-gonic/gin               | v1.7.0                | v1.10.0               |
 | go-redis      | https://github.com/redis/go-redis              | v9.0.5                | v9.5.1                |
 | go-redis v8   | https://github.com/redis/go-redis              | v8.11.0               | v8.11.5               |
 | gomicro       | https://github.com/micro/go-micro              | v5.0.0                | v5.3.0                |
 | gorestful     | https://github.com/emicklei/go-restful         | v3.7.0                | v3.12.1               |
 | gorm          | https://github.com/go-gorm/gorm                | v1.22.0               | v1.25.9               |
-| grpc          | https://google.golang.org/grpc                 | v1.44.0               | v1.71.0               |
-| hertz         | https://github.com/cloudwego/hertz             | v0.8.0                | v0.9.2                |
+| grpc          | https://google.golang.org/grpc                 | v1.44.0               | -                     |
+| hertz         | https://github.com/cloudwego/hertz             | v0.8.0                | -                     |
 | iris          | https://github.com/kataras/iris                | v12.2.0               | v12.2.11              |
 | kitex         | https://github.com/cloudwego/kitex             | v0.5.1                | v0.11.3               |
 | kratos        | https://github.com/go-kratos/kratos            | v2.6.3                | v2.8.4                |
@@ -107,6 +109,8 @@ Also there are several [**documents**](./docs) that you may find useful for eith
 | trpc-go       | https://github.com/trpc-group/trpc-go          | v1.0.0                | v1.0.3                |
 | zap           | https://github.com/uber-go/zap                 | v1.20.0               | v1.27.0               |
 | zerolog       | https://github.com/rs/zerolog                  | v1.10.0               | v1.33.0               |
+| go-kit/log    | https://github.com/go-kit/log                  | v0.1.0                | v0.2.1                |
+| pg            | https://github.com/go-pg/pg                    | v1.10.0               | v1.14.0               |
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
 
@@ -125,10 +129,10 @@ to engage with us.
 
 We would thankfully acknowledge the following contributors for their valuable contributions to this project:
 
-<a href="https://github.com/alibaba/opentelemetry-go-auto-instrumentation/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/opentelemetry-go-auto-instrumentation" height="100"/>
+<a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/loongsuite-go-agent" height="100"/>
 </a>
 
 The star history of this project is as follows, which shows the growth of this project over time:
 
-<img src="https://api.star-history.com/svg?repos=alibaba/opentelemetry-go-auto-instrumentation&type=Date" height="200">
+<img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200">

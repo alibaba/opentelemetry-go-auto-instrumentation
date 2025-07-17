@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      rpc://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/inst-api-semconv/instrumenter/utils"
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/utils"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
@@ -44,16 +44,17 @@ type RpcClientMetric struct {
 var mu sync.Mutex
 
 var rpcMetricsConv = map[attribute.Key]bool{
-	semconv.RPCSystemKey:     true,
-	semconv.RPCMethodKey:     true,
-	semconv.RPCServiceKey:    true,
-	semconv.ServerAddressKey: true,
+	semconv.RPCSystemKey:         true,
+	semconv.RPCMethodKey:         true,
+	semconv.RPCServiceKey:        true,
+	semconv.ServerAddressKey:     true,
+	semconv.RPCGRPCStatusCodeKey: true,
 }
 
 var globalMeter metric.Meter
 
 // InitRpcMetrics so we need to make sure the otel_setup is executed before all the init() function
-// related to issue rpcs://github.com/alibaba/opentelemetry-go-auto-instrumentation/issues/48
+// related to issue rpcs://github.com/alibaba/loongsuite-go-agent/issues/48
 func InitRpcMetrics(m metric.Meter) {
 	mu.Lock()
 	defer mu.Unlock()

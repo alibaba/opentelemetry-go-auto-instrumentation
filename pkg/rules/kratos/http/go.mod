@@ -1,11 +1,11 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/kratos/http
+module github.com/alibaba/loongsuite-go-agent/pkg/rules/kratos/http
 
 go 1.23.0
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../../pkg
+replace github.com/alibaba/loongsuite-go-agent/pkg => ../../../../pkg
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/pkg v0.0.0-00010101000000-000000000000
 	github.com/go-kratos/kratos/v2 v2.6.3
 	go.opentelemetry.io/otel v1.36.0
 	go.opentelemetry.io/otel/sdk v1.36.0

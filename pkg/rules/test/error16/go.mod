@@ -1,5 +1,5 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/error16
+module github.com/alibaba/loongsuite-go-agent/pkg/rules/error16
 
 go 1.23.0
 
-require github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-20250613015359-8313b2644a4a
+require github.com/alibaba/loongsuite-go-agent/pkg v0.0.0-20250613015359-8313b2644a4a

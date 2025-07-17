@@ -2,6 +2,6 @@ module golog
 
 go 1.23
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../opentelemetry-go-auto-instrumentation/test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../test/verifier
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/loongsuite-go-agent => ../../

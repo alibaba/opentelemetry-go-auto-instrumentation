@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/alibaba/loongsuite-go-agent/test/verifier"
 	"github.com/elastic/go-elasticsearch/v8"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )

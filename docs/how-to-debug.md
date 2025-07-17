@@ -1,6 +1,6 @@
 ## How to debug instrumented program
 
-`opentelemetry-go-auto-instrumentation` provides some convenient ways for users to debug the instrumented program.
+`loongsuite-go-agent` provides some convenient ways for users to debug the instrumented program.
 
 ## 1. Perform instrumentation with -debug options
 

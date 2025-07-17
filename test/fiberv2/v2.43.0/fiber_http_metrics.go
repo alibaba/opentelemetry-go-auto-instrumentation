@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/alibaba/loongsuite-go-agent/test/verifier"
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"

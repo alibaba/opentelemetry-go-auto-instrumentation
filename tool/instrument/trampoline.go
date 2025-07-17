@@ -20,9 +20,9 @@ import (
 	"go/token"
 	"strconv"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/errc"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/resource"
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/tool/util"
+	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/resource"
+	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
 )
 
@@ -244,7 +244,7 @@ func (rp *RuleProcessor) callOnEnterHook(t *resource.InstFuncRule, traits []Para
 	// target function
 	if rp.exact {
 		util.Assert(len(traits) == (len(rp.onEnterHookFunc.Type.Params.List)+1),
-			"mismatched param traits")
+			"do you miss api.CallContext parameter?")
 	}
 	// Hook: 	   func onEnterFoo(callContext* CallContext, p*[]int)
 	// Trampoline: func OtelOnEnterTrampoline_foo(p *[]int)
@@ -277,7 +277,7 @@ func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []Param
 	// target function
 	if rp.exact {
 		util.Assert(len(traits) == len(rp.onExitHookFunc.Type.Params.List),
-			"mismatched param traits")
+			"do you miss api.CallContext parameter?")
 	}
 	// Hook: 	   func onExitFoo(ctx* CallContext, p*[]int)
 	// Trampoline: func OtelOnExitTrampoline_foo(ctx* CallContext, p *[]int)
@@ -315,7 +315,7 @@ func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []Param
 
 func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	if len(paramList.List) != len(traits) {
-		return errc.New(errc.ErrInternal, "mismatched param traits")
+		return errc.New(errc.ErrInternal, "do you miss api.CallContext parameter?")
 	}
 	for i, field := range paramList.List {
 		trait := traits[i]

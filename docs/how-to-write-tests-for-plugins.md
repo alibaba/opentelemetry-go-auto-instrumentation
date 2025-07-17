@@ -1,8 +1,8 @@
 ## How to write tests for plugins
 
 Once you've added a new instrumentation rule according
-to [how-to-add-a-new-rule.md](https://github.com/alibaba/opentelemetry-go-auto-instrumentation/blob/main/docs/how-to-add-a-new-rule.md),
-you need to add tests to verify your rules. `opentelemetry-go-auto-instrumentation` provides a convenient way to verify
+to [how-to-add-a-new-rule.md](https://github.com/alibaba/loongsuite-go-agent/blob/main/docs/how-to-add-a-new-rule.md),
+you need to add tests to verify your rules. `loongsuite-go-agent` provides a convenient way to verify
 your rules.
 
 ## Add a general plugin test case
@@ -21,13 +21,13 @@ module redis/v9.0.5
 
 go 1.22
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/loongsuite-go-agent => ../../../
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../test/verifier
 
 require (
 	// import this dependency to use verifier
-    github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
+    github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/redis/go-redis/v9 v9.0.5
 	go.opentelemetry.io/otel v1.30.0
 	go.opentelemetry.io/otel/sdk v1.30.0
@@ -47,7 +47,7 @@ there should be two spans produced by `test_executing_commands.go`, one represen
 represents for the `get` redis operation. You should use the `verifier` to verify the correctness:
 
 ```go
-import "github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+import "github.com/alibaba/loongsuite-go-agent/test/verifier"
 
 verifier.WaitAndAssertTraces(func (stubs []tracetest.SpanStubs) {
 	verifier.VerifyDbAttributes(stubs[0][0], "set", "", "redis", "", "localhost", "set a b ex 5 ", "set", "")
@@ -123,7 +123,7 @@ testName, moduleName, minVersion, maxVersion, minGoVersion, maxGoVersion string,
 6. maxGoVersion: the highest supported Go version of the plugin.
 7. testFunc: test function to be executed.
 
-You should build the test case with the `opentelemetry-go-auto-instrumentation` to make your test case able to produce
+You should build the test case with the `loongsuite-go-agent` to make your test case able to produce
 telemetry data. Firstly you should call `UseApp` method to change directory to the directory of your test cases, and
 then call `RunGoBuild` to do hybrid compilation. Finally, use the `RunApp` to run the instrumented test-case binary to
 verify the telemetry data.
@@ -144,7 +144,7 @@ func TestExecutingUnsupportedCommands(t *testing.T, env ...string) {
 Muzzle check is inspired
 by [safety-mechanisms.md](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/safety-mechanisms.md).
 It is impossible for us to run general plugin test for every version because it's going to take a lot of time.
-So `opentelemetry-go-auto-instrumentation` will pick some random version to do the hybrid compilation in order to verify
+So `loongsuite-go-agent` will pick some random version to do the hybrid compilation in order to verify
 the API compatibility between different versions. If the muzzle check finds that some APIs are changed in some version,
 community will create a new rule to adapt it.
 
