@@ -724,7 +724,7 @@ func precheck() error {
 	return nil
 }
 
-// addModReplace adds replace directives to the go.mod file. The fisrt parameter
+// addModReplace adds replace directives to the go.mod file. The first parameter
 // is the path to the go.mod file, the second parameter is a map of replace
 // directives, where the key is the old import path and the value is a tuple
 // of the new import path and the version.
@@ -874,7 +874,7 @@ func Preprocess() error {
 	{
 		defer util.PhaseTimer("Preprocess")()
 
-		// Backup go.mod and add additional repalce directives for the pkg module
+		// Backup go.mod and add additional replace directives for the pkg module
 		err = dp.rectifyMod()
 		if err != nil {
 			return err

@@ -33,6 +33,6 @@ func TestDbSpanNameExtractor(t *testing.T) {
 		t.Fatalf("Should have returned `op table`")
 	}
 	if dbSpanNameExtractor.Extract(testRequest{Name: "test"}) != "test" {
-		t.Fatalf("Shoule have returned test")
+		t.Fatalf("Should have returned test")
 	}
 }
