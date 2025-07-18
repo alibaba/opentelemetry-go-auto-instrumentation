@@ -104,7 +104,7 @@ func TestMessageClientExtractorStartWithTemporaryDestination(t *testing.T) {
 		t.Fatalf("destination name should be temporary")
 	}
 	if attrs[2].Key != semconv.MessagingDestinationPartitionIDKey || attrs[2].Value.AsString() != "partition-id" {
-		t.Fatalf("destination anoymous should be true")
+		t.Fatalf("destination anonymous should be true")
 	}
 	if attrs[3].Key != semconv.MessagingDestinationAnonymousKey || attrs[3].Value.AsBool() != true {
 		t.Fatalf("partition ID should be partition-id")
@@ -116,16 +116,16 @@ func TestMessageClientExtractorStartWithTemporaryDestination(t *testing.T) {
 		t.Fatalf("message body size should be 2024")
 	}
 	if attrs[6].Key != semconv.MessagingMessageEnvelopeSizeKey || attrs[6].Value.AsInt64() != 2024 {
-		t.Fatalf("messsage envelope size should be 2024")
+		t.Fatalf("message envelope size should be 2024")
 	}
 	if attrs[7].Key != semconv.MessagingClientIDKey || attrs[7].Value.AsString() != "client-id" {
-		t.Fatalf("messsage client id should be client-id")
+		t.Fatalf("message client id should be client-id")
 	}
 	if attrs[8].Key != semconv.MessagingOperationNameKey || attrs[8].Value.AsString() != "publish" {
-		t.Fatalf("messsage operation should be publish")
+		t.Fatalf("message operation should be publish")
 	}
 	if attrs[9].Key != semconv.MessagingSystemKey || attrs[9].Value.AsString() != "system" {
-		t.Fatalf("messsage system should be system")
+		t.Fatalf("message system should be system")
 	}
 }
 
@@ -141,7 +141,7 @@ func TestMessageClientExtractorStartWithoutTemporaryDestination(t *testing.T) {
 		t.Fatalf("destination template should be destination-template")
 	}
 	if attrs[2].Key != semconv.MessagingDestinationPartitionIDKey || attrs[2].Value.AsString() != "partition-id" {
-		t.Fatalf("destination anoymous should be true")
+		t.Fatalf("destination anonymous should be true")
 	}
 	if attrs[3].Key != semconv.MessagingDestinationAnonymousKey || attrs[3].Value.AsBool() != true {
 		t.Fatalf("partition ID should be partition-id")
@@ -153,16 +153,16 @@ func TestMessageClientExtractorStartWithoutTemporaryDestination(t *testing.T) {
 		t.Fatalf("message body size should be 2024")
 	}
 	if attrs[6].Key != semconv.MessagingMessageEnvelopeSizeKey || attrs[6].Value.AsInt64() != 2024 {
-		t.Fatalf("messsage envelope size should be 2024")
+		t.Fatalf("message envelope size should be 2024")
 	}
 	if attrs[7].Key != semconv.MessagingClientIDKey || attrs[7].Value.AsString() != "client-id" {
-		t.Fatalf("messsage client id should be client-id")
+		t.Fatalf("message client id should be client-id")
 	}
 	if attrs[8].Key != semconv.MessagingOperationNameKey || attrs[8].Value.AsString() != "publish" {
-		t.Fatalf("messsage operation should be publish")
+		t.Fatalf("message operation should be publish")
 	}
 	if attrs[9].Key != semconv.MessagingSystemKey || attrs[9].Value.AsString() != "system" {
-		t.Fatalf("messsage system should be system")
+		t.Fatalf("message system should be system")
 	}
 }
 
