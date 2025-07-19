@@ -23,6 +23,9 @@ import (
 	_ "runtime"
 
 	_ "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown"
+	_ "github.com/cloudwego/eino-ext/components/model/ollama"
+	_ "github.com/cloudwego/eino-ext/components/model/openai"
+	_ "github.com/cloudwego/eino/compose"
 	_ "github.com/cloudwego/hertz/pkg/app/server"
 	_ "github.com/gin-gonic/gin"
 	_ "github.com/go-kratos/kratos/v2/transport/grpc"
