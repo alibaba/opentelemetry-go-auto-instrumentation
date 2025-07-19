@@ -1,11 +1,11 @@
-module github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg/rules/eino
+module github.com/alibaba/loongsuite-go-agent/pkg/rules/eino
 
 go 1.23.9
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg => ../../../pkg
+replace github.com/alibaba/loongsuite-go-agent/pkg => ../../../pkg
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg v0.0.0-20250707083332-bbadcb2d53b5
+	github.com/alibaba/loongsuite-go-agent/pkg v0.0.0-20250707083332-bbadcb2d53b5
 	github.com/bytedance/sonic v1.13.2
 	github.com/cloudwego/eino v0.3.51
 	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250709065928-969ed5f74a90

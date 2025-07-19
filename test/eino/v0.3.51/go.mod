@@ -2,12 +2,12 @@ module eino
 
 go 1.23.9
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier => ../../../../opentelemetry-go-auto-instrumentation/test/verifier
+replace github.com/alibaba/loongsuite-go-agent/test/verifier => ../../../../loongsuite-go-agent/test/verifier
 
-replace github.com/alibaba/opentelemetry-go-auto-instrumentation => ../../../../opentelemetry-go-auto-instrumentation
+replace github.com/alibaba/loongsuite-go-agent => ../../../../loongsuite-go-agent
 
 require (
-	github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier v0.0.0-00010101000000-000000000000
+	github.com/alibaba/loongsuite-go-agent/test/verifier v0.0.0-00010101000000-000000000000
 	github.com/cloudwego/eino v0.3.51
 	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250710065240-482d48888f25
 	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250710065240-482d48888f25

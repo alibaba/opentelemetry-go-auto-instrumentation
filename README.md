@@ -16,7 +16,7 @@ time. Simply adding `otel` prefix to `go build` to get started :rocket:
 ### Install via Bash
 For Linux and MacOS users, install the tool by running the following command
 ```console
-$ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
+$ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/loongsuite-go-agent@main/install.sh | sudo bash
 ```
 It will be installed in `/usr/local/bin/otel` by default.
 

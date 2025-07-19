@@ -17,7 +17,7 @@ package main
 import (
 	"context"
 
-	"github.com/alibaba/opentelemetry-go-auto-instrumentation/test/verifier"
+	"github.com/alibaba/loongsuite-go-agent/test/verifier"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
