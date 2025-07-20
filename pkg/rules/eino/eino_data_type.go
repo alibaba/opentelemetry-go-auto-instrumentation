@@ -61,4 +61,5 @@ type ChatModelConfig struct {
 	PresencePenalty  float64
 	Seed             int64
 	FrequencyPenalty float64
+	TopK             float64
 }

@@ -71,6 +71,7 @@ func einoModelCallHandler(config ChatModelConfig) *callbacksutils.ModelCallbackH
 				frequencyPenalty: config.FrequencyPenalty,
 				presencePenalty:  config.PresencePenalty,
 				seed:             config.Seed,
+				topK:             config.TopK,
 			}
 			if clientConfig != nil {
 				request.modelName = clientConfig.Model

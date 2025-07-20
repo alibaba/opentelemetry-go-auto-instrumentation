@@ -21,8 +21,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudwego/eino-ext/components/model/ark"
+	"github.com/cloudwego/eino-ext/components/model/claude"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/cloudwego/eino-ext/components/model/qwen"
 	"github.com/cloudwego/eino/components/document"
 	"github.com/cloudwego/eino/components/embedding"
 	"github.com/cloudwego/eino/components/indexer"
@@ -180,6 +183,246 @@ func NewMockOpenAIChatModelForStream(ctx context.Context) (cm model.ToolCallingC
 	return cm, nil
 }
 
+func NewMockArkChatModelForInvoke(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		mockBody := `{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "Hello! How can I help you today?",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1742631811,
+  "id": "0217426318107460cfa43dc3f3683b1de1c09624ff49085a456ac",
+  "model": "mock-chat",
+  "service_tier": "default",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 9,
+    "prompt_tokens": 19,
+    "total_tokens": 28,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  }
+}`
+		w.Write([]byte((mockBody)))
+	}))
+	config := &ark.ChatModelConfig{
+		APIKey:  "mock-api",
+		BaseURL: ts.URL,
+		Model:   "mock-chat",
+	}
+	cm, err = ark.NewChatModel(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
+}
+
+func NewMockArkChatModelForStream(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.WriteHeader(http.StatusOK)
+
+		chunks := []string{
+			`data: {"choices":[{"delta":{"role":"assistant","content":"Hello"},"finish_reason":null,"index":0}],"created":1742631811,"id":"stream-1","model":"mock-chat","object":"chat.completion.chunk"}`,
+			`data: {"choices":[{"delta":{"content":"! How can"},"finish_reason":null,"index":0}],"created":1742631811,"id":"stream-1","model":"mock-chat","object":"chat.completion.chunk"}`,
+			`data: {"choices":[{"delta":{"content":" I help you today?"},"finish_reason":null,"index":0}],"created":1742631811,"id":"stream-1","model":"mock-chat","object":"chat.completion.chunk"}`,
+			`data: {"choices":[{"delta":{},"finish_reason":"stop","index":0}],"created":1742631811,"id":"stream-1","model":"mock-chat","object":"chat.completion.chunk","usage":{"completion_tokens":9,"prompt_tokens":19,"total_tokens":28}}`,
+			`data: [DONE]`,
+		}
+
+		for _, chunk := range chunks {
+			w.Write([]byte(chunk + "\n\n"))
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}))
+
+	config := &ark.ChatModelConfig{
+		APIKey:  "mock-api",
+		BaseURL: ts.URL,
+		Model:   "mock-chat",
+	}
+	cm, err = ark.NewChatModel(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
+}
+
+func NewMockClaudeChatModelForInvoke(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		mockBody := `{  
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",  
+  "type": "message",  
+  "role": "assistant",  
+  "content": [  
+    {  
+      "type": "text",  
+      "text": "Hello! How can I assist you today?"  
+    }  
+  ],  
+  "model": "mock-chat",  
+  "stop_reason": "end_turn",  
+  "stop_sequence": null,  
+  "usage": {  
+    "input_tokens": 10,  
+    "output_tokens": 25  
+  }  
+}`
+		w.Write([]byte(mockBody))
+	}))
+
+	config := &claude.Config{
+		APIKey:  "mock-api-key",
+		BaseURL: &ts.URL,
+		Model:   "mock-chat",
+	}
+	cm, err = claude.NewChatModel(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
+}
+
+func NewMockClaudeChatModelForStream(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.WriteHeader(http.StatusOK)
+
+		chunks := []string{
+			`event: message_start  
+data: {"type": "message_start", "message": {"id": "msg_1nZdL29xx5MUA1yADyHTEsnR8uuvGzszyY", "type": "message", "role": "assistant", "content": [], "model": "claude-3-opus-20240229", "stop_reason": null, "stop_sequence": null, "usage": {"input_tokens": 25, "output_tokens": 1}}}`,
+			`event: content_block_start  
+data: {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}`,
+			`event: content_block_delta  
+data: {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Hello"}}`,
+			`event: content_block_delta  
+data: {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "! How can I assist you today?"}}`,
+			`event: content_block_stop  
+data: {"type": "content_block_stop", "index": 0}`,
+			`event: message_delta  
+data: {"type": "message_delta", "delta": {"stop_reason": "end_turn", "stop_sequence":null}, "usage": {"output_tokens": 15}}`,
+			`event: message_stop  
+data: {"type": "message_stop"}`,
+		}
+
+		for _, chunk := range chunks {
+			w.Write([]byte(chunk + "\n\n"))
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}))
+
+	config := &claude.Config{
+		APIKey:  "mock-api-key",
+		BaseURL: &ts.URL,
+		Model:   "mock-chat",
+	}
+	cm, err = claude.NewChatModel(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
+}
+
+func NewMockQwenChatModelForInvoke(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		mockBody := `{  
+  "id": "chatcmpl-9f8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c",  
+  "object": "chat.completion",  
+  "created": 1742631811,  
+  "model": "mock-chat",
+  "choices": [  
+    {  
+      "index": 0,  
+      "message": {  
+        "role": "assistant",  
+        "content": "Hello! How can I assist you today?"  
+      },  
+      "finish_reason": "stop"  
+    }  
+  ],  
+  "usage": {  
+    "prompt_tokens": 19,  
+    "completion_tokens": 9,  
+    "total_tokens": 28  
+  }  
+}`
+		w.Write([]byte(mockBody))
+	}))
+
+	config := &qwen.ChatModelConfig{
+		APIKey:  "mock-api-key",
+		BaseURL: ts.URL,
+		Model:   "mock-chat",
+	}
+	cm, err = qwen.NewChatModel(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
+}
+
+func NewMockQwenChatModelForStream(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.WriteHeader(http.StatusOK)
+
+		chunks := []string{
+			`data: {"id":"chatcmpl-9f8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c","object":"chat.completion.chunk","created":1742631811,"model":"mock-chat","choices":[{"index":0,"delta":{"role":"assistant","content":"Hello"},"finish_reason":null}]}`,
+			`data: {"id":"chatcmpl-9f8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c","object":"chat.completion.chunk","created":1742631811,"model":"mock-chat","choices":[{"index":0,"delta":{"content":"! How can"},"finish_reason":null}]}`,
+			`data: {"id":"chatcmpl-9f8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c","object":"chat.completion.chunk","created":1742631811,"model":"mock-chat","choices":[{"index":0,"delta":{"content":" I assist you today?"},"finish_reason":null}]}`,
+			`data: {"id":"chatcmpl-9f8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c","object":"chat.completion.chunk","created":1742631811,"model":"mock-chat","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
+			`data: [DONE]`,
+		}
+
+		for _, chunk := range chunks {
+			w.Write([]byte(chunk + "\n\n"))
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}))
+
+	config := &qwen.ChatModelConfig{
+		APIKey:  "mock-api-key",
+		BaseURL: ts.URL,
+		Model:   "mock-chat",
+	}
+	cm, err = qwen.NewChatModel(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
+}
+
 type MockGreetTool struct{}
 
 func (t *MockGreetTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
@@ -205,9 +448,9 @@ type MockLoader struct{}
 
 func (m *MockLoader) Load(ctx context.Context, src document.Source, opts ...document.LoaderOption) ([]*schema.Document, error) {
 	return []*schema.Document{
-		{ID: "doc1", Content: "这是第一个文档的内容"},
-		{ID: "doc2", Content: "这是第二个文档的内容"},
-		{ID: "doc3", Content: "这是第三个文档的内容"},
+		{ID: "doc1", Content: "This is the content of the first document"},
+		{ID: "doc2", Content: "This is the content of the second document"},
+		{ID: "doc3", Content: "This is the content of the third document"},
 	}, nil
 }
 
