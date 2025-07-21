@@ -707,89 +707,6 @@ type Dependency struct {
 	ReplaceVersion string // the version of the dependency
 }
 
-func (dp *DepProcessor) syncVendorModules(gomodDir string, dependencies []Dependency) error {
-	// Read the vendor/modules.txt file and parse it into lines
-	modulesTxt := filepath.Join(gomodDir, "vendor", "modules.txt")
-	dp.backupFile(modulesTxt)
-	modulesTxtContent, err := util.ReadFile(modulesTxt)
-	if err != nil {
-		return err
-	}
-	lines := strings.Split(modulesTxtContent, "\n")
-
-	// Sync the vendor/modules.txt file with the added dependencies, they may
-	// be added by require directive or replace directive.
-	copied := map[string]bool{}
-	for _, dependency := range dependencies {
-		src := dependency.ReplacePath            // github.com/foo/bar
-		dst := filepath.Join(gomodDir, "vendor") // vendor/
-
-		// Copy the dependency code to the vendor directory only once
-		if !copied[dependency.ImportPath] {
-			if !dependency.Replace {
-				continue
-			}
-			split := strings.Split(dependency.ImportPath, "/")
-			for _, s := range split {
-				dst = filepath.Join(dst, s) // vendor/github.com/foo/bar
-			}
-			err := util.CopyDirExclude(src, dst, []string{"go.mod", "go.sum"})
-			if err != nil {
-				return err
-			}
-			copied[dependency.ImportPath] = true
-		}
-
-		// See if we sync require or replace directive to the vendor/modules.txt
-		foundRequire, foundReplace := false, false
-		for i, line := range lines {
-			if strings.HasPrefix(line, fmt.Sprintf("# %s %s =>",
-				dependency.ImportPath, dependency.Version)) {
-				foundRequire = true
-				continue
-			}
-			if strings.HasPrefix(line, fmt.Sprintf("# %s =>",
-				dependency.ImportPath)) {
-				// Make replace path consistent with go.mod
-				lines[i] = fmt.Sprintf("# %s => %s",
-					dependency.ImportPath, dependency.ReplacePath)
-				foundReplace = true
-				continue
-			}
-		}
-		if !foundRequire {
-			// Require directive synchronization
-			newlines := make([]string, 0)
-			newline := fmt.Sprintf("# %s %s",
-				dependency.ImportPath, dependency.Version)
-			if dependency.Replace {
-				newline = fmt.Sprintf("# %s %s => %s %s",
-					dependency.ImportPath, dependency.Version,
-					dependency.ReplacePath, dependency.ReplaceVersion)
-			}
-			newlines = append(newlines, newline)
-			newline = "## explicit; go 1.18"
-			newlines = append(newlines, newline)
-			// It seems that we dont need to list all available packages of the
-			// dependency, I'm not sure why, but it does work...
-			lines = append(newlines, lines...) // prepend
-		}
-		if !foundReplace {
-			// Replace directive synchronization
-			replace := fmt.Sprintf("# %s => %s",
-				dependency.ImportPath, dependency.ReplacePath)
-			lines = append(lines, replace) // append
-		}
-	}
-	// Update the vendor/modules.txt file
-	modulesTxtContent = strings.Join(lines, "\n")
-	_, err = util.WriteFile(modulesTxt, modulesTxtContent)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) error {
 	modfile, err := parseGoMod(gomod)
 	if err != nil {
@@ -844,13 +761,6 @@ func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) e
 			return err
 		}
 		_, err = util.WriteFile(gomod, string(bs))
-		if err != nil {
-			return err
-		}
-	}
-	// Check if vendor directory is out of date, if so, update it properly.
-	if dp.vendorMode {
-		err = dp.syncVendorModules(dp.getGoModDir(), dependencies)
 		if err != nil {
 			return err
 		}
