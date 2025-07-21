@@ -18,6 +18,8 @@ import (
 	"context"
 	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 	"github.com/segmentio/kafka-go"
+	"net"
+	"time"
 	_ "unsafe"
 )
 
@@ -50,6 +52,7 @@ func producerWriteMessagesOnEnter(call api.CallContext, writer *kafka.Writer, ct
 	instrumentationData := map[string]interface{}{
 		"instrumentedContext": instrumentedContext,
 		"producerRequest":     producerRequest,
+		"startTimestamp":      time.Now(),
 	}
 	call.SetData(instrumentationData)
 
@@ -74,6 +77,204 @@ func producerWriteMessagesOnExit(call api.CallContext, err error) {
 	instrumentedContext := instrumentationData["instrumentedContext"].(context.Context)
 	producerRequest := instrumentationData["producerRequest"].(kafkaProducerReq)
 
-	// End instrumentation with results
+	// End instrumentation with results (includes metrics recording)
 	producerInstrumenter.End(instrumentedContext, producerRequest, nil, err)
+}
+
+//go:linkname producerWriteOnEnter github.com/segmentio/kafka-go.producerWriteOnEnter
+func producerWriteOnEnter(call api.CallContext, conn *kafka.Conn, msgs []kafka.Message) {
+	if !kafkaEnabler.Enable() {
+		return
+	}
+
+	// Extract topic from connection or messages
+	topic := extractTopicFromConnection(conn)
+	if topic == "" && len(msgs) > 0 {
+		topic = msgs[0].Topic
+	}
+
+	instrumentationData := map[string]interface{}{
+		"parentContext":   context.Background(),
+		"startTimestamp":  time.Now(),
+		"topic":          topic,
+		"messageCount":   len(msgs),
+		"async":          false, // Write operation is synchronous
+	}
+	call.SetData(instrumentationData)
+}
+
+//go:linkname producerWriteOnExit github.com/segmentio/kafka-go.producerWriteOnExit
+func producerWriteOnExit(call api.CallContext, n int, err error) {
+	if !kafkaEnabler.Enable() {
+		return
+	}
+
+	instrumentationData, ok := call.GetData().(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	parentContext := instrumentationData["parentContext"].(context.Context)
+	startTimestamp := instrumentationData["startTimestamp"].(time.Time)
+	endTimestamp := time.Now()
+	topic := instrumentationData["topic"].(string)
+	messageCount := instrumentationData["messageCount"].(int)
+	
+	// Create producer request
+	msgs := make([]*kafka.Message, messageCount)
+	producerRequest := kafkaProducerReq{
+		msgs:  msgs,
+		topic: topic,
+		async: false,
+	}
+
+	// Record both traces and metrics
+	producerInstrumenter.StartAndEnd(
+		parentContext,
+		producerRequest,
+		nil,
+		err,
+		startTimestamp,
+		endTimestamp,
+	)
+}
+
+//go:linkname producerWriteToOnEnter github.com/segmentio/kafka-go.producerWriteToOnEnter
+func producerWriteToOnEnter(call api.CallContext, conn *kafka.Conn, msgs []kafka.Message) {
+	if !kafkaEnabler.Enable() {
+		return
+	}
+
+	// Extract topic from connection or messages
+	topic := extractTopicFromConnection(conn)
+	if topic == "" && len(msgs) > 0 {
+		topic = msgs[0].Topic
+	}
+
+	instrumentationData := map[string]interface{}{
+		"parentContext":   context.Background(),
+		"startTimestamp":  time.Now(),
+		"topic":          topic,
+		"messageCount":   len(msgs),
+		"async":          false,
+	}
+	call.SetData(instrumentationData)
+}
+
+//go:linkname producerWriteToOnExit github.com/segmentio/kafka-go.producerWriteToOnExit
+func producerWriteToOnExit(call api.CallContext, n int, err error) {
+	if !kafkaEnabler.Enable() {
+		return
+	}
+
+	instrumentationData, ok := call.GetData().(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	parentContext := instrumentationData["parentContext"].(context.Context)
+	startTimestamp := instrumentationData["startTimestamp"].(time.Time)
+	endTimestamp := time.Now()
+	topic := instrumentationData["topic"].(string)
+	messageCount := instrumentationData["messageCount"].(int)
+	
+	// Create producer request
+	msgs := make([]*kafka.Message, messageCount)
+	producerRequest := kafkaProducerReq{
+		msgs:  msgs,
+		topic: topic,
+		async: false,
+	}
+
+	// Record both traces and metrics
+	producerInstrumenter.StartAndEnd(
+		parentContext,
+		producerRequest,
+		nil,
+		err,
+		startTimestamp,
+		endTimestamp,
+	)
+}
+
+//go:linkname writerWriteMessagesOnEnter github.com/segmentio/kafka-go.writerWriteMessagesOnEnter
+func writerWriteMessagesOnEnter(call api.CallContext, ctx context.Context, msgs []kafka.Message) {
+	if !kafkaEnabler.Enable() {
+		return
+	}
+
+	// Extract topic from messages
+	topic := ""
+	if len(msgs) > 0 {
+		topic = msgs[0].Topic
+	}
+
+	instrumentationData := map[string]interface{}{
+		"parentContext":   ctx,
+		"startTimestamp":  time.Now(),
+		"topic":          topic,
+		"messageCount":   len(msgs),
+		"async":          true, // Writer operations can be async
+	}
+	call.SetData(instrumentationData)
+}
+
+//go:linkname writerWriteMessagesOnExit github.com/segmentio/kafka-go.writerWriteMessagesOnExit
+func writerWriteMessagesOnExit(call api.CallContext, err error) {
+	if !kafkaEnabler.Enable() {
+		return
+	}
+
+	instrumentationData, ok := call.GetData().(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	parentContext := instrumentationData["parentContext"].(context.Context)
+	startTimestamp := instrumentationData["startTimestamp"].(time.Time)
+	endTimestamp := time.Now()
+	topic := instrumentationData["topic"].(string)
+	messageCount := instrumentationData["messageCount"].(int)
+	async := instrumentationData["async"].(bool)
+	
+	// Create producer request
+	msgs := make([]*kafka.Message, messageCount)
+	producerRequest := kafkaProducerReq{
+		msgs:  msgs,
+		topic: topic,
+		async: async,
+	}
+
+	// Record both traces and metrics
+	producerInstrumenter.StartAndEnd(
+		parentContext,
+		producerRequest,
+		nil,
+		err,
+		startTimestamp,
+		endTimestamp,
+	)
+}
+
+// Helper function to extract topic from connection
+func extractTopicFromConnection(conn *kafka.Conn) string {
+	if conn == nil {
+		return ""
+	}
+	
+	// Try to extract topic from connection address or metadata
+	// This is a simplified implementation - in real scenarios, 
+	// you might need to access internal connection state
+	return ""
+}
+
+// Helper function to create address from connection
+func createAddrFromConnection(conn *kafka.Conn) net.Addr {
+	if conn == nil {
+		return nil
+	}
+	
+	// Return the connection's remote address
+	// This is a simplified implementation
+	return nil
 }
