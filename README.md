@@ -1,4 +1,4 @@
-![](docs/loongsuite.png)
+![](docs/anim-logo.svg)
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md) &nbsp;
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
@@ -6,7 +6,7 @@
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
 [![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
-This project provides an automatic solution for Golang applications that want to
+**Loongsuite Go Agent** provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, the instrumentation is done at compile
 time. Simply adding `otel` prefix to `go build` to get started :rocket:
