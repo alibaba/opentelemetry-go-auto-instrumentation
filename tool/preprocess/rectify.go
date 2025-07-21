@@ -80,9 +80,16 @@ func extractGZip(data []byte, targetDir string) error {
 			continue
 		}
 
+		// Rename pkg_tmp to pkg in the path
+		// Normalize path to Unix style for consistent string operations
+		cleanName := filepath.ToSlash(filepath.Clean(header.Name))
+		if strings.HasPrefix(cleanName, "pkg_tmp/") {
+			cleanName = strings.Replace(cleanName, "pkg_tmp/", "pkg/", 1)
+		} else if cleanName == "pkg_tmp" {
+			cleanName = "pkg"
+		}
+
 		// Sanitize the file path to prevent Zip Slip vulnerability
-		// Clean the path and ensure it doesn't contain path traversal sequences
-		cleanName := filepath.Clean(header.Name)
 		if cleanName == "." || cleanName == ".." || strings.HasPrefix(cleanName, "..") {
 			continue
 		}
@@ -113,9 +120,9 @@ func extractGZip(data []byte, targetDir string) error {
 			if err != nil {
 				return errc.New(errc.ErrOpenFile, err.Error())
 			}
-			defer file.Close()
 
 			_, err = io.Copy(file, tarReader)
+			file.Close()
 			if err != nil {
 				return errc.New(errc.ErrCopyFile, err.Error())
 			}
@@ -231,23 +238,66 @@ func (dp *DepProcessor) rectifyMod() error {
 			}
 		}
 	}
-	// Since we haven't published the alibaba-otel pkg module, we need to add
-	// a replace directive to tell the go tool to use the local module cache
-	// instead of the remote module. This is a workaround for the case that
-	// the remote module is not available(published).
-	replaceMap := map[string][2]string{
-		pkgPrefix: {dp.pkgLocalCache, ""},
+	// Add the alibaba-otel pkg module to the go.mod file
+	addDeps := make([]Dependency, 0)
+	dep := Dependency{
+		ImportPath:     pkgPrefix,
+		Version:        "v0.0.0-00010101000000-000000000000",
+		Replace:        true,
+		ReplacePath:    dp.pkgLocalCache,
+		ReplaceVersion: "",
 	}
+	addDeps = append(addDeps, dep)
 	// OTel dependencies may publish new versions that are not compatible
 	// with the otel tool. In such cases, we need to add a replace directive
 	// to use certain versions of the OTel dependencies for given otel tool,
 	// otherwise, the otel tool may fail to run.
 	for path, version := range otelDeps {
-		replaceMap[path] = [2]string{path, version}
+		addDeps = append(addDeps, Dependency{
+			ImportPath:     path,
+			Version:        version,
+			Replace:        true,
+			ReplacePath:    path,
+			ReplaceVersion: version,
+		})
 	}
-	err := addModReplace(dp.getGoModPath(), replaceMap)
+	err := dp.addDependency(dp.getGoModPath(), addDeps)
 	if err != nil {
 		return err
+	}
+	// Update the existing replace directives to use the local module cache
+	// Very bad, we must guarantee the replace path is consistent either in
+	// go.mod or vendor/modules.txt, otherwise, the go build toolchian will fail
+	// so we must parse go.mod to check if there is any existing replace directive
+	// and update the vendor/modules.txt accordingly.
+	modfile, err := parseGoMod(dp.getGoModPath())
+	if err != nil {
+		return err
+	}
+	changed := false
+	for _, replace := range modfile.Replace {
+		if replace.Old.Path == pkgPrefix {
+			err = modfile.DropReplace(pkgPrefix, "")
+			if err != nil {
+				return err
+			}
+			err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
+			if err != nil {
+				return err
+			}
+			changed = true
+			break
+		}
+	}
+	if changed {
+		bs, err := modfile.Format()
+		if err != nil {
+			return err
+		}
+		_, err = util.WriteFile(dp.getGoModPath(), string(bs))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

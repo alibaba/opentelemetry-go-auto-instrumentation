@@ -217,6 +217,10 @@ func ListFiles(dir string) ([]string, error) {
 }
 
 func CopyDir(src string, dst string) error {
+	return CopyDirExclude(src, dst, []string{})
+}
+
+func CopyDirExclude(src string, dst string, exclude []string) error {
 	// Get the properties of the source directory
 	sourceInfo, err := os.Stat(src)
 	if err != nil {
@@ -240,14 +244,21 @@ func CopyDir(src string, dst string) error {
 		dstPath := filepath.Join(dst, entry.Name())
 
 		if entry.IsDir() {
-			// Recursively copy subdirectories
-			if err := CopyDir(srcPath, dstPath); err != nil {
+			if err := CopyDirExclude(srcPath, dstPath, exclude); err != nil {
 				return err
 			}
 		} else {
-			// Copy files
-			if err := CopyFile(srcPath, dstPath); err != nil {
-				return err
+			ignore := false
+			for _, e := range exclude {
+				if strings.HasSuffix(entry.Name(), e) {
+					ignore = true
+					break
+				}
+			}
+			if !ignore {
+				if err := CopyFile(srcPath, dstPath); err != nil {
+					return err
+				}
 			}
 		}
 	}

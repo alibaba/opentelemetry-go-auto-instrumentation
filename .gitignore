@@ -109,3 +109,5 @@ test/zap/test_zap_with_field
 tool/data/alibaba-pkg.gz
 test/custom/custom
 example/sqlinject/sqlinjectdemo
+pkg_tmp
+alibaba-pkg.gz
