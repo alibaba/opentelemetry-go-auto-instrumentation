@@ -908,10 +908,10 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 		// for log.Printf when declaring printstack/getstack variable
 		"log": "_otel_log",
 		// otel setup
-		"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg": "_",
-		"go.opentelemetry.io/otel":                                     "_",
-		"go.opentelemetry.io/otel/sdk/trace":                           "_",
-		"go.opentelemetry.io/otel/baggage":                             "_",
+		"github.com/alibaba/loongsuite-go-agent/pkg": "_",
+		"go.opentelemetry.io/otel":                   "_",
+		"go.opentelemetry.io/otel/sdk/trace":         "_",
+		"go.opentelemetry.io/otel/baggage":           "_",
 	}
 	for pkg, alias := range builtin {
 		content += fmt.Sprintf("import %s %q\n", alias, pkg)
@@ -964,14 +964,14 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 				cnt, bundle.ImportPath)
 		}
 		content += tag
-		s := fmt.Sprintf("var getstatck%d = debug.Stack\n", cnt)
+		s := fmt.Sprintf("var getstatck%d = _otel_debug.Stack\n", cnt)
 		content += s
 		if bundle.ImportPath != "main" {
 			tag = fmt.Sprintf("//go:linkname printstack%d %s.OtelPrintStackImpl\n",
 				cnt, bundle.ImportPath)
 		}
 		content += tag
-		s = fmt.Sprintf("var printstack%d = func (bt []byte){ log.Printf(string(bt)) }\n", cnt)
+		s = fmt.Sprintf("var printstack%d = func (bt []byte){ _otel_log.Printf(string(bt)) }\n", cnt)
 		content += s
 		cnt++
 	}

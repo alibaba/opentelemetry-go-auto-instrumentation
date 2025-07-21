@@ -254,7 +254,7 @@ func (dp *DepProcessor) rectifyMod() error {
 	for path, version := range otelDeps {
 		addDeps = append(addDeps, Dependency{
 			ImportPath:     path,
-			Version:        "",
+			Version:        version,
 			Replace:        true,
 			ReplacePath:    path,
 			ReplaceVersion: version,
