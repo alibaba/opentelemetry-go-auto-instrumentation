@@ -17,6 +17,7 @@ package utils
 const DATABASE_SQL_SCOPE_NAME = "pkg/rules/databasesql/setup.go"
 const DUBBO_CLIENT_SCOPE_NAME = "pkg/rules/dubbo/dubbo_client_setup.go"
 const DUBBO_SERVER_SCOPE_NAME = "pkg/rules/dubbo/dubbo_server_setup.go"
+const EINO_SCOPE_NAME = "pkg/rules/eino/eino_setup.go"
 const FAST_HTTP_CLIENT_SCOPE_NAME = "pkg/rules/fasthttp/fasthttp_client_setup.go"
 const FAST_HTTP_SERVER_SCOPE_NAME = "pkg/rules/fasthttp/fasthttp_server_setup.go"
 const FIBER_V2_SERVER_SCOPE_NAME = "pkg/rules/fiberv2/fiber_server_setup_v2.go"
