@@ -13,22 +13,25 @@ time. Simply adding `otel` prefix to `go build` to get started :rocket:
 
 # Installation
 
+### Prebuilt Binaries
+
+| OS | Architecture | Download |
+| -- | -- | -- |
+| Linux | AMD64 | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-amd64) |
+| Linux | ARM64 | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-amd64) |
+| MacOS | AMD64 | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-amd64) |
+| MacOS | ARM64 | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-arm64) |
+| Windows | AMD64 | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-windows-amd64.exe) |
+
+:airplane: **This is the recommended way to install the tool.**
+
 ### Install via Bash
-For Linux and MacOS users, install the tool by running the following command
+For Linux and MacOS users, the following script will install `otel` in `/usr/local/bin/otel` by default:
 ```console
 $ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/loongsuite-go-agent@main/install.sh | sudo bash
 ```
-It will be installed in `/usr/local/bin/otel` by default.
 
-### Precompiled Binary
-
-Please download the latest precompiled release version from
-the [Release](https://github.com/alibaba/loongsuite-go-agent/releases)
-page.
-
-### Build From Source
-
-Checkout source code and build the tool by running one of following commands:
+### Build from Source
 
 ```console
 $ make         # build only
@@ -37,20 +40,13 @@ $ make install # build and install
 
 # Getting Started
 
-Check the version by running:
+Make sure the tool is installed:
 ```console
+$ # You may use "otel-linux-amd64" instead of "otel"
 $ otel version
 ```
 
-The configuration for the tool can be set by the following command:
-
-```console
-$ otel set -verbose                          # print verbose logs
-$ otel set -debug                            # enable debug mode
-$ otel set -rule=custom.json                 # use default and custom rules
-```
-
-**Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:**
+Just adding `otel` prefix to `go build` to build your project:
 
 ```console
 $ otel go build
