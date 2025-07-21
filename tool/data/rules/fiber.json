@@ -1,6 +1,6 @@
 [
   {
-    "Version": "[2.43.0,2.52.9)",
+    "Version": "[2.43.0,2.52.10)",
     "ImportPath": "github.com/gofiber/fiber/v2",
     "Function": "handler",
     "ReceiverType": "\\*App",
