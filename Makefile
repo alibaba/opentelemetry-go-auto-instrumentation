@@ -122,10 +122,19 @@ install: build
 # otel tool needs to use it, it can directly extract and utilize the embedded
 # package, instead of downloading it from the internet (via go mod tidy or
 # go mod download).
+# Since we want exclude test dependencies, here we create a temporary directory
+# to hold the pkg module, remove test files, and refresh the go.mod file.
+# Finally, we package it into a gzipped tarball for embedding.
+# The tarball will be placed in tool/data/ directory.
 PKG_GZIP = alibaba-pkg.gz
-
+PKG_TMP = pkg_tmp
 .PHONY: package-pkg
 package-pkg:
 	@echo "Packaging pkg module..."
-	@tar -czf alibaba-pkg.gz --exclude='*.log' --exclude='*.string' --exclude='*.pprof' --exclude='*.gz' pkg
+	@rm -rf $(PKG_TMP)
+	@cp -a pkg $(PKG_TMP)
+	@find $(PKG_TMP)/* -iname '*_test.go' -exec rm -rf {} \;
+	@cd $(PKG_TMP) && go mod tidy
+	@tar -czf $(PKG_GZIP) --exclude='*.log' --exclude='*.string' --exclude='*.pprof' --exclude='*.gz' $(PKG_TMP)
 	@mv alibaba-pkg.gz tool/data/
+	@rm -rf $(PKG_TMP)

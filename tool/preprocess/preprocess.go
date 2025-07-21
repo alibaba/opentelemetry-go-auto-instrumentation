@@ -43,7 +43,6 @@ import (
 // for preparing these dependencies in advance.
 
 const (
-	OtelPkgDir       = "otel_pkg"
 	OtelImporter     = "otel_importer.go"
 	OtelRuleCache    = "rule_cache"
 	OtelBackups      = "backups"
@@ -255,6 +254,12 @@ func (dp *DepProcessor) initMod() (err error) {
 	if err != nil {
 		return err
 	}
+	// In the further processing, we will edit the go.mod file, which is illegal
+	// to use relative path, so we need to convert the relative path to an absolute
+	dp.pkgLocalCache, err = filepath.Abs(dp.pkgLocalCache)
+	if err != nil {
+		return err
+	}
 	if dp.pkgLocalCache == "" {
 		return errc.New(errc.ErrPreprocess, "cannot find rule cache dir")
 	}
@@ -324,10 +329,7 @@ func (dp *DepProcessor) postProcess() {
 	}
 
 	_ = os.RemoveAll(dp.otelImporter)
-
-	_ = os.RemoveAll(dp.generatedOf(OtelPkgDir))
-
-	// Restore everything we have modified during instrumentation
+	_ = os.RemoveAll(util.GetTempBuildDirWith("alibaba-pkg"))
 	_ = dp.restoreBackupFiles()
 }
 
@@ -697,6 +699,165 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	return err
 }
 
+type Dependency struct {
+	ImportPath     string // the import path of the dependency
+	Version        string // the version of the dependency
+	Replace        bool   // whether the dependency should be replaced
+	ReplacePath    string // the path of the dependency
+	ReplaceVersion string // the version of the dependency
+}
+
+func (dp *DepProcessor) syncVendorModules(gomodDir string, dependencies []Dependency) error {
+	// Read the vendor/modules.txt file and parse it into lines
+	modulesTxt := filepath.Join(gomodDir, "vendor", "modules.txt")
+	dp.backupFile(modulesTxt)
+	modulesTxtContent, err := util.ReadFile(modulesTxt)
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(modulesTxtContent, "\n")
+
+	// Sync the vendor/modules.txt file with the added dependencies, they may
+	// be added by require directive or replace directive.
+	copied := map[string]bool{}
+	for _, dependency := range dependencies {
+		src := dependency.ReplacePath            // github.com/foo/bar
+		dst := filepath.Join(gomodDir, "vendor") // vendor/
+
+		// Copy the dependency code to the vendor directory only once
+		if !copied[dependency.ImportPath] {
+			if !dependency.Replace {
+				continue
+			}
+			split := strings.Split(dependency.ImportPath, "/")
+			for _, s := range split {
+				dst = filepath.Join(dst, s) // vendor/github.com/foo/bar
+			}
+			err := util.CopyDirExclude(src, dst, []string{"go.mod", "go.sum"})
+			if err != nil {
+				return err
+			}
+			copied[dependency.ImportPath] = true
+		}
+
+		// See if we sync require or replace directive to the vendor/modules.txt
+		foundRequire, foundReplace := false, false
+		for i, line := range lines {
+			if strings.HasPrefix(line, fmt.Sprintf("# %s %s =>",
+				dependency.ImportPath, dependency.Version)) {
+				foundRequire = true
+				continue
+			}
+			if strings.HasPrefix(line, fmt.Sprintf("# %s =>",
+				dependency.ImportPath)) {
+				// Make replace path consistent with go.mod
+				lines[i] = fmt.Sprintf("# %s => %s",
+					dependency.ImportPath, dependency.ReplacePath)
+				foundReplace = true
+				continue
+			}
+		}
+		if !foundRequire {
+			// Require directive synchronization
+			newlines := make([]string, 0)
+			newline := fmt.Sprintf("# %s %s",
+				dependency.ImportPath, dependency.Version)
+			if dependency.Replace {
+				newline = fmt.Sprintf("# %s %s => %s %s",
+					dependency.ImportPath, dependency.Version,
+					dependency.ReplacePath, dependency.ReplaceVersion)
+			}
+			newlines = append(newlines, newline)
+			newline = "## explicit; go 1.18"
+			newlines = append(newlines, newline)
+			// It seems that we dont need to list all available packages of the
+			// dependency, I'm not sure why, but it does work...
+			lines = append(newlines, lines...) // prepend
+		}
+		if !foundReplace {
+			// Replace directive synchronization
+			replace := fmt.Sprintf("# %s => %s",
+				dependency.ImportPath, dependency.ReplacePath)
+			lines = append(lines, replace) // append
+		}
+	}
+	// Update the vendor/modules.txt file
+	modulesTxtContent = strings.Join(lines, "\n")
+	_, err = util.WriteFile(modulesTxt, modulesTxtContent)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) error {
+	modfile, err := parseGoMod(gomod)
+	if err != nil {
+		return err
+	}
+	// For each dependency, check if it is already in the go.mod file and add
+	// it using require directive. If the dependency specifies a replace path,
+	// then further add a replace directive if it is not already in the go.mod
+	changed := false
+	for _, dependency := range dependencies {
+		alreadyRequire := false
+		for _, r := range modfile.Require {
+			if r.Mod.Path == dependency.ImportPath {
+				alreadyRequire = true
+				break
+			}
+		}
+		if !alreadyRequire {
+			err = modfile.AddRequire(dependency.ImportPath, dependency.Version)
+			if err != nil {
+				return err
+			}
+			changed = true
+			util.Log("Add require dependency %s %s",
+				dependency.ImportPath, dependency.Version)
+		}
+		if dependency.Replace {
+			alreadyReplace := false
+			for _, r := range modfile.Replace {
+				if r.Old.Path == dependency.ImportPath {
+					alreadyReplace = true
+					break
+				}
+			}
+			if !alreadyReplace {
+				err = modfile.AddReplace(dependency.ImportPath, "",
+					dependency.ReplacePath, dependency.ReplaceVersion)
+				if err != nil {
+					return err
+				}
+				changed = true
+				util.Log("Add replace dependency %s %s => %s %s",
+					dependency.ImportPath, dependency.Version,
+					dependency.ReplacePath, dependency.ReplaceVersion)
+			}
+		}
+	}
+	// Once all dependencies are added and write back to go.mod
+	if changed {
+		bs, err := modfile.Format()
+		if err != nil {
+			return err
+		}
+		_, err = util.WriteFile(gomod, string(bs))
+		if err != nil {
+			return err
+		}
+	}
+	// Check if vendor directory is out of date, if so, update it properly.
+	if dp.vendorMode {
+		err = dp.syncVendorModules(dp.getGoModDir(), dependencies)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func precheck() error {
 	// Check if the project is modularized
 	go11module := os.Getenv("GO111MODULE")
@@ -724,59 +885,6 @@ func precheck() error {
 	return nil
 }
 
-// addModReplace adds replace directives to the go.mod file. The first parameter
-// is the path to the go.mod file, the second parameter is a map of replace
-// directives, where the key is the old import path and the value is a tuple
-// of the new import path and the version.
-func addModReplace(gomod string, replaceMap map[string][2]string) error {
-	modfile, err := parseGoMod(gomod)
-	if err != nil {
-		return err
-	}
-
-	added := false
-	for a, b := range replaceMap {
-		hasReplace := false
-		for _, r := range modfile.Replace {
-			if r.Old.Path == a {
-				hasReplace = true
-				break
-			}
-		}
-		if !hasReplace {
-			b0, b1 := b[0], b[1] // path, version
-			if b1 == "" {
-				// replace mod => /path/to/local/mod
-				b0, err = filepath.Abs(b0)
-				if err != nil {
-					return errc.New(errc.ErrAbsPath, err.Error())
-				}
-			} else {
-				// replace mod => mod version
-			}
-			err = modfile.AddReplace(a, "", b0, b1)
-			if err != nil {
-				return err
-			}
-			added = true
-		}
-	}
-
-	// If we have added any replace directive, we need to write the go.mod file
-	// back to the disk, otherwise we can just skip it.
-	if added {
-		bs, err := modfile.Format()
-		if err != nil {
-			return err
-		}
-		_, err = util.WriteFile(gomod, string(bs))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (dp *DepProcessor) saveDebugFiles() {
 	dir := filepath.Join(util.GetTempBuildDir(), "changed")
 	err := os.MkdirAll(dir, os.ModePerm)
@@ -788,17 +896,31 @@ func (dp *DepProcessor) saveDebugFiles() {
 	_ = util.CopyFile(dp.otelImporter, filepath.Join(dir, OtelImporter))
 }
 
-//go:embed template.go
-var importerTemplate string
-
 func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) error {
-	importerTemplate = strings.ReplaceAll(importerTemplate,
-		util.GoBuildIgnoreComment, "")
+	content := "package main\n"
+	builtin := map[string]string{
+		// for go:linkname when declaring printstack/getstack variable
+		"unsafe": "_",
+		// for debug.Stack and log.Printf when declaring printstack/getstack
+		// we do need import alias because user may declare global variable such
+		// as "log" or "debug" in their code, which will conflict with the import
+		"runtime/debug": "_otel_debug",
+		// for log.Printf when declaring printstack/getstack variable
+		"log": "_otel_log",
+		// otel setup
+		"github.com/alibaba/opentelemetry-go-auto-instrumentation/pkg": "_",
+		"go.opentelemetry.io/otel":                                     "_",
+		"go.opentelemetry.io/otel/sdk/trace":                           "_",
+		"go.opentelemetry.io/otel/baggage":                             "_",
+	}
+	for pkg, alias := range builtin {
+		content += fmt.Sprintf("import %s %q\n", alias, pkg)
+	}
 
 	// No rule bundles? We still need to generate the otel_importer.go file whose
 	// purpose is to import the fundamental dependencies
 	if len(bundles) == 0 {
-		_, err := util.WriteFile(dp.otelImporter, importerTemplate)
+		_, err := util.WriteFile(dp.otelImporter, content)
 		if err != nil {
 			return err
 		}
@@ -818,12 +940,17 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 			}
 		}
 	}
-	content := importerTemplate
-	replaceMap := map[string][2]string{}
+	addDeps := make([]Dependency, 0)
 	for path := range paths {
 		content += fmt.Sprintf("import _ %q\n", path)
 		t := strings.TrimPrefix(path, pkgPrefix)
-		replaceMap[path] = [2]string{filepath.Join(dp.pkgLocalCache, t), ""}
+		addDeps = append(addDeps, Dependency{
+			ImportPath:     path,
+			Version:        "v0.0.0-00010101000000-000000000000", // use latest version for the rule import
+			Replace:        true,
+			ReplacePath:    filepath.Join(dp.pkgLocalCache, t),
+			ReplaceVersion: "",
+		})
 	}
 	cnt := 0
 	for _, bundle := range bundles {
@@ -849,8 +976,8 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 		cnt++
 	}
 	util.WriteFile(dp.otelImporter, content)
-	// Add replace directives for all matched rules
-	err := addModReplace(dp.getGoModPath(), replaceMap)
+
+	err := dp.addDependency(dp.getGoModPath(), addDeps)
 	if err != nil {
 		return err
 	}
@@ -873,6 +1000,7 @@ func Preprocess() error {
 	defer func() { dp.postProcess() }()
 	{
 		defer util.PhaseTimer("Preprocess")()
+		defer dp.saveDebugFiles()
 
 		// Backup go.mod and add additional replace directives for the pkg module
 		err = dp.rectifyMod()
@@ -928,9 +1056,6 @@ func Preprocess() error {
 		if err != nil {
 			return err
 		}
-
-		// Retain otel rules and modified user files for debugging
-		dp.saveDebugFiles()
 	}
 
 	{
