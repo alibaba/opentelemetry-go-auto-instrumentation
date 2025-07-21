@@ -81,7 +81,8 @@ func extractGZip(data []byte, targetDir string) error {
 		}
 
 		// Rename pkg_tmp to pkg in the path
-		cleanName := filepath.Clean(header.Name)
+		// Normalize path to Unix style for consistent string operations
+		cleanName := filepath.ToSlash(filepath.Clean(header.Name))
 		if strings.HasPrefix(cleanName, "pkg_tmp/") {
 			cleanName = strings.Replace(cleanName, "pkg_tmp/", "pkg/", 1)
 		} else if cleanName == "pkg_tmp" {
@@ -273,20 +274,30 @@ func (dp *DepProcessor) rectifyMod() error {
 	if err != nil {
 		return err
 	}
+	changed := false
 	for _, replace := range modfile.Replace {
 		if replace.Old.Path == pkgPrefix {
-			modfile.DropReplace(pkgPrefix, "")
-			modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
+			err = modfile.DropReplace(pkgPrefix, "")
+			if err != nil {
+				return err
+			}
+			err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
+			if err != nil {
+				return err
+			}
+			changed = true
 			break
 		}
 	}
-	bs, err := modfile.Format()
-	if err != nil {
-		return err
-	}
-	_, err = util.WriteFile(dp.getGoModPath(), string(bs))
-	if err != nil {
-		return err
+	if changed {
+		bs, err := modfile.Format()
+		if err != nil {
+			return err
+		}
+		_, err = util.WriteFile(dp.getGoModPath(), string(bs))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
