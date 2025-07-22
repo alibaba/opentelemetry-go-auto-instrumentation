@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/config"
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
@@ -138,7 +138,7 @@ func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool
 		// instrumented file(path), which is also an absolute path
 		arg, err := filepath.Abs(arg)
 		if err != nil {
-			return errc.New(errc.ErrAbsPath, err.Error())
+			return ex.Error(err)
 		}
 		if pred(arg) {
 			rp.compileArgs[i] = newArg
@@ -154,8 +154,8 @@ func (rp *RuleProcessor) replaceCompileArg(newArg string, pred func(string) bool
 	if variant == "" {
 		variant = fmt.Sprintf("%v", rp.compileArgs)
 	}
-	msg := fmt.Sprintf("expect %s, actual %s", newArg, variant)
-	return errc.New(errc.ErrInstrument, msg)
+	return ex.Errorf(nil, "instrumentation failed, expect %s, actual %s",
+		newArg, variant)
 }
 
 func (rp *RuleProcessor) saveDebugFile(path string) {
@@ -183,20 +183,17 @@ func (rp *RuleProcessor) applyRules(bundle *resource.RuleBundle) (err error) {
 	// Apply file instrument rules first
 	err = rp.applyFileRules(bundle)
 	if err != nil {
-		err = errc.Adhere(err, "package", bundle.ImportPath)
-		return err
+		return ex.Error(err)
 	}
 
 	err = rp.applyStructRules(bundle)
 	if err != nil {
-		err = errc.Adhere(err, "package", bundle.ImportPath)
-		return err
+		return ex.Error(err)
 	}
 
 	err = rp.applyFuncRules(bundle)
 	if err != nil {
-		err = errc.Adhere(err, "package", bundle.ImportPath)
-		return err
+		return ex.Error(err)
 	}
 
 	return nil
@@ -215,7 +212,7 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	rp := newRuleProcessor(args, bundle.PackageName)
 	err := rp.applyRules(bundle)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// Strip -complete flag as we may insert some hook points that are not ready
 	// yet, i.e. they dont have function body
@@ -227,7 +224,10 @@ func compileRemix(bundle *resource.RuleBundle, args []string) error {
 	}
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
-	return err
+	if err != nil {
+		return ex.Errorf(err, "failed to compile %v", rp.compileArgs)
+	}
+	return nil
 }
 
 func Instrument() error {
@@ -240,8 +240,7 @@ func Instrument() error {
 		}
 		bundles, err := resource.LoadRuleBundles()
 		if err != nil {
-			err = errc.Adhere(err, "cmd", fmt.Sprintf("%v", args))
-			return err
+			return ex.Errorf(err, "failed to load rule bundles %v", args)
 		}
 		for _, bundle := range bundles {
 			util.Assert(bundle.IsValid(), "sanity check")
@@ -250,9 +249,7 @@ func Instrument() error {
 				util.Log("Apply bundle %v", bundle)
 				err = compileRemix(bundle, args)
 				if err != nil {
-					err = errc.Adhere(err, "cmd", fmt.Sprintf("%v", args))
-					err = errc.Adhere(err, "bundle", bundle.String())
-					return err
+					return ex.Errorf(err, "failed to apply %s", bundle.String())
 				}
 				return nil
 			}

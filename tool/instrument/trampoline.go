@@ -16,11 +16,10 @@ package instrument
 
 import (
 	_ "embed"
-	"fmt"
 	"go/token"
 	"strconv"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
@@ -77,7 +76,7 @@ func (rp *RuleProcessor) materializeTemplate() error {
 	p := util.NewAstParser()
 	astRoot, err := p.ParseSource(trampolineTemplate)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 
 	rp.varDecls = make([]dst.Decl, 0)
@@ -159,7 +158,7 @@ func isHookDefined(root *dst.File, rule *resource.InstFuncRule) bool {
 func findHookFile(rule *resource.InstFuncRule) (string, error) {
 	files, err := findRuleFiles(rule)
 	if err != nil {
-		return "", err
+		return "", ex.Error(err)
 	}
 	for _, file := range files {
 		if !util.IsGoFile(file) {
@@ -167,21 +166,20 @@ func findHookFile(rule *resource.InstFuncRule) (string, error) {
 		}
 		root, err := util.ParseAstFromFileFast(file)
 		if err != nil {
-			return "", err
+			return "", ex.Error(err)
 		}
 		if isHookDefined(root, rule) {
 			return file, nil
 		}
 	}
-	return "", errc.New(errc.ErrNotExist,
-		fmt.Sprintf("no hook %s/%s found for %s from %v",
-			rule.OnEnter, rule.OnExit, rule.Function, files))
+	return "", ex.Errorf(nil, "no hook %s/%s found for %s from %v",
+		rule.OnEnter, rule.OnExit, rule.Function, files)
 }
 
 func findRuleFiles(rule resource.InstRule) ([]string, error) {
 	files, err := util.ListFiles(rule.GetPath())
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	switch rule.(type) {
 	case *resource.InstFuncRule, *resource.InstFileRule:
@@ -195,11 +193,11 @@ func findRuleFiles(rule resource.InstRule) ([]string, error) {
 func getHookFunc(t *resource.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
 	file, err := findHookFile(t)
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	astRoot, err := util.ParseAstFromFile(file)
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	var target *dst.FuncDecl
 	if onEnter {
@@ -212,17 +210,16 @@ func getHookFunc(t *resource.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) 
 	}
 
 	if onEnter {
-		err = errc.Adhere(err, "hook", t.OnEnter)
+		return nil, ex.Errorf(err, "hook %s", t.OnEnter)
 	} else {
-		err = errc.Adhere(err, "hook", t.OnExit)
+		return nil, ex.Errorf(err, "hook %s", t.OnExit)
 	}
-	return nil, err
 }
 
 func getHookParamTraits(t *resource.InstFuncRule, onEnter bool) ([]ParamTrait, error) {
 	target, err := getHookFunc(t, onEnter)
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	var attrs []ParamTrait
 	// Find which parameter is type of interface{}
@@ -315,7 +312,7 @@ func (rp *RuleProcessor) callOnExitHook(t *resource.InstFuncRule, traits []Param
 
 func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	if len(paramList.List) != len(traits) {
-		return errc.New(errc.ErrInternal, "do you miss api.CallContext parameter?")
+		return ex.Errorf(nil, "do you miss api.CallContext parameter?")
 	}
 	for i, field := range paramList.List {
 		trait := traits[i]
@@ -339,7 +336,7 @@ func (rp *RuleProcessor) addHookFuncVar(t *resource.InstFuncRule,
 		// raw function is not exposed
 		err := rectifyAnyType(paramTypes, traits)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 
@@ -708,11 +705,11 @@ func (rp *RuleProcessor) callHookFunc(t *resource.InstFuncRule,
 	onEnter bool) error {
 	traits, err := getHookParamTraits(t, onEnter)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	err = rp.addHookFuncVar(t, traits, onEnter)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	if onEnter {
 		err = rp.callOnEnterHook(t, traits)
@@ -720,10 +717,10 @@ func (rp *RuleProcessor) callHookFunc(t *resource.InstFuncRule,
 		err = rp.callOnExitHook(t, traits)
 	}
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	if !rp.replenishCallContext(onEnter) {
-		return errc.New(errc.ErrInstrument, "can not rewrite hook function")
+		return ex.Errorf(nil, "can not rewrite hook function")
 	}
 	return nil
 }
@@ -733,7 +730,7 @@ func (rp *RuleProcessor) generateTrampoline(t *resource.InstFuncRule) error {
 	// a bunch of manual AST code generation, isn't it?
 	err := rp.materializeTemplate()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// Implement CallContext interface
 	rp.implementCallContext(t)
@@ -747,13 +744,13 @@ func (rp *RuleProcessor) generateTrampoline(t *resource.InstFuncRule) error {
 	if t.OnEnter != "" {
 		err = rp.callHookFunc(t, true)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 	if t.OnExit != "" {
 		err = rp.callHookFunc(t, false)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 	return nil

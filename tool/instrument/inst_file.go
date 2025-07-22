@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
@@ -27,13 +27,13 @@ import (
 func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error) {
 	for _, rule := range bundle.FileRules {
 		if rule.FileName == "" {
-			return errc.New(errc.ErrInvalidRule, "no file name")
+			return ex.Errorf(nil, "no file name")
 		}
 		// Decorate the source code to remove //go:build exclude
 		// and rename package name
 		source, err := util.ReadFile(rule.FileName)
 		if err != nil {
-			return errc.Adhere(err, "file", rule.FileName)
+			return ex.Errorf(err, "filename %s", rule.FileName)
 		}
 		source = util.RemoveGoBuildComment(source)
 		source = util.RenamePackage(source, bundle.PackageName)
@@ -44,7 +44,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 			fmt.Sprintf("otel_inst_file_%s", fileName))
 		_, err = util.WriteFile(target, source)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		// Relocate the file dependency of the rule, any rules targeting the
 		// file dependency specified by the rule should be updated to target the
@@ -57,10 +57,8 @@ func (rp *RuleProcessor) applyFileRules(bundle *resource.RuleBundle) (err error)
 				return strings.HasSuffix(arg, fileName)
 			})
 			if err != nil {
-				err = errc.Adhere(err, "compileArgs",
-					strings.Join(rp.compileArgs, " "))
-				err = errc.Adhere(err, "newArg", target)
-				return err
+				return ex.Errorf(err, "compileArgs %v, newArg %s",
+					rp.compileArgs, target)
 			}
 		} else {
 			rp.addCompileArg(target)

@@ -45,6 +45,7 @@ XVALUES := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) \
 
 LDFLAGS := -ldflags="$(XVALUES) $(STRIP_DEBUG)"
 BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -trimpath $(LDFLAGS) -o $(3) ./tool/otel
+BUILD_CMD_DEV = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a $(LDFLAGS) -o $(3) ./tool/otel
 
 #-------------------------------------------------------------------------------
 # Multiple OS and ARCH support
@@ -70,7 +71,7 @@ build: package-pkg tidy
 ifeq ($(CURRENT_OS),windows)
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE).exe)
 endif
-	@$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
+	@$(call BUILD_CMD_DEV,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
 	@echo "Built completed: $(OUTPUT_BIN)"
 
 .PHONY: all test clean

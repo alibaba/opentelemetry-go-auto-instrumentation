@@ -24,7 +24,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
@@ -81,11 +81,11 @@ func (bc *BuildConfig) GetDisabledRules() string {
 
 func (bc *BuildConfig) makeRuleAbs(file string) (string, error) {
 	if util.PathNotExists(file) {
-		return "", errc.New(errc.ErrNotExist, file)
+		return "", ex.Errorf(nil, "file %s not exists", file)
 	}
 	file, err := filepath.Abs(file)
 	if err != nil {
-		return "", errc.New(errc.ErrAbsPath, err.Error())
+		return "", ex.Error(err)
 	}
 	return file, nil
 }
@@ -105,7 +105,7 @@ func (bc *BuildConfig) parseRuleFiles() error {
 		for i, file := range files {
 			f, err := bc.makeRuleAbs(file)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			files[i] = f
 		}
@@ -113,7 +113,7 @@ func (bc *BuildConfig) parseRuleFiles() error {
 	} else {
 		f, err := bc.makeRuleAbs(bc.RuleJsonFiles)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		bc.RuleJsonFiles = f
 	}
@@ -130,11 +130,11 @@ func storeConfig(bc *BuildConfig) error {
 	file := getConfPath(BuildConfFile)
 	bs, err := json.Marshal(bc)
 	if err != nil {
-		return errc.New(errc.ErrInvalidJSON, err.Error())
+		return ex.Error(err)
 	}
 	_, err = util.WriteFile(file, string(bs))
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	return nil
 }
@@ -150,12 +150,12 @@ func loadConfig() (*BuildConfig, error) {
 	file := getConfPath(BuildConfFile)
 	data, err := util.ReadFile(file)
 	if err != nil {
-		return &BuildConfig{}, err
+		return &BuildConfig{}, ex.Error(err)
 	}
 	bc := &BuildConfig{}
 	err = json.Unmarshal([]byte(data), bc)
 	if err != nil {
-		return nil, errc.New(errc.ErrInvalidJSON, err.Error())
+		return nil, ex.Error(err)
 	}
 	return bc, nil
 }
@@ -209,13 +209,13 @@ func InitConfig() (err error) {
 	// Load build config from json file
 	conf, err = loadConfig()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	loadConfigFromEnv(conf)
 
 	err = conf.parseRuleFiles()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 
 	mode := os.O_WRONLY | os.O_APPEND
@@ -236,7 +236,7 @@ func InitConfig() (err error) {
 func PrintVersion() error {
 	name, err := util.GetToolName()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	fmt.Printf("%s version %s\n", name, ToolVersion)
 	return nil
@@ -263,7 +263,7 @@ func Configure() error {
 	// Store build config for future phases
 	err = storeConfig(bc)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	return nil
 }

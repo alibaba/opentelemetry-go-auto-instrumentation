@@ -17,6 +17,7 @@ package instrument
 import (
 	"path/filepath"
 
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
@@ -35,7 +36,7 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		// Apply struct rules to the file
 		astRoot, err := rp.loadAst(file)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		for _, decl := range astRoot.Decls {
 			for structName, rules := range struct2Rules {
@@ -50,13 +51,13 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		// in future compilation
 		newFile, err := rp.restoreAst(file, astRoot)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		// Line directive must be placed at the beginning of the line, otherwise
 		// it will be ignored by the compiler
 		err = rp.enableLineDirective(newFile)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		rp.saveDebugFile(newFile)
 	}

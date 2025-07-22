@@ -40,11 +40,3 @@ func Log(format string, args ...interface{}) {
 	fmt.Fprintf(logWriter, template, args...)
 	logMutex.Unlock()
 }
-
-func LogFatal(format string, args ...interface{}) {
-	Log(format, args...)
-	if InPreprocess() {
-		fmt.Fprintf(os.Stderr, format, args...)
-	}
-	os.Exit(1)
-}

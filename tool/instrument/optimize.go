@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/config"
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
@@ -161,7 +161,7 @@ func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
 	p := util.NewAstParser()
 	astRoot, err := p.ParseSnippet(tmpl)
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	ctxExpr := astRoot[0].(*dst.ExprStmt).X
 	// Replenish call context by passing addresses of all arguments
@@ -173,7 +173,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	// Construct CallContext on the fly and pass to onExit trampoline defer call
 	callContextExpr, err := rp.newCallContextImpl(tjump)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// Find defer call to onExit and replace its call context with new one
 	found := false
@@ -204,7 +204,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 		return false
 	})
 	if removed == nil {
-		return errc.New(errc.ErrInternal, "onEnter trampoline not found")
+		return ex.Errorf(nil, "onEnter trampoline not found")
 	}
 	return nil
 }
@@ -255,7 +255,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnExit == "" {
 			err = rp.removeOnExitTrampolineCall(tjump)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			removedOnExit = true
 		}
@@ -266,7 +266,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnEnter == "" {
 			err = rp.removeOnEnterTrampolineCall(tjump)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 		}
 
@@ -278,7 +278,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnEnter != "" {
 			onEnterHook, err := getHookFunc(rule, true)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			foundPoison := false
 			const poison = "SkipCall"

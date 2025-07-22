@@ -26,7 +26,7 @@ import (
 	"syscall"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/config"
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
@@ -103,8 +103,7 @@ func runCmdCombinedOutput(dir string, env []string, args ...string) (string, err
 	cmd.Env = append(os.Environ(), env...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errc.New(errc.ErrRunCmd, string(out)).
-			With("command", fmt.Sprintf("%v", args))
+		return "", ex.Errorf(err, "%s", string(out))
 	}
 	return string(out), nil
 }
@@ -122,17 +121,17 @@ func findGoMod(dir string) (string, error) {
 		}
 		dir = par
 	}
-	return "", errc.New(errc.ErrPreprocess, "cannot find go.mod")
+	return "", ex.Errorf(nil, "cannot find go.mod")
 }
 
 func parseGoMod(gomod string) (*modfile.File, error) {
 	data, err := util.ReadFile(gomod)
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	modFile, err := modfile.Parse(util.GoModFile, []byte(data), nil)
 	if err != nil {
-		return nil, errc.New(errc.ErrParseCode, err.Error())
+		return nil, ex.Error(err)
 	}
 	return modFile, nil
 }
@@ -159,7 +158,7 @@ func findMainDir(pkgs []*packages.Package) (string, error) {
 		}
 		root, err := util.ParseAstFromFileFast(gofile)
 		if err != nil {
-			return "", err
+			return "", ex.Error(err)
 		}
 		for _, decl := range root.Decls {
 			if d, ok := decl.(*dst.FuncDecl); ok && d.Name.Name == "main" {
@@ -168,15 +167,14 @@ func findMainDir(pkgs []*packages.Package) (string, error) {
 			}
 		}
 	}
-	return "", errc.New(errc.ErrPreprocess,
-		"cannot find main function in the source files")
+	return "", ex.Errorf(nil, "cannot find main function in the source files")
 }
 
 func (dp *DepProcessor) initMod() (err error) {
 	// Find compiling module and package information from the build command
 	pkgs, err := findModule(dp.goBuildCmd)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	util.Log("Find Go packages %v", util.Jsonify(pkgs))
 	for _, pkg := range pkgs {
@@ -194,7 +192,7 @@ func (dp *DepProcessor) initMod() (err error) {
 			dp.modulePath = pkg.Module.GoMod
 			dir, err := findMainDir(pkgs)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			dp.otelImporter = filepath.Join(dir, OtelImporter)
 		} else {
@@ -207,7 +205,7 @@ func (dp *DepProcessor) initMod() (err error) {
 				gofile := pkg.GoFiles[0]
 				gomod, err := findGoMod(filepath.Dir(gofile))
 				if err != nil {
-					return err
+					return ex.Error(err)
 				}
 				util.Assert(gomod != "", "gomod is empty")
 				util.Assert(util.PathExists(gomod), "gomod does not exist")
@@ -215,7 +213,7 @@ func (dp *DepProcessor) initMod() (err error) {
 				// Get module name from go.mod file
 				modfile, err := parseGoMod(gomod)
 				if err != nil {
-					return err
+					return ex.Error(err)
 				}
 				dp.moduleName = modfile.Module.Mod.Path
 				// We generate additional source file(otel_importer.go) in the
@@ -238,10 +236,10 @@ func (dp *DepProcessor) initMod() (err error) {
 		}
 	}
 	if dp.moduleName == "" || dp.modulePath == "" {
-		return errc.New(errc.ErrPreprocess, "cannot find compiled module")
+		return ex.Errorf(nil, "cannot find compiled module")
 	}
 	if dp.otelImporter == "" {
-		return errc.New(errc.ErrPreprocess, "cannot place otel_importer.go file")
+		return ex.Errorf(nil, "cannot place otel_importer.go file")
 	}
 
 	// We will import alibaba-otel/pkg module in generated code, which is not
@@ -252,16 +250,16 @@ func (dp *DepProcessor) initMod() (err error) {
 	// along with the replace directive in the go.mod file.
 	dp.pkgLocalCache, err = findModCacheDir()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// In the further processing, we will edit the go.mod file, which is illegal
 	// to use relative path, so we need to convert the relative path to an absolute
 	dp.pkgLocalCache, err = filepath.Abs(dp.pkgLocalCache)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	if dp.pkgLocalCache == "" {
-		return errc.New(errc.ErrPreprocess, "cannot find rule cache dir")
+		return ex.Errorf(nil, "cannot find rule cache dir")
 	}
 	return nil
 }
@@ -310,7 +308,7 @@ func (dp *DepProcessor) init() error {
 	dp.initCmd()
 	err := dp.initMod()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	dp.initBuildMode()
 	dp.initSignalHandler()
@@ -339,12 +337,12 @@ func (dp *DepProcessor) backupFile(origin string) error {
 	backup = util.GetLogPath(filepath.Join(OtelBackups, backup))
 	err := os.MkdirAll(filepath.Dir(backup), 0777)
 	if err != nil {
-		return errc.New(errc.ErrMkdirAll, err.Error())
+		return ex.Error(err)
 	}
 	if _, exist := dp.backups[origin]; !exist {
 		err = util.CopyFile(origin, backup)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		dp.backups[origin] = backup
 		util.Log("Backup %v", origin)
@@ -359,7 +357,7 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 	for origin, backup := range dp.backups {
 		err := util.CopyFile(backup, origin)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		util.Log("Restore %v", origin)
 	}
@@ -369,7 +367,7 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 func getCompileCommands() ([]string, error) {
 	dryRunLog, err := os.Open(util.GetLogPath(DryRunLog))
 	if err != nil {
-		return nil, errc.New(errc.ErrOpenFile, err.Error())
+		return nil, ex.Error(err)
 	}
 	defer func(dryRunLog *os.File) {
 		err := dryRunLog.Close()
@@ -393,7 +391,7 @@ func getCompileCommands() ([]string, error) {
 	}
 	err = scanner.Err()
 	if err != nil {
-		return nil, errc.New(errc.ErrParseCode, "cannot parse dry run log")
+		return nil, ex.Errorf(nil, "cannot parse dry run log")
 	}
 	return compileCmds, nil
 }
@@ -488,7 +486,7 @@ func tryLoadPackage(path string) ([]*packages.Package, error) {
 
 	pkgs, err := packages.Load(cfg, path)
 	if err != nil {
-		return nil, errc.New(errc.ErrPreprocess, err.Error())
+		return nil, ex.Error(err)
 	}
 	return pkgs, nil
 }
@@ -550,7 +548,7 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 	if !found {
 		pkgs, err := tryLoadPackage(".")
 		if err != nil {
-			return nil, err
+			return nil, ex.Error(err)
 		}
 		for _, pkg := range pkgs {
 			if pkg.Errors != nil {
@@ -560,7 +558,7 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 		}
 	}
 	if len(candidates) == 0 {
-		return nil, errc.New(errc.ErrPreprocess, "no package found")
+		return nil, ex.Errorf(nil, "no package found")
 	}
 
 	return candidates, nil
@@ -570,7 +568,7 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 func runDryBuild(goBuildCmd []string) ([]string, error) {
 	dryRunLog, err := os.Create(util.GetLogPath(DryRunLog))
 	if err != nil {
-		return nil, errc.New(errc.ErrCreateFile, err.Error())
+		return nil, ex.Error(err)
 	}
 	// The full build command is: "go build/install -a -x -n  {...}"
 	args := []string{}
@@ -593,14 +591,13 @@ func runDryBuild(goBuildCmd []string) ([]string, error) {
 	cmd.Dir = ""
 	err = cmd.Run()
 	if err != nil {
-		return nil, errc.New(errc.ErrRunCmd, err.Error()).
-			With("command", fmt.Sprintf("%v", args))
+		return nil, ex.Errorf(err, "command %v", args)
 	}
 
 	// Find compile commands from dry run log
 	compileCmds, err := getCompileCommands()
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	return compileCmds, nil
 }
@@ -609,28 +606,34 @@ func (dp *DepProcessor) runModTidy() error {
 	out, err := runCmdCombinedOutput(dp.getGoModDir(), nil,
 		"go", "mod", "tidy")
 	util.Log("Run go mod tidy: %v", out)
-	return err
+	if err != nil {
+		return ex.Errorf(err, "failed to run go mod tidy %s", string(out))
+	}
+	return nil
 }
 
 func (dp *DepProcessor) runModVendor() error {
 	out, err := runCmdCombinedOutput(dp.getGoModDir(), nil,
 		"go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
-	return err
+	if err != nil {
+		return ex.Errorf(err, "failed to run go mod vendor %s", string(out))
+	}
+	return nil
 }
 
 func (dp *DepProcessor) refreshDeps() error {
 	// Run go mod tidy to remove unused dependencies
 	err := dp.runModTidy()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 
 	// Run go mod vendor to update the vendor directory
 	if dp.vendorMode {
 		err = dp.runModVendor()
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 
@@ -640,13 +643,13 @@ func (dp *DepProcessor) refreshDeps() error {
 func getTempGoCache() (string, error) {
 	goCachePath, err := filepath.Abs(filepath.Join(util.TempBuildDir, GoCacheDir))
 	if err != nil {
-		return "", err
+		return "", ex.Error(err)
 	}
 
 	if !util.PathExists(goCachePath) {
 		err = os.MkdirAll(goCachePath, 0755)
 		if err != nil {
-			return "", err
+			return "", ex.Error(err)
 		}
 	}
 	return goCachePath, nil
@@ -659,7 +662,7 @@ func buildGoCacheEnv(value string) []string {
 func runBuildWithToolexec(goBuildCmd []string) error {
 	exe, err := os.Executable()
 	if err != nil {
-		return errc.New(errc.ErrGetExecutable, err.Error())
+		return ex.Error(err)
 	}
 	// go build/install
 	args := []string{}
@@ -687,7 +690,7 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	// get the temporary build cache path
 	goCachePath, err := getTempGoCache()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	util.Log("Using isolated GOCACHE: %s", goCachePath)
 
@@ -696,7 +699,10 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	// command
 	out, err := runCmdCombinedOutput("", buildGoCacheEnv(goCachePath), args...)
 	util.Log("Output from toolexec build: %v", out)
-	return err
+	if err != nil {
+		return ex.Error(err)
+	}
+	return nil
 }
 
 type Dependency struct {
@@ -710,7 +716,7 @@ type Dependency struct {
 func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) error {
 	modfile, err := parseGoMod(gomod)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// For each dependency, check if it is already in the go.mod file and add
 	// it using require directive. If the dependency specifies a replace path,
@@ -727,7 +733,7 @@ func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) e
 		if !alreadyRequire {
 			err = modfile.AddRequire(dependency.ImportPath, dependency.Version)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			changed = true
 			util.Log("Add require dependency %s %s",
@@ -745,7 +751,7 @@ func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) e
 				err = modfile.AddReplace(dependency.ImportPath, "",
 					dependency.ReplacePath, dependency.ReplaceVersion)
 				if err != nil {
-					return err
+					return ex.Error(err)
 				}
 				changed = true
 				util.Log("Add replace dependency %s %s => %s %s",
@@ -758,11 +764,11 @@ func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) e
 	if changed {
 		bs, err := modfile.Format()
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		_, err = util.WriteFile(gomod, string(bs))
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 	return nil
@@ -772,7 +778,7 @@ func precheck() error {
 	// Check if the project is modularized
 	go11module := os.Getenv("GO111MODULE")
 	if go11module == "off" {
-		return errc.New(errc.ErrNotModularized, "GO111MODULE is off")
+		return ex.Errorf(nil, "GO111MODULE is off")
 	}
 
 	// Check if the build arguments is sane
@@ -832,7 +838,7 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 	if len(bundles) == 0 {
 		_, err := util.WriteFile(dp.otelImporter, content)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		return nil
 	}
@@ -889,7 +895,7 @@ func (dp *DepProcessor) newRuleImporterWith(bundles []*resource.RuleBundle) erro
 
 	err := dp.addDependency(dp.getGoModPath(), addDeps)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	return nil
 }
@@ -898,14 +904,14 @@ func Preprocess() error {
 	// Make sure the project is modularized otherwise we cannot proceed
 	err := precheck()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 
 	dp := newDepProcessor()
 
 	err = dp.init()
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	defer func() { dp.postProcess() }()
 	{
@@ -915,7 +921,7 @@ func Preprocess() error {
 		// Backup go.mod and add additional replace directives for the pkg module
 		err = dp.rectifyMod()
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 
 		// Two round of rule matching
@@ -939,32 +945,32 @@ func Preprocess() error {
 		for i := 0; i < 3; i++ {
 			err = dp.newRuleImporterWith(bundles)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 
 			err = dp.refreshDeps()
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			if i == 2 {
 				continue
 			}
 			bundles, err = dp.matchRules()
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 		}
 
 		// Rectify file rules to make sure we can find them locally
 		err = dp.rectifyRule(bundles)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 
 		// From this point on, we no longer modify the rules
 		err = resource.StoreRuleBundles(bundles)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 
@@ -974,7 +980,7 @@ func Preprocess() error {
 		// Run go build with toolexec to start instrumentation
 		err = runBuildWithToolexec(dp.goBuildCmd)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 	util.Log("Build completed successfully")
