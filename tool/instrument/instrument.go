@@ -49,7 +49,7 @@ type RuleProcessor struct {
 	rule2Suffix map[*resource.InstFuncRule]string
 	// The target function to be instrumented
 	rawFunc *dst.FuncDecl
-	// Whether the rule is exact match with target functio, or it's a regexp match
+	// Whether the rule is exact match with target function, or it's a regexp match
 	exact bool
 	// The enter hook function, it should be inserted into the target source file
 	onEnterHookFunc *dst.FuncDecl

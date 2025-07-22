@@ -61,7 +61,7 @@ If you run on k8s
 kubectl apply -f jaeger.yaml
 ```
 
-If you run on loacal machine:
+If you run on local machine:
 
 ```shell
 docker run --rm --name jaeger \
