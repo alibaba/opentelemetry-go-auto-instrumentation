@@ -4,4 +4,4 @@
 
 ## **publish module**
 
-监听github.com/rabbitmq/amqp091-go下Channel类的PublishWithDeferredConfirm方法。Headers作为传递traceparent的媒介用于关联pulish和consume。当使用者需要使pulish和consume的追踪关联时，在调用pulish时要保证所传参数amqp.Publishing的Headers不能为nil。
+监听github.com/rabbitmq/amqp091-go下Channel类的PublishWithDeferredConfirm方法。Headers作为传递traceparent的媒介用于关联publish和consume。当使用者需要使publish和consume的追踪关联时，在调用publish时要保证所传参数amqp.Publishing的Headers不能为nil。

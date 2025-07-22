@@ -357,9 +357,9 @@ func (rp *RuleProcessor) applyFuncRules(bundle *resource.RuleBundle) (err error)
 			return err
 		}
 		rp.trampolineJumps = make([]*TJump, 0)
-		// Since we may generate many functions into the same file, while we dont
+		// Since we may generate many functions into the same file, while we don't
 		// want to further instrument these functions, we need to make sure that
-		// the generated function are exclued from the instrumented file.
+		// the generated function are excluded from the instrumented file.
 		oldDecls := make([]dst.Decl, len(astRoot.Decls))
 		copy(oldDecls, astRoot.Decls)
 		for fnName, rules := range fn2rules {

@@ -47,15 +47,15 @@ type InstRule interface {
 }
 
 type InstBaseRule struct {
-	// Local path of the rule, it desginates where we can found the hook code
+	// Local path of the rule, it designates where we can found the hook code
 	Path string `json:"Path,omitempty"`
-	// Version of the rule, e.g. "[1.9.1,1.9.2)" or "", it desginates the
+	// Version of the rule, e.g. "[1.9.1,1.9.2)" or "", it designates the
 	// version range of rule, all other version will not be instrumented
 	Version string `json:"Version,omitempty"`
-	// Go version of the rule, e.g. "[1.22.0,)" or "", it desginates the go
+	// Go version of the rule, e.g. "[1.22.0,)" or "", it designates the go
 	// version range of rule, all other go version will not be instrumented
 	GoVersion string `json:"GoVersion,omitempty"`
-	// Import path of the rule, e.g. "github.com/gin-gonic/gin", it desginates
+	// Import path of the rule, e.g. "github.com/gin-gonic/gin", it designates
 	// the import path of rule, all other import path will not be instrumented
 	ImportPath string `json:"ImportPath,omitempty"`
 }
