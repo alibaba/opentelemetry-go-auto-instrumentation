@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 )
@@ -234,9 +234,7 @@ func SwitchCase(list []dst.Expr, stmts []dst.Stmt) *dst.CaseClause {
 
 func AddStructField(decl dst.Decl, name string, typ string) {
 	gen, ok := decl.(*dst.GenDecl)
-	if !ok {
-		LogFatal("decl is not a GenDecl")
-	}
+	Assert(ok, "decl is not a GenDecl")
 	fd := NewField(name, Ident(typ))
 	st := gen.Specs[0].(*dst.TypeSpec).Type.(*dst.StructType)
 	st.Fields.List = append(st.Fields.List, fd)
@@ -435,7 +433,7 @@ func (ap *AstParser) ParseSnippet(codeSnippet string) ([]dst.Stmt, error) {
 	snippet := "package main; func _() {" + codeSnippet + "}"
 	file, err := decorator.ParseFile(ap.fset, "", snippet, 0)
 	if err != nil {
-		return nil, errc.New(errc.ErrParseCode, err.Error())
+		return nil, ex.Error(err)
 	}
 	return file.Decls[0].(*dst.FuncDecl).Body.List, nil
 }
@@ -446,7 +444,7 @@ func (ap *AstParser) ParseSource(source string) (*dst.File, error) {
 	ap.dec = decorator.NewDecorator(ap.fset)
 	dstRoot, err := ap.dec.Parse(source)
 	if err != nil {
-		return nil, errc.New(errc.ErrParseCode, err.Error())
+		return nil, ex.Error(err)
 	}
 	return dstRoot, nil
 }
@@ -455,22 +453,22 @@ func (ap *AstParser) ParseFile(filePath string, mode parser.Mode) (*dst.File, er
 	name := filepath.Base(filePath)
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, errc.New(errc.ErrOpenFile, err.Error())
+		return nil, ex.Error(err)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			LogFatal("failed to close file %s: %v", file.Name(), err)
+			ex.Fatal(err)
 		}
 	}(file)
 	astFile, err := parser.ParseFile(ap.fset, name, file, mode)
 	if err != nil {
-		return nil, errc.New(errc.ErrParseCode, err.Error())
+		return nil, ex.Error(err)
 	}
 	ap.dec = decorator.NewDecorator(ap.fset)
 	dstFile, err := ap.dec.DecorateFile(astFile)
 	if err != nil {
-		return nil, errc.New(errc.ErrParseCode, err.Error())
+		return nil, ex.Error(err)
 	}
 	return dstFile, nil
 }
@@ -492,19 +490,19 @@ func ParseAstFromFile(filePath string) (*dst.File, error) {
 func WriteAstToFile(astRoot *dst.File, filePath string) (string, error) {
 	file, err := os.Create(filePath)
 	if err != nil {
-		return "", errc.New(errc.ErrCreateFile, err.Error())
+		return "", ex.Error(err)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			LogFatal("failed to close file %s: %v", file.Name(), err)
+			ex.Fatal(err)
 		}
 	}(file)
 
 	r := decorator.NewRestorer()
 	err = r.Fprint(file, astRoot)
 	if err != nil {
-		return "", errc.New(errc.ErrParseCode, err.Error())
+		return "", ex.Error(err)
 	}
 	return file.Name(), nil
 }

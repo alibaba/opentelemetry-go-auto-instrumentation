@@ -18,6 +18,8 @@ import (
 	"embed"
 	_ "embed"
 	"strings"
+
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 )
 
 //go:embed *
@@ -26,7 +28,7 @@ var dataFs embed.FS
 func ListRuleFiles() ([]string, error) {
 	entries, err := dataFs.ReadDir("rules")
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 
 	var files []string

@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
@@ -135,12 +135,12 @@ func (rule *InstFileRule) String() string {
 func verifyRule(rule *InstBaseRule, checkPath bool) error {
 	if checkPath {
 		if rule.Path == "" {
-			return errc.New(errc.ErrInvalidRule, "local path is empty")
+			return ex.Errorf(nil, "local path is empty")
 		}
 	}
 	// Import path should not be empty
 	if rule.ImportPath == "" {
-		return errc.New(errc.ErrInvalidRule, "import path is empty")
+		return ex.Errorf(nil, "import path is empty")
 	}
 	// If version is specified, it should be in the format of [start,end)
 	for _, v := range []string{rule.Version, rule.GoVersion} {
@@ -149,7 +149,7 @@ func verifyRule(rule *InstBaseRule, checkPath bool) error {
 				!strings.Contains(v, ")") ||
 				!strings.Contains(v, ",") ||
 				strings.Contains(v, "v") {
-				return errc.New(errc.ErrInvalidRule, "bad version "+v)
+				return ex.Errorf(nil, "bad version "+v)
 			}
 		}
 	}
@@ -167,13 +167,13 @@ func verifyRuleBaseWithoutPath(rule *InstBaseRule) error {
 func (rule *InstFileRule) Verify() error {
 	err := verifyRuleBase(&rule.InstBaseRule)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	if rule.FileName == "" {
-		return errc.New(errc.ErrInvalidRule, "empty file name")
+		return ex.Errorf(nil, "empty file name")
 	}
 	if !util.IsGoFile(rule.FileName) {
-		return errc.New(errc.ErrInvalidRule, "not a go file")
+		return ex.Errorf(nil, "not a go file")
 	}
 	return nil
 }
@@ -186,13 +186,13 @@ func (rule *InstFuncRule) Verify() error {
 		err = verifyRuleBase(&rule.InstBaseRule)
 	}
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	if rule.Function == "" {
-		return errc.New(errc.ErrInvalidRule, "empty function name")
+		return ex.Errorf(nil, "empty function name")
 	}
 	if rule.OnEnter == "" && rule.OnExit == "" {
-		return errc.New(errc.ErrInvalidRule, "empty hook")
+		return ex.Errorf(nil, "empty hook")
 	}
 	return nil
 }
@@ -200,13 +200,13 @@ func (rule *InstFuncRule) Verify() error {
 func (rule *InstStructRule) Verify() error {
 	err := verifyRuleBaseWithoutPath(&rule.InstBaseRule)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	if rule.StructType == "" {
-		return errc.New(errc.ErrInvalidRule, "empty struct type")
+		return ex.Errorf(nil, "empty struct type")
 	}
 	if rule.FieldName == "" || rule.FieldType == "" {
-		return errc.New(errc.ErrInvalidRule, "empty field name or type")
+		return ex.Errorf(nil, "empty field name or type")
 	}
 	return nil
 }

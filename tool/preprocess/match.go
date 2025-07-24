@@ -17,7 +17,6 @@ package preprocess
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -26,7 +25,7 @@ import (
 
 	"github.com/alibaba/loongsuite-go-agent/tool/config"
 	"github.com/alibaba/loongsuite-go-agent/tool/data"
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
@@ -62,8 +61,7 @@ func loadRuleFile(path string) ([]resource.InstRule, error) {
 	content, err := util.ReadFile(path)
 	if err != nil {
 		currentDir, _ := os.Getwd()
-		err = errc.Adhere(err, "pwd", currentDir)
-		return nil, err
+		return nil, ex.Errorf(err, "pwd %s", currentDir)
 	}
 	return loadRuleRaw(content)
 }
@@ -72,7 +70,7 @@ func loadRuleRaw(content string) ([]resource.InstRule, error) {
 	var h []*ruleHolder
 	err := json.Unmarshal([]byte(content), &h)
 	if err != nil {
-		return nil, errc.New(errc.ErrInvalidJSON, err.Error())
+		return nil, ex.Error(err)
 	}
 	rules := make([]resource.InstRule, 0)
 	for _, rule := range h {
@@ -139,7 +137,7 @@ func loadDefaultRules() []resource.InstRule {
 			raw, err := data.ReadRuleFile(name)
 			if err != nil {
 				util.Log("Failed to read rule file %s: %v", name, err)
-				return err
+				return ex.Error(err)
 			}
 
 			// Parse JSON content into InstRule slice
@@ -240,15 +238,13 @@ func matchVersion(version string, ruleVersion string) (bool, error) {
 	}
 	// Check if both rule version and package version are in sane
 	if !strings.Contains(version, "v") {
-		return false, errc.New(errc.ErrMatchRule,
-			fmt.Sprintf("invalid version %v", version))
+		return false, ex.Errorf(nil, "invalid version %v", version)
 	}
 	if !strings.Contains(ruleVersion, "[") ||
 		!strings.Contains(ruleVersion, ")") ||
 		!strings.Contains(ruleVersion, ",") ||
 		strings.Contains(ruleVersion, "v") {
-		return false, errc.New(errc.ErrMatchRule,
-			fmt.Sprintf("invalid rule version %v", ruleVersion))
+		return false, ex.Errorf(nil, "invalid rule version %v", ruleVersion)
 	}
 	// Remove extra whitespace from the rule version string
 	ruleVersion = strings.ReplaceAll(ruleVersion, " ", "")
@@ -277,8 +273,7 @@ func matchVersion(version string, ruleVersion string) (bool, error) {
 			return true, nil
 		}
 	default:
-		return false, errc.New(errc.ErrMatchRule,
-			fmt.Sprintf("invalid rule version range %v", ruleVersion))
+		return false, ex.Errorf(nil, "invalid rule version range %v", ruleVersion)
 	}
 	return false, nil
 }
@@ -486,11 +481,11 @@ func cutPrefix(s, prefix string) (after string, found bool) {
 func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	vendorFile := filepath.Join(projDir, "vendor", "modules.txt")
 	if util.PathNotExists(vendorFile) {
-		return nil, errc.New(errc.ErrNotExist, "vendor/modules.txt not found")
+		return nil, ex.Errorf(nil, "vendor/modules.txt not found")
 	}
 	file, err := os.Open(vendorFile)
 	if err != nil {
-		return nil, errc.New(errc.ErrOpenFile, err.Error())
+		return nil, ex.Error(err)
 	}
 	defer func(dryRunLog *os.File) {
 		err := dryRunLog.Close()
@@ -564,8 +559,7 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	}
 	err = scanner.Err()
 	if err != nil {
-		return nil, errc.New(errc.ErrParseCode,
-			"cannot parse vendor/modules.txt")
+		return nil, ex.Errorf(err, "cannot parse vendor/modules.txt")
 	}
 	return vms, nil
 }
@@ -585,8 +579,7 @@ func (dp *DepProcessor) matchRules() ([]*resource.RuleBundle, error) {
 	if err != nil {
 		// Tell us more about what happened in the dry run
 		errLog, _ := util.ReadFile(util.GetLogPath(DryRunLog))
-		err = errc.Adhere(err, "reason", errLog)
-		return nil, err
+		return nil, ex.Errorf(err, "reason %s", errLog)
 	}
 
 	matcher := newRuleMatcher()
@@ -596,7 +589,7 @@ func (dp *DepProcessor) matchRules() ([]*resource.RuleBundle, error) {
 	if dp.vendorMode {
 		modules, err := parseVendorModules(dp.getGoModDir())
 		if err != nil {
-			return nil, err
+			return nil, ex.Error(err)
 		}
 		if config.GetConf().Verbose {
 			util.Log("Vendor modules: %v", modules)

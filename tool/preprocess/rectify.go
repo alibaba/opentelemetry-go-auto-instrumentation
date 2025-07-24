@@ -17,14 +17,13 @@ package preprocess
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/data"
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/resource"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
@@ -55,12 +54,12 @@ var otelDeps = map[string]string{
 func extractGZip(data []byte, targetDir string) error {
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
-		return errc.New(errc.ErrMkdirAll, err.Error())
+		return ex.Error(err)
 	}
 
 	gzReader, err := gzip.NewReader(strings.NewReader(string(data)))
 	if err != nil {
-		return errc.New(errc.ErrReadDir, fmt.Sprintf("gzip error: %v", err))
+		return ex.Errorf(err, "gzip error")
 	}
 	defer gzReader.Close()
 
@@ -71,7 +70,7 @@ func extractGZip(data []byte, targetDir string) error {
 			break
 		}
 		if err != nil {
-			return errc.New(errc.ErrReadDir, fmt.Sprintf("gzip error: %v", err))
+			return ex.Errorf(err, "gzip error")
 		}
 
 		// Skip AppleDouble files (._filename) and other hidden files
@@ -111,26 +110,25 @@ func extractGZip(data []byte, targetDir string) error {
 		case tar.TypeDir:
 			err = os.MkdirAll(targetPath, os.FileMode(header.Mode))
 			if err != nil {
-				return errc.New(errc.ErrMkdirAll, err.Error())
+				return ex.Error(err)
 			}
 
 		case tar.TypeReg:
 			file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR,
 				os.FileMode(header.Mode))
 			if err != nil {
-				return errc.New(errc.ErrOpenFile, err.Error())
+				return ex.Error(err)
 			}
 
 			_, err = io.Copy(file, tarReader)
 			file.Close()
 			if err != nil {
-				return errc.New(errc.ErrCopyFile, err.Error())
+				return ex.Error(err)
 			}
 
 		default:
-			return errc.New(errc.ErrPreprocess,
-				fmt.Sprintf("unsupported file type: %c in %s",
-					header.Typeflag, header.Name))
+			return ex.Errorf(nil, "unsupported file type: %c in %s",
+				header.Typeflag, header.Name)
 		}
 	}
 
@@ -142,8 +140,7 @@ func extractGZip(data []byte, targetDir string) error {
 func findModCacheDir() (string, error) {
 	bs, err := data.UseEmbededPkg()
 	if err != nil {
-		return "", errc.New(errc.ErrPreprocess,
-			fmt.Sprintf("error reading embedded pkg: %v", err))
+		return "", ex.Errorf(err, "error reading embedded pkg")
 	}
 	tempPkg := util.GetTempBuildDirWith("alibaba-pkg")
 	if util.PathExists(tempPkg) {
@@ -151,7 +148,7 @@ func findModCacheDir() (string, error) {
 	}
 	err = extractGZip(bs, tempPkg)
 	if err != nil {
-		return "", err
+		return "", ex.Error(err)
 	}
 	return filepath.Join(tempPkg, "pkg"), nil
 }
@@ -162,7 +159,7 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 	defer util.PhaseTimer("Fetch")()
 	modfile, err := parseGoMod(dp.getGoModPath())
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// Collect all the replace directives from go.mod file, we will use it to
 	// rectify the custom rules.
@@ -189,8 +186,7 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 					} else {
 						p, exist := replaceMap[rule.Path]
 						if !exist {
-							return errc.New(errc.ErrPreprocess,
-								fmt.Sprintf("rule path %s is not found in go.mod file", rule.Path))
+							return ex.Errorf(nil, "rule path %s is not found in go.mod file", rule.Path)
 						}
 						rule.SetPath(p)
 						rectified[p] = true
@@ -211,8 +207,7 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 			} else {
 				p, exist := replaceMap[fileRule.Path]
 				if !exist {
-					return errc.New(errc.ErrPreprocess,
-						fmt.Sprintf("rule path %s is not found in go.mod file", fileRule.Path))
+					return ex.Errorf(nil, "rule path %s is not found in go.mod file", fileRule.Path)
 				}
 				fileRule.SetPath(p)
 				fileRule.FileName = filepath.Join(p, fileRule.FileName)
@@ -234,7 +229,7 @@ func (dp *DepProcessor) rectifyMod() error {
 		if util.PathExists(file) {
 			err := dp.backupFile(file)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 		}
 	}
@@ -263,7 +258,7 @@ func (dp *DepProcessor) rectifyMod() error {
 	}
 	err := dp.addDependency(dp.getGoModPath(), addDeps)
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// Update the existing replace directives to use the local module cache
 	// Very bad, we must guarantee the replace path is consistent either in
@@ -272,18 +267,18 @@ func (dp *DepProcessor) rectifyMod() error {
 	// and update the vendor/modules.txt accordingly.
 	modfile, err := parseGoMod(dp.getGoModPath())
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	changed := false
 	for _, replace := range modfile.Replace {
 		if replace.Old.Path == pkgPrefix {
 			err = modfile.DropReplace(pkgPrefix, "")
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 			changed = true
 			break
@@ -292,11 +287,11 @@ func (dp *DepProcessor) rectifyMod() error {
 	if changed {
 		bs, err := modfile.Format()
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		_, err = util.WriteFile(dp.getGoModPath(), string(bs))
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 	}
 	return nil
