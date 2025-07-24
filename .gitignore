@@ -111,3 +111,16 @@ test/custom/custom
 example/sqlinject/sqlinjectdemo
 pkg_tmp
 alibaba-pkg.gz
+
+# Ollama test binaries
+test/ollama/*/test_*
+!test/ollama/*/test_*.go
+
+# OpenTelemetry collector binaries
+test/ollama/*/otelcol
+test/ollama/*/*.tar.gz
+
+# Temporary documentation files
+*_REVIEW.md
+*_FIXES.md
+test/ollama/*/README.md

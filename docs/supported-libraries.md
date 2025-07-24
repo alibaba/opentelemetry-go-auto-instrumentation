@@ -25,6 +25,7 @@
 | mux           | https://github.com/gorilla/mux                 | v1.3.0                | v1.8.1                |
 | nacos         | https://github.com/nacos-group/nacos-sdk-go/v2 | v2.0.0                | v2.2.7                |
 | net/http      | https://pkg.go.dev/net/http                    | -                     | -                     |
+| ollama        | https://github.com/ollama/ollama               | v0.3.14               | -                     |
 | redigo        | https://github.com/gomodule/redigo             | v1.9.0                | v1.9.2                |
 | slog          | https://pkg.go.dev/log/slog                    | -                     | -                     |
 | trpc-go       | https://github.com/trpc-group/trpc-go          | v1.0.0                | v1.0.3                |
