@@ -164,7 +164,7 @@ func (dp *DepProcessor) newDeps(bundles []*rules.RuleBundle) error {
 				cnt, bundle.ImportPath)
 		}
 		content += tag
-		s = fmt.Sprintf("var _printstack%d = func (bt []byte){ _otel_log.Fatal(string(bt)) }\n", cnt)
+		s = fmt.Sprintf("var _printstack%d = func (bt []byte){ _otel_log.Printf(string(bt)) }\n", cnt)
 		content += s
 		cnt++
 	}
