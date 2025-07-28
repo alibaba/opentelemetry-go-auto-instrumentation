@@ -19,6 +19,9 @@ import (
 	"io"
 	"log"
 	"runtime/debug"
+	"time"
+
+	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/ai"
 
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/callbacks"
@@ -87,7 +90,8 @@ func einoModelCallHandler(config ChatModelConfig) *callbacksutils.ModelCallbackH
 			request := ctx.Value(llmRequestKey{}).(einoLLMRequest)
 			response := einoLLMResponse{}
 			if output.TokenUsage != nil {
-				response.usageOutputTokens = int64(output.TokenUsage.TotalTokens)
+				response.usageOutputTokens = int64(output.TokenUsage.CompletionTokens)
+				request.usageInputTokens = int64(output.TokenUsage.PromptTokens)
 			}
 			if output.Message != nil && output.Message.ResponseMeta != nil {
 				response.responseFinishReasons = []string{output.Message.ResponseMeta.FinishReason}
@@ -110,6 +114,7 @@ func einoModelCallHandler(config ChatModelConfig) *callbacksutils.ModelCallbackH
 				}()
 				response := einoLLMResponse{}
 				var outs []*model.CallbackOutput
+				firstTokenTime := time.Now()
 				for {
 					chunk, err := output.Recv()
 					if err == io.EOF {
@@ -141,9 +146,11 @@ func einoModelCallHandler(config ChatModelConfig) *callbacksutils.ModelCallbackH
 					}
 				}
 				if usage != nil {
-					response.usageOutputTokens = int64(usage.TotalTokens)
+					response.usageOutputTokens = int64(usage.CompletionTokens)
+					request.usageInputTokens = int64(usage.PromptTokens)
 				}
 				response.responseModel = request.modelName
+				ctx = context.WithValue(ctx, ai.TimeToFirstTokenKey{}, firstTokenTime)
 				einoLLMInstrument.End(ctx, request, response, nil)
 			}()
 			return ctx
