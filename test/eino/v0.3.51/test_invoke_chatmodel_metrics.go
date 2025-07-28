@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/alibaba/loongsuite-go-agent/test/verifier"
@@ -46,7 +45,6 @@ func main() {
 			if len(mrs.ScopeMetrics) <= 0 {
 				panic("No gen_ai.client.token.usage metrics received!")
 			}
-			fmt.Println(mrs.ScopeMetrics[0].Metrics[0])
 			point := mrs.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[int64])
 			if point.DataPoints[0].Count <= 0 || point.DataPoints[1].Count <= 0 {
 				panic("gen_ai.client.token.usage metrics count is not positive")

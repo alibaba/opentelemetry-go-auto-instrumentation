@@ -1,10 +1,10 @@
-// Copyright (c) 2024 Alibaba Group Holding Ltd.
+// Copyright (c) 2025 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,19 +32,23 @@ import (
 // GenAI metrics instrumentation (Stability: development).
 // Spec: https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/
 const (
-	gen_ai_client_token_usage        = "gen_ai.client.token.usage"
-	gen_ai_client_operation_duration = "gen_ai.client.operation.duration"
+	gen_ai_client_token_usage         = "gen_ai.client.token.usage"
+	gen_ai_client_operation_duration  = "gen_ai.client.operation.duration"
+	gen_ai_server_time_to_first_token = "gen_ai.server.time_to_first_token"
 )
 
 type AIClientMetric struct {
 	key                     attribute.Key
 	clientOperationDuration metric.Float64Histogram
 	clientTokenUsage        metric.Int64Histogram
+	serverTimeToFirstToken  metric.Float64Histogram
 }
 
 var _ instrumenter.OperationListener = (*AIClientMetric)(nil)
 
 var mu sync.Mutex
+
+type TimeToFirstTokenKey struct{}
 
 var aiMetricsConv = map[attribute.Key]bool{
 	semconv.GenAIOperationNameKey: true,
@@ -80,8 +84,16 @@ func newAIClientMatric(key string, meter metric.Meter) (*AIClientMetric, error) 
 		return nil, err
 	}
 	clientTokenUsage, err := newAIClientTokenUsageMeasures(meter)
+	if err != nil {
+		return nil, err
+	}
+	serverTimeToFirstToken, err := newAIClientServerTimeToFirstTokenMeasures(meter)
+	if err != nil {
+		return nil, err
+	}
 	m.clientOperationDuration = clientOperationDuration
 	m.clientTokenUsage = clientTokenUsage
+	m.serverTimeToFirstToken = serverTimeToFirstToken
 	return m, nil
 }
 
@@ -118,6 +130,24 @@ func newAIClientTokenUsageMeasures(meter metric.Meter) (metric.Int64Histogram, e
 		return d, nil
 	} else {
 		return d, errors.New(fmt.Sprintf("failed to create gen_ai.client.token.usage histogram, %v", err))
+	}
+}
+
+func newAIClientServerTimeToFirstTokenMeasures(meter metric.Meter) (metric.Float64Histogram, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if meter == nil {
+		return nil, errors.New("nil meter")
+	}
+	d, err := meter.Float64Histogram(gen_ai_server_time_to_first_token,
+		metric.WithUnit("s"),
+		metric.WithDescription("Time to generate first token for successful responses."),
+		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0),
+	)
+	if err == nil {
+		return d, nil
+	} else {
+		return d, errors.New(fmt.Sprintf("failed to create gen_ai.server.time_to_first_token histogram, %v", err))
 	}
 }
 
@@ -195,5 +225,18 @@ func (a AIClientMetric) OnAfterEnd(ctx context.Context, endAttributes []attribut
 		a.clientTokenUsage.Record(ctx, outputTokens.AsInt64(),
 			metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)),
 			metric.WithAttributes(semconv.GenAITokenTypeCompletion))
+	}
+
+	// record the server time to first token
+	if firstTokenTime, ok := ctx.Value(TimeToFirstTokenKey{}).(time.Time); ok {
+		if a.serverTimeToFirstToken == nil {
+			var err error
+			// second change to init the metric
+			a.serverTimeToFirstToken, err = newAIClientServerTimeToFirstTokenMeasures(globalMeter)
+			if err != nil {
+				log.Printf("failed to create serverTimeToFirstToken, err is %v\n", err)
+			}
+		}
+		a.serverTimeToFirstToken.Record(ctx, firstTokenTime.Sub(startTime).Seconds(), metric.WithAttributeSet(attribute.NewSet(metricsAttrs[0:n]...)))
 	}
 }
