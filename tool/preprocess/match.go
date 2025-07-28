@@ -385,7 +385,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 
 			if tree == nil {
 				// Failed to parse the file, stop here and log only
-				// sicne it's a tolerant failure
+				// since it's a tolerant failure
 				util.Log("Failed to parse file %s", file)
 				continue
 			}

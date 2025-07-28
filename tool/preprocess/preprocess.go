@@ -276,7 +276,7 @@ func Preprocess() error {
 		defer util.PhaseTimer("Preprocess")()
 		defer dp.saveDebugFiles()
 
-		// Backup go.mod and add additional repalce directives for the pkg module
+		// Backup go.mod and add additional replace directives for the pkg module
 		err = dp.updateGoMod()
 		if err != nil {
 			return ex.Error(err)
