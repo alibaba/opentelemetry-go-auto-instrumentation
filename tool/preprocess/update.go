@@ -17,16 +17,16 @@ package preprocess
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/data"
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
-	"github.com/alibaba/loongsuite-go-agent/tool/resource"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
+	"github.com/alibaba/loongsuite-go-agent/tool/rules"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
+	"golang.org/x/mod/modfile"
 )
 
 const (
@@ -52,15 +52,39 @@ var otelDeps = map[string]string{
 	"go.opentelemetry.io/otel/exporters/zipkin":                         "v1.35.0",
 }
 
+func parseGoMod(gomod string) (*modfile.File, error) {
+	data, err := util.ReadFile(gomod)
+	if err != nil {
+		return nil, ex.Error(err)
+	}
+	modFile, err := modfile.Parse(util.GoModFile, []byte(data), nil)
+	if err != nil {
+		return nil, ex.Error(err)
+	}
+	return modFile, nil
+}
+
+func writeGoMod(gomod string, modfile *modfile.File) error {
+	bs, err := modfile.Format()
+	if err != nil {
+		return ex.Error(err)
+	}
+	_, err = util.WriteFile(gomod, string(bs))
+	if err != nil {
+		return ex.Error(err)
+	}
+	return nil
+}
+
 func extractGZip(data []byte, targetDir string) error {
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
-		return errc.New(errc.ErrMkdirAll, err.Error())
+		return ex.Error(err)
 	}
 
 	gzReader, err := gzip.NewReader(strings.NewReader(string(data)))
 	if err != nil {
-		return errc.New(errc.ErrReadDir, fmt.Sprintf("gzip error: %v", err))
+		return ex.Errorf(err, "gzip error")
 	}
 	defer gzReader.Close()
 
@@ -71,7 +95,7 @@ func extractGZip(data []byte, targetDir string) error {
 			break
 		}
 		if err != nil {
-			return errc.New(errc.ErrReadDir, fmt.Sprintf("gzip error: %v", err))
+			return ex.Errorf(err, "gzip error")
 		}
 
 		// Skip AppleDouble files (._filename) and other hidden files
@@ -80,9 +104,16 @@ func extractGZip(data []byte, targetDir string) error {
 			continue
 		}
 
+		// Rename pkg_tmp to pkg in the path
+		// Normalize path to Unix style for consistent string operations
+		cleanName := filepath.ToSlash(filepath.Clean(header.Name))
+		if strings.HasPrefix(cleanName, "pkg_tmp/") {
+			cleanName = strings.Replace(cleanName, "pkg_tmp/", "pkg/", 1)
+		} else if cleanName == "pkg_tmp" {
+			cleanName = "pkg"
+		}
+
 		// Sanitize the file path to prevent Zip Slip vulnerability
-		// Clean the path and ensure it doesn't contain path traversal sequences
-		cleanName := filepath.Clean(header.Name)
 		if cleanName == "." || cleanName == ".." || strings.HasPrefix(cleanName, "..") {
 			continue
 		}
@@ -104,26 +135,25 @@ func extractGZip(data []byte, targetDir string) error {
 		case tar.TypeDir:
 			err = os.MkdirAll(targetPath, os.FileMode(header.Mode))
 			if err != nil {
-				return errc.New(errc.ErrMkdirAll, err.Error())
+				return ex.Error(err)
 			}
 
 		case tar.TypeReg:
 			file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR,
 				os.FileMode(header.Mode))
 			if err != nil {
-				return errc.New(errc.ErrOpenFile, err.Error())
+				return ex.Error(err)
 			}
-			defer file.Close()
 
 			_, err = io.Copy(file, tarReader)
+			file.Close()
 			if err != nil {
-				return errc.New(errc.ErrCopyFile, err.Error())
+				return ex.Error(err)
 			}
 
 		default:
-			return errc.New(errc.ErrPreprocess,
-				fmt.Sprintf("unsupported file type: %c in %s",
-					header.Typeflag, header.Name))
+			return ex.Errorf(nil, "unsupported file type: %c in %s",
+				header.Typeflag, header.Name)
 		}
 	}
 
@@ -135,8 +165,7 @@ func extractGZip(data []byte, targetDir string) error {
 func findModCacheDir() (string, error) {
 	bs, err := data.UseEmbededPkg()
 	if err != nil {
-		return "", errc.New(errc.ErrPreprocess,
-			fmt.Sprintf("error reading embedded pkg: %v", err))
+		return "", ex.Errorf(err, "error reading embedded pkg")
 	}
 	tempPkg := util.GetTempBuildDirWith("alibaba-pkg")
 	if util.PathExists(tempPkg) {
@@ -144,18 +173,18 @@ func findModCacheDir() (string, error) {
 	}
 	err = extractGZip(bs, tempPkg)
 	if err != nil {
-		return "", err
+		return "", ex.Error(err)
 	}
 	return filepath.Join(tempPkg, "pkg"), nil
 }
 
-// rectifyRule rectifies the file rules path to the local module cache path.
-func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
+// updateRule rectifies the file rules path to the local module cache path.
+func (dp *DepProcessor) updateRule(bundles []*rules.RuleBundle) error {
 	util.GuaranteeInPreprocess()
 	defer util.PhaseTimer("Fetch")()
 	modfile, err := parseGoMod(dp.getGoModPath())
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	// Collect all the replace directives from go.mod file, we will use it to
 	// rectify the custom rules.
@@ -182,8 +211,7 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 					} else {
 						p, exist := replaceMap[rule.Path]
 						if !exist {
-							return errc.New(errc.ErrPreprocess,
-								fmt.Sprintf("rule path %s is not found in go.mod file", rule.Path))
+							return ex.Errorf(nil, "rule path %s is not found in go.mod file", rule.Path)
 						}
 						rule.SetPath(p)
 						rectified[p] = true
@@ -204,8 +232,7 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 			} else {
 				p, exist := replaceMap[fileRule.Path]
 				if !exist {
-					return errc.New(errc.ErrPreprocess,
-						fmt.Sprintf("rule path %s is not found in go.mod file", fileRule.Path))
+					return ex.Errorf(nil, "rule path %s is not found in go.mod file", fileRule.Path)
 				}
 				fileRule.SetPath(p)
 				fileRule.FileName = filepath.Join(p, fileRule.FileName)
@@ -216,7 +243,7 @@ func (dp *DepProcessor) rectifyRule(bundles []*resource.RuleBundle) error {
 	return nil
 }
 
-func (dp *DepProcessor) rectifyMod() error {
+func (dp *DepProcessor) updateGoMod() error {
 	// Backup go.mod and go.sum files
 	gomodDir := dp.getGoModDir()
 	files := []string{}
@@ -227,27 +254,66 @@ func (dp *DepProcessor) rectifyMod() error {
 		if util.PathExists(file) {
 			err := dp.backupFile(file)
 			if err != nil {
-				return err
+				return ex.Error(err)
 			}
 		}
 	}
-	// Since we haven't published the alibaba-otel pkg module, we need to add
-	// a replace directive to tell the go tool to use the local module cache
-	// instead of the remote module. This is a workaround for the case that
-	// the remote module is not available(published).
-	replaceMap := map[string][2]string{
-		pkgPrefix: {dp.pkgLocalCache, ""},
+	// Add the alibaba-otel pkg module to the go.mod file
+	addDeps := make([]Dependency, 0)
+	dep := Dependency{
+		ImportPath:     pkgPrefix,
+		Version:        "v0.0.0-00010101000000-000000000000",
+		Replace:        true,
+		ReplacePath:    dp.pkgLocalCache,
+		ReplaceVersion: "",
 	}
+	addDeps = append(addDeps, dep)
 	// OTel dependencies may publish new versions that are not compatible
 	// with the otel tool. In such cases, we need to add a replace directive
 	// to use certain versions of the OTel dependencies for given otel tool,
 	// otherwise, the otel tool may fail to run.
 	for path, version := range otelDeps {
-		replaceMap[path] = [2]string{path, version}
+		addDeps = append(addDeps, Dependency{
+			ImportPath:     path,
+			Version:        version,
+			Replace:        true,
+			ReplacePath:    path,
+			ReplaceVersion: version,
+		})
 	}
-	err := addModReplace(dp.getGoModPath(), replaceMap)
+	err := dp.addDependency(dp.getGoModPath(), addDeps)
 	if err != nil {
-		return err
+		return ex.Error(err)
+	}
+	// Update the existing replace directives to use the local module cache
+	// Very bad, we must guarantee the replace path is consistent either in
+	// go.mod or vendor/modules.txt, otherwise, the go build toolchian will fail
+	// so we must parse go.mod to check if there is any existing replace directive
+	// and update the vendor/modules.txt accordingly.
+	modfile, err := parseGoMod(dp.getGoModPath())
+	if err != nil {
+		return ex.Error(err)
+	}
+	changed := false
+	for _, replace := range modfile.Replace {
+		if replace.Old.Path == pkgPrefix {
+			err = modfile.DropReplace(pkgPrefix, "")
+			if err != nil {
+				return ex.Error(err)
+			}
+			err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
+			if err != nil {
+				return ex.Error(err)
+			}
+			changed = true
+			break
+		}
+	}
+	if changed {
+		err = writeGoMod(dp.getGoModPath(), modfile)
+		if err != nil {
+			return ex.Error(err)
+		}
 	}
 	return nil
 }

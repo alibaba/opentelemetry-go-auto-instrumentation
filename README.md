@@ -1,4 +1,4 @@
-![](docs/loongsuite.png)
+![](docs/anim-logo.svg)
 
 [![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md) &nbsp;
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
@@ -6,29 +6,28 @@
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
 [![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
-This project provides an automatic solution for Golang applications that want to
+**Loongsuite Go Agent** provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, the instrumentation is done at compile
 time. Simply adding `otel` prefix to `go build` to get started :rocket:
 
 # Installation
 
+### Prebuilt Binaries
+
+| Linux AMD64 | Linux ARM64 | MacOS AMD64 | MacOS ARM64 | Windows AMD64 |
+| -- | -- | -- | -- | -- |
+| [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-amd64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-arm64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-amd64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-arm64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-windows-amd64.exe) | 
+
+**This is the recommended way to install the tool.**
+
 ### Install via Bash
-For Linux and MacOS users, install the tool by running the following command
+For Linux and MacOS users, the following script will install `otel` in `/usr/local/bin/otel` by default:
 ```console
-$ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/opentelemetry-go-auto-instrumentation@main/install.sh | sudo bash
+$ sudo curl -fsSL https://cdn.jsdelivr.net/gh/alibaba/loongsuite-go-agent@main/install.sh | sudo bash
 ```
-It will be installed in `/usr/local/bin/otel` by default.
 
-### Precompiled Binary
-
-Please download the latest precompiled release version from
-the [Release](https://github.com/alibaba/loongsuite-go-agent/releases)
-page.
-
-### Build From Source
-
-Checkout source code and build the tool by running one of following commands:
+### Build from Source
 
 ```console
 $ make         # build only
@@ -37,20 +36,13 @@ $ make install # build and install
 
 # Getting Started
 
-Check the version by running:
+Make sure the tool is installed:
 ```console
+$ # You may use "otel-linux-amd64" instead of "otel"
 $ otel version
 ```
 
-The configuration for the tool can be set by the following command:
-
-```console
-$ otel set -verbose                          # print verbose logs
-$ otel set -debug                            # enable debug mode
-$ otel set -rule=custom.json                 # use default and custom rules
-```
-
-**Normally, you don't need to set any configurations. Just adding `otel` prefix to `go build` to build your project:**
+Just adding `otel` prefix to `go build` to build your project:
 
 ```console
 $ otel go build
@@ -77,12 +69,12 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 - [nethttp](./example/nethttp) - HTTP monitoring example showcasing automatic instrumentation of request/response headers and network traffic analysis.
 
 # Supported Libraries
-
-| Plugin Name   | Repository Url                                 | Min Supported Version | Max Supported Version |
-|---------------| ---------------------------------------------- |-----------------------|-----------------------|
+| Library       | Repository Url                                 | Min           Version | Max           Version |
+|---------------|------------------------------------------------|-----------------------|-----------------------|
 | database/sql  | https://pkg.go.dev/database/sql                | -                     | -                     |
 | dubbo-go      | https://github.com/apache/dubbo-go             | v3.3.0                | -                     |
 | echo          | https://github.com/labstack/echo               | v4.0.0                | v4.12.0               |
+| eino          | https://github.com/cloudwego/eino              | v0.3.51               | -                     |
 | elasticsearch | https://github.com/elastic/go-elasticsearch    | v8.4.0                | v8.15.0               |
 | fasthttp      | https://github.com/valyala/fasthttp            | v1.45.0               | v1.63.0               |
 | fiber         | https://github.com/gofiber/fiber               | v2.43.0               | v2.52.8               |
@@ -104,6 +96,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 | mux           | https://github.com/gorilla/mux                 | v1.3.0                | v1.8.1                |
 | nacos         | https://github.com/nacos-group/nacos-sdk-go/v2 | v2.0.0                | v2.2.7                |
 | net/http      | https://pkg.go.dev/net/http                    | -                     | -                     |
+| ollama        | https://github.com/ollama/ollama               | v0.3.14               | -                     |
 | redigo        | https://github.com/gomodule/redigo             | v1.9.0                | v1.9.2                |
 | slog          | https://pkg.go.dev/log/slog                    | -                     | -                     |
 | trpc-go       | https://github.com/trpc-group/trpc-go          | v1.0.0                | v1.0.3                |
@@ -112,7 +105,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 | go-kit/log    | https://github.com/go-kit/log                  | v0.1.0                | v0.2.1                |
 | pg            | https://github.com/go-pg/pg                    | v1.10.0               | v1.14.0               |
 
-We are progressively open-sourcing the libraries we have supported, and your contributions are very welcome 💖!
+We are progressively open-sourcing the libraries we have supported, and your contributions are [**very welcome** 💖!](https://github.com/alibaba/loongsuite-go-agent/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22contribution%20welcome%22)
 
 > [!IMPORTANT]
 > The framework you expected is not in the list? Don't worry, you can easily inject your code into any frameworks/libraries that are not officially supported.

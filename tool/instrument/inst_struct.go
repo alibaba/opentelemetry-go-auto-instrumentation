@@ -17,29 +17,31 @@ package instrument
 import (
 	"path/filepath"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/resource"
+	"github.com/alibaba/loongsuite-go-agent/tool/ast"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
+	"github.com/alibaba/loongsuite-go-agent/tool/rules"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 	"github.com/dave/dst"
 )
 
-func (rp *RuleProcessor) addStructField(rule *resource.InstStructRule, decl dst.Decl) {
+func (rp *RuleProcessor) addStructField(rule *rules.InstStructRule, decl dst.Decl) {
 	util.Assert(rule.FieldName != "" && rule.FieldType != "",
 		"rule must have field and type")
 	util.Log("Apply struct rule %v (%v)", rule, rp.compileArgs)
-	util.AddStructField(decl, rule.FieldName, rule.FieldType)
+	ast.AddStructField(decl, rule.FieldName, rule.FieldType)
 }
 
-func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
+func (rp *RuleProcessor) applyStructRules(bundle *rules.RuleBundle) error {
 	for file, struct2Rules := range bundle.File2StructRules {
 		util.Assert(filepath.IsAbs(file), "file path must be absolute")
 		// Apply struct rules to the file
 		astRoot, err := rp.loadAst(file)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		for _, decl := range astRoot.Decls {
 			for structName, rules := range struct2Rules {
-				if util.MatchStructDecl(decl, structName) {
+				if ast.MatchStructDecl(decl, structName) {
 					for _, rule := range rules {
 						rp.addStructField(rule, decl)
 					}
@@ -50,13 +52,13 @@ func (rp *RuleProcessor) applyStructRules(bundle *resource.RuleBundle) error {
 		// in future compilation
 		newFile, err := rp.restoreAst(file, astRoot)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		// Line directive must be placed at the beginning of the line, otherwise
 		// it will be ignored by the compiler
 		err = rp.enableLineDirective(newFile)
 		if err != nil {
-			return err
+			return ex.Error(err)
 		}
 		rp.saveDebugFile(newFile)
 	}

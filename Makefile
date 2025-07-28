@@ -45,6 +45,7 @@ XVALUES := -X=$(MOD_NAME)/tool/config.ToolVersion=$(VERSION) \
 
 LDFLAGS := -ldflags="$(XVALUES) $(STRIP_DEBUG)"
 BUILD_CMD = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a -trimpath $(LDFLAGS) -o $(3) ./tool/otel
+BUILD_CMD_DEV = CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -a $(LDFLAGS) -o $(3) ./tool/otel
 
 #-------------------------------------------------------------------------------
 # Multiple OS and ARCH support
@@ -70,7 +71,7 @@ build: package-pkg tidy
 ifeq ($(CURRENT_OS),windows)
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE).exe)
 endif
-	@$(call BUILD_CMD,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
+	@$(call BUILD_CMD_DEV,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
 	@echo "Built completed: $(OUTPUT_BIN)"
 
 .PHONY: all test clean
@@ -122,10 +123,19 @@ install: build
 # otel tool needs to use it, it can directly extract and utilize the embedded
 # package, instead of downloading it from the internet (via go mod tidy or
 # go mod download).
+# Since we want exclude test dependencies, here we create a temporary directory
+# to hold the pkg module, remove test files, and refresh the go.mod file.
+# Finally, we package it into a gzipped tarball for embedding.
+# The tarball will be placed in tool/data/ directory.
 PKG_GZIP = alibaba-pkg.gz
-
+PKG_TMP = pkg_tmp
 .PHONY: package-pkg
 package-pkg:
 	@echo "Packaging pkg module..."
-	@tar -czf alibaba-pkg.gz --exclude='*.log' --exclude='*.string' --exclude='*.pprof' --exclude='*.gz' pkg
+	@rm -rf $(PKG_TMP)
+	@cp -a pkg $(PKG_TMP)
+	@find $(PKG_TMP)/* -iname '*_test.go' -exec rm -rf {} \;
+	@cd $(PKG_TMP) && go mod tidy
+	@tar -czf $(PKG_GZIP) --exclude='*.log' --exclude='*.string' --exclude='*.pprof' --exclude='*.gz' $(PKG_TMP)
 	@mv alibaba-pkg.gz tool/data/
+	@rm -rf $(PKG_TMP)

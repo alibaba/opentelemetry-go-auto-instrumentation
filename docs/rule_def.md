@@ -1,6 +1,6 @@
 ## Fields of a rule definition
 
-## Instument a function
+## Instrument a function
 - `ImportPath`: The import path of the package that contains the function to be instrumented. e.g. `net/http`.
 - `Function`: The name of the function to be instrumented, it could be a regular expression to match multiple functions. e.g. `.*` matches all functions in the package, `.*ServeHTTP` matches all functions whose name ends with `ServeHTTP`, and so on.
 - `ReceiverType`: The type of the receiver of the function to be instrumented, it could be a regular expression as well. e.g. `.*` matches all receiver types in the package, even if the function has no receiver, `.*` still matches it. `.*http.Request` matches all functions whose receiver type is `http.Request`, `\\*Client` matches all functions whose receiver type is `*Client`, and so on.

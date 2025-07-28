@@ -24,13 +24,13 @@ func TestFlags(t *testing.T) {
 	UseApp(AppName)
 
 	RunGoBuildFallible(t, "go", "build", "-thisisnotvalid")
-	ExpectDebugLogContains(t, "Fatal Error")
+	ExpectStderrContains(t, "Stack:")
 
 	RunVersion(t)
 	ExpectStdoutContains(t, "version")
 
 	RunGoBuildFallible(t, "go", "build", "notevenaflag")
-	ExpectDebugLogContains(t, "Fatal Error")
+	ExpectStderrContains(t, "Stack:")
 
 	RunSet(t, "-verbose")
 	RunGoBuild(t, "go", "build", `-ldflags=-X main.Placeholder=replaced`)

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resource
+package rules
 
 import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/errc"
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
@@ -60,7 +60,7 @@ func (rb *RuleBundle) IsValid() bool {
 func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) error {
 	file, err := filepath.Abs(file)
 	if err != nil {
-		return errc.New(errc.ErrAbsPath, err.Error())
+		return ex.Error(err)
 	}
 	fn := rule.Function + "," + rule.ReceiverType
 	util.Assert(fn != "", "sanity check")
@@ -77,7 +77,7 @@ func (rb *RuleBundle) AddFile2FuncRule(file string, rule *InstFuncRule) error {
 func (rb *RuleBundle) AddFile2StructRule(file string, rule *InstStructRule) error {
 	file, err := filepath.Abs(file)
 	if err != nil {
-		return errc.New(errc.ErrAbsPath, err.Error())
+		return ex.Error(err)
 	}
 	st := rule.StructType
 	util.Assert(st != "", "sanity check")
@@ -104,11 +104,11 @@ func StoreRuleBundles(bundles []*RuleBundle) error {
 	ruleFile := util.GetPreprocessLogPath(MatchedRulesJsonFile)
 	bs, err := json.Marshal(bundles)
 	if err != nil {
-		return errc.New(errc.ErrInvalidJSON, err.Error())
+		return ex.Error(err)
 	}
 	_, err = util.WriteFile(ruleFile, string(bs))
 	if err != nil {
-		return err
+		return ex.Error(err)
 	}
 	return nil
 }
@@ -119,12 +119,12 @@ func LoadRuleBundles() ([]*RuleBundle, error) {
 	ruleFile := util.GetPreprocessLogPath(MatchedRulesJsonFile)
 	data, err := util.ReadFile(ruleFile)
 	if err != nil {
-		return nil, err
+		return nil, ex.Error(err)
 	}
 	var bundles []*RuleBundle
 	err = json.Unmarshal([]byte(data), &bundles)
 	if err != nil {
-		return nil, errc.New(errc.ErrInvalidJSON, "bad "+ruleFile)
+		return nil, ex.Errorf(err, "bad "+ruleFile)
 	}
 	return bundles, nil
 }

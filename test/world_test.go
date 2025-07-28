@@ -22,7 +22,7 @@ import (
 
 const WorldAppName = "world"
 
-const expectImportCounts = 30
+const expectedImportCounts = 37
 
 func TestCompileTheWorld(t *testing.T) {
 	UseApp(WorldAppName)
@@ -41,7 +41,8 @@ func TestCompileTheWorld(t *testing.T) {
 		importPath := match[1]
 		importPaths[importPath] = struct{}{}
 	}
-	if len(importPaths) != expectImportCounts {
+	if len(importPaths) != expectedImportCounts {
+		t.Logf("Expected %d import paths, but found %d", expectedImportCounts, len(importPaths))
 		t.Log("Matched import paths:")
 		// sort import paths for better readability
 		// (not strictly necessary, but helps in debugging)
