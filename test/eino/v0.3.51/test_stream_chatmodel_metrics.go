@@ -16,10 +16,12 @@ package main
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/alibaba/loongsuite-go-agent/test/verifier"
+
 	"github.com/cloudwego/eino/schema"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-	"strconv"
 )
 
 func main() {
@@ -48,8 +50,7 @@ func main() {
 			if point.DataPoints[0].Count <= 0 || point.DataPoints[1].Count <= 0 {
 				panic("gen_ai.client.token.usage metrics count is not positive")
 			}
-			verifier.VerifyGenAITokenUsageMetricsAttributes(point.DataPoints[0].Attributes.ToSlice(), "chat", "eino", "mock-chat", "mock-chat", "input")
-			verifier.VerifyGenAITokenUsageMetricsAttributes(point.DataPoints[1].Attributes.ToSlice(), "chat", "eino", "mock-chat", "mock-chat", "output")
+			verifier.VerifyGenAIOperationDurationMetricsAttributes(point.DataPoints[0].Attributes.ToSlice(), "chat", "eino", "mock-chat", "mock-chat")
 		},
 		"gen_ai.server.time_to_first_token": func(mrs metricdata.ResourceMetrics) {
 			if len(mrs.ScopeMetrics) <= 0 {
