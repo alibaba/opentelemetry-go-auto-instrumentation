@@ -15,7 +15,6 @@
 package preprocess
 
 import (
-	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
@@ -24,7 +23,7 @@ func (dp *DepProcessor) runModTidy() error {
 		nil, "go", "mod", "tidy")
 	util.Log("Run go mod tidy: %v", out)
 	if err != nil {
-		return ex.Errorf(err, "failed to run go mod tidy %s", string(out))
+		return err
 	}
 	return nil
 }
@@ -34,7 +33,7 @@ func (dp *DepProcessor) runModVendor() error {
 		nil, "go", "mod", "vendor")
 	util.Log("Run go mod vendor: %v", out)
 	if err != nil {
-		return ex.Errorf(err, "failed to run go mod vendor %s", string(out))
+		return err
 	}
 	return nil
 }
@@ -43,14 +42,14 @@ func (dp *DepProcessor) syncDeps() error {
 	// Run go mod tidy to remove unused dependencies
 	err := dp.runModTidy()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	// Run go mod vendor to update the vendor directory
 	if dp.vendorMode {
 		err = dp.runModVendor()
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 

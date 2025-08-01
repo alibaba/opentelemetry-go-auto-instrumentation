@@ -17,7 +17,6 @@ package config
 import (
 	"fmt"
 
-	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
 )
 
@@ -29,7 +28,7 @@ var ToolVersion = "1.0.0"
 func PrintVersion() error {
 	name, err := util.GetToolName()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	fmt.Printf("%s version %s\n", name, ToolVersion)
 	return nil

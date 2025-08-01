@@ -51,7 +51,7 @@ func getCompileCommands() ([]string, error) {
 	}
 	err = scanner.Err()
 	if err != nil {
-		return nil, ex.Errorf(nil, "cannot parse dry run log")
+		return nil, ex.Errorf(err, "cannot parse dry run log")
 	}
 	return compileCmds, nil
 }
@@ -89,7 +89,7 @@ func runDryBuild(goBuildCmd []string) ([]string, error) {
 	// Find compile commands from dry run log
 	compileCmds, err := getCompileCommands()
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	return compileCmds, nil
 }
@@ -103,7 +103,7 @@ func (dp *DepProcessor) findDeps() ([]string, error) {
 	if err != nil {
 		// Tell us more about what happened in the dry run
 		errLog, _ := util.ReadFile(util.GetLogPath(DryRunLog))
-		return nil, ex.Errorf(err, "reason %s", errLog)
+		return nil, ex.Errorf(err, "dryRunFail: %s", errLog)
 	}
 	return compileCmds, nil
 }

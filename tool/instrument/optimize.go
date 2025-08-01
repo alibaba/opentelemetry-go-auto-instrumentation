@@ -162,7 +162,7 @@ func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
 	p := ast.NewAstParser()
 	astRoot, err := p.ParseSnippet(tmpl)
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	ctxExpr := astRoot[0].(*dst.ExprStmt).X
 	// Replenish call context by passing addresses of all arguments
@@ -174,7 +174,7 @@ func (rp *RuleProcessor) removeOnEnterTrampolineCall(tjump *TJump) error {
 	// Construct CallContext on the fly and pass to onExit trampoline defer call
 	callContextExpr, err := rp.newCallContextImpl(tjump)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// Find defer call to onExit and replace its call context with new one
 	found := false
@@ -256,7 +256,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnExit == "" {
 			err = rp.removeOnExitTrampolineCall(tjump)
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 			removedOnExit = true
 		}
@@ -267,7 +267,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnEnter == "" {
 			err = rp.removeOnEnterTrampolineCall(tjump)
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 		}
 
@@ -279,7 +279,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		if rule.OnEnter != "" {
 			onEnterHook, err := getHookFunc(rule, true)
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 			foundPoison := false
 			const poison = "SkipCall"

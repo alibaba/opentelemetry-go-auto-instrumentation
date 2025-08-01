@@ -244,7 +244,7 @@ func CopyDirExclude(src string, dst string, exclude []string) error {
 
 		if entry.IsDir() {
 			if err := CopyDirExclude(srcPath, dstPath, exclude); err != nil {
-				return ex.Error(err)
+				return err
 			}
 		} else {
 			ignore := false
@@ -256,7 +256,7 @@ func CopyDirExclude(src string, dst string, exclude []string) error {
 			}
 			if !ignore {
 				if err := CopyFile(srcPath, dstPath); err != nil {
-					return ex.Error(err)
+					return err
 				}
 			}
 		}

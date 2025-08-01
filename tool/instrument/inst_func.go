@@ -63,7 +63,7 @@ func (rp *RuleProcessor) copyOtelApi(pkgName string) error {
 	target := filepath.Join(rp.workDir, OtelAPIFile)
 	file, err := copyAPI(target, pkgName)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	rp.addCompileArg(file)
 	return nil
@@ -75,7 +75,7 @@ func (rp *RuleProcessor) loadAst(filePath string) (*dst.File, error) {
 	var err error
 	rp.target, err = rp.parser.ParseFile(file, parser.ParseComments)
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	return rp.target, nil
 }
@@ -87,7 +87,7 @@ func (rp *RuleProcessor) restoreAst(filePath string, root *dst.File) (string, er
 	name := filepath.Base(filePath)
 	newFile, err := ast.WriteAstToFile(root, filepath.Join(rp.workDir, name))
 	if err != nil {
-		return "", ex.Error(err)
+		return "", err
 	}
 	err = rp.replaceCompileArg(newFile, func(arg string) bool {
 		return arg == filePath
@@ -258,7 +258,7 @@ func (rp *RuleProcessor) insertTJump(t *rules.InstFuncRule,
 	// Generate corresponding trampoline code
 	err := rp.generateTrampoline(t)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }
@@ -270,7 +270,7 @@ func (rp *RuleProcessor) insertRaw(r *rules.InstFuncRule, decl *dst.FuncDecl) er
 		p := ast.NewAstParser()
 		onEnterSnippet, err := p.ParseSnippet(r.OnEnter)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		decl.Body.List = append(onEnterSnippet, decl.Body.List...)
 	}
@@ -281,7 +281,7 @@ func (rp *RuleProcessor) insertRaw(r *rules.InstFuncRule, decl *dst.FuncDecl) er
 			fmt.Sprintf("defer func(){ %s }()", r.OnExit),
 		)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		decl.Body.List = append(onExitSnippet, decl.Body.List...)
 	}
@@ -313,7 +313,7 @@ func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 	p := ast.NewAstParser()
 	trampoline, err := p.ParseSource("package " + pkgName)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// One trampoline file shares common variable declarations
 	trampoline.Decls = append(trampoline.Decls, rp.varDecls...)
@@ -321,7 +321,7 @@ func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 	path := filepath.Join(rp.workDir, OtelTrampolineFile)
 	trampolineFile, err := ast.WriteAstToFile(trampoline, path)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	rp.addCompileArg(trampolineFile)
 	rp.saveDebugFile(path)
@@ -331,14 +331,14 @@ func (rp *RuleProcessor) writeTrampoline(pkgName string) error {
 func (rp *RuleProcessor) enableLineDirective(filePath string) error {
 	text, err := util.ReadFile(filePath)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	re := regexp.MustCompile(".*//line ")
 	text = re.ReplaceAllString(text, "//line ")
 	// All done, persist to file
 	_, err = util.WriteFile(filePath, text)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }
@@ -351,7 +351,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *rules.RuleBundle) (err error) {
 	// Copy API file to compilation working directory
 	err = rp.copyOtelApi(bundle.PackageName)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// Applied all matched func rules, either inserting raw code or inserting
 	// our trampoline calls.
@@ -359,7 +359,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *rules.RuleBundle) (err error) {
 		util.Assert(filepath.IsAbs(file), "file path must be absolute")
 		astRoot, err := rp.loadAst(file)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		rp.trampolineJumps = make([]*TJump, 0)
 		// Since we may generate many functions into the same file, while we don't
@@ -398,7 +398,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *rules.RuleBundle) (err error) {
 							err = rp.insertTJump(rule, fnDecl)
 						}
 						if err != nil {
-							return ex.Error(err)
+							return err
 						}
 						util.Log("Apply func rule %s (%v)", rule, rp.compileArgs)
 					}
@@ -409,25 +409,25 @@ func (rp *RuleProcessor) applyFuncRules(bundle *rules.RuleBundle) (err error) {
 		// Optimize generated trampoline-jump-ifs
 		err = rp.optimizeTJumps()
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		// Restore the ast to original file once all rules are applied
 		newFile, err := rp.restoreAst(file, astRoot)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		// Line directive must be placed at the beginning of the line, otherwise
 		// it will be ignored by the compiler
 		err = rp.enableLineDirective(newFile)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		rp.saveDebugFile(newFile)
 	}
 
 	err = rp.writeTrampoline(bundle.PackageName)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }

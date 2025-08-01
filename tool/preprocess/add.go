@@ -35,7 +35,7 @@ type Dependency struct {
 func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) error {
 	modfile, err := parseGoMod(gomod)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// For each dependency, check if it is already in the go.mod file and add
 	// it using require directive. If the dependency specifies a replace path,
@@ -83,7 +83,7 @@ func (dp *DepProcessor) addDependency(gomod string, dependencies []Dependency) e
 	if changed {
 		err = writeGoMod(gomod, modfile)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 	return nil
@@ -115,7 +115,7 @@ func (dp *DepProcessor) newDeps(bundles []*rules.RuleBundle) error {
 	if len(bundles) == 0 {
 		_, err := util.WriteFile(dp.otelRuntimeGo, content)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		return nil
 	}
@@ -170,12 +170,12 @@ func (dp *DepProcessor) newDeps(bundles []*rules.RuleBundle) error {
 	}
 	_, err := util.WriteFile(dp.otelRuntimeGo, content)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	err = dp.addDependency(dp.getGoModPath(), addDeps)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }

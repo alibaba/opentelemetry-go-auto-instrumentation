@@ -181,7 +181,7 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 	if !found {
 		pkgs, err := tryLoadPackage(".")
 		if err != nil {
-			return nil, ex.Error(err)
+			return nil, err
 		}
 		for _, pkg := range pkgs {
 			if pkg.Errors != nil {
@@ -236,7 +236,7 @@ func findMainDir(pkgs []*packages.Package) (string, error) {
 		}
 		root, err := ast.ParseAstFromFileFast(gofile)
 		if err != nil {
-			return "", ex.Error(err)
+			return "", err
 		}
 		for _, decl := range root.Decls {
 			if d, ok := decl.(*dst.FuncDecl); ok && d.Name.Name == "main" {
@@ -252,7 +252,7 @@ func (dp *DepProcessor) initMod() (err error) {
 	// Find compiling module and package information from the build command
 	pkgs, err := findModule(dp.goBuildCmd)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	util.Log("Find Go packages %v", util.Jsonify(pkgs))
 	for _, pkg := range pkgs {
@@ -270,7 +270,7 @@ func (dp *DepProcessor) initMod() (err error) {
 			dp.modulePath = pkg.Module.GoMod
 			dir, err := findMainDir(pkgs)
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 			dp.otelRuntimeGo = filepath.Join(dir, OtelRuntimeGo)
 		} else {
@@ -283,7 +283,7 @@ func (dp *DepProcessor) initMod() (err error) {
 				gofile := pkg.GoFiles[0]
 				gomod, err := findGoMod(filepath.Dir(gofile))
 				if err != nil {
-					return ex.Error(err)
+					return err
 				}
 				util.Assert(gomod != "", "gomod is empty")
 				util.Assert(util.PathExists(gomod), "gomod does not exist")
@@ -291,7 +291,7 @@ func (dp *DepProcessor) initMod() (err error) {
 				// Get module name from go.mod file
 				modfile, err := parseGoMod(gomod)
 				if err != nil {
-					return ex.Error(err)
+					return err
 				}
 				dp.moduleName = modfile.Module.Mod.Path
 				// We generate additional source file(otel_importer.go) in the
@@ -328,7 +328,7 @@ func (dp *DepProcessor) initMod() (err error) {
 	// along with the replace directive in the go.mod file.
 	dp.pkgLocalCache, err = findModCacheDir()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// In the further processing, we will edit the go.mod file, which is illegal
 	// to use relative path, so we need to convert the relative path to an absolute
@@ -386,7 +386,7 @@ func (dp *DepProcessor) init() error {
 	dp.initCmd()
 	err := dp.initMod()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	dp.initBuildMode()
 	dp.initSignalHandler()

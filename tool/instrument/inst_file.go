@@ -33,7 +33,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *rules.RuleBundle) (err error) {
 		// and rename package name
 		source, err := util.ReadFile(rule.FileName)
 		if err != nil {
-			return ex.Errorf(err, "filename %s", rule.FileName)
+			return err
 		}
 		source = util.RemoveGoBuildComment(source)
 		source = util.RenamePackage(source, bundle.PackageName)
@@ -44,7 +44,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *rules.RuleBundle) (err error) {
 			fmt.Sprintf("otel_inst_file_%s", fileName))
 		_, err = util.WriteFile(target, source)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		// Relocate the file dependency of the rule, any rules targeting the
 		// file dependency specified by the rule should be updated to target the
@@ -57,8 +57,7 @@ func (rp *RuleProcessor) applyFileRules(bundle *rules.RuleBundle) (err error) {
 				return strings.HasSuffix(arg, fileName)
 			})
 			if err != nil {
-				return ex.Errorf(err, "compileArgs %v, newArg %s",
-					rp.compileArgs, target)
+				return err
 			}
 		} else {
 			rp.addCompileArg(target)

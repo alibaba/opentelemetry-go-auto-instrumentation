@@ -55,7 +55,7 @@ var otelDeps = map[string]string{
 func parseGoMod(gomod string) (*modfile.File, error) {
 	data, err := util.ReadFile(gomod)
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	modFile, err := modfile.Parse(util.GoModFile, []byte(data), nil)
 	if err != nil {
@@ -71,7 +71,7 @@ func writeGoMod(gomod string, modfile *modfile.File) error {
 	}
 	_, err = util.WriteFile(gomod, string(bs))
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }
@@ -84,7 +84,7 @@ func extractGZip(data []byte, targetDir string) error {
 
 	gzReader, err := gzip.NewReader(strings.NewReader(string(data)))
 	if err != nil {
-		return ex.Errorf(err, "gzip error")
+		return ex.Error(err)
 	}
 	defer gzReader.Close()
 
@@ -95,7 +95,7 @@ func extractGZip(data []byte, targetDir string) error {
 			break
 		}
 		if err != nil {
-			return ex.Errorf(err, "gzip error")
+			return ex.Error(err)
 		}
 
 		// Skip AppleDouble files (._filename) and other hidden files
@@ -114,7 +114,8 @@ func extractGZip(data []byte, targetDir string) error {
 		}
 
 		// Sanitize the file path to prevent Zip Slip vulnerability
-		if cleanName == "." || cleanName == ".." || strings.HasPrefix(cleanName, "..") {
+		if cleanName == "." || cleanName == ".." ||
+			strings.HasPrefix(cleanName, "..") {
 			continue
 		}
 
@@ -128,7 +129,8 @@ func extractGZip(data []byte, targetDir string) error {
 
 		// Check if the resolved path is within the target directory
 		relPath, err := filepath.Rel(targetDir, resolvedPath)
-		if err != nil || strings.HasPrefix(relPath, "..") || filepath.IsAbs(relPath) {
+		if err != nil || strings.HasPrefix(relPath, "..") ||
+			filepath.IsAbs(relPath) {
 			continue // Skip files that would be extracted outside target dir
 		}
 		switch header.Typeflag {
@@ -165,7 +167,7 @@ func extractGZip(data []byte, targetDir string) error {
 func findModCacheDir() (string, error) {
 	bs, err := data.UseEmbededPkg()
 	if err != nil {
-		return "", ex.Errorf(err, "error reading embedded pkg")
+		return "", err
 	}
 	tempPkg := util.GetTempBuildDirWith("alibaba-pkg")
 	if util.PathExists(tempPkg) {
@@ -173,7 +175,7 @@ func findModCacheDir() (string, error) {
 	}
 	err = extractGZip(bs, tempPkg)
 	if err != nil {
-		return "", ex.Error(err)
+		return "", err
 	}
 	return filepath.Join(tempPkg, "pkg"), nil
 }
@@ -184,7 +186,7 @@ func (dp *DepProcessor) updateRule(bundles []*rules.RuleBundle) error {
 	defer util.PhaseTimer("Fetch")()
 	modfile, err := parseGoMod(dp.getGoModPath())
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// Collect all the replace directives from go.mod file, we will use it to
 	// rectify the custom rules.
@@ -254,7 +256,7 @@ func (dp *DepProcessor) updateGoMod() error {
 		if util.PathExists(file) {
 			err := dp.backupFile(file)
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 		}
 	}
@@ -283,7 +285,7 @@ func (dp *DepProcessor) updateGoMod() error {
 	}
 	err := dp.addDependency(dp.getGoModPath(), addDeps)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// Update the existing replace directives to use the local module cache
 	// Very bad, we must guarantee the replace path is consistent either in
@@ -292,7 +294,7 @@ func (dp *DepProcessor) updateGoMod() error {
 	// and update the vendor/modules.txt accordingly.
 	modfile, err := parseGoMod(dp.getGoModPath())
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	changed := false
 	for _, replace := range modfile.Replace {
@@ -312,7 +314,7 @@ func (dp *DepProcessor) updateGoMod() error {
 	if changed {
 		err = writeGoMod(dp.getGoModPath(), modfile)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 	return nil

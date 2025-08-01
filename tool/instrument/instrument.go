@@ -184,17 +184,17 @@ func (rp *RuleProcessor) applyRules(bundle *rules.RuleBundle) (err error) {
 	// Apply file instrument rules first
 	err = rp.applyFileRules(bundle)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	err = rp.applyStructRules(bundle)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	err = rp.applyFuncRules(bundle)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	return nil
@@ -213,7 +213,7 @@ func compileRemix(bundle *rules.RuleBundle, args []string) error {
 	rp := newRuleProcessor(args, bundle.PackageName)
 	err := rp.applyRules(bundle)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// Strip -complete flag as we may insert some hook points that are not ready
 	// yet, i.e. they dont have function body
@@ -226,7 +226,7 @@ func compileRemix(bundle *rules.RuleBundle, args []string) error {
 	// Good, run final compilation after instrumentation
 	err = util.RunCmd(rp.compileArgs...)
 	if err != nil {
-		return ex.Errorf(err, "failed to compile %v", rp.compileArgs)
+		return err
 	}
 	return nil
 }
@@ -241,7 +241,7 @@ func Instrument() error {
 		}
 		bundles, err := rules.LoadRuleBundles()
 		if err != nil {
-			return ex.Errorf(err, "failed to load rule bundles %v", args)
+			return err
 		}
 		for _, bundle := range bundles {
 			util.Assert(bundle.IsValid(), "sanity check")
@@ -250,7 +250,7 @@ func Instrument() error {
 				util.Log("Apply bundle %v", bundle)
 				err = compileRemix(bundle, args)
 				if err != nil {
-					return ex.Errorf(err, "failed to apply %s", bundle.String())
+					return err
 				}
 				return nil
 			}
