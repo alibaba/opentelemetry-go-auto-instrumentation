@@ -1,0 +1,9 @@
+[
+  {
+    "Version": "[v1.3.0,v1.7.1)",
+    "ImportPath": "github.com/gocql/gocql",
+    "Function": "NewSession",
+    "OnEnter": "beforeNewSession",
+    "Path": "github.com/alibaba/loongsuite-go-agent/pkg/rules/gocql"
+  }
+]
