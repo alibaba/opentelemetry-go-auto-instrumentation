@@ -89,7 +89,7 @@ type writerWrapper struct {
 func (w *writerWrapper) WriteHeader(statusCode int) {
 	// cache the status code
 	if w.statusCode == statusCode {
-		return // 防止多次写入 Header
+		return // Prevent multiple header writes
 	}
 	w.statusCode = statusCode
 
