@@ -242,7 +242,7 @@ func (rp *RuleProcessor) callOnEnterHook(t *rules.InstFuncRule, traits []ParamTr
 	// target function
 	if rp.exact {
 		util.Assert(len(traits) == (len(rp.onEnterHookFunc.Type.Params.List)+1),
-			"do you miss api.CallContext parameter?")
+			"hook func signature can not match with target function")
 	}
 	// Hook: 	   func onEnterFoo(callContext* CallContext, p*[]int)
 	// Trampoline: func OtelOnEnterTrampoline_foo(p *[]int)
@@ -275,7 +275,7 @@ func (rp *RuleProcessor) callOnExitHook(t *rules.InstFuncRule, traits []ParamTra
 	// target function
 	if rp.exact {
 		util.Assert(len(traits) == len(rp.onExitHookFunc.Type.Params.List),
-			"do you miss api.CallContext parameter?")
+			"hook func signature can not match with target function")
 	}
 	// Hook: 	   func onExitFoo(ctx* CallContext, p*[]int)
 	// Trampoline: func OtelOnExitTrampoline_foo(ctx* CallContext, p *[]int)
@@ -313,7 +313,7 @@ func (rp *RuleProcessor) callOnExitHook(t *rules.InstFuncRule, traits []ParamTra
 
 func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	if len(paramList.List) != len(traits) {
-		return ex.Errorf(nil, "do you miss api.CallContext parameter?")
+		return ex.Errorf(nil, "hook func signature can not match with target function")
 	}
 	for i, field := range paramList.List {
 		trait := traits[i]
