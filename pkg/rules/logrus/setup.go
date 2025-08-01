@@ -91,7 +91,7 @@ func (hook *logHook) Fire(entry *logrus.Entry) error {
 	if !logrusEnabler.Enable() {
 		return nil
 	}
-	// 修改日志内容
+	// Modify log content
 	traceId, spanId := trace.GetTraceAndSpanId()
 	if traceId != "" {
 		entry.Data["trace_id"] = traceId
