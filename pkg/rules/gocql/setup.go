@@ -36,7 +36,7 @@ var gocqlEnabler = gocqlInnerEnabler{
 
 var gocqlInstrumenter = BuildGocqlInstrumenter()
 
-//go:linkname beforeNewSession github.com/apache/cassandra-gocql-driver/v2/gosql.beforeNewSession
+//go:linkname beforeNewSession github.com/gocql/gosql.beforeNewSession
 func beforeNewSession(_ api.CallContext, clusterCfg gocql.ClusterConfig) {
 	if !gocqlEnabler.Enable() {
 		return
