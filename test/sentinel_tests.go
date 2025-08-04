@@ -27,6 +27,6 @@ func init() {
 
 func TestSentinelBasic(t *testing.T, env ...string) {
 	UseApp("sentinel")
-	RunGoBuild(t, "go", "build", "test_sentinel_basic.go", "base.go")
+	RunGoBuild(t, "go", "build", "test_sentinel_basic.go")
 	RunApp(t, "test_sentinel_basic", env...)
 }

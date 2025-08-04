@@ -15,19 +15,48 @@
 package main
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/alibaba/loongsuite-go-agent/test/verifier"
+	"github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/flow"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 func main() {
-	go SetUpResource()
-	time.Sleep(3 * time.Second)
-	c := &http.Client{}
-	c.Get("http://localhost:8080/test")
+	api.InitDefault()
+	flow.LoadRules([]*flow.Rule{
+		{
+			Resource:               "test",
+			Threshold:              20,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+		},
+		{
+			Resource:               "test1",
+			Threshold:              0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+		},
+	})
+	e, _ := api.Entry(
+		"test",
+		api.WithResourceType(base.ResTypeWeb),
+		api.WithTrafficType(base.Inbound),
+	)
+	if e != nil {
+		e.Exit()
+	}
+	e, _ = api.Entry(
+		"test1",
+		api.WithResourceType(base.ResTypeWeb),
+		api.WithTrafficType(base.Inbound),
+	)
+	if e != nil {
+		e.Exit()
+	}
+
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifySentinelAttributes(stubs[0][0], "test", "Internal", false)
-	}, 1)
+		verifier.VerifySentinelAttributes(stubs[1][0], "test1", "Internal", false)
+	}, 2)
 }
