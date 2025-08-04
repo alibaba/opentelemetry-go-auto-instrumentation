@@ -32,7 +32,7 @@ func main() {
 			ControlBehavior:        flow.Reject,
 		},
 		{
-			Resource:               "test1",
+			Resource:               "test_block",
 			Threshold:              0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
