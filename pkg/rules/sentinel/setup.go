@@ -33,6 +33,10 @@ type OnEndHook struct {
 	instrumenter *sentinelInstrumenter
 }
 
+var Hook = &OnEndHook{
+	instrumenter: NewSentinelInstrumenter(),
+}
+
 func (h *OnEndHook) Order() uint32 {
 	// execute at the end of slot chain
 	return 10000
@@ -120,9 +124,7 @@ func onExitInitSentinel(call api.CallContext, err error) {
 		return
 	}
 	// add hook to slot chain
-	sentinel.GlobalSlotChain().AddStatSlot(&OnEndHook{
-		instrumenter: NewSentinelInstrumenter(),
-	})
+	sentinel.GlobalSlotChain().AddStatSlot(Hook)
 
 	// register metric callback
 	_, er := experimental.SentinelMeter.RegisterCallback(func(ctx context.Context, observer metric.Observer) error {
