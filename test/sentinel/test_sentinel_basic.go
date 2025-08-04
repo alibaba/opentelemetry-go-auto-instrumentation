@@ -28,6 +28,6 @@ func main() {
 	c := &http.Client{}
 	c.Get("http://localhost:8080/test")
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifySentinelAttributes(stubs[0], "test", "Internal", false), 
+		verifier.VerifySentinelAttributes(stubs[0][0], "test", "Internal", false)
 	}, 1)
 }
