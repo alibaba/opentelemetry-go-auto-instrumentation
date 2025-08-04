@@ -44,7 +44,7 @@ see the following output:
 
 The TraceId and SpanId are automatically injected into the log.
 
-## Maunal Injection
+## Manual Injection
 
 If the framework is not supported by `loongsuite-go-agent`. We can manually inject TraceId and SpanId into the log:
 ```go

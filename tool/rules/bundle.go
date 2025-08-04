@@ -108,7 +108,7 @@ func StoreRuleBundles(bundles []*RuleBundle) error {
 	}
 	_, err = util.WriteFile(ruleFile, string(bs))
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func LoadRuleBundles() ([]*RuleBundle, error) {
 	ruleFile := util.GetPreprocessLogPath(MatchedRulesJsonFile)
 	data, err := util.ReadFile(ruleFile)
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	var bundles []*RuleBundle
 	err = json.Unmarshal([]byte(data), &bundles)
