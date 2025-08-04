@@ -24,8 +24,6 @@ import (
 
 	_ "dubbo.apache.org/dubbo-go/v3/filter/graceful_shutdown"
 	_ "github.com/alibaba/sentinel-golang/api"
-	_ "github.com/alibaba/sentinel-golang/core/base"
-	_ "github.com/alibaba/sentinel-golang/core/flow"
 	_ "github.com/cloudwego/eino-ext/components/model/ark"
 	_ "github.com/cloudwego/eino-ext/components/model/claude"
 	_ "github.com/cloudwego/eino-ext/components/model/ollama"
