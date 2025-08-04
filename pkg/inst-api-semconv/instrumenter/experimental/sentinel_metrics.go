@@ -24,7 +24,7 @@ import (
 type sentinelEnabler struct{}
 
 func (n sentinelEnabler) Enable() bool {
-	return os.Getenv("OTEL_INSTRUMENTATION_SENTINEL_EXPERIMENTAL_ENABLE") != "false"
+	return os.Getenv("OTEL_INSTRUMENTATION_SENTINEL_EXPERIMENTAL_ENABLE") == "true"
 }
 
 var SentinelEnabler sentinelEnabler
