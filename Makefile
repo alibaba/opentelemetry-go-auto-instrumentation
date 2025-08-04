@@ -14,9 +14,7 @@
 
 #-------------------------------------------------------------------------------
 # General build options
-mk_path  := $(abspath $(lastword $(MAKEFILE_LIST))) # Get the absolute path of the current Makefile
-mk_dir   := $(dir $(mk_path)) # Extract the directory path from the Makefile path
-tool_bin := $(mk_dir)bin # Define the path to the 'bin' directory located in the same directory as the Makefile
+tool_bin := $(abspath ./bin)
 
 MAIN_VERSION := $(shell git describe --tags --abbrev=0 | sed 's/^v//')
 
@@ -150,9 +148,9 @@ package-pkg:
 LINTER := $(tool_bin)/golangci-lint
 lint:
 	@if [ ! -x "$(LINTER)" ]; then \
-		echo "golangci-lint not found, installing..."; \
+  		echo "golangci-lint not found, installing to $(tool_bin)..."; \
 		mkdir -p $(tool_bin); \
 		GOBIN=$(tool_bin) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8; \
     fi
 	@echo "Running golangci-lint..."
-	$(LINTER) run ./... --timeout=10m
+	$(LINTER) run -v --config .golangci.yml ./...
