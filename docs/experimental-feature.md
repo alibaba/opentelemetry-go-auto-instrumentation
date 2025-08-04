@@ -22,5 +22,5 @@
 
 | Environment Variable                                | Type    | Default | Description                                                  |
 | --------------------------------------------------- | ------- | ------- | ------------------------------------------------------------ |
-| `OTEL_INSTRUMENTATION_SENTINEL_EXPERIMENTAL_ENABLE` | Boolean | `true`  | Enable the capture of experimental sentinel span and metrics attributes. |
+| `OTEL_INSTRUMENTATION_SENTINEL_EXPERIMENTAL_ENABLE` | Boolean | `false`  | Enable the capture of experimental sentinel span and metrics attributes. |
 
