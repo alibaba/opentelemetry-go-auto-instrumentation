@@ -36,7 +36,7 @@ func TestAIClientMetric(t *testing.T) {
 	)
 	mp := metric.NewMeterProvider(metric.WithReader(reader), metric.WithResource(res))
 	m := mp.Meter("test-meter")
-	client, err := newAIClientMatric("test", m)
+	client, err := newAIClientMetric("test", m)
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +111,7 @@ func TestLazyAIClientMetric(t *testing.T) {
 }
 
 func TestAINilMeter(t *testing.T) {
-	_, err := newAIClientMatric("test", nil)
+	_, err := newAIClientMetric("test", nil)
 	if err == nil {
 		panic("expected error on nil meter")
 	}
