@@ -22,7 +22,6 @@ import (
 	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/instrumenter"
 	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/utils"
 	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/version"
-
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"

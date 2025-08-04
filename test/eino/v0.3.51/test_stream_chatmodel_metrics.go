@@ -19,7 +19,6 @@ import (
 	"strconv"
 
 	"github.com/alibaba/loongsuite-go-agent/test/verifier"
-
 	"github.com/cloudwego/eino/schema"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
