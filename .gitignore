@@ -11,6 +11,7 @@ otel
 otel-*
 *.log
 .otel-build
+bin
 
 test/errors-test/errors-test
 test/errorstest/errorstest

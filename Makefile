@@ -14,6 +14,10 @@
 
 #-------------------------------------------------------------------------------
 # General build options
+mk_path  := $(abspath $(lastword $(MAKEFILE_LIST))) # Get the absolute path of the current Makefile
+mk_dir   := $(dir $(mk_path)) # Extract the directory path from the Makefile path
+tool_bin := $(mk_dir)bin # Define the path to the 'bin' directory located in the same directory as the Makefile
+
 MAIN_VERSION := $(shell git describe --tags --abbrev=0 | sed 's/^v//')
 
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -139,3 +143,16 @@ package-pkg:
 	@tar -czf $(PKG_GZIP) --exclude='*.log' --exclude='*.string' --exclude='*.pprof' --exclude='*.gz' $(PKG_TMP)
 	@mv alibaba-pkg.gz tool/data/
 	@rm -rf $(PKG_TMP)
+
+#-------------------------------------------------------------------------------
+# Code Quality: Linting with golangci-lint
+.PHONY: lint
+LINTER := $(tool_bin)/golangci-lint
+lint:
+	@if [ ! -x "$(LINTER)" ]; then \
+		echo "golangci-lint not found, installing..."; \
+		mkdir -p $(tool_bin); \
+		GOBIN=$(tool_bin) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8; \
+    fi
+	@echo "Running golangci-lint..."
+	$(LINTER) run ./... --timeout=10m
