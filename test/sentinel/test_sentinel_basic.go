@@ -56,7 +56,7 @@ func main() {
 	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifySentinelAttributes(stubs[0][0], "test", "Inbound", false)
-		verifier.VerifySentinelAttributes(stubs[1][0], "test_block", "Inbound", true)
+		verifier.VerifySentinelAttributes(stubs[0][0], "test", "Inbound", "", false)
+		verifier.VerifySentinelAttributes(stubs[1][0], "test_block", "Inbound", "BlockTypeFlowControl", true)
 	}, 2)
 }
