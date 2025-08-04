@@ -47,7 +47,7 @@ func main() {
 		e.Exit()
 	}
 	e, _ = api.Entry(
-		"test1",
+		"test_block",
 		api.WithResourceType(base.ResTypeWeb),
 		api.WithTrafficType(base.Inbound),
 	)
@@ -57,6 +57,6 @@ func main() {
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		verifier.VerifySentinelAttributes(stubs[0][0], "test", "Inbound", false)
-		verifier.VerifySentinelAttributes(stubs[1][0], "test1", "Inbound", false)
+		verifier.VerifySentinelAttributes(stubs[1][0], "test_block", "Inbound", true)
 	}, 2)
 }
