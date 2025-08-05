@@ -14,8 +14,6 @@
 
 #-------------------------------------------------------------------------------
 # General build options
-tool_bin := $(abspath ./bin)
-
 MAIN_VERSION := $(shell git describe --tags --abbrev=0 | sed 's/^v//')
 
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -143,14 +141,20 @@ package-pkg:
 	@rm -rf $(PKG_TMP)
 
 #-------------------------------------------------------------------------------
-# Code Quality: Linting with golangci-lint
+# Linting with golangci-lint
 .PHONY: lint
-LINTER := $(tool_bin)/golangci-lint
 lint:
-	@if [ ! -x "$(LINTER)" ]; then \
-  		echo "golangci-lint not found, installing to $(tool_bin)..."; \
-		mkdir -p $(tool_bin); \
-		GOBIN=$(tool_bin) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8; \
-    fi
-	@echo "Running golangci-lint..."
-	$(LINTER) run -v --config .golangci.yml ./...
+	@LINTER=""; \
+	if [ -n "$$GOBIN" ]; then \
+		LINTER="$$GOBIN/golangci-lint"; \
+	elif [ -n "$$GOPATH" ]; then \
+		LINTER="$$GOPATH/bin/golangci-lint"; \
+	else \
+		LINTER="$$HOME/go/bin/golangci-lint"; \
+	fi; \
+	if [ ! -x "$$LINTER" ]; then \
+  		echo "golangci-lint not found, installing to $$LINTER..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8; \
+    fi; \
+	echo "Running golangci-lint..."; \
+	$$LINTER run -v --config .golangci.yml ./...
