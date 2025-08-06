@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package preprocess
 
 import "testing"
 
@@ -156,7 +156,7 @@ func TestMatchVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MatchVersion(tt.args.version, tt.args.ruleVersion)
+			got, err := matchVersion(tt.args.version, tt.args.ruleVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MatchVersion() error = %v, wantErr %v", err, tt.wantErr)
 				return

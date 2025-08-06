@@ -242,7 +242,10 @@ func Configure() error {
 		"Use custom.json rules. Multiple rules are separated by comma.")
 	flag.StringVar(&bc.DisableRules, "disable", bc.DisableRules,
 		"Disable specific rules. Use 'all' to disable all default rules, or comma-separated list of rule file names to disable specific rules")
-	flag.CommandLine.Parse(os.Args[2:])
+	err = flag.CommandLine.Parse(os.Args[2:])
+	if err != nil {
+		return ex.Error(err)
+	}
 
 	util.Log("Configured in %s", getConfPath(BuildConfFile))
 
