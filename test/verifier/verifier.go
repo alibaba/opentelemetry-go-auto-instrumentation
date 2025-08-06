@@ -187,3 +187,10 @@ func VerifyMQConsumeAttributes(span tracetest.SpanStub, exchange, routing, queue
 	Assert(actualSystem == system, "Except messaging.system to be %s, got %s", system, actualSystem)
 	Assert(span.SpanKind == trace.SpanKindConsumer, "Expect to be consumer span, got %d", span.SpanKind)
 }
+
+func VerifySentinelAttributes(span tracetest.SpanStub, resourceName, EntryType, BlockType string, IsBlocked bool) {
+	Assert(GetAttribute(span.Attributes, "sentinel.resource.name").AsString() == resourceName, "Except resourceName to be %s, got %s", resourceName, GetAttribute(span.Attributes, "sentinel.resource.name").AsString())
+	Assert(GetAttribute(span.Attributes, "sentinel.entry.type").AsString() == EntryType, "Except EntryType to be %s, got %s", EntryType, GetAttribute(span.Attributes, "sentinel.entry.type").AsString())
+	Assert(GetAttribute(span.Attributes, "sentinel.block.type").AsString() == BlockType, "Except BlockType to be %s, got %s", BlockType, GetAttribute(span.Attributes, "sentinel.block.type").AsString())
+	Assert(GetAttribute(span.Attributes, "sentinel.is_blocked").AsBool() == IsBlocked, "Except IsBlocked to be %t, got %t", IsBlocked, GetAttribute(span.Attributes, "sentinel.is_blocked").AsBool())
+}

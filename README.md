@@ -70,7 +70,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 
 # Supported Libraries
 | Library       | Repository Url                                 | Min           Version | Max           Version |
-|---------------|------------------------------------------------|-----------------------|-----------------------|
+| ------------- | ---------------------------------------------- | --------------------- | --------------------- |
 | database/sql  | https://pkg.go.dev/database/sql                | -                     | -                     |
 | dubbo-go      | https://github.com/apache/dubbo-go             | v3.3.0                | -                     |
 | echo          | https://github.com/labstack/echo               | v4.0.0                | v4.12.0               |
@@ -98,6 +98,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 | net/http      | https://pkg.go.dev/net/http                    | -                     | -                     |
 | ollama        | https://github.com/ollama/ollama               | v0.3.14               | -                     |
 | redigo        | https://github.com/gomodule/redigo             | v1.9.0                | v1.9.2                |
+| sentinel      | https://github.com/alibaba/sentinel-golang     | v1.0.4                | -                     |
 | slog          | https://pkg.go.dev/log/slog                    | -                     | -                     |
 | trpc-go       | https://github.com/trpc-group/trpc-go          | v1.0.0                | v1.0.3                |
 | zap           | https://github.com/uber-go/zap                 | v1.20.0               | v1.27.0               |

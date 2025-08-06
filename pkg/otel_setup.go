@@ -201,6 +201,8 @@ func initMetrics() error {
 	ai.InitAIMetrics(m)
 	// nacos experimental metrics
 	experimental.InitNacosExperimentalMetrics(m)
+	// sentinel experimental metrics
+	experimental.InitSentinelExperimentalMetrics(m)
 	// DefaultMinimumReadMemStatsInterval is 15 second
 	return otelruntime.Start(otelruntime.WithMeterProvider(metricsProvider))
 }
