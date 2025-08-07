@@ -16,10 +16,12 @@ package gocql
 
 import (
 	"context"
+	"fmt"
 	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 	"github.com/gocql/gocql"
 	"os"
 	"strings"
+	_ "unsafe"
 )
 
 type gocqlInnerEnabler struct {
@@ -36,14 +38,18 @@ var gocqlEnabler = gocqlInnerEnabler{
 
 var gocqlInstrumenter = BuildGocqlInstrumenter()
 
-//go:linkname beforeNewSession github.com/gocql/gosql.beforeNewSession
-func beforeNewSession(_ api.CallContext, clusterCfg gocql.ClusterConfig) {
+//go:linkname beforeCreateSession github.com/gocql/gocql.beforeCreateSession
+func beforeCreateSession(_ api.CallContext, clusterCfg *gocql.ClusterConfig) {
 	if !gocqlEnabler.Enable() {
+		return
+	}
+	if clusterCfg == nil {
 		return
 	}
 	otelObsvr := newOtelObserver(clusterCfg.QueryObserver, clusterCfg.BatchObserver)
 	clusterCfg.QueryObserver = otelObsvr
 	clusterCfg.BatchObserver = otelObsvr
+	fmt.Println(fmt.Sprintf("%+v", clusterCfg))
 	// try to fill user
 	if clusterCfg.Authenticator == nil {
 		return
@@ -73,11 +79,14 @@ func (o *otelObserver) ObserveQuery(ctx context.Context, query gocql.ObservedQue
 		Statement: query.Statement,
 		DbName:    query.Keyspace,
 		Addr:      query.Host.HostnameAndPort(),
-		Op:        "QUERY",
+		Op:        extractOpType(query.Statement),
 		User:      o.user,
 		BatchSize: 1,
 	}
 	gocqlInstrumenter.StartAndEnd(ctx, request, nil, query.Err, query.Start, query.End)
+	if o.queryObserver != nil {
+		o.queryObserver.ObserveQuery(ctx, query)
+	}
 }
 
 func (o *otelObserver) ObserveBatch(ctx context.Context, batch gocql.ObservedBatch) {
@@ -90,4 +99,7 @@ func (o *otelObserver) ObserveBatch(ctx context.Context, batch gocql.ObservedBat
 		BatchSize: len(batch.Statements),
 	}
 	gocqlInstrumenter.StartAndEnd(ctx, request, nil, batch.Err, batch.Start, batch.End)
+	if o.batchObserver != nil {
+		o.batchObserver.ObserveBatch(ctx, batch)
+	}
 }

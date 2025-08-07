@@ -25,7 +25,7 @@ import (
 type gogpAttrsGetter struct{}
 
 func (g gogpAttrsGetter) GetSystem(_ gocqlRequest) string {
-	return "postgresql"
+	return "cassandra"
 }
 
 func (g gogpAttrsGetter) GetServerAddress(gocqlRequest gocqlRequest) string {
