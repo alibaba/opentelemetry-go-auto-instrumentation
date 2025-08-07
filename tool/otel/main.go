@@ -123,7 +123,7 @@ func main() {
 	subcmd := os.Args[1]
 	switch subcmd {
 	case SubcommandVersion:
-		err = config.PrintVersion()
+		config.PrintVersion()
 	case SubcommandSet:
 		err = config.Configure()
 	case SubcommandGo:

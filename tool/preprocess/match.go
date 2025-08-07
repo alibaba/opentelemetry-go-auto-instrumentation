@@ -52,9 +52,9 @@ func newRuleMatcher() *ruleMatcher {
 
 type ruleHolder struct {
 	rules.InstBaseRule
-	rules.InstFileRule
-	rules.InstStructRule
-	rules.InstFuncRule
+	rules.InstFileRule   //nolint:govet
+	rules.InstStructRule //nolint:govet
+	rules.InstFuncRule   //nolint:govet
 }
 
 func loadRuleFile(path string) ([]rules.InstRule, error) {
@@ -484,6 +484,7 @@ func cutPrefix(s, prefix string) (after string, found bool) {
 	return s[len(prefix):], true
 }
 
+//nolint:staticcheck // verbatim copy from go source
 func parseVendorModules(projDir string) ([]*vendorModule, error) {
 	vendorFile := filepath.Join(projDir, "vendor", "modules.txt")
 	if util.PathNotExists(vendorFile) {
@@ -532,7 +533,6 @@ func parseVendorModules(projDir string) ([]*vendorModule, error) {
 				mod = &vendorModule{}
 				continue
 			}
-
 			if len(f) >= 2 && f[0] == "=>" {
 				// Skip replacement lines
 			}

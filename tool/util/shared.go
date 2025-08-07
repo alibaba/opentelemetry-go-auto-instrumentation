@@ -102,7 +102,7 @@ func GetPreprocessLogPath(name string) string {
 
 func GetVarNameOfFunc(fn string) string {
 	const varDeclSuffix = "Impl"
-	fn = strings.Title(fn)
+	fn = strings.Title(fn) //nolint:staticcheck
 	return fn + varDeclSuffix
 }
 
