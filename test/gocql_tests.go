@@ -52,10 +52,13 @@ func initCassandraContainer() (testcontainers.Container, nat.Port) {
 		Image:        "cassandra:latest",
 		ExposedPorts: []string{"9042/tcp"},
 		Env: map[string]string{
-			"CQLSH_PORT":    "9042",
-			"JVM_OPTS":      "-Xms2G -Xmx2G",
-			"MAX_HEAP_SIZE": "2G",
-			"HEAP_NEWSIZE":  "800M",
+			"CQLSH_PORT":                  "9042",
+			"JVM_OPTS":                    "-Xms2G -Xmx2G",
+			"MAX_HEAP_SIZE":               "2G",
+			"HEAP_NEWSIZE":                "800M",
+			"CASSANDRA_LISTEN_ADDRESS":    "127.0.0.1",
+			"CASSANDRA_RPC_ADDRESS":       "127.0.0.1",
+			"CASSANDRA_BROADCAST_ADDRESS": "127.0.0.1",
 		},
 		WaitingFor: wait.ForLog("Starting listening for CQL clients")}
 	postgresC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
