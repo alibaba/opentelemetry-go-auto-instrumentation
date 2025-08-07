@@ -16,7 +16,6 @@ package gocql
 
 import (
 	"context"
-	"fmt"
 	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 	"github.com/gocql/gocql"
 	"os"
@@ -49,7 +48,6 @@ func beforeCreateSession(_ api.CallContext, clusterCfg *gocql.ClusterConfig) {
 	otelObsvr := newOtelObserver(clusterCfg.QueryObserver, clusterCfg.BatchObserver)
 	clusterCfg.QueryObserver = otelObsvr
 	clusterCfg.BatchObserver = otelObsvr
-	fmt.Println(fmt.Sprintf("%+v", clusterCfg))
 	// try to fill user
 	if clusterCfg.Authenticator == nil {
 		return

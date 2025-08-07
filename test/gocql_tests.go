@@ -48,13 +48,20 @@ func TestGocqlCrudV170(t *testing.T, env ...string) {
 }
 
 func initCassandraContainer() (testcontainers.Container, nat.Port) {
+	natPort, err := nat.NewPort("tcp", "9042")
+	if err != nil {
+		panic(err)
+	}
 	containerReqeust := testcontainers.ContainerRequest{
 		Image:        "cassandra:latest",
 		ExposedPorts: []string{"9042/tcp"},
 		Env: map[string]string{
-			"CQLSH_PORT": "9042",
+			"CQLSH_PORT":    "9042",
+			"JVM_OPTS":      "-Xms2G -Xmx2G",
+			"MAX_HEAP_SIZE": "2G",
+			"HEAP_NEWSIZE":  "800M",
 		},
-		WaitingFor: wait.ForLog("database system is ready to accept connections")}
+		WaitingFor: wait.ForListeningPort(natPort)}
 	postgresC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
 	if err != nil {
 		panic(err)
