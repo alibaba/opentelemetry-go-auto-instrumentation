@@ -57,7 +57,7 @@ func initCassandraContainer() (testcontainers.Container, nat.Port) {
 			"MAX_HEAP_SIZE": "2G",
 			"HEAP_NEWSIZE":  "800M",
 		},
-		WaitingFor: wait.ForLog("Starting listening for CQL clients on localhost/127.0.0.1:9042")}
+		WaitingFor: wait.ForLog("Starting listening for CQL clients")}
 	postgresC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
 	if err != nil {
 		panic(err)
