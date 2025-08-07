@@ -60,14 +60,14 @@ func initCassandraContainer() (testcontainers.Container, nat.Port) {
 			"CASSANDRA_RPC_ADDRESS":       "127.0.0.1",
 			"CASSANDRA_BROADCAST_ADDRESS": "127.0.0.1",
 		},
-		WaitingFor: wait.ForLog("Starting listening for CQL clients 127.0.0.1:9042")}
-	postgresC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
+		WaitingFor: wait.ForLog("Startup complete")}
+	cassandraC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
 	if err != nil {
 		panic(err)
 	}
-	port, err := postgresC.MappedPort(context.Background(), "9042")
+	port, err := cassandraC.MappedPort(context.Background(), "9042")
 	if err != nil {
 		panic(err)
 	}
-	return postgresC, port
+	return cassandraC, port
 }
