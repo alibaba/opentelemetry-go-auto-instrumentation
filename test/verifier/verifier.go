@@ -127,14 +127,6 @@ func VerifyGenAIOperationDurationMetricsAttributes(attrs []attribute.KeyValue, o
 	Assert(GetAttribute(attrs, string(semconv.GenAIResponseModelKey)).AsString() == responseModel, "Expected gen_ai.response.model to be %s, got %s", responseModel, GetAttribute(attrs, string(semconv.GenAIResponseModelKey)).AsString())
 }
 
-func VerifyGenAITokenUsageMetricsAttributes(attrs []attribute.KeyValue, operationName, system, requestModel, responseModel, tokenType string) {
-	Assert(GetAttribute(attrs, string(semconv.GenAIOperationNameKey)).AsString() == operationName, "Expected gen_ai.operation.name to be %s, got %s", operationName, GetAttribute(attrs, string(semconv.GenAIOperationNameKey)).AsString())
-	Assert(GetAttribute(attrs, string(semconv.GenAISystemKey)).AsString() == system, "Expected gen_ai.system to be %s, got %s", system, GetAttribute(attrs, string(semconv.GenAISystemKey)).AsString())
-	Assert(GetAttribute(attrs, string(semconv.GenAIRequestModelKey)).AsString() == requestModel, "Expected gen_ai.request.model to be %s, got %s", requestModel, GetAttribute(attrs, string(semconv.GenAIRequestModelKey)).AsString())
-	Assert(GetAttribute(attrs, string(semconv.GenAIResponseModelKey)).AsString() == responseModel, "Expected gen_ai.response.model to be %s, got %s", responseModel, GetAttribute(attrs, string(semconv.GenAIResponseModelKey)).AsString())
-	Assert(GetAttribute(attrs, string(semconv.GenAITokenTypeKey)).AsString() == tokenType, "Expected gen_ai.token.type to be %s, got %s", tokenType, GetAttribute(attrs, string(semconv.GenAITokenTypeKey)).AsString())
-}
-
 func VerifyRpcClientMetricsAttributes(attrs []attribute.KeyValue, method, service, system, serverAddr string) {
 	Assert(GetAttribute(attrs, "rpc.method").AsString() == method, "Except rpc.method to be %s, got %s", method, GetAttribute(attrs, "rpc.method").AsString())
 	Assert(GetAttribute(attrs, "rpc.service").AsString() == service, "Except rpc.service to be %s, got %s", service, GetAttribute(attrs, "rpc.service").AsString())
@@ -194,4 +186,11 @@ func VerifyMQConsumeAttributes(span tracetest.SpanStub, exchange, routing, queue
 	actualSystem := GetAttribute(span.Attributes, "messaging.system").AsString()
 	Assert(actualSystem == system, "Except messaging.system to be %s, got %s", system, actualSystem)
 	Assert(span.SpanKind == trace.SpanKindConsumer, "Expect to be consumer span, got %d", span.SpanKind)
+}
+
+func VerifySentinelAttributes(span tracetest.SpanStub, resourceName, EntryType, BlockType string, IsBlocked bool) {
+	Assert(GetAttribute(span.Attributes, "sentinel.resource.name").AsString() == resourceName, "Except resourceName to be %s, got %s", resourceName, GetAttribute(span.Attributes, "sentinel.resource.name").AsString())
+	Assert(GetAttribute(span.Attributes, "sentinel.entry.type").AsString() == EntryType, "Except EntryType to be %s, got %s", EntryType, GetAttribute(span.Attributes, "sentinel.entry.type").AsString())
+	Assert(GetAttribute(span.Attributes, "sentinel.block.type").AsString() == BlockType, "Except BlockType to be %s, got %s", BlockType, GetAttribute(span.Attributes, "sentinel.block.type").AsString())
+	Assert(GetAttribute(span.Attributes, "sentinel.is_blocked").AsBool() == IsBlocked, "Except IsBlocked to be %t, got %t", IsBlocked, GetAttribute(span.Attributes, "sentinel.is_blocked").AsBool())
 }

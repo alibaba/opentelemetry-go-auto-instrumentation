@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http:#www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -139,3 +139,22 @@ package-pkg:
 	@tar -czf $(PKG_GZIP) --exclude='*.log' --exclude='*.string' --exclude='*.pprof' --exclude='*.gz' $(PKG_TMP)
 	@mv alibaba-pkg.gz tool/data/
 	@rm -rf $(PKG_TMP)
+
+#-------------------------------------------------------------------------------
+# Linting with golangci-lint
+.PHONY: lint
+lint:
+	@LINTER=""; \
+	if [ -n "$$GOBIN" ]; then \
+		LINTER="$$GOBIN/golangci-lint"; \
+	elif [ -n "$$GOPATH" ]; then \
+		LINTER="$$GOPATH/bin/golangci-lint"; \
+	else \
+		LINTER="$$HOME/go/bin/golangci-lint"; \
+	fi; \
+	if [ ! -x "$$LINTER" ]; then \
+  		echo "golangci-lint not found, installing to $$LINTER..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8; \
+	fi; \
+	echo "Running golangci-lint..."; \
+	$$LINTER run -v --config .golangci.yml ./...

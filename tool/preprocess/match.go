@@ -143,7 +143,7 @@ func loadDefaultRules() []rules.InstRule {
 			raw, err := data.ReadRuleFile(name)
 			if err != nil {
 				util.Log("Failed to read rule file %s: %v", name, err)
-				return ex.Error(err)
+				return err
 			}
 
 			// Parse JSON content into InstRule slice
@@ -579,7 +579,7 @@ func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
 	defer util.PhaseTimer("Match")()
 	compileCmds, err := dp.findDeps()
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 
 	matcher := newRuleMatcher()
@@ -589,7 +589,7 @@ func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
 	if dp.vendorMode {
 		modules, err := parseVendorModules(dp.getGoModDir())
 		if err != nil {
-			return nil, ex.Error(err)
+			return nil, err
 		}
 		if config.GetConf().Verbose {
 			util.Log("Vendor modules: %v", modules)

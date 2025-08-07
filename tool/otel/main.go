@@ -96,14 +96,14 @@ func initEnv() error {
 	// Create temp build directory
 	err := initTempDir()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	// Prepare shared configuration
 	if util.InPreprocess() || util.InInstrument() {
 		err = config.InitConfig()
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 	return nil

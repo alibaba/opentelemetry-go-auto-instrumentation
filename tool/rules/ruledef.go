@@ -167,13 +167,13 @@ func verifyRuleBaseWithoutPath(rule *InstBaseRule) error {
 func (rule *InstFileRule) Verify() error {
 	err := verifyRuleBase(&rule.InstBaseRule)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if rule.FileName == "" {
 		return ex.Errorf(nil, "empty file name")
 	}
 	if !util.IsGoFile(rule.FileName) {
-		return ex.Errorf(nil, "not a go file")
+		return err
 	}
 	return nil
 }
@@ -186,7 +186,7 @@ func (rule *InstFuncRule) Verify() error {
 		err = verifyRuleBase(&rule.InstBaseRule)
 	}
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if rule.Function == "" {
 		return ex.Errorf(nil, "empty function name")
@@ -200,7 +200,7 @@ func (rule *InstFuncRule) Verify() error {
 func (rule *InstStructRule) Verify() error {
 	err := verifyRuleBaseWithoutPath(&rule.InstBaseRule)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if rule.StructType == "" {
 		return ex.Errorf(nil, "empty struct type")
