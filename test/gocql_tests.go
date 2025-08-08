@@ -16,9 +16,11 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"io"
 	"testing"
 )
 
@@ -49,7 +51,7 @@ func TestGocqlCrudV170(t *testing.T, env ...string) {
 
 func initCassandraContainer() (testcontainers.Container, nat.Port) {
 	containerReqeust := testcontainers.ContainerRequest{
-		Image:        "cassandra:latest",
+		Image:        "cassandra:4.1",
 		ExposedPorts: []string{"9042/tcp"},
 		Env: map[string]string{
 			"JVM_OPTS":                    "-Xms2G -Xmx2G",
@@ -63,6 +65,11 @@ func initCassandraContainer() (testcontainers.Container, nat.Port) {
 	cassandraC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
 	if err != nil {
 		panic(err)
+	}
+	logs, err := cassandraC.Logs(context.Background())
+	if err == nil {
+		logContent, _ := io.ReadAll(logs)
+		fmt.Println(string(logContent))
 	}
 	port, err := cassandraC.MappedPort(context.Background(), "9042")
 	if err != nil {
