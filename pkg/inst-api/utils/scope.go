@@ -48,3 +48,4 @@ const KAFKAGO_PRODUCER_SCOPE_NAME = "pkg/rules/segmentio-kafka-go/kafka_producer
 const KAFKAGO_CONSUMER_SCOPE_NAME = "pkg/rules/segmentio-kafka-go/kafka_consumer_setup.go"
 const GOPG_SCOPE_NAME = "pkg/rules/gopg/setup.go"
 const SENTINEL_SCOPE_NAME = "pkg/rules/sentinel/setup.go"
+const GOCQL_SCOPE_NAME = "pkg/rules/gocql/setup.go"

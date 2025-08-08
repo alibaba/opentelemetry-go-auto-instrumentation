@@ -70,7 +70,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 
 # Supported Libraries
 | Library       | Repository Url                                 | Min           Version | Max           Version |
-| ------------- | ---------------------------------------------- | --------------------- | --------------------- |
+|---------------|------------------------------------------------|-----------------------|-----------------------|
 | database/sql  | https://pkg.go.dev/database/sql                | -                     | -                     |
 | dubbo-go      | https://github.com/apache/dubbo-go             | v3.3.0                | -                     |
 | echo          | https://github.com/labstack/echo               | v4.0.0                | v4.12.0               |
@@ -105,6 +105,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 | zerolog       | https://github.com/rs/zerolog                  | v1.10.0               | v1.33.0               |
 | go-kit/log    | https://github.com/go-kit/log                  | v0.1.0                | v0.2.1                |
 | pg            | https://github.com/go-pg/pg                    | v1.10.0               | v1.14.0               |
+| gocql         | https://github.com/gocql/gocql                 | v1.3.0                | v1.7.0                |
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are [**very welcome** 💖!](https://github.com/alibaba/loongsuite-go-agent/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22contribution%20welcome%22)
 
