@@ -56,7 +56,33 @@ func main() {
 	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifySentinelAttributes(stubs[0][0], "test", "Inbound", "", false)
-		verifier.VerifySentinelAttributes(stubs[1][0], "test_block", "Inbound", "BlockTypeFlowControl", true)
+		// Find spans by resource name instead of assuming order
+		var testSpan, testBlockSpan tracetest.SpanStub
+		var foundTest, foundTestBlock bool
+		
+		// Iterate through all traces and spans
+		for _, trace := range stubs {
+			for _, span := range trace {
+				resourceName := verifier.GetAttribute(span.Attributes, "sentinel.resource.name").AsString()
+				if resourceName == "test" {
+					testSpan = span
+					foundTest = true
+				} else if resourceName == "test_block" {
+					testBlockSpan = span
+					foundTestBlock = true
+				}
+			}
+		}
+		
+		// Verify we found both spans
+		if !foundTest {
+			panic("Expected to find span with resource name 'test'")
+		}
+		if !foundTestBlock {
+			panic("Expected to find span with resource name 'test_block'")
+		}
+		
+		verifier.VerifySentinelAttributes(testSpan, "test", "Inbound", "", false)
+		verifier.VerifySentinelAttributes(testBlockSpan, "test_block", "Inbound", "BlockTypeFlowControl", true)
 	}, 2)
 }
