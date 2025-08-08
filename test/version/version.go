@@ -69,7 +69,7 @@ func NewVersion(v string) (*Version, error) {
 
 func NewGoVersion(v string) (*Version, error) {
 	goStart := 0
-	for i, _ := range v {
+	for i := range v {
 		if i+1 < len(v) && v[i] == 'g' && v[i+1] == 'o' {
 			goStart = i + 2
 			break
@@ -274,7 +274,7 @@ func comparePrereleases(v string, other string) int {
 		return 0
 	}
 
-	// split both pre releases for analyse their parts
+	// split both pre releases for analyze their parts
 	selfPreReleaseMeta := strings.Split(v, ".")
 	otherPreReleaseMeta := strings.Split(other, ".")
 
