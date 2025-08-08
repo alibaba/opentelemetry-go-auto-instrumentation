@@ -16,11 +16,9 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"io"
 	"testing"
 )
 
@@ -34,14 +32,7 @@ func init() {
 }
 
 func TestGocqlCrudV130(t *testing.T, env ...string) {
-	cassandraC, cassandraPort := initCassandraContainer()
-	defer func() {
-		logs, err := cassandraC.Logs(context.Background())
-		if err == nil {
-			logContent, _ := io.ReadAll(logs)
-			fmt.Println(string(logContent))
-		}
-	}()
+	_, cassandraPort := initCassandraContainer()
 	UseApp("gocql/v1.3.0")
 	RunGoBuild(t, "go", "build", "test_gocql_crud.go")
 	env = append(env, "CASSANDRA_PORT="+cassandraPort.Port())
@@ -49,14 +40,7 @@ func TestGocqlCrudV130(t *testing.T, env ...string) {
 }
 
 func TestGocqlCrudV170(t *testing.T, env ...string) {
-	cassandraC, cassandraPort := initCassandraContainer()
-	defer func() {
-		logs, err := cassandraC.Logs(context.Background())
-		if err == nil {
-			logContent, _ := io.ReadAll(logs)
-			fmt.Println(string(logContent))
-		}
-	}()
+	_, cassandraPort := initCassandraContainer()
 	UseApp("gocql/v1.7.0")
 	RunGoBuild(t, "go", "build", "test_gocql_crud.go")
 	env = append(env, "CASSANDRA_PORT="+cassandraPort.Port())

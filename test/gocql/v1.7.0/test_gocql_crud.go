@@ -74,7 +74,8 @@ func TestDropKeyspace() {
 }
 
 func main() {
-	clusterCfg := gocql.NewCluster("127.0.0.1:" + os.Getenv("CASSANDRA_PORT"))
+	host := "127.0.0.1:" + os.Getenv("CASSANDRA_PORT")
+	clusterCfg := gocql.NewCluster(host)
 	clusterCfg.Authenticator = gocql.PasswordAuthenticator{Username: "cassandra"}
 	s, err := clusterCfg.CreateSession()
 	if err != nil {
@@ -91,13 +92,13 @@ func main() {
 	TestDropTable()
 	TestDropKeyspace()
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
-		verifier.VerifyDbAttributes(stubs[0][0], "CREATE KEYSPACE", "cassandra", "127.0.0.1:9042", "CREATE KEYSPACE IF NOT EXISTS cassandra WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : '1' };", "CREATE KEYSPACE", "", nil)
-		verifier.VerifyDbAttributes(stubs[1][0], "CREATE TABLE", "cassandra", "127.0.0.1:9042", "CREATE TABLE IF NOT EXISTS cassandra.shopping_cart (userid text PRIMARY KEY,item_count int,last_update_timestamp timestamp);", "CREATE TABLE", "", nil)
-		verifier.VerifyDbAttributes(stubs[2][0], "INSERT", "cassandra", "127.0.0.1:9042", "INSERT INTO cassandra.shopping_cart\n(userid, item_count, last_update_timestamp)\nVALUES ('9876', 2, toTimeStamp(now()));", "INSERT", "", nil)
-		verifier.VerifyDbAttributes(stubs[3][0], "SELECT", "cassandra", "127.0.0.1:9042", "SELECT userid FROM cassandra.shopping_cart;", "SELECT", "", nil)
-		verifier.VerifyDbAttributes(stubs[4][0], "UPDATE", "cassandra", "127.0.0.1:9042", "update cassandra.shopping_cart \nSET item_count = 6, last_update_timestamp = toTimeStamp(now()) \nWHERE userid = '1234';", "UPDATE", "", nil)
-		verifier.VerifyDbAttributes(stubs[5][0], "DELETE", "cassandra", "127.0.0.1:9042", "delete FROM cassandra.shopping_cart \nWHERE userid = '1234';", "DELETE", "", nil)
-		verifier.VerifyDbAttributes(stubs[6][0], "DROP TABLE", "cassandra", "127.0.0.1:9042", "DROP table IF EXISTS cassandra.shopping_cart;", "DROP TABLE", "", nil)
-		verifier.VerifyDbAttributes(stubs[7][0], "DROP KEYSPACE", "cassandra", "127.0.0.1:9042", "DROP KEYSPACE IF EXISTS cassandra;", "DROP KEYSPACE", "", nil)
+		verifier.VerifyDbAttributes(stubs[0][0], "CREATE KEYSPACE", "cassandra", host, "CREATE KEYSPACE IF NOT EXISTS cassandra WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : '1' };", "CREATE KEYSPACE", "", nil)
+		verifier.VerifyDbAttributes(stubs[1][0], "CREATE TABLE", "cassandra", host, "CREATE TABLE IF NOT EXISTS cassandra.shopping_cart (userid text PRIMARY KEY,item_count int,last_update_timestamp timestamp);", "CREATE TABLE", "", nil)
+		verifier.VerifyDbAttributes(stubs[2][0], "INSERT", "cassandra", host, "INSERT INTO cassandra.shopping_cart\n(userid, item_count, last_update_timestamp)\nVALUES ('9876', 2, toTimeStamp(now()));", "INSERT", "", nil)
+		verifier.VerifyDbAttributes(stubs[3][0], "SELECT", "cassandra", host, "SELECT userid FROM cassandra.shopping_cart;", "SELECT", "", nil)
+		verifier.VerifyDbAttributes(stubs[4][0], "UPDATE", "cassandra", host, "update cassandra.shopping_cart \nSET item_count = 6, last_update_timestamp = toTimeStamp(now()) \nWHERE userid = '1234';", "UPDATE", "", nil)
+		verifier.VerifyDbAttributes(stubs[5][0], "DELETE", "cassandra", host, "delete FROM cassandra.shopping_cart \nWHERE userid = '1234';", "DELETE", "", nil)
+		verifier.VerifyDbAttributes(stubs[6][0], "DROP TABLE", "cassandra", host, "DROP table IF EXISTS cassandra.shopping_cart;", "DROP TABLE", "", nil)
+		verifier.VerifyDbAttributes(stubs[7][0], "DROP KEYSPACE", "cassandra", host, "DROP KEYSPACE IF EXISTS cassandra;", "DROP KEYSPACE", "", nil)
 	}, 1)
 }
