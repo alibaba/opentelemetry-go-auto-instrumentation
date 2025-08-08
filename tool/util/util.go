@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -232,7 +231,7 @@ func CopyDirExclude(src string, dst string, exclude []string) error {
 	}
 
 	// Read the contents of the source directory
-	entries, err := ioutil.ReadDir(src)
+	entries, err := os.ReadDir(src)
 	if err != nil {
 		return ex.Error(err)
 	}
