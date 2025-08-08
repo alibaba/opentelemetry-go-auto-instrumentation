@@ -19,6 +19,7 @@ import (
 	"github.com/gocql/gocql"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"log"
+	"os"
 )
 
 var session *gocql.Session
@@ -73,7 +74,7 @@ func TestDropKeyspace() {
 }
 
 func main() {
-	clusterCfg := gocql.NewCluster("127.0.0.1:9042")
+	clusterCfg := gocql.NewCluster("127.0.0.1:" + os.Getenv("CASSANDRA_PORT"))
 	clusterCfg.Authenticator = gocql.PasswordAuthenticator{Username: "cassandra"}
 	s, err := clusterCfg.CreateSession()
 	if err != nil {

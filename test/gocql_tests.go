@@ -52,7 +52,6 @@ func initCassandraContainer() (testcontainers.Container, nat.Port) {
 		Image:        "cassandra:latest",
 		ExposedPorts: []string{"9042/tcp"},
 		Env: map[string]string{
-			"CQLSH_PORT":                  "9042",
 			"JVM_OPTS":                    "-Xms2G -Xmx2G",
 			"MAX_HEAP_SIZE":               "2G",
 			"HEAP_NEWSIZE":                "800M",
