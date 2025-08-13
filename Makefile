@@ -154,7 +154,7 @@ lint:
 	fi; \
 	if [ ! -x "$$LINTER" ]; then \
   		echo "golangci-lint not found, installing to $$LINTER..."; \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.1.6; \
+		go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6; \
 	fi; \
 	echo "Running golangci-lint..."; \
 	$$LINTER run --config .golangci.yml ./tool/...
