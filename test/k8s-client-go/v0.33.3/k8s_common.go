@@ -27,6 +27,18 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	globalPodAddedCh   chan struct{}
+	globalPodUpdatedCh chan struct{}
+	globalPodDeletedCh chan struct{}
+)
+
+func InjectEventChannels(add, update, del chan struct{}) {
+	globalPodAddedCh = add
+	globalPodUpdatedCh = update
+	globalPodDeletedCh = del
+}
+
 func CreateK8sClient(stopCh chan struct{}) *kubernetes.Clientset {
 	kubeconfigYaml := []byte(os.Getenv("KUBECONFIG"))
 	restConfig, err := clientcmd.RESTConfigFromKubeConfig(kubeconfigYaml)
@@ -45,10 +57,18 @@ func CreateK8sClient(stopCh chan struct{}) *kubernetes.Clientset {
 		AddFunc: func(obj interface{}) {
 			pod := obj.(*corev1.Pod)
 			fmt.Printf("[Informer] Pod added: %s/%s\n", pod.Namespace, pod.Name)
+			if pod.Name == "otel-demo-pod" && globalPodAddedCh != nil {
+				close(globalPodAddedCh)
+				globalPodAddedCh = nil
+			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			newPod := newObj.(*corev1.Pod)
 			fmt.Printf("[Informer] Pod updated: %s/%s\n", newPod.Namespace, newPod.Name)
+			if newPod.Name == "otel-demo-pod" && globalPodUpdatedCh != nil {
+				close(globalPodUpdatedCh)
+				globalPodUpdatedCh = nil
+			}
 		},
 		DeleteFunc: func(obj interface{}) {
 			var pod *corev1.Pod
@@ -67,6 +87,10 @@ func CreateK8sClient(stopCh chan struct{}) *kubernetes.Clientset {
 				return
 			}
 			fmt.Printf("[Informer] Pod deleted: %s/%s\n", pod.Namespace, pod.Name)
+			if pod.Name == "otel-demo-pod" && globalPodDeletedCh != nil {
+				close(globalPodDeletedCh)
+				globalPodDeletedCh = nil
+			}
 		},
 	})
 

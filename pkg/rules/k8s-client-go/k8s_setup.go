@@ -20,8 +20,6 @@ import (
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go-agent/pkg/api"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -42,16 +40,16 @@ func ProcessDeltasOnEnter(call api.CallContext, handler cache.ResourceEventHandl
 		eventInfo := k8sEventInfo{}
 		eventInfo.startTime = time.Now()
 		eventInfo.eventType = string(d.Type)
-		if m, err := meta.Accessor(obj); err == nil {
+		if m, ok := metaAccessor(obj); ok {
 			eventInfo.name = m.GetName()
 			eventInfo.namespace = m.GetNamespace()
-			eventInfo.eventUID = string(m.GetUID())
+			eventInfo.eventUID = m.GetUID()
 			eventInfo.resourceVersion = m.GetResourceVersion()
 		}
-		if objWithGVK, ok := obj.(schema.ObjectKind); ok {
+		if objWithGVK, ok := objectKindAccessor(obj); ok {
 			gvk := objWithGVK.GroupVersionKind()
-			eventInfo.resourceVersion = gvk.Group + "/" + gvk.Kind
-			eventInfo.resourceVersion = gvk.Version
+			eventInfo.apiVersion = gvk.Group + "/" + gvk.Version
+			eventInfo.kind = gvk.Kind
 		}
 
 		ctx = k8sClientGoEventInstrumenter.Start(ctx, eventInfo)
