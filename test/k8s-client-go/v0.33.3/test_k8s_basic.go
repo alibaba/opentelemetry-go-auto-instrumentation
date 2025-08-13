@@ -1,21 +1,8 @@
-// Copyright (c) 2025 Alibaba Group Holding Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -31,6 +18,12 @@ func main() {
 
 	ctx := context.Background()
 	clientset := CreateK8sClient(stopCh)
+
+	podAddedCh := make(chan struct{})
+	podUpdatedCh := make(chan struct{})
+	podDeletedCh := make(chan struct{})
+
+	InjectEventChannels(podAddedCh, podUpdatedCh, podDeletedCh)
 
 	testPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -53,7 +46,19 @@ func main() {
 		log.Fatalf("failed to create pod: %v", err)
 	}
 
-	time.Sleep(10 * time.Second)
+	select {
+	case <-podAddedCh:
+		fmt.Println("Pod added event received")
+	case <-time.After(10 * time.Second):
+		log.Fatal("timeout waiting for pod Added event")
+	}
+
+	select {
+	case <-podUpdatedCh:
+		fmt.Println("Pod updated event received")
+	case <-time.After(10 * time.Second):
+		log.Fatal("timeout waiting for pod Updated event")
+	}
 
 	deletePolicy := metav1.DeletePropagationForeground
 	err = clientset.CoreV1().Pods("default").Delete(ctx, testPod.Name, metav1.DeleteOptions{
@@ -64,7 +69,12 @@ func main() {
 		log.Fatalf("failed to delete test pod: %v", err)
 	}
 
-	time.Sleep(10 * time.Second)
+	select {
+	case <-podDeletedCh:
+		fmt.Println("Pod deleted event received")
+	case <-time.After(10 * time.Second):
+		log.Fatal("timeout waiting for pod Deleted event")
+	}
 
 	verifier.WaitAndAssertTraces(func(stubs []tracetest.SpanStubs) {
 		if len(stubs) == 0 {
