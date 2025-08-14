@@ -48,7 +48,11 @@ func ProcessDeltasOnEnter(call api.CallContext, handler cache.ResourceEventHandl
 		}
 		if objWithGVK, ok := objectKindAccessor(obj); ok {
 			gvk := objWithGVK.GroupVersionKind()
-			eventInfo.apiVersion = gvk.Group + "/" + gvk.Version
+			if gvk.Group == "" {
+				eventInfo.apiVersion = gvk.Version
+			} else {
+				eventInfo.apiVersion = gvk.Group + "/" + gvk.Version
+			}
 			eventInfo.kind = gvk.Kind
 		}
 
