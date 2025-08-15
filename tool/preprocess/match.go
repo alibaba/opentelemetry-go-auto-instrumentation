@@ -35,19 +35,9 @@ import (
 )
 
 type ruleMatcher struct {
+	allPackages    []string
 	availableRules map[string][]rules.InstRule
 	moduleVersions []*vendorModule // vendor used only
-}
-
-func newRuleMatcher() *ruleMatcher {
-	rules := make(map[string][]rules.InstRule)
-	for _, rule := range findAvailableRules() {
-		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
-	}
-	if config.GetConf().Verbose {
-		util.Log("Available rules: %v", rules)
-	}
-	return &ruleMatcher{availableRules: rules}
 }
 
 type ruleHolder struct {
@@ -575,15 +565,30 @@ func runMatch(matcher *ruleMatcher, cmd string, ch chan *rules.RuleBundle) {
 	ch <- bundle
 }
 
-func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
-	defer util.PhaseTimer("Match")()
-	compileCmds, err := dp.findDeps()
-	if err != nil {
-		return nil, err
+func findAllPackages(compileCmds []string) []string {
+	packages := make([]string, 0)
+	for _, cmd := range compileCmds {
+		packages = append(packages, util.SplitCmds(cmd)...)
 	}
+	return packages
+}
 
-	matcher := newRuleMatcher()
+func listAllRules() map[string][]rules.InstRule {
+	rules := make(map[string][]rules.InstRule)
+	for _, rule := range findAvailableRules() {
+		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
+	}
+	if config.GetConf().Verbose {
+		util.Log("Available rules: %v", rules)
+	}
+	return rules
+}
 
+func (dp *DepProcessor) newRuleMatcher(compileCmds []string) (*ruleMatcher, error) {
+	matcher := &ruleMatcher{
+		availableRules: listAllRules(),
+		allPackages:    findAllPackages(compileCmds),
+	}
 	// If we are in vendor mode, we need to parse the vendor/modules.txt file
 	// to get the version of each module for future matching
 	if dp.vendorMode {
@@ -595,6 +600,19 @@ func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
 			util.Log("Vendor modules: %v", modules)
 		}
 		matcher.moduleVersions = modules
+	}
+	return matcher, nil
+}
+
+func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
+	defer util.PhaseTimer("Match")()
+	compileCmds, err := dp.findDeps()
+	if err != nil {
+		return nil, err
+	}
+	matcher, err := dp.newRuleMatcher(compileCmds)
+	if err != nil {
+		return nil, err
 	}
 
 	// Find used instrumentation rule according to compile commands
