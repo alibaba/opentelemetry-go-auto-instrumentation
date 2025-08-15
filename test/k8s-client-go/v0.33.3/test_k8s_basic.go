@@ -85,26 +85,31 @@ func main() {
 
 		for _, stub := range stubs {
 			for _, span := range stub {
-				if span.Name == "k8s.informer.event.process" {
-					var eventType, objectName string
-					for _, attr := range span.Attributes {
-						switch attr.Key {
-						case "k8s.event.type":
-							eventType = attr.Value.AsString()
-						case "k8s.object.name":
-							objectName = attr.Value.AsString()
-						}
-					}
+				if span.Name != "k8s.informer.Pod.process" {
+					continue
+				}
 
-					if objectName == "otel-demo-pod" {
-						switch eventType {
-						case "Added":
-							hasPodAdded = true
-						case "Updated":
-							hasPodUpdated = true
-						case "Deleted":
-							hasPodDelete = true
-						}
+				var podName, eventType string
+				for _, attr := range span.Attributes {
+					if attr.Key == "k8s.object.name" {
+						podName = attr.Value.AsString()
+					}
+					if attr.Key == "k8s.event.type" {
+						eventType = attr.Value.AsString()
+					}
+				}
+
+				if podName == "otel-demo-pod" {
+					switch eventType {
+					case "Added":
+						hasPodAdded = true
+						verifier.VerifyK8sPodEventAttributes(span, "Added", "otel-demo-pod", "Pod", "default", "/v1")
+					case "Updated":
+						hasPodUpdated = true
+						verifier.VerifyK8sPodEventAttributes(span, "Updated", "otel-demo-pod", "Pod", "default", "/v1")
+					case "Deleted":
+						hasPodDelete = true
+						verifier.VerifyK8sPodEventAttributes(span, "Deleted", "otel-demo-pod", "Pod", "default", "/v1")
 					}
 				}
 			}
@@ -121,5 +126,5 @@ func main() {
 		}
 
 		log.Println("All expected events found: Added, Updated, Deleted")
-	}, 5)
+	}, 11)
 }

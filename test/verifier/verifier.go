@@ -194,3 +194,12 @@ func VerifySentinelAttributes(span tracetest.SpanStub, resourceName, EntryType, 
 	Assert(GetAttribute(span.Attributes, "sentinel.block.type").AsString() == BlockType, "Except BlockType to be %s, got %s", BlockType, GetAttribute(span.Attributes, "sentinel.block.type").AsString())
 	Assert(GetAttribute(span.Attributes, "sentinel.is_blocked").AsBool() == IsBlocked, "Except IsBlocked to be %t, got %t", IsBlocked, GetAttribute(span.Attributes, "sentinel.is_blocked").AsBool())
 }
+
+func VerifyK8sPodEventAttributes(span tracetest.SpanStub, eventType, objectName, objectKind, objectNamespace string, objectApiVersion string) {
+	Assert(span.Name == "k8s.informer.Pod.process", "Expected span name to be 'k8s.informer.Pod.process', got %s", span.Name)
+	Assert(GetAttribute(span.Attributes, "k8s.event.type").AsString() == eventType, "Expected k8s.event.type to be %s, got %s", eventType, GetAttribute(span.Attributes, "k8s.event.type").AsString())
+	Assert(GetAttribute(span.Attributes, "k8s.object.name").AsString() == objectName, "Expected k8s.object.name to be %s, got %s", objectName, GetAttribute(span.Attributes, "k8s.object.name").AsString())
+	Assert(GetAttribute(span.Attributes, "k8s.object.kind").AsString() == objectKind, "Expected k8s.object.kind to be %s, got %s", objectKind, GetAttribute(span.Attributes, "k8s.object.kind").AsString())
+	Assert(GetAttribute(span.Attributes, "k8s.namespace.name").AsString() == objectNamespace, "Expected k8s.object.namespace to be %s, got %s", objectNamespace, GetAttribute(span.Attributes, "k8s.object.namespace").AsString())
+	Assert(GetAttribute(span.Attributes, "k8s.object.api_version").AsString() == objectApiVersion, "Expected k8s.object.api_version to be %s, got %s", objectApiVersion, GetAttribute(span.Attributes, "k8s.object.api_version").AsString())
+}
