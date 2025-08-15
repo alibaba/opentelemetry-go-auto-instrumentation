@@ -16,7 +16,6 @@ package k8s_client_go
 
 import (
 	"context"
-	"time"
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go-agent/pkg/api"
@@ -34,62 +33,14 @@ func ProcessDeltasOnEnter(call api.CallContext, handler cache.ResourceEventHandl
 	}
 	ctx := k8sClientGoEventsInstrumenter.Start(context.TODO(), eventsInfo)
 
-	for _, d := range deltas {
-		obj := d.Object
+	handler = NewK8sOtelEventHandler(ctx, handler)
+	call.SetParam(0, handler)
 
-		eventInfo := k8sEventInfo{}
-		eventInfo.startTime = time.Now()
-		eventInfo.eventType = string(d.Type)
-		if m, ok := metaAccessor(obj); ok {
-			eventInfo.name = m.GetName()
-			eventInfo.namespace = m.GetNamespace()
-			eventInfo.eventUID = m.GetUID()
-			eventInfo.resourceVersion = m.GetResourceVersion()
-		}
-		if objWithGVK, ok := objectKindAccessor(obj); ok {
-			gvk := objWithGVK.GroupVersionKind()
-			if gvk.Group == "" {
-				eventInfo.apiVersion = gvk.Version
-			} else {
-				eventInfo.apiVersion = gvk.Group + "/" + gvk.Version
-			}
-			eventInfo.kind = gvk.Kind
-		}
-
-		ctx = k8sClientGoEventInstrumenter.Start(ctx, eventInfo)
-
-		switch d.Type {
-		case cache.Sync, cache.Replaced, cache.Added, cache.Updated:
-			if old, exists, err := clientState.Get(obj); err == nil && exists {
-				if err := clientState.Update(obj); err != nil {
-					call.SetData(err)
-					return
-				}
-				handler.OnUpdate(old, obj)
-			} else {
-				if err := clientState.Add(obj); err != nil {
-					call.SetData(err)
-					return
-				}
-				handler.OnAdd(obj, isInInitialList)
-			}
-		case cache.Deleted:
-			if err := clientState.Delete(obj); err != nil {
-				call.SetData(err)
-				return
-			}
-			handler.OnDelete(obj)
-		}
-
-		duration := time.Since(eventInfo.startTime)
-		eventInfo.processingTime = duration.Microseconds()
-		k8sClientGoEventInstrumenter.End(ctx, eventInfo, eventInfo, nil)
+	m := map[string]interface{}{
+		"ctx":        ctx,
+		"eventsInfo": eventsInfo,
 	}
-
-	k8sClientGoEventsInstrumenter.End(ctx, eventsInfo, eventsInfo, nil)
-
-	call.SetData(nil)
-	call.SetSkipCall(true)
+	call.SetData(m)
 }
 
 //go:linkname ProcessDeltasOnExit k8s.io/client-go/tools/cache.ProcessDeltasOnExit
@@ -97,9 +48,14 @@ func ProcessDeltasOnExit(call api.CallContext, err error) {
 	if !k8sEnabler.Enable() {
 		return
 	}
-	e := call.GetData()
-	if e != nil {
-		err = e.(error)
-		call.SetReturnVal(0, err)
+	m := call.GetData().(map[string]interface{})
+	ctx := m["ctx"].(context.Context)
+	eventsInfo := m["eventsInfo"].(k8sEventsInfo)
+	if err != nil {
+		eventsInfo.hasError = true
+		eventsInfo.errorMsg = err.Error()
+		k8sClientGoEventsInstrumenter.End(ctx, eventsInfo, eventsInfo, err)
+	} else {
+		k8sClientGoEventsInstrumenter.End(ctx, eventsInfo, eventsInfo, nil)
 	}
 }
