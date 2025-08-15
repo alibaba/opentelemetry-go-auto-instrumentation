@@ -16,7 +16,6 @@ package data
 
 import (
 	"embed"
-	_ "embed"
 	"strings"
 )
 

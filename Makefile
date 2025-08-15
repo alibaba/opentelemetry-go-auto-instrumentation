@@ -65,14 +65,14 @@ endif
 #-------------------------------------------------------------------------------
 # Build targets
 .PHONY: build
-build: package-pkg tidy
+build: package-pkg tidy lint
 	@echo "Building $(OUTPUT_BIN)..."
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE))
 ifeq ($(CURRENT_OS),windows)
 	$(eval OUTPUT_BIN=$(OUTPUT_BASE).exe)
 endif
 	@$(call BUILD_CMD_DEV,$(CURRENT_OS),$(CURRENT_ARCH),$(OUTPUT_BIN))
-	@echo "Built completed: $(OUTPUT_BIN)"
+	@echo "Built completed: $(OUTPUT_BIN) $(VERSION)"
 
 .PHONY: all test clean
 
@@ -154,7 +154,7 @@ lint:
 	fi; \
 	if [ ! -x "$$LINTER" ]; then \
   		echo "golangci-lint not found, installing to $$LINTER..."; \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8; \
+		go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6; \
 	fi; \
 	echo "Running golangci-lint..."; \
-	$$LINTER run -v --config .golangci.yml ./...
+	$$LINTER run --config .golangci.yml ./tool/...

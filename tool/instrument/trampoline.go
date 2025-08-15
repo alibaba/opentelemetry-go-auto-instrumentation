@@ -102,9 +102,10 @@ func (rp *RuleProcessor) materializeTemplate() error {
 		// Materialize variable declarations
 		if decl, ok := node.(*dst.GenDecl); ok {
 			// No further processing for variable declarations, just append them
-			if decl.Tok == token.VAR {
+			switch decl.Tok {
+			case token.VAR:
 				rp.varDecls = append(rp.varDecls, decl)
-			} else if decl.Tok == token.TYPE {
+			case token.TYPE:
 				rp.callCtxDecl = decl
 				rp.addDecl(decl)
 			}
