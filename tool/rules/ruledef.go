@@ -95,6 +95,8 @@ type InstFuncRule struct {
 	OnEnter string `json:"OnEnter,omitempty"`
 	// OnExit callback, called after original function
 	OnExit string `json:"OnExit,omitempty"`
+	// Dependencies of the rule, e.g. ["crypto/md5", "crypto/sha1"]
+	Dependencies []string `json:"Dependencies,omitempty"`
 }
 
 // InstStructRule finds specific struct type and instrument by adding new field

@@ -68,5 +68,25 @@
         "Function":"IsPrint",
         "OnEnter":"onEnterIsPrint",
         "Path":"github.com/alibaba/loongsuite-go-agent/pkg/rules/test/nethttp10"
+    },
+    {
+        "ImportPath": "net/http",
+        "Function": "Do",
+        "ReceiverType": "\\*Client",
+        "OnEnter": "onEnterClientDo1",
+        "Path": "github.com/alibaba/loongsuite-go-agent/pkg/rules/test/nethttp11",
+        "Dependencies": [
+            "crypto/md5"
+        ]
+    },
+    {
+        "ImportPath": "net/http",
+        "Function": "Do",
+        "ReceiverType": "\\*Client",
+        "OnEnter": "onEnterClientDo2",
+        "Path": "github.com/alibaba/loongsuite-go-agent/pkg/rules/test/nethttp11",
+        "Dependencies": [
+            "crypto/sha1"
+        ]
     }
 ]

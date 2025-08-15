@@ -9,6 +9,7 @@
 - `Order`: The order of the probe code in the instrumented function. e.g. `0`, `1`, `2`.
 - `Path`: The path to the directory containing the probe code. The path can be either go module url or local file system path, e.g. `github.com/foo/bar` or `/path/to/probe/code`.
 - `Version`: The version of the package that contains the function to be instrumented. e.g. `[1.0.0,1.1.0)`, the version range is `[1.0.0,1.1.0)`, which means the version is greater than or equal to `1.0.0` and less than `1.1.0`.
+- `Dependencies`: The rule will be instrumented only if ImportPath and all Dependencies exist. This is useful when the hook code depends on modules other than the package to be instrumented.
 
 > ![TIP]
 > You can use ".*" of both `Function` and `ReceiverType` to match all functions and all receiver types in the specific package.
