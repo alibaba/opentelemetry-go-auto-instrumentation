@@ -49,7 +49,6 @@ func newRuleMatcher(modulePath string) *ruleMatcher {
 		util.Log("Available rules: %v", availableRules)
 	}
 
-	// Parse project dependencies from go.mod (similar to how we handle module info)
 	projectDeps := parseProjectDependencies(modulePath)
 
 	return &ruleMatcher{
