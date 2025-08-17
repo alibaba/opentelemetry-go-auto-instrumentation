@@ -37,17 +37,25 @@ import (
 type ruleMatcher struct {
 	availableRules map[string][]rules.InstRule
 	moduleVersions []*vendorModule // vendor used only
+	projectDeps    map[string]bool // actual dependencies from go.mod
 }
 
-func newRuleMatcher() *ruleMatcher {
-	rules := make(map[string][]rules.InstRule)
+func newRuleMatcher(modulePath string) *ruleMatcher {
+	availableRules := make(map[string][]rules.InstRule)
 	for _, rule := range findAvailableRules() {
-		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
+		availableRules[rule.GetImportPath()] = append(availableRules[rule.GetImportPath()], rule)
 	}
 	if config.GetConf().Verbose {
-		util.Log("Available rules: %v", rules)
+		util.Log("Available rules: %v", availableRules)
 	}
-	return &ruleMatcher{availableRules: rules}
+
+	// Parse project dependencies from go.mod (similar to how we handle module info)
+	projectDeps := parseProjectDependencies(modulePath)
+
+	return &ruleMatcher{
+		availableRules: availableRules,
+		projectDeps:    projectDeps,
+	}
 }
 
 type ruleHolder struct {
@@ -55,6 +63,30 @@ type ruleHolder struct {
 	rules.InstFileRule
 	rules.InstStructRule
 	rules.InstFuncRule
+}
+
+// parseProjectDependencies parses the project's go.mod file to get all dependencies
+// This follows the same pattern as other project metadata extraction (like version checking)
+func parseProjectDependencies(modulePath string) map[string]bool {
+	modFile, err := parseGoMod(modulePath)
+	if err != nil {
+		util.Log("Cannot parse go.mod file: %v", err)
+		return make(map[string]bool)
+	}
+
+	// Collect all dependencies including direct, indirect, and replace
+	deps := make(map[string]bool)
+
+	// Add all required modules (both direct and indirect)
+	for _, req := range modFile.Require {
+		deps[req.Mod.Path] = true
+	}
+
+	if config.GetConf().Verbose {
+		util.Log("Project dependencies from go.mod: %v", deps)
+	}
+
+	return deps
 }
 
 func loadRuleFile(path string) ([]rules.InstRule, error) {
@@ -284,6 +316,26 @@ func matchVersion(version string, ruleVersion string) (bool, error) {
 	return false, nil
 }
 
+// matchDependencies checks if all required dependencies are present in the project
+func (rm *ruleMatcher) matchDependencies(rule rules.InstRule) bool {
+	dependencies := rule.GetDependencies()
+	if len(dependencies) == 0 {
+		return true // No dependencies required
+	}
+
+	// Check if all dependencies are present in project's go.mod
+	for _, dep := range dependencies {
+		if !rm.projectDeps[dep] {
+			if config.GetConf().Verbose {
+				util.Log("Dependency %s not found for rule %s", dep, rule.GetImportPath())
+			}
+			return false
+		}
+	}
+
+	return true
+}
+
 // match gives compilation arguments and finds out all interested rules
 // for it.
 func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
@@ -350,6 +402,10 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 				if !matched {
 					continue
 				}
+			}
+			// Check if all required dependencies are present
+			if !rm.matchDependencies(rule) {
+				continue
 			}
 
 			// Check if it matches with file rule early as we try to avoid
@@ -582,7 +638,7 @@ func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
 		return nil, err
 	}
 
-	matcher := newRuleMatcher()
+	matcher := newRuleMatcher(dp.modulePath)
 
 	// If we are in vendor mode, we need to parse the vendor/modules.txt file
 	// to get the version of each module for future matching
