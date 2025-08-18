@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package rules
 
 import (
@@ -37,14 +38,13 @@ import (
 // - InstFileRule: Instrumentation rule for a specific file
 
 type InstRule interface {
-	GetVersion() string        // GetVersion returns the version of the rule
-	GetGoVersion() string      // GetGoVersion returns the go version of the rule
-	GetImportPath() string     // GetImportPath returns import path of the rule
-	GetPath() string           // GetPath returns the local path of the rule
-	SetPath(path string)       // SetPath sets the local path of the rule
-	GetDependencies() []string // GetDependencies returns the dependencies required by the rule
-	String() string            // String returns string representation of rule
-	Verify() error             // Verify checks the rule is valid
+	GetVersion() string    // GetVersion returns the version of the rule
+	GetGoVersion() string  // GetGoVersion returns the go version of the rule
+	GetImportPath() string // GetImportPath returns import path of the rule
+	GetPath() string       // GetPath returns the local path of the rule
+	SetPath(path string)   // SetPath sets the local path of the rule
+	String() string        // String returns string representation of rule
+	Verify() error         // Verify checks the rule is valid
 }
 
 type InstBaseRule struct {
@@ -59,9 +59,6 @@ type InstBaseRule struct {
 	// Import path of the rule, e.g. "github.com/gin-gonic/gin", it designates
 	// the import path of rule, all other import path will not be instrumented
 	ImportPath string `json:"ImportPath,omitempty"`
-	// Dependencies is a list of additional dependencies that must be present
-	// for this rule to be applied. All dependencies must exist in the project.
-	Dependencies []string `json:"Dependencies,omitempty"`
 }
 
 func (rule *InstBaseRule) GetVersion() string {
@@ -84,10 +81,6 @@ func (rule *InstBaseRule) SetPath(path string) {
 	rule.Path = path
 }
 
-func (rule *InstBaseRule) GetDependencies() []string {
-	return rule.Dependencies
-}
-
 // InstFuncRule finds specific function call and instrument by adding new code
 type InstFuncRule struct {
 	InstBaseRule
@@ -103,6 +96,9 @@ type InstFuncRule struct {
 	OnEnter string `json:"OnEnter,omitempty"`
 	// OnExit callback, called after original function
 	OnExit string `json:"OnExit,omitempty"`
+	// Dependencies is a list of additional dependencies that must be present
+	// for this rule to be applied. All dependencies must exist in the project.
+	Dependencies []string `json:"Dependencies,omitempty"`
 }
 
 // InstStructRule finds specific struct type and instrument by adding new field
@@ -130,10 +126,17 @@ func (rule *InstFuncRule) String() string {
 	bs, _ := json.Marshal(rule)
 	return string(bs)
 }
+
+// GetDependencies returns the dependencies required by the rule
+func (rule *InstFuncRule) GetDependencies() []string {
+	return rule.Dependencies
+}
+
 func (rule *InstStructRule) String() string {
 	bs, _ := json.Marshal(rule)
 	return string(bs)
 }
+
 func (rule *InstFileRule) String() string {
 	bs, _ := json.Marshal(rule)
 	return string(bs)

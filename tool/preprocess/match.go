@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/ast"
 	"github.com/alibaba/loongsuite-go-agent/tool/config"
@@ -37,10 +38,10 @@ import (
 type ruleMatcher struct {
 	availableRules map[string][]rules.InstRule
 	moduleVersions []*vendorModule // vendor used only
-	projectDeps    map[string]bool // actual dependencies from go.mod
+	projectDeps    map[string]bool // actual dependencies from dry run commands
 }
 
-func newRuleMatcher(modulePath string) *ruleMatcher {
+func newRuleMatcher(compileCmds []string) *ruleMatcher {
 	availableRules := make(map[string][]rules.InstRule)
 	for _, rule := range findAvailableRules() {
 		availableRules[rule.GetImportPath()] = append(availableRules[rule.GetImportPath()], rule)
@@ -49,7 +50,8 @@ func newRuleMatcher(modulePath string) *ruleMatcher {
 		util.Log("Available rules: %v", availableRules)
 	}
 
-	projectDeps := parseProjectDependencies(modulePath)
+	// Populated projectDeps from compileCmds
+	projectDeps := populateDependenciesFromCmd(compileCmds)
 
 	return &ruleMatcher{
 		availableRules: availableRules,
@@ -57,35 +59,49 @@ func newRuleMatcher(modulePath string) *ruleMatcher {
 	}
 }
 
+// populateDependenciesFromCmd extracts import paths from the compile commands concurrently
+func populateDependenciesFromCmd(compileCmds []string) map[string]bool {
+	projectDeps := make(map[string]bool)
+	var mu sync.Mutex
+
+	workers := 10
+	ch := make(chan string)
+
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for cmd := range ch {
+				cmdArgs := util.SplitCmds(cmd)
+				importPath := findFlagValue(cmdArgs, util.BuildPattern)
+				if importPath != "" {
+					mu.Lock()
+					projectDeps[importPath] = true
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+
+	for _, cmd := range compileCmds {
+		ch <- cmd
+	}
+	close(ch)
+	wg.Wait()
+
+	if config.GetConf().Verbose {
+		util.Log("Project dependencies from dry run commands: %v", projectDeps)
+	}
+
+	return projectDeps
+}
+
 type ruleHolder struct {
 	rules.InstBaseRule
 	rules.InstFileRule
 	rules.InstStructRule
 	rules.InstFuncRule
-}
-
-// parseProjectDependencies parses the project's go.mod file to get all dependencies
-// This follows the same pattern as other project metadata extraction (like version checking)
-func parseProjectDependencies(modulePath string) map[string]bool {
-	modFile, err := parseGoMod(modulePath)
-	if err != nil {
-		util.Log("Cannot parse go.mod file: %v", err)
-		return make(map[string]bool)
-	}
-
-	// Collect all dependencies including direct, indirect, and replace
-	deps := make(map[string]bool)
-
-	// Add all required modules (both direct and indirect)
-	for _, req := range modFile.Require {
-		deps[req.Mod.Path] = true
-	}
-
-	if config.GetConf().Verbose {
-		util.Log("Project dependencies from go.mod: %v", deps)
-	}
-
-	return deps
 }
 
 func loadRuleFile(path string) ([]rules.InstRule, error) {
@@ -316,13 +332,18 @@ func matchVersion(version string, ruleVersion string) (bool, error) {
 }
 
 // matchDependencies checks if all required dependencies are present in the project
+// Only InstFuncRule supports dependencies checking
 func (rm *ruleMatcher) matchDependencies(rule rules.InstRule) bool {
-	dependencies := rule.GetDependencies()
+	funcRule, ok := rule.(*rules.InstFuncRule)
+	if !ok {
+		return true
+	}
+
+	dependencies := funcRule.GetDependencies()
 	if len(dependencies) == 0 {
 		return true // No dependencies required
 	}
 
-	// Check if all dependencies are present in project's go.mod
 	for _, dep := range dependencies {
 		if !rm.projectDeps[dep] {
 			if config.GetConf().Verbose {
@@ -637,7 +658,7 @@ func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
 		return nil, err
 	}
 
-	matcher := newRuleMatcher(dp.modulePath)
+	matcher := newRuleMatcher(compileCmds)
 
 	// If we are in vendor mode, we need to parse the vendor/modules.txt file
 	// to get the version of each module for future matching
