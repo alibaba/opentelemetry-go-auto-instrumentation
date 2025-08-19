@@ -16,10 +16,12 @@ package test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"testing"
 )
 
 const gocql_dependency_name = "github.com/gocql/gocql"
@@ -56,7 +58,7 @@ func initCassandraContainer() (testcontainers.Container, nat.Port) {
 			"MAX_HEAP_SIZE": "2G",
 			"HEAP_NEWSIZE":  "800M",
 		},
-		WaitingFor: wait.ForLog("Startup complete")}
+		WaitingFor: wait.ForLog("Startup complete").WithStartupTimeout(180 * time.Second)}
 	cassandraC, err := testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{ContainerRequest: containerReqeust, Started: true})
 	if err != nil {
 		panic(err)

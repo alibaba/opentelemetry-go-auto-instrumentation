@@ -111,6 +111,7 @@ test/custom/custom
 example/sqlinject/sqlinjectdemo
 pkg_tmp
 alibaba-pkg.gz
+test/gocql/v1.3.0/test_gocql_crud
 
 # Ollama test binaries
 test/ollama/*/test_*
