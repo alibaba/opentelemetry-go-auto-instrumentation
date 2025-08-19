@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/ast"
 	"github.com/alibaba/loongsuite-go-agent/tool/config"
@@ -59,36 +58,17 @@ func newRuleMatcher(compileCmds []string) *ruleMatcher {
 	}
 }
 
-// populateDependenciesFromCmd extracts import paths from the compile commands concurrently
+// populateDependenciesFromCmd extracts import paths from the compile commands
 func populateDependenciesFromCmd(compileCmds []string) map[string]bool {
 	projectDeps := make(map[string]bool)
-	var mu sync.Mutex
-
-	workers := 10
-	ch := make(chan string)
-
-	var wg sync.WaitGroup
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for cmd := range ch {
-				cmdArgs := util.SplitCmds(cmd)
-				importPath := findFlagValue(cmdArgs, util.BuildPattern)
-				if importPath != "" {
-					mu.Lock()
-					projectDeps[importPath] = true
-					mu.Unlock()
-				}
-			}
-		}()
-	}
 
 	for _, cmd := range compileCmds {
-		ch <- cmd
+		cmdArgs := util.SplitCmds(cmd)
+		importPath := findFlagValue(cmdArgs, util.BuildPattern)
+		if importPath != "" {
+			projectDeps[importPath] = true
+		}
 	}
-	close(ch)
-	wg.Wait()
 
 	if config.GetConf().Verbose {
 		util.Log("Project dependencies from dry run commands: %v", projectDeps)
@@ -373,6 +353,18 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 	if len(availables) == 0 {
 		return nil // fast fail
 	}
+	// Early filtering: filter rules based on dependencies before processing any files
+	filteredAvailables := make([]rules.InstRule, 0, len(availables))
+	for _, rule := range availables {
+		if rm.matchDependencies(rule) {
+			filteredAvailables = append(filteredAvailables, rule)
+		}
+	}
+
+	if len(filteredAvailables) == 0 {
+		return nil // no rules match dependencies
+	}
+
 	parsedAst := make(map[string]*dst.File)
 	bundle := rules.NewRuleBundle(importPath)
 
@@ -398,8 +390,8 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 			}
 		}
 
-		for i := len(availables) - 1; i >= 0; i-- {
-			rule := availables[i]
+		for i := len(filteredAvailables) - 1; i >= 0; i-- {
+			rule := filteredAvailables[i]
 
 			// Check if the version is supported
 			matched, err := matchVersion(version, rule.GetVersion())
@@ -439,7 +431,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 				util.Log("Match file rule %s", rule)
 				bundle.AddFileRule(rule.(*rules.InstFileRule))
 				bundle.SetPackageName(ast.Name.Name)
-				availables = append(availables[:i], availables[i+1:]...)
+				filteredAvailables = append(filteredAvailables[:i], filteredAvailables[i+1:]...)
 				continue
 			}
 
@@ -500,7 +492,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 			}
 			if valid {
 				// Remove the rule from the available rules
-				availables = append(availables[:i], availables[i+1:]...)
+				filteredAvailables = append(filteredAvailables[:i], filteredAvailables[i+1:]...)
 			}
 		}
 	}
