@@ -37,17 +37,43 @@ import (
 type ruleMatcher struct {
 	availableRules map[string][]rules.InstRule
 	moduleVersions []*vendorModule // vendor used only
+	projectDeps    map[string]bool // actual dependencies from dry run commands
 }
 
-func newRuleMatcher() *ruleMatcher {
-	rules := make(map[string][]rules.InstRule)
+func newRuleMatcher(compileCmds []string) *ruleMatcher {
+	availableRules := make(map[string][]rules.InstRule)
 	for _, rule := range findAvailableRules() {
-		rules[rule.GetImportPath()] = append(rules[rule.GetImportPath()], rule)
+		availableRules[rule.GetImportPath()] = append(availableRules[rule.GetImportPath()], rule)
 	}
 	if config.GetConf().Verbose {
-		util.Log("Available rules: %v", rules)
+		util.Log("Available rules: %v", availableRules)
 	}
-	return &ruleMatcher{availableRules: rules}
+
+	// Populated projectDeps from compileCmds
+	projectDeps := populateDependenciesFromCmd(compileCmds)
+
+	return &ruleMatcher{
+		availableRules: availableRules,
+		projectDeps:    projectDeps,
+	}
+}
+
+// populateDependenciesFromCmd extracts import paths from the compile commands
+func populateDependenciesFromCmd(compileCmds []string) map[string]bool {
+	projectDeps := make(map[string]bool)
+
+	for _, cmd := range compileCmds {
+		cmdArgs := util.SplitCmds(cmd)
+		importPath := findFlagValue(cmdArgs, util.BuildPattern)
+		util.Assert(importPath != "", "sanity check")
+		projectDeps[importPath] = true
+	}
+
+	if config.GetConf().Verbose {
+		util.Log("Project dependencies from dry run commands: %v", projectDeps)
+	}
+
+	return projectDeps
 }
 
 type ruleHolder struct {
@@ -284,6 +310,31 @@ func matchVersion(version string, ruleVersion string) (bool, error) {
 	return false, nil
 }
 
+// matchDependencies checks if all required dependencies are present in the project
+// Only InstFuncRule supports dependencies checking
+func (rm *ruleMatcher) matchDependencies(rule rules.InstRule) bool {
+	funcRule, ok := rule.(*rules.InstFuncRule)
+	if !ok {
+		return true
+	}
+
+	dependencies := funcRule.GetDependencies()
+	if len(dependencies) == 0 {
+		return true // No dependencies required
+	}
+
+	for _, dep := range dependencies {
+		if !rm.projectDeps[dep] {
+			if config.GetConf().Verbose {
+				util.Log("Dependency %s not found for rule %s", dep, rule.GetImportPath())
+			}
+			return false
+		}
+	}
+
+	return true
+}
+
 // match gives compilation arguments and finds out all interested rules
 // for it.
 func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
@@ -301,6 +352,18 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 	if len(availables) == 0 {
 		return nil // fast fail
 	}
+	// Early filtering: filter rules based on dependencies before processing any files
+	filteredAvailables := make([]rules.InstRule, 0, len(availables))
+	for _, rule := range availables {
+		if rm.matchDependencies(rule) {
+			filteredAvailables = append(filteredAvailables, rule)
+		}
+	}
+
+	if len(filteredAvailables) == 0 {
+		return nil // no rules match dependencies
+	}
+
 	parsedAst := make(map[string]*dst.File)
 	bundle := rules.NewRuleBundle(importPath)
 
@@ -326,8 +389,8 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 			}
 		}
 
-		for i := len(availables) - 1; i >= 0; i-- {
-			rule := availables[i]
+		for i := len(filteredAvailables) - 1; i >= 0; i-- {
+			rule := filteredAvailables[i]
 
 			// Check if the version is supported
 			matched, err := matchVersion(version, rule.GetVersion())
@@ -351,7 +414,6 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 					continue
 				}
 			}
-
 			// Check if it matches with file rule early as we try to avoid
 			// parsing the file content, which is time consuming
 			if _, ok := rule.(*rules.InstFileRule); ok {
@@ -363,7 +425,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 				util.Log("Match file rule %s", rule)
 				bundle.AddFileRule(rule.(*rules.InstFileRule))
 				bundle.SetPackageName(ast.Name.Name)
-				availables = append(availables[:i], availables[i+1:]...)
+				filteredAvailables = append(filteredAvailables[:i], filteredAvailables[i+1:]...)
 				continue
 			}
 
@@ -424,7 +486,7 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 			}
 			if valid {
 				// Remove the rule from the available rules
-				availables = append(availables[:i], availables[i+1:]...)
+				filteredAvailables = append(filteredAvailables[:i], filteredAvailables[i+1:]...)
 			}
 		}
 	}
@@ -582,7 +644,7 @@ func (dp *DepProcessor) matchRules() ([]*rules.RuleBundle, error) {
 		return nil, err
 	}
 
-	matcher := newRuleMatcher()
+	matcher := newRuleMatcher(compileCmds)
 
 	// If we are in vendor mode, we need to parse the vendor/modules.txt file
 	// to get the version of each module for future matching
