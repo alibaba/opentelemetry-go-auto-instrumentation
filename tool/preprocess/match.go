@@ -65,9 +65,8 @@ func populateDependenciesFromCmd(compileCmds []string) map[string]bool {
 	for _, cmd := range compileCmds {
 		cmdArgs := util.SplitCmds(cmd)
 		importPath := findFlagValue(cmdArgs, util.BuildPattern)
-		if importPath != "" {
-			projectDeps[importPath] = true
-		}
+		util.Assert(importPath != "", "sanity check")
+		projectDeps[importPath] = true
 	}
 
 	if config.GetConf().Verbose {
@@ -415,11 +414,6 @@ func (rm *ruleMatcher) match(cmdArgs []string) *rules.RuleBundle {
 					continue
 				}
 			}
-			// Check if all required dependencies are present
-			if !rm.matchDependencies(rule) {
-				continue
-			}
-
 			// Check if it matches with file rule early as we try to avoid
 			// parsing the file content, which is time consuming
 			if _, ok := rule.(*rules.InstFileRule); ok {
