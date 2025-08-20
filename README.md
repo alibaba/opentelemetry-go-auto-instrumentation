@@ -120,14 +120,12 @@ We are looking forward to your feedback and suggestions. You can join
 our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )
 to engage with us.
 
-<img src="docs/dingtalk.png" height="200">
+| DingTalk | Star History |
+| :---: | :---: |
+| <img src="docs/dingtalk.png" height="200"> | <img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200"> |
 
 We would thankfully acknowledge the following contributors for their valuable contributions to this project:
 
 <a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/loongsuite-go-agent" height="100"/>
+  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/loongsuite-go-agent" height="150"/>
 </a>
-
-The star history of this project is as follows, which shows the growth of this project over time:
-
-<img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200">

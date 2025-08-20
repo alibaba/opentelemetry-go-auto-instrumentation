@@ -240,7 +240,7 @@ func (dp *DepProcessor) saveDebugFiles() {
 	err := os.MkdirAll(dir, os.ModePerm)
 	if err == nil {
 		for origin := range dp.backups {
-			util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))
+			_ = util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))
 		}
 	}
 	_ = util.CopyFile(dp.otelRuntimeGo, filepath.Join(dir, OtelRuntimeGo))

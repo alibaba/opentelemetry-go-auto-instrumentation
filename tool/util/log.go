@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
+
+	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 )
 
 var logWriter *os.File = os.Stdout
@@ -37,6 +39,9 @@ func GetLoggerPath() string {
 func Log(format string, args ...interface{}) {
 	template := "[" + GetRunPhase().String() + "] " + format + "\n"
 	logMutex.Lock()
-	fmt.Fprintf(logWriter, template, args...)
+	_, err := fmt.Fprintf(logWriter, template, args...)
+	if err != nil {
+		ex.Fatal(err)
+	}
 	logMutex.Unlock()
 }

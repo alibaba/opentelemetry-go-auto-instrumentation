@@ -86,7 +86,12 @@ func extractGZip(data []byte, targetDir string) error {
 	if err != nil {
 		return ex.Error(err)
 	}
-	defer gzReader.Close()
+	defer func() {
+		err := gzReader.Close()
+		if err != nil {
+			ex.Fatal(err)
+		}
+	}()
 
 	tarReader := tar.NewReader(gzReader)
 	for {
@@ -148,7 +153,10 @@ func extractGZip(data []byte, targetDir string) error {
 			}
 
 			_, err = io.Copy(file, tarReader)
-			file.Close()
+			if err != nil {
+				return ex.Error(err)
+			}
+			err = file.Close()
 			if err != nil {
 				return ex.Error(err)
 			}
