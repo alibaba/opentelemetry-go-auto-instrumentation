@@ -16,10 +16,10 @@ package ollama
 
 import (
 	"context"
-	
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
-	
+
 	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/ai"
 	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/instrumenter"
 	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api/version"
@@ -112,18 +112,18 @@ func (o ollamaAttrsGetter) GetAIUsageOutputTokens(request ollamaRequest, respons
 // Streaming-specific attribute extraction methods
 func (o ollamaAttrsGetter) GetStreamingMetrics(response ollamaResponse) map[string]interface{} {
 	metrics := make(map[string]interface{})
-	
+
 	// Add streaming-specific attributes if this was a streaming response
 	if response.streamingMetrics != nil {
 		metrics["gen_ai.response.streaming"] = true
 		metrics["gen_ai.response.ttft_ms"] = response.streamingMetrics.getTTFTMillis()
 		metrics["gen_ai.response.chunk_count"] = response.streamingMetrics.chunkCount
-		
+
 		// Calculate tokens per second if we have valid data
 		if response.streamingMetrics.tokenRate > 0 {
 			metrics["gen_ai.response.tokens_per_second"] = response.streamingMetrics.tokenRate
 		}
-		
+
 		// Add stream duration if available
 		if response.streamingMetrics.endTime != nil {
 			streamDuration := response.streamingMetrics.endTime.Sub(response.streamingMetrics.startTime).Milliseconds()
@@ -132,7 +132,7 @@ func (o ollamaAttrsGetter) GetStreamingMetrics(response ollamaResponse) map[stri
 	} else {
 		metrics["gen_ai.response.streaming"] = false
 	}
-	
+
 	return metrics
 }
 
@@ -157,7 +157,7 @@ func (o ollamaAttrsGetter) GetAIServerAddress(request ollamaRequest) string {
 func BuildOllamaLLMInstrumenter() instrumenter.Instrumenter[ollamaRequest, ollamaResponse] {
 	builder := instrumenter.Builder[ollamaRequest, ollamaResponse]{}
 	getter := ollamaAttrsGetter{}
-	
+
 	return builder.Init().
 		SetSpanNameExtractor(&ai.AISpanNameExtractor[ollamaRequest, ollamaResponse]{Getter: getter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[ollamaRequest]{}).
@@ -183,20 +183,20 @@ func (s *streamingAttributesExtractor) OnEnd(attributes []attribute.KeyValue, co
 	if response.streamingMetrics != nil {
 		// Add streaming flag
 		attributes = append(attributes, attribute.Bool("gen_ai.response.streaming", true))
-		
+
 		// Add TTFT if available
 		if ttft := response.streamingMetrics.getTTFTMillis(); ttft > 0 {
 			attributes = append(attributes, attribute.Int64("gen_ai.response.ttft_ms", ttft))
 		}
-		
+
 		// Add chunk count
 		attributes = append(attributes, attribute.Int("gen_ai.response.chunk_count", response.streamingMetrics.chunkCount))
-		
+
 		// Add tokens per second if calculated
 		if response.streamingMetrics.tokenRate > 0 {
 			attributes = append(attributes, attribute.Float64("gen_ai.response.tokens_per_second", response.streamingMetrics.tokenRate))
 		}
-		
+
 		// Add stream duration
 		if response.streamingMetrics.endTime != nil {
 			streamDuration := response.streamingMetrics.endTime.Sub(response.streamingMetrics.startTime).Milliseconds()
@@ -210,7 +210,7 @@ func (s *streamingAttributesExtractor) OnEnd(attributes []attribute.KeyValue, co
 		// Non-streaming request
 		attributes = append(attributes, attribute.Bool("gen_ai.response.streaming", false))
 	}
-	
+
 	return attributes, context
 }
 
