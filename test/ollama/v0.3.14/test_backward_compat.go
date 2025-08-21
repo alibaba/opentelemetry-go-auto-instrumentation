@@ -19,7 +19,7 @@ func main() {
 	ctx := context.Background()
 	
 	fmt.Println("Testing backward compatibility...")
-	fmt.Println("=" * 50)
+	fmt.Println("==================================================")
 	
 	// Test 1: Generate with Stream explicitly set to false
 	fmt.Println("\nTest 1: Generate API with Stream=false")
@@ -30,10 +30,8 @@ func main() {
 		Stream: &streamFalse, // Explicitly disable streaming
 	}
 	
-	var nonStreamingResponse string
 	err = client.Generate(ctx, genReqNoStream, func(resp api.GenerateResponse) error {
 		if resp.Done {
-			nonStreamingResponse = resp.Response
 			fmt.Printf("Non-streaming response received\n")
 			fmt.Printf("Content: %s\n", resp.Response)
 			fmt.Printf("Tokens - Input: %d, Output: %d\n", 
@@ -56,10 +54,8 @@ func main() {
 		Stream: &streamFalse, // Explicitly disable streaming
 	}
 	
-	var nonStreamingChatResponse string
 	err = client.Chat(ctx, chatReqNoStream, func(resp api.ChatResponse) error {
 		if resp.Done {
-			nonStreamingChatResponse = resp.Message.Content
 			fmt.Printf("Non-streaming response received\n")
 			fmt.Printf("Content: %s\n", resp.Message.Content)
 			fmt.Printf("Tokens - Input: %d, Output: %d\n", 
@@ -94,7 +90,7 @@ func main() {
 		fmt.Printf("Generate error (expected if no server): %v\n", err)
 	}
 	
-	fmt.Println("\n" + "=" * 50)
+	fmt.Println("\n" + "==================================================")
 	fmt.Println("Backward compatibility test completed!")
 	fmt.Println("All three modes tested:")
 	fmt.Println("✓ Stream=false (non-streaming)")
