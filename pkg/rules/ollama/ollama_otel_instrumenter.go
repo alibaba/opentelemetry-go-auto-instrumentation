@@ -15,6 +15,9 @@
 package ollama
 
 import (
+	"context"
+	
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	
 	"github.com/alibaba/loongsuite-go-agent/pkg/inst-api-semconv/instrumenter/ai"
@@ -106,6 +109,33 @@ func (o ollamaAttrsGetter) GetAIUsageOutputTokens(request ollamaRequest, respons
 	return int64(request.completionTokens)
 }
 
+// Streaming-specific attribute extraction methods
+func (o ollamaAttrsGetter) GetStreamingMetrics(response ollamaResponse) map[string]interface{} {
+	metrics := make(map[string]interface{})
+	
+	// Add streaming-specific attributes if this was a streaming response
+	if response.streamingMetrics != nil {
+		metrics["gen_ai.response.streaming"] = true
+		metrics["gen_ai.response.ttft_ms"] = response.streamingMetrics.getTTFTMillis()
+		metrics["gen_ai.response.chunk_count"] = response.streamingMetrics.chunkCount
+		
+		// Calculate tokens per second if we have valid data
+		if response.streamingMetrics.tokenRate > 0 {
+			metrics["gen_ai.response.tokens_per_second"] = response.streamingMetrics.tokenRate
+		}
+		
+		// Add stream duration if available
+		if response.streamingMetrics.endTime != nil {
+			streamDuration := response.streamingMetrics.endTime.Sub(response.streamingMetrics.startTime).Milliseconds()
+			metrics["gen_ai.response.stream_duration_ms"] = streamDuration
+		}
+	} else {
+		metrics["gen_ai.response.streaming"] = false
+	}
+	
+	return metrics
+}
+
 func (o ollamaAttrsGetter) GetAIResponseFinishReasons(request ollamaRequest, response ollamaResponse) []string {
 	if response.err != nil {
 		return []string{"error"}
@@ -132,11 +162,56 @@ func BuildOllamaLLMInstrumenter() instrumenter.Instrumenter[ollamaRequest, ollam
 		SetSpanNameExtractor(&ai.AISpanNameExtractor[ollamaRequest, ollamaResponse]{Getter: getter}).
 		SetSpanKindExtractor(&instrumenter.AlwaysClientExtractor[ollamaRequest]{}).
 		AddAttributesExtractor(&ai.AILLMAttrsExtractor[ollamaRequest, ollamaResponse, ollamaAttrsGetter, ollamaAttrsGetter]{}).
+		AddAttributesExtractor(&streamingAttributesExtractor{}).
 		SetInstrumentationScope(instrumentation.Scope{
 			Name:    OLLAMA_SCOPE_NAME,
 			Version: version.Tag,
 		}).
 		BuildInstrumenter()
+}
+
+// streamingAttributesExtractor extracts streaming-specific attributes
+type streamingAttributesExtractor struct{}
+
+func (s *streamingAttributesExtractor) OnStart(attributes []attribute.KeyValue, parentContext context.Context, request ollamaRequest) ([]attribute.KeyValue, context.Context) {
+	// No additional attributes on start
+	return attributes, parentContext
+}
+
+func (s *streamingAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request ollamaRequest, response ollamaResponse, err error) []attribute.KeyValue {
+	// Add streaming-specific attributes if this was a streaming response
+	if response.streamingMetrics != nil {
+		// Add streaming flag
+		attributes = append(attributes, attribute.Bool("gen_ai.response.streaming", true))
+		
+		// Add TTFT if available
+		if ttft := response.streamingMetrics.getTTFTMillis(); ttft > 0 {
+			attributes = append(attributes, attribute.Int64("gen_ai.response.ttft_ms", ttft))
+		}
+		
+		// Add chunk count
+		attributes = append(attributes, attribute.Int("gen_ai.response.chunk_count", response.streamingMetrics.chunkCount))
+		
+		// Add tokens per second if calculated
+		if response.streamingMetrics.tokenRate > 0 {
+			attributes = append(attributes, attribute.Float64("gen_ai.response.tokens_per_second", response.streamingMetrics.tokenRate))
+		}
+		
+		// Add stream duration
+		if response.streamingMetrics.endTime != nil {
+			streamDuration := response.streamingMetrics.endTime.Sub(response.streamingMetrics.startTime).Milliseconds()
+			attributes = append(attributes, attribute.Int64("gen_ai.response.stream_duration_ms", streamDuration))
+		}
+	} else if request.isStreaming {
+		// Request was streaming but no metrics collected (error case)
+		attributes = append(attributes, attribute.Bool("gen_ai.response.streaming", true))
+		attributes = append(attributes, attribute.Bool("gen_ai.response.partial", true))
+	} else {
+		// Non-streaming request
+		attributes = append(attributes, attribute.Bool("gen_ai.response.streaming", false))
+	}
+	
+	return attributes
 }
 
 // Singleton instance
