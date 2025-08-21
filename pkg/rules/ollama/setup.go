@@ -16,7 +16,6 @@ package ollama
 
 import (
 	"context"
-	"fmt"
 	_ "unsafe" // Required for go:linkname
 	
 	"go.opentelemetry.io/otel/attribute"

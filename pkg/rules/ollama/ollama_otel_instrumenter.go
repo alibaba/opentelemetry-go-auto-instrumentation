@@ -178,7 +178,7 @@ func (s *streamingAttributesExtractor) OnStart(attributes []attribute.KeyValue, 
 	return attributes, parentContext
 }
 
-func (s *streamingAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request ollamaRequest, response ollamaResponse, err error) []attribute.KeyValue {
+func (s *streamingAttributesExtractor) OnEnd(attributes []attribute.KeyValue, context context.Context, request ollamaRequest, response ollamaResponse, err error) ([]attribute.KeyValue, context.Context) {
 	// Add streaming-specific attributes if this was a streaming response
 	if response.streamingMetrics != nil {
 		// Add streaming flag
@@ -211,7 +211,7 @@ func (s *streamingAttributesExtractor) OnEnd(attributes []attribute.KeyValue, co
 		attributes = append(attributes, attribute.Bool("gen_ai.response.streaming", false))
 	}
 	
-	return attributes
+	return attributes, context
 }
 
 // Singleton instance
