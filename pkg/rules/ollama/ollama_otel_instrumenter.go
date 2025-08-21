@@ -74,8 +74,8 @@ func (o ollamaAttrsGetter) GetAIRequestPresencePenalty(request ollamaRequest) fl
 }
 
 func (o ollamaAttrsGetter) GetAIRequestIsStream(request ollamaRequest) bool {
-	// Ollama uses callback-based streaming; this implementation reports as non-streaming
-	return false
+	// Return true if this is a streaming request
+	return request.isStreaming
 }
 
 func (o ollamaAttrsGetter) GetAIOperationName(request ollamaRequest) string {

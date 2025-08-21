@@ -16,11 +16,23 @@ package ollama
 
 import (
 	"context"
+	"fmt"
 	_ "unsafe" // Required for go:linkname
+	
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	
 	"github.com/alibaba/loongsuite-go-agent/pkg/api"
 	ollamaapi "github.com/ollama/ollama/api"
 )
+
+// Helper function to truncate strings for span attributes
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
 
 // GENERATE API HOOKS
 
@@ -57,6 +69,38 @@ func clientGenerateOnEnter(call api.CallContext, c *ollamaapi.Client, ctx contex
 			// Record chunk data
 			hasContent := resp.Response != ""
 			streamState.recordChunk(resp.Response, hasContent, resp.EvalCount)
+			
+			// Record span events for streaming milestones
+			if span := trace.SpanFromContext(ctx); span.IsRecording() {
+				// First token event
+				if streamState.chunkCount == 1 && hasContent {
+					span.AddEvent("First token received",
+						trace.WithAttributes(
+							attribute.Int64("gen_ai.response.ttft_ms", streamState.getTTFTMillis()),
+							attribute.Int("chunk_number", streamState.chunkCount),
+						))
+				}
+				
+				// Periodic updates (every 10 chunks or 500ms)
+				if streamState.shouldRecordEvent() {
+					span.AddEvent("Streaming progress",
+						trace.WithAttributes(
+							attribute.Int("chunk_count", streamState.chunkCount),
+							attribute.Int("tokens_generated", streamState.runningTokenCount),
+							attribute.String("content_preview", truncateString(streamState.responseBuilder.String(), 100)),
+						))
+				}
+				
+				// Final chunk event
+				if resp.Done {
+					span.AddEvent("Streaming completed",
+						trace.WithAttributes(
+							attribute.Int("total_chunks", streamState.chunkCount),
+							attribute.Int("total_tokens", resp.EvalCount),
+							attribute.Float64("tokens_per_second", streamState.tokenRate),
+						))
+				}
+			}
 			
 			// Check if this is the final chunk
 			if resp.Done {
@@ -184,6 +228,38 @@ func clientChatOnEnter(call api.CallContext, c *ollamaapi.Client, ctx context.Co
 			// Record chunk data (for chat, content is in Message.Content)
 			hasContent := resp.Message.Content != ""
 			streamState.recordChunk(resp.Message.Content, hasContent, resp.EvalCount)
+			
+			// Record span events for streaming milestones
+			if span := trace.SpanFromContext(ctx); span.IsRecording() {
+				// First token event
+				if streamState.chunkCount == 1 && hasContent {
+					span.AddEvent("First token received",
+						trace.WithAttributes(
+							attribute.Int64("gen_ai.response.ttft_ms", streamState.getTTFTMillis()),
+							attribute.Int("chunk_number", streamState.chunkCount),
+						))
+				}
+				
+				// Periodic updates (every 10 chunks or 500ms)
+				if streamState.shouldRecordEvent() {
+					span.AddEvent("Streaming progress",
+						trace.WithAttributes(
+							attribute.Int("chunk_count", streamState.chunkCount),
+							attribute.Int("tokens_generated", streamState.runningTokenCount),
+							attribute.String("content_preview", truncateString(streamState.responseBuilder.String(), 100)),
+						))
+				}
+				
+				// Final chunk event
+				if resp.Done {
+					span.AddEvent("Streaming completed",
+						trace.WithAttributes(
+							attribute.Int("total_chunks", streamState.chunkCount),
+							attribute.Int("total_tokens", resp.EvalCount),
+							attribute.Float64("tokens_per_second", streamState.tokenRate),
+						))
+				}
+			}
 			
 			// Check if this is the final chunk
 			if resp.Done {
