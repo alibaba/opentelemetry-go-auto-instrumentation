@@ -120,7 +120,16 @@ func (s *streamingState) getTTFTMillis() int64 {
 func (s *streamingState) shouldRecordEvent() bool {
 	// Record event every 10 chunks or every 500ms
 	timeSinceLastEvent := time.Since(s.lastChunkTime)
-	return s.chunkCount%10 == 0 || timeSinceLastEvent > 500*time.Millisecond
+
+const (
+	eventChunkInterval   = 10  // Record event every 10 chunks
+	eventTimeIntervalMs  = 500 // Record event every 500ms
+)
+
+func (s *streamingState) shouldRecordEvent() bool {
+	// Record event every eventChunkInterval chunks or every eventTimeIntervalMs milliseconds
+	timeSinceLastEvent := time.Since(s.lastChunkTime)
+	return s.chunkCount%eventChunkInterval == 0 || timeSinceLastEvent > eventTimeIntervalMs*time.Millisecond
 }
 
 // ollamaResponse represents an Ollama API response
