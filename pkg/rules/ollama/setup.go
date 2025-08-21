@@ -25,6 +25,10 @@ import (
 	ollamaapi "github.com/ollama/ollama/api"
 )
 
+const (
+	contentPreviewMaxLen = 100 // Maximum length for content preview in span events
+)
+
 // Helper function to truncate strings for span attributes
 func truncateString(s string, maxLen int) string {
 	if len(s) <= maxLen {
@@ -86,7 +90,7 @@ func clientGenerateOnEnter(call api.CallContext, c *ollamaapi.Client, ctx contex
 						trace.WithAttributes(
 							attribute.Int("chunk_count", streamState.chunkCount),
 							attribute.Int("tokens_generated", streamState.runningTokenCount),
-							attribute.String("content_preview", truncateString(streamState.responseBuilder.String(), 100)),
+							attribute.String("content_preview", truncateString(streamState.responseBuilder.String(), contentPreviewMaxLen)),
 						))
 				}
 
@@ -245,7 +249,7 @@ func clientChatOnEnter(call api.CallContext, c *ollamaapi.Client, ctx context.Co
 						trace.WithAttributes(
 							attribute.Int("chunk_count", streamState.chunkCount),
 							attribute.Int("tokens_generated", streamState.runningTokenCount),
-							attribute.String("content_preview", truncateString(streamState.responseBuilder.String(), 100)),
+							attribute.String("content_preview", truncateString(streamState.responseBuilder.String(), contentPreviewMaxLen)),
 						))
 				}
 

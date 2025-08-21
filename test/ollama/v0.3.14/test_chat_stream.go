@@ -9,6 +9,8 @@ import (
 	"github.com/ollama/ollama/api"
 )
 
+const progressReportInterval = 10 // Report progress every 10 chunks
+
 func main() {
 	// Test Chat API with streaming enabled
 	client, err := api.ClientFromEnvironment()
@@ -22,7 +24,7 @@ func main() {
 	// Explicitly enable streaming
 	streamFlag := true
 	req := &api.ChatRequest{
-		Model: "llama3:8b",
+		Model: "tinyllama",
 		Messages: []api.Message{
 			{
 				Role:    "system",
@@ -59,8 +61,8 @@ func main() {
 		// Accumulate content
 		totalContent += resp.Message.Content
 		
-		// Print progress every 10 chunks
-		if chunkCount%10 == 0 {
+		// Print progress every progressReportInterval chunks
+		if chunkCount%progressReportInterval == 0 {
 			fmt.Printf("Streaming progress: %d chunks received\n", chunkCount)
 		}
 		
