@@ -116,16 +116,12 @@ func (s *streamingState) getTTFTMillis() int64 {
 	return s.firstTokenTime.Sub(s.startTime).Milliseconds()
 }
 
-// shouldRecordEvent checks if we should record a span event based on time or chunk count
-func (s *streamingState) shouldRecordEvent() bool {
-	// Record event every 10 chunks or every 500ms
-	timeSinceLastEvent := time.Since(s.lastChunkTime)
-
 const (
-	eventChunkInterval   = 10  // Record event every 10 chunks
-	eventTimeIntervalMs  = 500 // Record event every 500ms
+	eventChunkInterval  = 10  // Record event every 10 chunks
+	eventTimeIntervalMs = 500 // Record event every 500ms
 )
 
+// shouldRecordEvent checks if we should record a span event based on time or chunk count
 func (s *streamingState) shouldRecordEvent() bool {
 	// Record event every eventChunkInterval chunks or every eventTimeIntervalMs milliseconds
 	timeSinceLastEvent := time.Since(s.lastChunkTime)
