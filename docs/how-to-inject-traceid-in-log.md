@@ -2,8 +2,7 @@
 
 ## Automatic Injection
 
-If we use the log framework supported by `loongsuite-go-agent`, which is shown
-in [here](./supported-libraries.md). TraceId and SpanId are automatically injected into the log.
+If we use the log framework supported by `loongsuite-go-agent`, TraceId and SpanId are automatically injected into the log.
 
 ```go
 package main

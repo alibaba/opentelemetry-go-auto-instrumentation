@@ -1,10 +1,7 @@
 ![](docs/anim-logo.svg)
 
-[![](https://shields.io/badge/Docs-English-blue?logo=Read%20The%20Docs)](./README.md) &nbsp;
 [![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
-[![codecov](https://codecov.io/gh/alibaba/loongsuite-go-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/alibaba/loongsuite-go-agent)  &nbsp;
 [![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
-[![](https://img.shields.io/badge/New-Adopter-orange?logo=githubsponsors)](https://github.com/alibaba/loongsuite-go-agent/issues/225) &nbsp;
 
 **Loongsuite Go Agent** provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -17,7 +14,7 @@ time. Simply adding `otel` prefix to `go build` to get started :rocket:
 
 | Linux AMD64 | Linux ARM64 | MacOS AMD64 | MacOS ARM64 | Windows AMD64 |
 | -- | -- | -- | -- | -- |
-| [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-amd64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-arm64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-amd64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-arm64) | [Download](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-windows-amd64.exe) | 
+| [![Download](https://shields.io/badge/-Download-black?logo=winamp)](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-amd64) | [![Download](https://shields.io/badge/-Download-black?logo=winamp)](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-linux-arm64) | [![Download](https://shields.io/badge/-Download-black?logo=winamp)](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-amd64) | [![Download](https://shields.io/badge/-Download-black?logo=winamp)](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-darwin-arm64) | [![Download](https://shields.io/badge/-Download-black?logo=winamp)](https://github.com/alibaba/loongsuite-go-agent/releases/latest/download/otel-windows-amd64.exe) | 
 
 **This is the recommended way to install the tool.**
 
@@ -123,7 +120,7 @@ to engage with us.
 
 | DingTalk | Star History |
 | :---: | :---: |
-| <img src="docs/dingtalk.png" height="200"> | <img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200"> |
+| <img src="docs/images/dingtalk.png" height="200"> | <img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200"> |
 
 We would thankfully acknowledge the following contributors for their valuable contributions to this project:
 
