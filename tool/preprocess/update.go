@@ -173,7 +173,7 @@ func extractGZip(data []byte, targetDir string) error {
 // Fetch the zipped pkg module from the embedded data section and extract it to
 // a temporary directory, then return the path to the pkg directory.
 func findModCacheDir() (string, error) {
-	bs, err := data.UseEmbededPkg()
+	bs, err := data.UseEmbeddedPkg()
 	if err != nil {
 		return "", err
 	}
@@ -297,7 +297,7 @@ func (dp *DepProcessor) updateGoMod() error {
 	}
 	// Update the existing replace directives to use the local module cache
 	// Very bad, we must guarantee the replace path is consistent either in
-	// go.mod or vendor/modules.txt, otherwise, the go build toolchian will fail
+	// go.mod or vendor/modules.txt, otherwise, the go build toolchain will fail
 	// so we must parse go.mod to check if there is any existing replace directive
 	// and update the vendor/modules.txt accordingly.
 	modfile, err := parseGoMod(dp.getGoModPath())
