@@ -246,7 +246,7 @@ func (rp *RuleProcessor) optimizeTJumps() (err error) {
 		stripTJumpLabel(tjump)
 
 		// No onExit hook present? Simply remove defer call to onExit trampoline.
-		// Why we dont remove the whole else block of trampoline-jump-if? Well,
+		// Why we don't remove the whole else block of trampoline-jump-if? Well,
 		// because there might be more than one trampoline-jump-if in the same
 		// function, they are nested in the else block. See findJumpPoint for
 		// more details.

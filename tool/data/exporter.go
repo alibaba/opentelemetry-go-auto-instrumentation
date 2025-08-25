@@ -41,6 +41,6 @@ func ReadRuleFile(name string) ([]byte, error) {
 	return dataFs.ReadFile("rules/" + name)
 }
 
-func UseEmbededPkg() ([]byte, error) {
+func UseEmbeddedPkg() ([]byte, error) {
 	return dataFs.ReadFile("alibaba-pkg.gz")
 }

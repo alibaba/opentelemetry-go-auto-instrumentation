@@ -216,7 +216,7 @@ func compileRemix(bundle *rules.RuleBundle, args []string) error {
 		return err
 	}
 	// Strip -complete flag as we may insert some hook points that are not ready
-	// yet, i.e. they dont have function body
+	// yet, i.e. they don't have function body
 	for i, arg := range rp.compileArgs {
 		if arg == "-complete" {
 			rp.compileArgs = append(rp.compileArgs[:i], rp.compileArgs[i+1:]...)

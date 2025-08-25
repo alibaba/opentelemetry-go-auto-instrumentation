@@ -374,7 +374,7 @@ func (rp *RuleProcessor) applyFuncRules(bundle *rules.RuleBundle) (err error) {
 				recvType := nameAndRecvType[1]
 				if ast.MatchFuncDecl(decl, name, recvType) {
 					fnDecl := decl.(*dst.FuncDecl)
-					util.Assert(fnDecl.Body != nil, "target func boby is empty")
+					util.Assert(fnDecl.Body != nil, "target func body is empty")
 					fnName := fnDecl.Name.Name
 					// Save raw function declaration
 					rp.rawFunc = fnDecl

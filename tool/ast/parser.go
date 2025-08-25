@@ -57,9 +57,9 @@ func (ap *AstParser) FindPosition(node dst.Node) token.Position {
 }
 
 // ParseSnippet parses the AST from incomplete source code snippet.
-func (ap *AstParser) ParseSnippet(codeSnippnet string) ([]dst.Stmt, error) {
-	util.Assert(codeSnippnet != "", "empty code snippet")
-	snippet := "package main; func _() {" + codeSnippnet + "}"
+func (ap *AstParser) ParseSnippet(codeSnippet string) ([]dst.Stmt, error) {
+	util.Assert(codeSnippet != "", "empty code snippet")
+	snippet := "package main; func _() {" + codeSnippet + "}"
 	file, err := decorator.ParseFile(ap.fset, "", snippet, 0)
 	if err != nil {
 		return nil, ex.Error(err)
