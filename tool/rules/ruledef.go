@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package rules
 
 import (
@@ -95,6 +96,9 @@ type InstFuncRule struct {
 	OnEnter string `json:"OnEnter,omitempty"`
 	// OnExit callback, called after original function
 	OnExit string `json:"OnExit,omitempty"`
+	// Dependencies is a list of additional dependencies that must be present
+	// for this rule to be applied. All dependencies must exist in the project.
+	Dependencies []string `json:"Dependencies,omitempty"`
 }
 
 // InstStructRule finds specific struct type and instrument by adding new field
@@ -122,10 +126,17 @@ func (rule *InstFuncRule) String() string {
 	bs, _ := json.Marshal(rule)
 	return string(bs)
 }
+
+// GetDependencies returns the dependencies required by the rule
+func (rule *InstFuncRule) GetDependencies() []string {
+	return rule.Dependencies
+}
+
 func (rule *InstStructRule) String() string {
 	bs, _ := json.Marshal(rule)
 	return string(bs)
 }
+
 func (rule *InstFileRule) String() string {
 	bs, _ := json.Marshal(rule)
 	return string(bs)
@@ -167,13 +178,13 @@ func verifyRuleBaseWithoutPath(rule *InstBaseRule) error {
 func (rule *InstFileRule) Verify() error {
 	err := verifyRuleBase(&rule.InstBaseRule)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if rule.FileName == "" {
 		return ex.Errorf(nil, "empty file name")
 	}
 	if !util.IsGoFile(rule.FileName) {
-		return ex.Errorf(nil, "not a go file")
+		return err
 	}
 	return nil
 }
@@ -186,7 +197,7 @@ func (rule *InstFuncRule) Verify() error {
 		err = verifyRuleBase(&rule.InstBaseRule)
 	}
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if rule.Function == "" {
 		return ex.Errorf(nil, "empty function name")
@@ -200,7 +211,7 @@ func (rule *InstFuncRule) Verify() error {
 func (rule *InstStructRule) Verify() error {
 	err := verifyRuleBaseWithoutPath(&rule.InstBaseRule)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if rule.StructType == "" {
 		return ex.Errorf(nil, "empty struct type")

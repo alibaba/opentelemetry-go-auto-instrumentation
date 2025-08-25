@@ -124,7 +124,7 @@ kubectl get svc opentelemetry-demo-jaeger-collector
 ```
 
 Wait a little while, you can see the corresponding trace data！All the spans are aggregated in one trace.
-![jaeger.png](jaeger.png)
+![jaeger.png](images/jaeger.png)
 
 ### 8. check prometheus data
 
@@ -132,7 +132,7 @@ if run on local machine:
 
 access prometheus page: http://localhost:9464/metrics
 
-![metrics.png](metrics.png)
+![metrics.png](images/metrics.png)
 
 ## Related
 

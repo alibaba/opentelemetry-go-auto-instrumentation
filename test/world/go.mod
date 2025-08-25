@@ -8,6 +8,7 @@ replace github.com/alibaba/loongsuite-go-agent => ../../
 
 require (
 	dubbo.apache.org/dubbo-go/v3 v3.3.0
+	github.com/alibaba/sentinel-golang v1.0.4
 	github.com/apache/rocketmq-client-go/v2 v2.1.2
 	github.com/cloudwego/eino v0.3.51
 	github.com/cloudwego/eino-ext/components/model/ark v0.1.16

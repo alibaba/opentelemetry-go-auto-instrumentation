@@ -26,11 +26,10 @@ import (
 // is passed.
 var ToolVersion = "1.0.0"
 
-func PrintVersion() error {
+func PrintVersion() {
 	name, err := util.GetToolName()
 	if err != nil {
-		return ex.Error(err)
+		ex.Fatal(err)
 	}
 	fmt.Printf("%s version %s\n", name, ToolVersion)
-	return nil
 }

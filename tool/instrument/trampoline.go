@@ -77,7 +77,7 @@ func (rp *RuleProcessor) materializeTemplate() error {
 	p := ast.NewAstParser()
 	astRoot, err := p.ParseSource(trampolineTemplate)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	rp.varDecls = make([]dst.Decl, 0)
@@ -102,9 +102,10 @@ func (rp *RuleProcessor) materializeTemplate() error {
 		// Materialize variable declarations
 		if decl, ok := node.(*dst.GenDecl); ok {
 			// No further processing for variable declarations, just append them
-			if decl.Tok == token.VAR {
+			switch decl.Tok {
+			case token.VAR:
 				rp.varDecls = append(rp.varDecls, decl)
-			} else if decl.Tok == token.TYPE {
+			case token.TYPE:
 				rp.callCtxDecl = decl
 				rp.addDecl(decl)
 			}
@@ -159,7 +160,7 @@ func isHookDefined(root *dst.File, rule *rules.InstFuncRule) bool {
 func findHookFile(rule *rules.InstFuncRule) (string, error) {
 	files, err := findRuleFiles(rule)
 	if err != nil {
-		return "", ex.Error(err)
+		return "", err
 	}
 	for _, file := range files {
 		if !util.IsGoFile(file) {
@@ -167,7 +168,7 @@ func findHookFile(rule *rules.InstFuncRule) (string, error) {
 		}
 		root, err := ast.ParseAstFromFileFast(file)
 		if err != nil {
-			return "", ex.Error(err)
+			return "", err
 		}
 		if isHookDefined(root, rule) {
 			return file, nil
@@ -180,7 +181,7 @@ func findHookFile(rule *rules.InstFuncRule) (string, error) {
 func findRuleFiles(rule rules.InstRule) ([]string, error) {
 	files, err := util.ListFiles(rule.GetPath())
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	switch rule.(type) {
 	case *rules.InstFuncRule, *rules.InstFileRule:
@@ -194,11 +195,11 @@ func findRuleFiles(rule rules.InstRule) ([]string, error) {
 func getHookFunc(t *rules.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
 	file, err := findHookFile(t)
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	astRoot, err := ast.ParseAstFromFile(file)
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	var target *dst.FuncDecl
 	if onEnter {
@@ -220,7 +221,7 @@ func getHookFunc(t *rules.InstFuncRule, onEnter bool) (*dst.FuncDecl, error) {
 func getHookParamTraits(t *rules.InstFuncRule, onEnter bool) ([]ParamTrait, error) {
 	target, err := getHookFunc(t, onEnter)
 	if err != nil {
-		return nil, ex.Error(err)
+		return nil, err
 	}
 	var attrs []ParamTrait
 	// Find which parameter is type of interface{}
@@ -242,7 +243,7 @@ func (rp *RuleProcessor) callOnEnterHook(t *rules.InstFuncRule, traits []ParamTr
 	// target function
 	if rp.exact {
 		util.Assert(len(traits) == (len(rp.onEnterHookFunc.Type.Params.List)+1),
-			"do you miss api.CallContext parameter?")
+			"hook func signature can not match with target function")
 	}
 	// Hook: 	   func onEnterFoo(callContext* CallContext, p*[]int)
 	// Trampoline: func OtelOnEnterTrampoline_foo(p *[]int)
@@ -275,7 +276,7 @@ func (rp *RuleProcessor) callOnExitHook(t *rules.InstFuncRule, traits []ParamTra
 	// target function
 	if rp.exact {
 		util.Assert(len(traits) == len(rp.onExitHookFunc.Type.Params.List),
-			"do you miss api.CallContext parameter?")
+			"hook func signature can not match with target function")
 	}
 	// Hook: 	   func onExitFoo(ctx* CallContext, p*[]int)
 	// Trampoline: func OtelOnExitTrampoline_foo(ctx* CallContext, p *[]int)
@@ -313,7 +314,7 @@ func (rp *RuleProcessor) callOnExitHook(t *rules.InstFuncRule, traits []ParamTra
 
 func rectifyAnyType(paramList *dst.FieldList, traits []ParamTrait) error {
 	if len(paramList.List) != len(traits) {
-		return ex.Errorf(nil, "do you miss api.CallContext parameter?")
+		return ex.Errorf(nil, "hook func signature can not match with target function")
 	}
 	for i, field := range paramList.List {
 		trait := traits[i]
@@ -337,7 +338,7 @@ func (rp *RuleProcessor) addHookFuncVar(t *rules.InstFuncRule,
 		// raw function is not exposed
 		err := rectifyAnyType(paramTypes, traits)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 
@@ -706,11 +707,11 @@ func (rp *RuleProcessor) callHookFunc(t *rules.InstFuncRule,
 	onEnter bool) error {
 	traits, err := getHookParamTraits(t, onEnter)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	err = rp.addHookFuncVar(t, traits, onEnter)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if onEnter {
 		err = rp.callOnEnterHook(t, traits)
@@ -718,10 +719,10 @@ func (rp *RuleProcessor) callHookFunc(t *rules.InstFuncRule,
 		err = rp.callOnExitHook(t, traits)
 	}
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	if !rp.replenishCallContext(onEnter) {
-		return ex.Errorf(nil, "can not rewrite hook function")
+		return err
 	}
 	return nil
 }
@@ -731,7 +732,7 @@ func (rp *RuleProcessor) generateTrampoline(t *rules.InstFuncRule) error {
 	// a bunch of manual AST code generation, isn't it?
 	err := rp.materializeTemplate()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	// Implement CallContext interface
 	rp.implementCallContext(t)
@@ -745,13 +746,13 @@ func (rp *RuleProcessor) generateTrampoline(t *rules.InstFuncRule) error {
 	if t.OnEnter != "" {
 		err = rp.callHookFunc(t, true)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 	if t.OnExit != "" {
 		err = rp.callHookFunc(t, false)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 	return nil

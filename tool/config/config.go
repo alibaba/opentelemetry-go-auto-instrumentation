@@ -100,7 +100,7 @@ func (bc *BuildConfig) parseRuleFiles() error {
 		for i, file := range files {
 			f, err := bc.makeRuleAbs(file)
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 			files[i] = f
 		}
@@ -108,7 +108,7 @@ func (bc *BuildConfig) parseRuleFiles() error {
 	} else {
 		f, err := bc.makeRuleAbs(bc.RuleJsonFiles)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		bc.RuleJsonFiles = f
 	}
@@ -129,7 +129,7 @@ func storeConfig(bc *BuildConfig) error {
 	}
 	_, err = util.WriteFile(file, string(bs))
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }
@@ -145,7 +145,7 @@ func loadConfig() (*BuildConfig, error) {
 	file := getConfPath(BuildConfFile)
 	data, err := util.ReadFile(file)
 	if err != nil {
-		return &BuildConfig{}, ex.Error(err)
+		return &BuildConfig{}, err
 	}
 	bc := &BuildConfig{}
 	err = json.Unmarshal([]byte(data), bc)
@@ -204,13 +204,13 @@ func InitConfig() (err error) {
 	// Load build config from json file
 	conf, err = loadConfig()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	loadConfigFromEnv(conf)
 
 	err = conf.parseRuleFiles()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	mode := os.O_WRONLY | os.O_APPEND
@@ -242,14 +242,17 @@ func Configure() error {
 		"Use custom.json rules. Multiple rules are separated by comma.")
 	flag.StringVar(&bc.DisableRules, "disable", bc.DisableRules,
 		"Disable specific rules. Use 'all' to disable all default rules, or comma-separated list of rule file names to disable specific rules")
-	flag.CommandLine.Parse(os.Args[2:])
+	err = flag.CommandLine.Parse(os.Args[2:])
+	if err != nil {
+		return ex.Error(err)
+	}
 
 	util.Log("Configured in %s", getConfPath(BuildConfFile))
 
 	// Store build config for future phases
 	err = storeConfig(bc)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }

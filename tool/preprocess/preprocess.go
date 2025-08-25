@@ -97,18 +97,6 @@ func runCmdCombinedOutput(dir string, env []string, args ...string) (string, err
 	return string(out), nil
 }
 
-func runCmdOutput(dir string, args ...string) (string, error) {
-	path := args[0]
-	args = args[1:]
-	cmd := exec.Command(path, args...)
-	cmd.Dir = dir
-	out, err := cmd.Output()
-	if err != nil {
-		return "", ex.Errorf(err, "command %v", args)
-	}
-	return string(out), nil
-}
-
 func (dp *DepProcessor) postProcess() {
 	util.GuaranteeInPreprocess()
 
@@ -133,7 +121,7 @@ func (dp *DepProcessor) backupFile(origin string) error {
 	if _, exist := dp.backups[origin]; !exist {
 		err = util.CopyFile(origin, backup)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		dp.backups[origin] = backup
 		util.Log("Backup %v", origin)
@@ -148,7 +136,7 @@ func (dp *DepProcessor) restoreBackupFiles() error {
 	for origin, backup := range dp.backups {
 		err := util.CopyFile(backup, origin)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 		util.Log("Restore %v", origin)
 	}
@@ -205,7 +193,7 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	// get the temporary build cache path
 	goCachePath, err := getTempGoCache()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	util.Log("Using isolated GOCACHE: %s", goCachePath)
 
@@ -215,7 +203,7 @@ func runBuildWithToolexec(goBuildCmd []string) error {
 	out, err := runCmdCombinedOutput("", buildGoCacheEnv(goCachePath), args...)
 	util.Log("Output from toolexec build: %v", out)
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	return nil
 }
@@ -252,7 +240,7 @@ func (dp *DepProcessor) saveDebugFiles() {
 	err := os.MkdirAll(dir, os.ModePerm)
 	if err == nil {
 		for origin := range dp.backups {
-			util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))
+			_ = util.CopyFile(origin, filepath.Join(dir, filepath.Base(origin)))
 		}
 	}
 	_ = util.CopyFile(dp.otelRuntimeGo, filepath.Join(dir, OtelRuntimeGo))
@@ -262,24 +250,24 @@ func Preprocess() error {
 	// Make sure the project is modularized otherwise we cannot proceed
 	err := precheck()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 
 	dp := newDepProcessor()
 
 	err = dp.init()
 	if err != nil {
-		return ex.Error(err)
+		return err
 	}
 	defer func() { dp.postProcess() }()
 	{
 		defer util.PhaseTimer("Preprocess")()
 		defer dp.saveDebugFiles()
 
-		// Backup go.mod and add additional repalce directives for the pkg module
+		// Backup go.mod and add additional replace directives for the pkg module
 		err = dp.updateGoMod()
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 
 		// Two round of rule matching
@@ -304,32 +292,32 @@ func Preprocess() error {
 			util.Log("Round %d of rule matching", i+1)
 			err = dp.newDeps(bundles)
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 
 			err = dp.syncDeps()
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 			if i == 2 {
 				continue
 			}
 			bundles, err = dp.matchRules()
 			if err != nil {
-				return ex.Error(err)
+				return err
 			}
 		}
 
 		// Rectify file rules to make sure we can find them locally
 		err = dp.updateRule(bundles)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 
 		// From this point on, we no longer modify the rules
 		err = rules.StoreRuleBundles(bundles)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 
@@ -339,7 +327,7 @@ func Preprocess() error {
 		// Run go build with toolexec to start instrumentation
 		err = runBuildWithToolexec(dp.goBuildCmd)
 		if err != nil {
-			return ex.Error(err)
+			return err
 		}
 	}
 	util.Log("Build completed successfully")
