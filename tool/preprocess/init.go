@@ -154,7 +154,7 @@ func findModule(buildCmd []string) ([]*packages.Package, error) {
 		}
 
 		// Trying to load package from the build argument, error is tolerated
-		// because we dont know what the build argument is. One exception is
+		// because we don't know what the build argument is. One exception is
 		// when we already found packages, in this case, we expect subsequent
 		// build arguments are packages, so we should not tolerate any error.
 		pkgs, err := tryLoadPackage(buildArg)

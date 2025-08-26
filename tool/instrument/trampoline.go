@@ -654,7 +654,7 @@ func (rp *RuleProcessor) rewriteCallContextImpl() {
 		}
 	}
 	// Rewrite SetParam and GetParam methods
-	// Dont believe what you see in template.go, we will null out it and rewrite
+	// Don't believe what you see in template.go, we will null out it and rewrite
 	// the whole switch statement
 	methodSetParamBody := methodSetParam.Body.List[1].(*dst.SwitchStmt).Body
 	methodGetParamBody := methodGetParam.Body.List[0].(*dst.SwitchStmt).Body
