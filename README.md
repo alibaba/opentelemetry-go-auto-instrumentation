@@ -117,7 +117,7 @@ We are progressively open-sourcing the libraries we have supported, and your con
 # Community
 
 We are looking forward to your feedback and suggestions. You can join
-our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )
+our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,PBuICMTDvdh0En8MrVbHBYTGUcPXJ/NdT6JKCZ8CG+w=&_dt_no_comment=1&origin=11)
 to engage with us.
 
 | DingTalk | Star History |
