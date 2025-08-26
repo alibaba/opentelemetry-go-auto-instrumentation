@@ -10,7 +10,6 @@ leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, the instrumentation is done at compile
 time. Simply adding `otel` prefix to `go build` to get started :rocket:
 
-
 # Installation
 
 ### Prebuilt Binaries
