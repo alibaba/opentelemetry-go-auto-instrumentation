@@ -1,12 +1,15 @@
-![](docs/anim-logo.svg)
+![](docs/images/anim-logo.svg)
 
-[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
-[![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
+[![](https://shields.io/badge/-中文文档-black?logo=dolphin)](./docs/README_CN.md)  &nbsp;
+[![](https://shields.io/badge/-阿里云商业版-black?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
+[![](https://shields.io/badge/-Loongsuite_Java-black?logo=alibabacloud)](https://github.com/alibaba/loongsuite-java-agent)  &nbsp;
+[![](https://shields.io/badge/-Loongsuite_Python-black?logo=alibabacloud)](https://github.com/alibaba/loongsuite-python-agent)  &nbsp;
 
 **Loongsuite Go Agent** provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
 required in the target application, the instrumentation is done at compile
 time. Simply adding `otel` prefix to `go build` to get started :rocket:
+
 
 # Installation
 
@@ -121,9 +124,3 @@ to engage with us.
 | DingTalk | Star History |
 | :---: | :---: |
 | <img src="docs/images/dingtalk.png" height="200"> | <img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200"> |
-
-We would thankfully acknowledge the following contributors for their valuable contributions to this project:
-
-<a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/loongsuite-go-agent" height="150"/>
-</a>
