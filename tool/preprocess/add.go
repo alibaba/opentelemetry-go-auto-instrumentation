@@ -153,11 +153,11 @@ func (dp *DepProcessor) newDeps(bundles []*rules.RuleBundle) error {
 		// in the main package, adding new linkname for generated code will cause
 		// the symbol redefinition error.
 		if bundle.ImportPath != "main" {
-			tag = fmt.Sprintf("//go:linkname _getstatck%d %s.OtelGetStackImpl\n",
+			tag = fmt.Sprintf("//go:linkname _getstack%d %s.OtelGetStackImpl\n",
 				cnt, bundle.ImportPath)
 		}
 		content += tag
-		s := fmt.Sprintf("var _getstatck%d = _otel_debug.Stack\n", cnt)
+		s := fmt.Sprintf("var _getstack%d = _otel_debug.Stack\n", cnt)
 		content += s
 		if bundle.ImportPath != "main" {
 			tag = fmt.Sprintf("//go:linkname _printstack%d %s.OtelPrintStackImpl\n",
