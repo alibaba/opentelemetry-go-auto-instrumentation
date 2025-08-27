@@ -1,7 +1,9 @@
-![](docs/anim-logo.svg)
+![](docs/images/anim-logo.svg)
 
-[![](https://shields.io/badge/Readme-中文-blue?logo=Read%20The%20Docs)](./docs/README_CN.md)  &nbsp;
-[![](https://shields.io/badge/Aliyun-Commercial-orange?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
+[![](https://shields.io/badge/-中文文档-black?logo=dolphin)](./docs/README_CN.md)  &nbsp;
+[![](https://shields.io/badge/-阿里云商业版-black?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
+[![](https://shields.io/badge/-Loongsuite_Java-black?logo=alibabacloud)](https://github.com/alibaba/loongsuite-java-agent)  &nbsp;
+[![](https://shields.io/badge/-Loongsuite_Python-black?logo=alibabacloud)](https://github.com/alibaba/loongsuite-python-agent)  &nbsp;
 
 **Loongsuite Go Agent** provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -104,6 +106,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 | go-kit/log    | https://github.com/go-kit/log                  | v0.1.0               | v0.2.1                |
 | pg            | https://github.com/go-pg/pg                    | v1.10.0              | v1.14.0               |
 | gocql         | https://github.com/gocql/gocql                 | v1.3.0                | v1.7.0                |
+| sqlx          | https://github.com/jmoiron/sqlx                | v1.3.0                | v1.4.0                |
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are [**very welcome** 💖!](https://github.com/alibaba/loongsuite-go-agent/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22contribution%20welcome%22)
 
@@ -115,15 +118,9 @@ We are progressively open-sourcing the libraries we have supported, and your con
 # Community
 
 We are looking forward to your feedback and suggestions. You can join
-our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,GyDX5fUTYnJ0En8MrVbHBYTGUcPXJ/NdsmLODGibd0w=&_dt_no_comment=1&origin=11? )
+our [DingTalk group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,PBuICMTDvdh0En8MrVbHBYTGUcPXJ/NdT6JKCZ8CG+w=&_dt_no_comment=1&origin=11)
 to engage with us.
 
 | DingTalk | Star History |
 | :---: | :---: |
 | <img src="docs/images/dingtalk.png" height="200"> | <img src="https://api.star-history.com/svg?repos=alibaba/loongsuite-go-agent&type=Date" height="200"> |
-
-We would thankfully acknowledge the following contributors for their valuable contributions to this project:
-
-<a href="https://github.com/alibaba/loongsuite-go-agent/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=alibaba/loongsuite-go-agent" height="150"/>
-</a>
