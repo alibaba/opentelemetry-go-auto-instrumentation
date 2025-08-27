@@ -106,6 +106,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 | go-kit/log    | https://github.com/go-kit/log                  | v0.1.0               | v0.2.1                |
 | pg            | https://github.com/go-pg/pg                    | v1.10.0              | v1.14.0               |
 | gocql         | https://github.com/gocql/gocql                 | v1.3.0                | v1.7.0                |
+| sqlx          | https://github.com/jmoiron/sqlx                | v1.3.0                | v1.4.0                |
 
 We are progressively open-sourcing the libraries we have supported, and your contributions are [**very welcome** 💖!](https://github.com/alibaba/loongsuite-go-agent/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22contribution%20welcome%22)
 
