@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alibaba/loongsuite-go-agent/tool/config"
 	"github.com/alibaba/loongsuite-go-agent/tool/data"
 	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/rules"
@@ -172,7 +173,32 @@ func extractGZip(data []byte, targetDir string) error {
 
 // Fetch the zipped pkg module from the embedded data section and extract it to
 // a temporary directory, then return the path to the pkg directory.
-func findModCacheDir() (string, error) {
+// In -pkg flag is specified, we will use the path specified by the flag instead
+// of the temporary directory. This flag is specifically used for a scenario where
+// the user compiles a shared library and the main program separately. If the
+// injected code uses different temporary pkg directories, it will cause the
+// plugin to report a version conflict error. This flag ensures that the shared
+// library and the main program share the same pkg directory to prevent this issue.
+func findPkgModDir() (string, error) {
+	pkgPath := config.GetConf().PkgPath
+	// If -pkg flag is specified, check if the path exists. If it does,
+	// return the absolute path. If it does not, extract the embedded pkg
+	// module into the path.
+	if pkgPath != "" {
+		if util.PathExists(pkgPath) {
+			return filepath.Join(pkgPath, "pkg"), nil
+		}
+		bs, err := data.UseEmbeddedPkg()
+		if err != nil {
+			return "", err
+		}
+		tempPkg := pkgPath
+		err = extractGZip(bs, tempPkg)
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(tempPkg, "pkg"), nil
+	}
 	bs, err := data.UseEmbeddedPkg()
 	if err != nil {
 		return "", err
@@ -215,7 +241,7 @@ func (dp *DepProcessor) updateRule(bundles []*rules.RuleBundle) error {
 					}
 					if strings.HasPrefix(rule.Path, pkgPrefix) {
 						p := strings.TrimPrefix(rule.Path, pkgPrefix)
-						p = filepath.Join(dp.pkgLocalCache, p)
+						p = filepath.Join(dp.pkgModDir, p)
 						rule.SetPath(p)
 						rectified[p] = true
 					} else {
@@ -235,7 +261,7 @@ func (dp *DepProcessor) updateRule(bundles []*rules.RuleBundle) error {
 			}
 			if strings.HasPrefix(fileRule.Path, pkgPrefix) {
 				p := strings.TrimPrefix(fileRule.Path, pkgPrefix)
-				p = filepath.Join(dp.pkgLocalCache, p)
+				p = filepath.Join(dp.pkgModDir, p)
 				fileRule.SetPath(p)
 				fileRule.FileName = filepath.Join(p, fileRule.FileName)
 				rectified[p] = true
@@ -274,7 +300,7 @@ func (dp *DepProcessor) updateGoMod() error {
 		ImportPath:     pkgPrefix,
 		Version:        "v0.0.0-00010101000000-000000000000",
 		Replace:        true,
-		ReplacePath:    dp.pkgLocalCache,
+		ReplacePath:    dp.pkgModDir,
 		ReplaceVersion: "",
 	}
 	addDeps = append(addDeps, dep)
@@ -311,7 +337,7 @@ func (dp *DepProcessor) updateGoMod() error {
 			if err != nil {
 				return ex.Error(err)
 			}
-			err = modfile.AddReplace(pkgPrefix, "", dp.pkgLocalCache, "")
+			err = modfile.AddReplace(pkgPrefix, "", dp.pkgModDir, "")
 			if err != nil {
 				return ex.Error(err)
 			}

@@ -126,3 +126,5 @@ test/ollama/*/*.tar.gz
 *_FIXES.md
 test/ollama/*/README.md
 otel.runtime.go
+*.so
+test/sharedlib/sharedlib

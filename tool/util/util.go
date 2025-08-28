@@ -17,12 +17,13 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"io"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -87,25 +88,6 @@ func ShouldNotReachHere() {
 
 func ShouldNotReachHereT(msg string) {
 	panic("should not reach here: " + msg)
-}
-
-var recordedRand = make(map[string]bool)
-
-// RandomString generates a globally unique random string of length n
-func RandomString(n int) string {
-	for {
-		var letters = []rune("0123456789")
-		b := make([]rune, n)
-		for i := range b {
-			b[i] = letters[rand.Intn(len(letters))]
-		}
-		s := string(b)
-		// Random suffix collision? Reroll until we get a unique one
-		if _, ok := recordedRand[s]; !ok {
-			recordedRand[s] = true
-			return s
-		}
-	}
 }
 
 func RunCmd(args ...string) error {
@@ -300,4 +282,9 @@ func GetToolName() (string, error) {
 func Jsonify(v interface{}) string {
 	b, _ := json.Marshal(v)
 	return string(b)
+}
+
+func Crc32(s string) string {
+	crc32Hash := crc32.ChecksumIEEE([]byte(s))
+	return strconv.FormatUint(uint64(crc32Hash), 10)
 }

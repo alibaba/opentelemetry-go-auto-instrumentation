@@ -141,7 +141,7 @@ func (dp *DepProcessor) newDeps(bundles []*rules.RuleBundle) error {
 			ImportPath:     path,
 			Version:        "v0.0.0-00010101000000-000000000000", // use latest version for the rule import
 			Replace:        true,
-			ReplacePath:    filepath.Join(dp.pkgLocalCache, t),
+			ReplacePath:    filepath.Join(dp.pkgModDir, t),
 			ReplaceVersion: "",
 		})
 	}

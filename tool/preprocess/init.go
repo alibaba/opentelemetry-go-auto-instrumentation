@@ -326,17 +326,17 @@ func (dp *DepProcessor) initMod() (err error) {
 	// module, that's why we do this here.
 	// TODO: Once we publish the alibaba-otel/pkg module, we can remove this code
 	// along with the replace directive in the go.mod file.
-	dp.pkgLocalCache, err = findModCacheDir()
+	dp.pkgModDir, err = findPkgModDir()
 	if err != nil {
 		return err
 	}
 	// In the further processing, we will edit the go.mod file, which is illegal
 	// to use relative path, so we need to convert the relative path to an absolute
-	dp.pkgLocalCache, err = filepath.Abs(dp.pkgLocalCache)
+	dp.pkgModDir, err = filepath.Abs(dp.pkgModDir)
 	if err != nil {
 		return ex.Error(err)
 	}
-	if dp.pkgLocalCache == "" {
+	if dp.pkgModDir == "" {
 		return ex.Errorf(nil, "cannot find rule cache dir")
 	}
 	return nil
