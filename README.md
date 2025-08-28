@@ -1,9 +1,9 @@
 ![](docs/images/anim-logo.svg)
 
-[![](https://shields.io/badge/-中文文档-black?logo=dolphin)](./docs/README_CN.md)  &nbsp;
-[![](https://shields.io/badge/-阿里云商业版-black?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
-[![](https://shields.io/badge/-Loongsuite_Java-black?logo=alibabacloud)](https://github.com/alibaba/loongsuite-java-agent)  &nbsp;
-[![](https://shields.io/badge/-Loongsuite_Python-black?logo=alibabacloud)](https://github.com/alibaba/loongsuite-python-agent)  &nbsp;
+[![](https://shields.io/badge/README-中文-blue?logo=dolphin)](./docs/README_CN.md)  &nbsp;
+[![](https://shields.io/badge/Loongsuite-Go商业版-blue?logo=alibabacloud)](https://help.aliyun.com/zh/arms/application-monitoring/getting-started/monitoring-the-golang-applications) &nbsp;
+[![](https://shields.io/badge/Loongsuite-Java-blue?logo=alibabacloud)](https://github.com/alibaba/loongsuite-java-agent)  &nbsp;
+[![](https://shields.io/badge/Loongsuite-Python-blue?logo=alibabacloud)](https://github.com/alibaba/loongsuite-python-agent)  &nbsp;
 
 **Loongsuite Go Agent** provides an automatic solution for Golang applications that want to
 leverage OpenTelemetry to enable effective observability. No code changes are
@@ -108,7 +108,7 @@ The detailed usage of `otel` tool can be found in [**Usage**](./docs/usage.md).
 | gocql         | https://github.com/gocql/gocql                 | v1.3.0                | v1.7.0                |
 | sqlx          | https://github.com/jmoiron/sqlx                | v1.3.0                | v1.4.0                |
 
-We are progressively open-sourcing the libraries we have supported, and your contributions are [**very welcome** 💖!](https://github.com/alibaba/loongsuite-go-agent/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22contribution%20welcome%22)
+We are progressively open-sourcing the libraries we have supported, and your contributions are [![](https://shields.io/badge/-Very_Welcome-white?logo=gnu&logoColor=black)](https://github.com/alibaba/loongsuite-go-agent/issues?q=state%3Aopen%20label%3Aavailable)
 
 > [!IMPORTANT]
 > The framework you expected is not in the list? Don't worry, you can easily inject your code into any frameworks/libraries that are not officially supported.
