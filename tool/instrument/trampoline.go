@@ -548,7 +548,7 @@ func (rp *RuleProcessor) replenishCallContext(onEnter bool) bool {
 // renaming occurrences of CallContextImpl to CallContextImpl{suffix} in the
 // trampoline template
 func (rp *RuleProcessor) implementCallContext(t *rules.InstFuncRule) {
-	suffix := rp.rule2Suffix[t]
+	suffix := util.Crc32(t.String())
 	structType := rp.callCtxDecl.Specs[0].(*dst.TypeSpec)
 	util.Assert(structType.Name.Name == TrampolineCallContextImplType,
 		"sanity check")

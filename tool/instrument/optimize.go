@@ -158,7 +158,7 @@ func (rp *RuleProcessor) newCallContextImpl(tjump *TJump) (dst.Expr, error) {
 	// directive
 	// One line please, otherwise debugging line number will be a nightmare
 	tmpl := fmt.Sprintf("&CallContextImpl%s{Params:[]interface{}{},ReturnVals:[]interface{}{}}",
-		rp.rule2Suffix[tjump.rule])
+		util.Crc32(tjump.rule.String()))
 	p := ast.NewAstParser()
 	astRoot, err := p.ParseSnippet(tmpl)
 	if err != nil {

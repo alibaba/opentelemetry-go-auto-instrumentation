@@ -46,8 +46,6 @@ type RuleProcessor struct {
 	parser *ast.AstParser
 	// The compiling arguments for the target file
 	compileArgs []string
-	// Randomly generated suffix for the rule, used to avoid name collision
-	rule2Suffix map[*rules.InstFuncRule]string
 	// The target function to be instrumented
 	rawFunc *dst.FuncDecl
 	// Whether the rule is exact match with target function, or it's a regexp match
@@ -84,7 +82,6 @@ func newRuleProcessor(args []string, pkgName string) *RuleProcessor {
 		workDir:     outputDir,
 		target:      nil,
 		compileArgs: args,
-		rule2Suffix: make(map[*rules.InstFuncRule]string),
 		relocated:   make(map[string]string),
 	}
 	return rp

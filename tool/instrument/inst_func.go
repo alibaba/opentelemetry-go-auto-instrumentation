@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/loongsuite-go-agent/tool/ast"
+	"github.com/alibaba/loongsuite-go-agent/tool/config"
 	"github.com/alibaba/loongsuite-go-agent/tool/ex"
 	"github.com/alibaba/loongsuite-go-agent/tool/rules"
 	"github.com/alibaba/loongsuite-go-agent/tool/util"
@@ -105,7 +106,8 @@ func (rp *RuleProcessor) makeName(r *rules.InstFuncRule,
 	if onEnter {
 		prefix = TrampolineOnEnterName
 	}
-	return fmt.Sprintf("%s_%s%s", prefix, funcDecl.Name.Name, rp.rule2Suffix[r])
+	return fmt.Sprintf("%s_%s%s",
+		prefix, funcDecl.Name.Name, util.Crc32(r.String()))
 }
 
 func findJumpPoint(jumpIf *dst.IfStmt) *dst.BlockStmt {
@@ -136,13 +138,13 @@ func (rp *RuleProcessor) insertTJump(t *rules.InstFuncRule,
 		retVals = make([]dst.Expr, 0)
 		// If return values are named, collect their names, otherwise we try to
 		// name them manually for further use
-		for _, field := range retList.List {
+		for i, field := range retList.List {
 			if field.Names != nil {
 				for _, name := range field.Names {
 					retVals = append(retVals, dst.NewIdent(name.Name))
 				}
 			} else {
-				retValIdent := dst.NewIdent("retVal" + util.RandomString(5))
+				retValIdent := dst.NewIdent(fmt.Sprintf("retVal%d", i))
 				field.Names = []*dst.Ident{retValIdent}
 				retVals = append(retVals, dst.Clone(retValIdent).(*dst.Ident))
 			}
@@ -167,8 +169,10 @@ func (rp *RuleProcessor) insertTJump(t *rules.InstFuncRule,
 		}
 	}
 
-	varSuffix := util.RandomString(5)
-	rp.rule2Suffix[t] = varSuffix
+	varSuffix := util.Crc32(t.String())
+	if config.GetConf().Verbose {
+		util.Log("varSuffix: %s for %s", varSuffix, t.String())
+	}
 
 	// Generate the trampoline-jump-if. N.B. Note that future optimization pass
 	// heavily depends on the structure of trampoline-jump-if. Any change in it

@@ -52,7 +52,7 @@ type DepProcessor struct {
 	modulePath    string // Where go.mod is located
 	goBuildCmd    []string
 	vendorMode    bool
-	pkgLocalCache string // Local module cache path of alibaba-otel pkg module
+	pkgModDir     string // Local module cache path of alibaba-otel pkg module
 	otelRuntimeGo string // Path to the otel.runtime.go file
 }
 
@@ -60,16 +60,16 @@ func newDepProcessor() *DepProcessor {
 	dp := &DepProcessor{
 		backups:       map[string]string{},
 		vendorMode:    false,
-		pkgLocalCache: "",
+		pkgModDir:     "",
 		otelRuntimeGo: "",
 	}
 	return dp
 }
 
 func (dp *DepProcessor) String() string {
-	return fmt.Sprintf("moduleName: %s, modulePath: %s, goBuildCmd: %v, vendorMode: %v, pkgLocalCache: %s, OtelRuntimeGo: %s",
+	return fmt.Sprintf("moduleName: %s, modulePath: %s, goBuildCmd: %v, vendorMode: %v, pkgModDir: %s, OtelRuntimeGo: %s",
 		dp.moduleName, dp.modulePath, dp.goBuildCmd, dp.vendorMode,
-		dp.pkgLocalCache, dp.otelRuntimeGo)
+		dp.pkgModDir, dp.otelRuntimeGo)
 }
 
 func (dp *DepProcessor) getGoModPath() string {
