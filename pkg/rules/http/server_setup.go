@@ -23,6 +23,7 @@ import (
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go/pkg/api"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var netHttpServerInstrumenter = BuildNetHttpServerOtelInstrumenter()
@@ -39,12 +40,12 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 		return
 	}
 	request := &netHttpRequest{
-		method:  r.Method,
-		url:     r.URL,
-		header:  r.Header,
-		version: getProtocolVersion(r.ProtoMajor, r.ProtoMinor),
-		host:    r.Host,
-		isTls:   r.TLS != nil,
+		method:       r.Method,
+		url:          r.URL,
+		header:       r.Header,
+		version:      getProtocolVersion(r.ProtoMajor, r.ProtoMinor),
+		host:         r.Host,
+		isTls:        r.TLS != nil,
 	}
 	request.requestHeaders = netHttpCaptureConfig.captureHeaders(r.Header)
 	request.requestBody = captureHTTPRequestBody(r, netHttpCaptureConfig)
@@ -58,9 +59,10 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 		}
 		call.SetParam(1, x1)
 	}
-	data := make(map[string]interface{}, 2)
+	data := make(map[string]interface{}, 3)
 	data["ctx"] = ctx
 	data["request"] = request
+	data["httpRequest"] = r
 	call.SetData(data)
 	return
 }
@@ -78,6 +80,15 @@ func serverOnExit(call api.CallContext) {
 	request, ok := data["request"].(*netHttpRequest)
 	if !ok {
 		return
+	}
+	if rawRequest, ok := data["httpRequest"].(*http.Request); ok {
+		// ServeMux fills Pattern after this hook's entry. Middleware that passes
+		// r.WithContext(...) to the mux replaces the request pointer, so the
+		// outer hook cannot observe that copy's pattern.
+		request.routePattern = rawRequest.Pattern
+		if route := (netHttpServerAttrsGetter{}).GetHttpRoute(request); route != "" {
+			trace.SpanFromContext(ctx).SetName(request.method + " " + route)
+		}
 	}
 	if p, ok := call.GetParam(1).(http.ResponseWriter); ok {
 		if w1, ok := p.(*writerWrapper); ok {
