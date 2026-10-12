@@ -117,7 +117,15 @@ func (n netHttpClientAttrsGetter) GetUrlFull(request *netHttpRequest) string {
 }
 
 func (n netHttpClientAttrsGetter) GetServerAddress(request *netHttpRequest) string {
-	return request.host
+	// Client Request.Host is optional; when empty the transport uses URL.Host.
+	// Fall back so server.address is still populated for those requests.
+	if request.host != "" {
+		return request.host
+	}
+	if request.url != nil {
+		return request.url.Host
+	}
+	return ""
 }
 
 func (n netHttpClientAttrsGetter) GetServerPort(request *netHttpRequest) int {
