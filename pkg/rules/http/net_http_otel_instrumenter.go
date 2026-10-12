@@ -15,6 +15,7 @@
 package http
 
 import (
+	stdlibnet "net"
 	"os"
 	"strconv"
 
@@ -119,13 +120,26 @@ func (n netHttpClientAttrsGetter) GetUrlFull(request *netHttpRequest) string {
 func (n netHttpClientAttrsGetter) GetServerAddress(request *netHttpRequest) string {
 	// Client Request.Host is optional; when empty the transport uses URL.Host.
 	// Fall back so server.address is still populated for those requests.
+	// Return host/IP only (no port) to align with OTel server.address.
 	if request.host != "" {
-		return request.host
+		return hostnameFromHostPort(request.host)
 	}
 	if request.url != nil {
-		return request.url.Host
+		return request.url.Hostname()
 	}
 	return ""
+}
+
+// hostnameFromHostPort returns the host/IP without a port.
+// Request.Host may be "example.com", "192.168.1.1:8080", "[::1]:8443", or "[::1]".
+func hostnameFromHostPort(host string) string {
+	if h, _, err := stdlibnet.SplitHostPort(host); err == nil {
+		return h
+	}
+	if len(host) >= 2 && host[0] == '[' && host[len(host)-1] == ']' {
+		return host[1 : len(host)-1]
+	}
+	return host
 }
 
 func (n netHttpClientAttrsGetter) GetServerPort(request *netHttpRequest) int {
