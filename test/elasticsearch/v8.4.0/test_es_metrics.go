@@ -93,7 +93,7 @@ func main() {
 				}
 				attrs := dp.Attributes.ToSlice()
 				if verifier.GetAttribute(attrs, "http.request.method").AsString() == "PUT" {
-					verifier.VerifyHttpClientMetricsAttributes(attrs, "PUT", "", "", "http", "1.1", port, 200)
+					verifier.VerifyHttpClientMetricsAttributes(attrs, "PUT", "127.0.0.1", "", "http", "1.1", port, 200)
 					found = true
 					break
 				}
