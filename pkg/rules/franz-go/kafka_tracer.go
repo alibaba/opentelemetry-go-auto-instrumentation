@@ -19,6 +19,8 @@ import (
 	"strconv"
 
 	"github.com/twmb/franz-go/pkg/kgo"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -29,6 +31,22 @@ var (
 )
 
 type KafkaTracer struct{}
+
+// detachSpanFromGLS removes the span created by Start from the caller's
+// goroutine-local TraceContext while keeping it alive in ctx.
+//
+// franz-go invokes Buffered hooks on the Produce/Poll caller goroutine and
+// Unbuffered hooks on an internal completion goroutine. LoongSuite's GLS
+// requires Add/Del on the same goroutine; without this detach, async End
+// leaves spans stuck on the caller and eventually hits maxSpans (300),
+// causing "Failed to add span to TraceContext" and sticky log trace_ids.
+func detachSpanFromGLS(ctx context.Context) {
+	span := trace.SpanFromContext(ctx)
+	if !span.SpanContext().IsValid() {
+		return
+	}
+	sdktrace.TraceContextDelSpan(span)
+}
 
 func (t *KafkaTracer) OnProduceRecordBuffered(r *kgo.Record) {
 	if r.Context == nil {
@@ -41,6 +59,9 @@ func (t *KafkaTracer) OnProduceRecordBuffered(r *kgo.Record) {
 	}
 	ctx := franzKafkaProducerInstrumenter.Start(r.Context, request)
 	r.Context = ctx
+	// Inject already happened in Start. Detach from caller GLS so the async
+	// Unbuffered End does not leak the span on the Produce caller.
+	detachSpanFromGLS(ctx)
 }
 
 func (t *KafkaTracer) OnProduceRecordUnbuffered(r *kgo.Record, err error) {
@@ -67,6 +88,8 @@ func (t *KafkaTracer) OnFetchRecordBuffered(r *kgo.Record) {
 	}
 	newCtx := franzKafkaConsumerInstrumenter.Start(r.Context, request)
 	r.Context = newCtx
+	// Same cross-goroutine Buffered/Unbuffered split as produce.
+	detachSpanFromGLS(newCtx)
 }
 
 func (t *KafkaTracer) OnFetchRecordUnbuffered(r *kgo.Record, _ bool) {
