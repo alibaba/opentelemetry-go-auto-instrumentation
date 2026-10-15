@@ -97,7 +97,17 @@ func serverOnExit(call api.CallContext) {
 				request.routePattern = rawRequest.URL.Path
 			}
 		}
-		if route := (netHttpServerAttrsGetter{}).GetHttpRoute(request); route != "" {
+		// A framework may already have published a more specific route template
+		// (for example go-restful's /users/{id}). Do not replace it with the
+		// outer ServeMux catch-all pattern. A framework static route equals the
+		// raw path, so it is still safe to add the HTTP method in that case.
+		spanName := ""
+		if readable, ok := span.(sdktrace.ReadOnlySpan); ok {
+			spanName = readable.Name()
+		}
+		if route := (netHttpServerAttrsGetter{}).GetHttpRoute(request); route != "" &&
+			(spanName == request.method ||
+				(rawRequest.URL != nil && spanName == rawRequest.URL.Path)) {
 			span.SetName(request.method + " " + route)
 		}
 	}
