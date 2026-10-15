@@ -57,7 +57,10 @@ func (t *KafkaTracer) OnProduceRecordBuffered(r *kgo.Record) {
 		Record:  r,
 		Context: r.Context,
 	}
-	ctx := franzKafkaProducerInstrumenter.Start(r.Context, request)
+	// WithNewRoot: SpanFromContext(Background) falls back to GLS in loongsuite,
+	// so each Produce would otherwise become a child of the previous produce
+	// (deep sticky chains). Same approach as ibm/shopify-sarama producers.
+	ctx := franzKafkaProducerInstrumenter.Start(r.Context, request, trace.WithNewRoot())
 	r.Context = ctx
 	// Inject already happened in Start. Detach from caller GLS so the async
 	// Unbuffered End does not leak the span on the Produce caller.
