@@ -48,6 +48,22 @@ func detachSpanFromGLS(ctx context.Context) {
 	sdktrace.TraceContextDelSpan(span)
 }
 
+// startWithoutGLSParentFallback runs Start while the caller GLS TraceContext
+// is cleared. LoongSuite's SpanFromContext falls back to GLS when ctx has no
+// span (e.g. context.Background()), which would otherwise parent each Produce
+// onto leftover GLS spans and form deep sticky chains. Clearing GLS only for
+// Start restores vanilla OTel parent selection: explicit spans in r.Context
+// are preserved; Background/empty ctx get no parent (new root) without
+// WithNewRoot(). The previous GLS stack is restored afterward; callers should
+// still detachSpanFromGLS so the newly started span is not left on the
+// temporary GLS if restore ordering ever changes.
+func startWithoutGLSParentFallback(start func() context.Context) context.Context {
+	saved := sdktrace.GetTraceContextFromGLS()
+	sdktrace.SetTraceContextToGLS(nil)
+	defer sdktrace.SetTraceContextToGLS(saved)
+	return start()
+}
+
 func (t *KafkaTracer) OnProduceRecordBuffered(r *kgo.Record) {
 	if r.Context == nil {
 		r.Context = context.Background()
@@ -57,10 +73,9 @@ func (t *KafkaTracer) OnProduceRecordBuffered(r *kgo.Record) {
 		Record:  r,
 		Context: r.Context,
 	}
-	// WithNewRoot: SpanFromContext(Background) falls back to GLS in loongsuite,
-	// so each Produce would otherwise become a child of the previous produce
-	// (deep sticky chains). Same approach as ibm/shopify-sarama producers.
-	ctx := franzKafkaProducerInstrumenter.Start(r.Context, request, trace.WithNewRoot())
+	ctx := startWithoutGLSParentFallback(func() context.Context {
+		return franzKafkaProducerInstrumenter.Start(r.Context, request)
+	})
 	r.Context = ctx
 	// Inject already happened in Start. Detach from caller GLS so the async
 	// Unbuffered End does not leak the span on the Produce caller.
@@ -89,7 +104,9 @@ func (t *KafkaTracer) OnFetchRecordBuffered(r *kgo.Record) {
 		Record:  r,
 		Context: r.Context,
 	}
-	newCtx := franzKafkaConsumerInstrumenter.Start(r.Context, request)
+	newCtx := startWithoutGLSParentFallback(func() context.Context {
+		return franzKafkaConsumerInstrumenter.Start(r.Context, request)
+	})
 	r.Context = newCtx
 	// Same cross-goroutine Buffered/Unbuffered split as produce.
 	detachSpanFromGLS(newCtx)
