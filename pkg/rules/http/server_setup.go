@@ -23,6 +23,7 @@ import (
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go/pkg/api"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -86,8 +87,18 @@ func serverOnExit(call api.CallContext) {
 		// r.WithContext(...) to the mux replaces the request pointer, so the
 		// outer hook cannot observe that copy's pattern.
 		request.routePattern = rawRequest.Pattern
+		span := trace.SpanFromContext(ctx)
+		// Framework hooks set a validated static route as the span name. When
+		// that route equals the raw path, retain it without inferring arbitrary
+		// request paths as route templates.
+		if request.routePattern == "" && rawRequest.URL != nil {
+			if readable, ok := span.(sdktrace.ReadOnlySpan); ok &&
+				readable.Name() == rawRequest.URL.Path {
+				request.routePattern = rawRequest.URL.Path
+			}
+		}
 		if route := (netHttpServerAttrsGetter{}).GetHttpRoute(request); route != "" {
-			trace.SpanFromContext(ctx).SetName(request.method + " " + route)
+			span.SetName(request.method + " " + route)
 		}
 	}
 	if p, ok := call.GetParam(1).(http.ResponseWriter); ok {
