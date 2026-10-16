@@ -25,7 +25,14 @@ import (
 //go:linkname spanFromContextOnExit go.opentelemetry.io/otel/trace.spanFromContextOnExit
 func spanFromContextOnExit(call api.CallContext, span spectrace.Span) {
 	if !span.SpanContext().IsValid() {
-		call.SetReturnVal(0, sdktrace.SpanFromGLS())
+		// Only replace with a GLS span when one exists. SpanFromGLS() returns
+		// nil when the goroutine TraceContext is unset or empty; substituting
+		// that nil would break callers such as SpanContextFromContext that
+		// assume SpanFromContext never returns a nil Span (OTel returns a
+		// non-nil noop span instead).
+		if glsSpan := sdktrace.SpanFromGLS(); glsSpan != nil {
+			call.SetReturnVal(0, glsSpan)
+		}
 	}
 	return
 }

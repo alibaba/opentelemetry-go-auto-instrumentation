@@ -43,6 +43,10 @@ func TestFranzGoBasic(t *testing.T, env ...string) {
 	RunGoBuild(t, "go", "build", "test_franz.go")
 	env = append(env, "FRANZ_KAFKA_PORT="+containers.KafkaPort)
 	RunApp(t, "test_franz", env...)
+
+	RunGoBuild(t, "go", "build", "test_franz_async.go")
+	stdout, stderr := RunApp(t, "test_franz_async", env...)
+	ExpectNotContains(t, stdout+stderr, "Failed to add span to TraceContext")
 }
 
 type FranzKafkaContainers struct {
