@@ -16,10 +16,10 @@ package http
 
 import "strings"
 
-// httpRouteFromSpanName returns a low-cardinality route template encoded in the
+// RouteFromSpanName returns a low-cardinality route template encoded in the
 // span name by framework hooks (gin FullPath, mux template, etc.). Raw request
 // paths such as "/users/123" must not be inferred from span names.
-func httpRouteFromSpanName(spanName string) string {
+func RouteFromSpanName(spanName string) string {
 	if spanName == "" {
 		return ""
 	}

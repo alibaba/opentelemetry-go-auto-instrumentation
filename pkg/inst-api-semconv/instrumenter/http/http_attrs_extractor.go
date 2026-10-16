@@ -211,7 +211,7 @@ func (h *HttpServerAttrsExtractor[REQUEST, RESPONSE, GETTER1, GETTER2, GETTER3])
 		route := h.Base.HttpGetter.GetHttpRoute(request)
 		spanName := localRootSpan.Name()
 		if route == "" || (route != "" && !strings.Contains(spanName, route)) {
-			if tmpl := httpRouteFromSpanName(spanName); tmpl != "" {
+			if tmpl := RouteFromSpanName(spanName); tmpl != "" {
 				route = tmpl
 			}
 		}

@@ -23,6 +23,7 @@ import (
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go/pkg/api"
+	semconvhttp "github.com/alibaba/loongsuite-go/pkg/inst-api-semconv/instrumenter/http"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -83,28 +84,12 @@ func serverOnExit(call api.CallContext) {
 		return
 	}
 	if rawRequest, ok := data["httpRequest"].(*http.Request); ok {
-		// ServeMux fills Pattern after this hook's entry. Middleware that passes
-		// r.WithContext(...) to the mux replaces the request pointer, so the
-		// outer hook cannot observe that copy's pattern.
-		request.routePattern = rawRequest.Pattern
 		span := trace.SpanFromContext(ctx)
-		// Framework hooks set a validated static route as the span name. When
-		// that route equals the raw path, retain it without inferring arbitrary
-		// request paths as route templates.
-		if request.routePattern == "" && rawRequest.URL != nil {
-			if readable, ok := span.(sdktrace.ReadOnlySpan); ok &&
-				readable.Name() == rawRequest.URL.Path {
-				request.routePattern = rawRequest.URL.Path
-			}
-		}
-		// A framework may already have published a more specific route template
-		// (for example go-restful's /users/{id}). Do not replace it with the
-		// outer ServeMux catch-all pattern. A framework static route equals the
-		// raw path, so it is still safe to add the HTTP method in that case.
 		spanName := ""
 		if readable, ok := span.(sdktrace.ReadOnlySpan); ok {
 			spanName = readable.Name()
 		}
+		setServerRoutePattern(request, rawRequest, spanName)
 		if route := (netHttpServerAttrsGetter{}).GetHttpRoute(request); route != "" &&
 			(spanName == request.method ||
 				(rawRequest.URL != nil && spanName == rawRequest.URL.Path)) {
@@ -123,6 +108,27 @@ func serverOnExit(call api.CallContext) {
 	}
 
 	return
+}
+
+func setServerRoutePattern(request *netHttpRequest, rawRequest *http.Request, spanName string) {
+	// ServeMux fills Pattern after this hook's entry. Middleware that passes
+	// r.WithContext(...) to the mux replaces the request pointer, so the outer
+	// hook cannot observe that copy's pattern.
+	request.routePattern = rawRequest.Pattern
+
+	// Framework hooks publish validated route templates in the span name. They
+	// are more specific than the outer ServeMux catch-all pattern (for example,
+	// go-restful registers "/" while selecting "/users/{user-id}").
+	if route := semconvhttp.RouteFromSpanName(spanName); route != "" {
+		request.routePattern = route
+		return
+	}
+
+	// A framework static route is also safe: it must exactly equal the request
+	// path. Do not infer arbitrary request paths as route templates.
+	if rawRequest.URL != nil && spanName == rawRequest.URL.Path {
+		request.routePattern = spanName
+	}
 }
 
 type writerWrapper struct {

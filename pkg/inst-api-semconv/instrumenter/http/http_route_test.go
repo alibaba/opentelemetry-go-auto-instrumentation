@@ -16,7 +16,7 @@ package http
 
 import "testing"
 
-func TestHttpRouteFromSpanName(t *testing.T) {
+func TestRouteFromSpanName(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		want string
@@ -30,7 +30,7 @@ func TestHttpRouteFromSpanName(t *testing.T) {
 		{"GET /files/*path", "/files/*path"},
 		{"GET /literal*value", ""},
 	} {
-		if got := httpRouteFromSpanName(tc.name); got != tc.want {
+		if got := RouteFromSpanName(tc.name); got != tc.want {
 			t.Fatalf("%q: got %q want %q", tc.name, got, tc.want)
 		}
 	}
