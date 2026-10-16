@@ -35,33 +35,17 @@ type KafkaTracer struct{}
 // detachSpanFromGLS removes the span created by Start from the caller's
 // goroutine-local TraceContext while keeping it alive in ctx.
 //
-// franz-go invokes Buffered hooks on the Produce/Poll caller goroutine and
-// Unbuffered hooks on an internal completion goroutine. LoongSuite's GLS
-// requires Add/Del on the same goroutine; without this detach, async End
-// leaves spans stuck on the caller and eventually hits maxSpans (300),
-// causing "Failed to add span to TraceContext" and sticky log trace_ids.
+// Produce buffered hooks run on the Produce caller; completion hooks can run
+// on another goroutine. Fetch buffered hooks run while records are fetched,
+// while unbuffered hooks run when records are polled or discarded. Start/End
+// therefore need not access the same GLS stack. Detach where Start runs, and
+// keep the span in Record.Context until the corresponding unbuffered hook.
 func detachSpanFromGLS(ctx context.Context) {
 	span := trace.SpanFromContext(ctx)
 	if !span.SpanContext().IsValid() {
 		return
 	}
 	sdktrace.TraceContextDelSpan(span)
-}
-
-// startWithoutGLSParentFallback runs Start while the caller GLS TraceContext
-// is cleared. LoongSuite's SpanFromContext falls back to GLS when ctx has no
-// span (e.g. context.Background()), which would otherwise parent each Produce
-// onto leftover GLS spans and form deep sticky chains. Clearing GLS only for
-// Start restores vanilla OTel parent selection: explicit spans in r.Context
-// are preserved; Background/empty ctx get no parent (new root) without
-// WithNewRoot(). The previous GLS stack is restored afterward; callers should
-// still detachSpanFromGLS so the newly started span is not left on the
-// temporary GLS if restore ordering ever changes.
-func startWithoutGLSParentFallback(start func() context.Context) context.Context {
-	saved := sdktrace.GetTraceContextFromGLS()
-	sdktrace.SetTraceContextToGLS(nil)
-	defer sdktrace.SetTraceContextToGLS(saved)
-	return start()
 }
 
 func (t *KafkaTracer) OnProduceRecordBuffered(r *kgo.Record) {
@@ -73,9 +57,7 @@ func (t *KafkaTracer) OnProduceRecordBuffered(r *kgo.Record) {
 		Record:  r,
 		Context: r.Context,
 	}
-	ctx := startWithoutGLSParentFallback(func() context.Context {
-		return franzKafkaProducerInstrumenter.Start(r.Context, request)
-	})
+	ctx := franzKafkaProducerInstrumenter.Start(r.Context, request)
 	r.Context = ctx
 	// Inject already happened in Start. Detach from caller GLS so the async
 	// Unbuffered End does not leak the span on the Produce caller.
@@ -104,11 +86,9 @@ func (t *KafkaTracer) OnFetchRecordBuffered(r *kgo.Record) {
 		Record:  r,
 		Context: r.Context,
 	}
-	newCtx := startWithoutGLSParentFallback(func() context.Context {
-		return franzKafkaConsumerInstrumenter.Start(r.Context, request)
-	})
+	newCtx := franzKafkaConsumerInstrumenter.Start(r.Context, request)
 	r.Context = newCtx
-	// Same cross-goroutine Buffered/Unbuffered split as produce.
+	// Detach from the fetch goroutine before polling can end the span elsewhere.
 	detachSpanFromGLS(newCtx)
 }
 
