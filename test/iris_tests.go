@@ -19,6 +19,8 @@ import "testing"
 func init() {
 	TestCases = append(TestCases,
 		NewGeneralTestCase("iris-test", "iris", "", "", "1.21", "", TestIris),
+		NewGeneralTestCase("iris-pattern-test", "iris", "", "", "1.21", "", TestIrisPattern),
+		NewGeneralTestCase("iris-error-route-test", "iris", "", "", "1.21", "", TestIrisErrorRoute),
 	)
 }
 
@@ -26,4 +28,16 @@ func TestIris(t *testing.T, env ...string) {
 	UseApp("iris")
 	RunGoBuild(t, "go", "build", "test_iris.go")
 	RunApp(t, "test_iris", env...)
+}
+
+func TestIrisPattern(t *testing.T, env ...string) {
+	UseApp("iris")
+	RunGoBuild(t, "go", "build", "test_iris_pattern.go")
+	RunApp(t, "test_iris_pattern", env...)
+}
+
+func TestIrisErrorRoute(t *testing.T, env ...string) {
+	UseApp("iris")
+	RunGoBuild(t, "go", "build", "test_iris_error_route.go")
+	RunApp(t, "test_iris_error_route", env...)
 }

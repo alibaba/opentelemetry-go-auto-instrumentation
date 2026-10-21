@@ -24,8 +24,6 @@ import (
 
 	"github.com/alibaba/loongsuite-go/pkg/api"
 	semconvhttp "github.com/alibaba/loongsuite-go/pkg/inst-api-semconv/instrumenter/http"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var netHttpServerInstrumenter = BuildNetHttpServerOtelInstrumenter()
@@ -42,16 +40,20 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 		return
 	}
 	request := &netHttpRequest{
-		method:       r.Method,
-		url:          r.URL,
-		header:       r.Header,
-		version:      getProtocolVersion(r.ProtoMajor, r.ProtoMinor),
-		host:         r.Host,
-		isTls:        r.TLS != nil,
+		method:     r.Method,
+		url:        r.URL,
+		header:     r.Header,
+		version:    getProtocolVersion(r.ProtoMajor, r.ProtoMinor),
+		host:       r.Host,
+		isTls:      r.TLS != nil,
+		rawRequest: r,
 	}
+	container := &routeTemplateContainer{}
+	rCtx := context.WithValue(r.Context(), routeContainerKey{}, container)
+	*r = *r.WithContext(rCtx)
 	request.requestHeaders = netHttpCaptureConfig.captureHeaders(r.Header)
 	request.requestBody = captureHTTPRequestBody(r, netHttpCaptureConfig)
-	ctx := netHttpServerInstrumenter.Start(r.Context(), request)
+	ctx := netHttpServerInstrumenter.Start(rCtx, request)
 	if x, ok := call.GetParam(1).(http.ResponseWriter); ok {
 		x1 := &writerWrapper{
 			ResponseWriter: x,
@@ -61,10 +63,9 @@ func serverOnEnter(call api.CallContext, _ interface{}, w http.ResponseWriter, r
 		}
 		call.SetParam(1, x1)
 	}
-	data := make(map[string]interface{}, 3)
+	data := make(map[string]interface{}, 2)
 	data["ctx"] = ctx
 	data["request"] = request
-	data["httpRequest"] = r
 	call.SetData(data)
 	return
 }
@@ -83,19 +84,20 @@ func serverOnExit(call api.CallContext) {
 	if !ok {
 		return
 	}
-	if rawRequest, ok := data["httpRequest"].(*http.Request); ok {
-		span := trace.SpanFromContext(ctx)
-		spanName := ""
-		if readable, ok := span.(sdktrace.ReadOnlySpan); ok {
-			spanName = readable.Name()
-		}
-		setServerRoutePattern(request, rawRequest, spanName)
-		if route := (netHttpServerAttrsGetter{}).GetHttpRoute(request); route != "" &&
-			(spanName == request.method ||
-				(rawRequest.URL != nil && spanName == rawRequest.URL.Path)) {
-			span.SetName(request.method + " " + route)
+	if request.rawRequest != nil {
+		r := request.rawRequest
+		if route := takeServerRouteTemplate(ctx, r); route != "" {
+			request.routeTemplate = route
+		} else if pattern := r.Pattern; pattern != "" {
+			// ServeMux patterns (including static ones like "GET /query" or "/a")
+			// are low-cardinality templates. Bare handlers leave Pattern empty.
+			request.routeTemplate = semconvhttp.RouteFromPattern(pattern)
 		}
 	}
+	if request.routeTemplate != "" {
+		UpdateServerSpanName(request.method, request.routeTemplate)
+	}
+
 	if p, ok := call.GetParam(1).(http.ResponseWriter); ok {
 		if w1, ok := p.(*writerWrapper); ok {
 			netHttpServerInstrumenter.End(ctx, request, &netHttpResponse{
@@ -110,25 +112,21 @@ func serverOnExit(call api.CallContext) {
 	return
 }
 
-func setServerRoutePattern(request *netHttpRequest, rawRequest *http.Request, spanName string) {
-	// ServeMux fills Pattern after this hook's entry. Middleware that passes
-	// r.WithContext(...) to the mux replaces the request pointer, so the outer
-	// hook cannot observe that copy's pattern.
-	request.routePattern = rawRequest.Pattern
-
-	// Framework hooks publish validated route templates in the span name. They
-	// are more specific than the outer ServeMux catch-all pattern (for example,
-	// go-restful registers "/" while selecting "/users/{user-id}").
-	if route := semconvhttp.RouteFromSpanName(spanName); route != "" {
-		request.routePattern = route
+// serveMuxOnExit records the matched ServeMux pattern into the route
+// container. Middleware that does r = r.WithContext(...) leaves Pattern on a
+// request copy; serverOnExit only sees the original *Request, so we bridge via
+// the context container injected in serverOnEnter.
+//
+//go:linkname serveMuxOnExit net/http.serveMuxOnExit
+func serveMuxOnExit(call api.CallContext) {
+	if !netHttpEnabler.Enable() {
 		return
 	}
-
-	// A framework static route is also safe: it must exactly equal the request
-	// path. Do not infer arbitrary request paths as route templates.
-	if rawRequest.URL != nil && spanName == rawRequest.URL.Path {
-		request.routePattern = spanName
+	r, ok := call.GetParam(2).(*http.Request)
+	if !ok || r == nil {
+		return
 	}
+	captureServeMuxRoute(r)
 }
 
 type writerWrapper struct {

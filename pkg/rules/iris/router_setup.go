@@ -18,21 +18,45 @@ import (
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go/pkg/api"
+	otelhttp "github.com/alibaba/loongsuite-go/pkg/rules/http"
 	iContext "github.com/kataras/iris/v12/context"
-	"go.opentelemetry.io/otel/sdk/trace"
+	"github.com/kataras/iris/v12/macro"
 )
 
-//go:linkname irisHttpOnEnter github.com/kataras/iris/v12/core/router.irisHttpOnEnter
-func irisHttpOnEnter(call api.CallContext, _ interface{}, iCtx *iContext.Context) {
-	if !irisEnabler.Enable() {
-		return
-	}
-	if iCtx == nil {
+//go:linkname irisSetCurrentRouteOnEnter github.com/kataras/iris/v12/context.irisSetCurrentRouteOnEnter
+func irisSetCurrentRouteOnEnter(call api.CallContext, iCtx *iContext.Context, curr iContext.RouteReadOnly) {
+	if !irisEnabler.Enable() || iCtx == nil || curr == nil {
 		return
 	}
 	r := iCtx.Request()
-	lcs := trace.LocalRootSpanFromGLS()
-	if lcs != nil && r != nil && iCtx.Path() != "" {
-		lcs.SetName(iCtx.Path())
+	if r == nil {
+		return
 	}
+	route := routeTemplateFromIrisRoute(curr)
+	if route == "" {
+		return
+	}
+	otelhttp.SetServerRouteTemplate(r, route)
+	otelhttp.UpdateServerSpanName(r.Method, route)
+}
+
+// irisRouteInfo is the RouteReadOnly surface needed to resolve a low-cardinality
+// http.route template without depending on request Path().
+type irisRouteInfo interface {
+	StatusErrorCode() int
+	Tmpl() macro.Template
+	Path() string
+}
+
+// routeTemplateFromIrisRoute returns a route template for selected resource
+// routes only. Error handlers (StatusErrorCode != 0) are skipped so they do not
+// overwrite a previously matched template with "/".
+func routeTemplateFromIrisRoute(curr irisRouteInfo) string {
+	if curr == nil || curr.StatusErrorCode() != 0 {
+		return ""
+	}
+	if tmpl := curr.Tmpl(); tmpl.Src != "" {
+		return tmpl.Src
+	}
+	return curr.Path()
 }
