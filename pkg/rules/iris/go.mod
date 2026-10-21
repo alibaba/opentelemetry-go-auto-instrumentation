@@ -7,8 +7,9 @@ replace github.com/alibaba/loongsuite-go/pkg => ../../../pkg
 require (
 	github.com/alibaba/loongsuite-go/pkg v0.0.0-00010101000000-000000000000
 	github.com/kataras/iris/v12 v12.2.0
-	go.opentelemetry.io/otel/sdk v1.45.0
 )
+
+require go.opentelemetry.io/otel/sdk v1.45.0 // indirect
 
 require (
 	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06 // indirect

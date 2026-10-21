@@ -20,28 +20,8 @@ import (
 	"github.com/alibaba/loongsuite-go/pkg/api"
 	otelhttp "github.com/alibaba/loongsuite-go/pkg/rules/http"
 	iContext "github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/macro"
 )
-
-//go:linkname irisHttpOnEnter github.com/kataras/iris/v12/core/router.irisHttpOnEnter
-func irisHttpOnEnter(call api.CallContext, _ interface{}, iCtx *iContext.Context) {
-	if !irisEnabler.Enable() || iCtx == nil {
-		return
-	}
-	r := iCtx.Request()
-	if r == nil || r.URL == nil {
-		return
-	}
-	route := iCtx.Path()
-	if !shouldUseIrisFallbackRoute(route, r.URL.Path) {
-		return
-	}
-	otelhttp.SetServerRouteTemplate(r, route)
-	otelhttp.UpdateServerSpanName(r.Method, route)
-}
-
-func shouldUseIrisFallbackRoute(route, requestPath string) bool {
-	return route != "" && route != requestPath
-}
 
 //go:linkname irisSetCurrentRouteOnEnter github.com/kataras/iris/v12/context.irisSetCurrentRouteOnEnter
 func irisSetCurrentRouteOnEnter(call api.CallContext, iCtx *iContext.Context, curr iContext.RouteReadOnly) {
@@ -52,16 +32,31 @@ func irisSetCurrentRouteOnEnter(call api.CallContext, iCtx *iContext.Context, cu
 	if r == nil {
 		return
 	}
-	var route string
-	tmpl := curr.Tmpl()
-	if tmpl.Src != "" {
-		route = tmpl.Src
-	} else if curr.Path() != "" {
-		route = curr.Path()
-	}
+	route := routeTemplateFromIrisRoute(curr)
 	if route == "" {
 		return
 	}
 	otelhttp.SetServerRouteTemplate(r, route)
 	otelhttp.UpdateServerSpanName(r.Method, route)
+}
+
+// irisRouteInfo is the RouteReadOnly surface needed to resolve a low-cardinality
+// http.route template without depending on request Path().
+type irisRouteInfo interface {
+	StatusErrorCode() int
+	Tmpl() macro.Template
+	Path() string
+}
+
+// routeTemplateFromIrisRoute returns a route template for selected resource
+// routes only. Error handlers (StatusErrorCode != 0) are skipped so they do not
+// overwrite a previously matched template with "/".
+func routeTemplateFromIrisRoute(curr irisRouteInfo) string {
+	if curr == nil || curr.StatusErrorCode() != 0 {
+		return ""
+	}
+	if tmpl := curr.Tmpl(); tmpl.Src != "" {
+		return tmpl.Src
+	}
+	return curr.Path()
 }
