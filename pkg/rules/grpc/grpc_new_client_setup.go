@@ -19,12 +19,16 @@ import (
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go/pkg/api"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
 )
 
 //go:linkname grpcNewClientOnEnter google.golang.org/grpc.grpcNewClientOnEnter
 func grpcNewClientOnEnter(call api.CallContext, target string, opts ...grpc.DialOption) {
+	if !grpcEnabler.Enable() {
+		return
+	}
 	h := grpc.WithStatsHandler(NewClientNewHandler())
 	var opt []grpc.DialOption
 	opt = append(opt, h)
@@ -65,6 +69,7 @@ func (h *clientNewHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) c
 	})
 	gCtx := gRPCContext{
 		methodName: info.FullMethodName,
+		span:       trace.SpanFromContext(nCtx),
 	}
 	return inject(context.WithValue(nCtx, gRPCContextKey{}, &gCtx), h.grpcOtelConfig.Propagators, info.FullMethodName)
 }

@@ -48,6 +48,13 @@ type Option interface {
 }
 
 func (c *grpcOtelConfig) handleRPC(ctx context.Context, rs stats.RPCStats, isServer bool) { // nolint: revive  // isServer is not a control flag.
+	gCtx, _ := ctx.Value(gRPCContextKey{}).(*gRPCContext)
+	if gCtx != nil && gCtx.span != nil {
+		// Use the span started by this handler, not whichever span another
+		// stats handler put into ctx last; otherwise our span is never ended
+		// and leaks in the goroutine-local TraceContext.
+		ctx = trace.ContextWithSpan(ctx, gCtx.span)
+	}
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
 		return
@@ -55,7 +62,6 @@ func (c *grpcOtelConfig) handleRPC(ctx context.Context, rs stats.RPCStats, isSer
 	var (
 		messageId int64
 	)
-	gCtx, _ := ctx.Value(gRPCContextKey{}).(*gRPCContext)
 	switch rs := rs.(type) {
 	case *stats.Begin:
 	case *stats.InPayload:

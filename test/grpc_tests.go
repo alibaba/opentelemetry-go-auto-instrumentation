@@ -27,7 +27,16 @@ func init() {
 		NewLatestDepthTestCase("grpc-latest-depth", grpc_dependency_name, grpc_module_name, "v1.77.0", "", "1.21", "", TestBasicGrpc),
 		NewMuzzleTestCase("grpc-muzzle", grpc_dependency_name, grpc_module_name, "v1.77.0", "", "1.21", "", []string{"go", "build", "test_grpc_basic.go", "grpc_common.go", "grpc.pb.go", "grpc_grpc.pb.go"}),
 		NewGeneralTestCase("grpc-client-stream-test", grpc_module_name, "v1.77.0", "", "1.21", "", TestGrpcClientStream),
+		NewGeneralTestCase("grpc-multi-stats-handler-test", grpc_module_name, "v1.77.0", "", "1.21", "", TestGrpcMultiStatsHandler),
 	)
+}
+
+func TestGrpcMultiStatsHandler(t *testing.T, env ...string) {
+	UseApp("grpc/v1.77.0")
+	RunGoBuild(t, "go", "build", "test_grpc_multi_stats_handler.go", "grpc_common.go", "grpc.pb.go", "grpc_grpc.pb.go")
+	env = append(env, "GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn")
+	stdout, _ := RunApp(t, "test_grpc_multi_stats_handler", env...)
+	ExpectNotContains(t, stdout, "Failed to add span to TraceContext")
 }
 
 func TestBasicGrpc(t *testing.T, env ...string) {
