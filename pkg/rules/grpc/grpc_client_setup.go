@@ -19,6 +19,7 @@ import (
 	_ "unsafe"
 
 	"github.com/alibaba/loongsuite-go/pkg/api"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
 )
@@ -67,6 +68,7 @@ func (h *clientHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) cont
 	})
 	gCtx := gRPCContext{
 		methodName: info.FullMethodName,
+		span:       trace.SpanFromContext(nCtx),
 	}
 
 	return inject(context.WithValue(nCtx, gRPCContextKey{}, &gCtx), h.grpcOtelConfig.Propagators, info.FullMethodName)

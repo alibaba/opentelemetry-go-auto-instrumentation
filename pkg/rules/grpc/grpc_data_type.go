@@ -16,6 +16,7 @@ package grpc
 
 import (
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -39,4 +40,9 @@ type gRPCContextKey struct{}
 
 type gRPCContext struct {
 	methodName string
+	// span is the span started by this handler in TagRPC. It is kept here
+	// because, when other stats handlers (e.g. otelgrpc) are registered on the
+	// same ClientConn/Server, trace.SpanFromContext(ctx) in HandleRPC returns
+	// the span of the handler tagged last instead of ours.
+	span trace.Span
 }
